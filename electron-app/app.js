@@ -476,6 +476,18 @@ document.addEventListener('DOMContentLoaded', function() {
     } catch (error) {
         console.error('Failed to auto-load demo kinematics:', error);
     }
+
+    // Local Raspberry Pi panel (only shown on the Pi)
+    try {
+        // Give the DOM a moment to settle, then check local server.
+        setTimeout(function () {
+            if (typeof checkLocalPiServer === 'function') {
+                checkLocalPiServer();
+            }
+        }, 200);
+    } catch (e) {
+        console.warn('Failed to check local Pi server:', e);
+    }
     
     // Re-check screen size on window resize
     window.addEventListener('resize', detectScreenSize);
@@ -3792,6 +3804,290 @@ async function runRapidProgram() {
 }
 
 // ===== Settings =====
+
+/**
+ * Returns true when the app is likely running on a Raspberry Pi.
+ * We keep this simple: Raspberry Pi usually reports linux + arm/arm64.
+ * If we cannot read arch, we fall back to linux only.
+ */
+function isLikelyRaspberryPi() {
+    try {
+        const platform = (window.electronAPI && window.electronAPI.platform) ? window.electronAPI.platform : null;
+        const isLinux = platform === 'linux';
+        let arch = null;
+        if (typeof process !== 'undefined' && process && typeof process.arch === 'string') {
+            arch = process.arch;
+        }
+        const isArm = arch === 'arm' || arch === 'arm64';
+        if (arch === null) {
+            return isLinux;
+        }
+        return isLinux && isArm;
+    } catch (e) {
+        return false;
+    }
+}
+
+/**
+ * Checks whether the local ST3215 WebSocket server is reachable on 127.0.0.1.
+ * The ST3215 server is WebSocket-only (no HTTP), so we try opening a WS connection.
+ *
+ * @param {number} port
+ * @returns {Promise<{ ok: boolean, message: string }>}
+ */
+function probeLocalSt3215Server(port) {
+    return new Promise(function (resolve) {
+        const portNumber = (typeof port === 'number' && isFinite(port)) ? port : 8080;
+        const url = `ws://127.0.0.1:${portNumber}`;
+
+        let finished = false;
+        const finish = function (ok, message, info) {
+            if (finished) return;
+            finished = true;
+            resolve({ ok: ok, message: message, info: info || null });
+        };
+
+        let ws = null;
+        const timeoutMs = 900;
+        const timer = setTimeout(function () {
+            try {
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                    ws.close();
+                }
+            } catch (e) {
+                // ignore
+            }
+            finish(false, `No response from local server at ${url}`);
+        }, timeoutMs);
+
+        try {
+            ws = new WebSocket(url);
+        } catch (e) {
+            clearTimeout(timer);
+            finish(false, `Could not create WebSocket to ${url}: ${e.message || e}`);
+            return;
+        }
+
+        ws.onopen = function () {
+            // Once connected, ask the server for network information.
+            try {
+                ws.send(JSON.stringify({ command: 'getPiNetworkInfo' }));
+            } catch (e) {
+                // If we cannot send the command, we still know the server is up.
+            }
+        };
+
+        ws.onmessage = function (event) {
+            try {
+                const data = JSON.parse(event.data);
+                if (data && data.type === 'networkInfo') {
+                    clearTimeout(timer);
+                    try { ws.close(); } catch (e) { /* ignore */ }
+                    finish(true, `Local ST3215 server detected at ${url}`, {
+                        hostname: data.hostname || null,
+                        interfaces: Array.isArray(data.interfaces) ? data.interfaces : [],
+                        gateway: data.gateway || null
+                    });
+                    return;
+                }
+                if (data && data.type === 'connected') {
+                    // Welcome message; we know the server is up even if networkInfo is not implemented.
+                    clearTimeout(timer);
+                    try { ws.close(); } catch (e) { /* ignore */ }
+                    finish(true, `Local ST3215 server detected at ${url}`, null);
+                }
+            } catch (e) {
+                // If we got any message at all, the server is up.
+                clearTimeout(timer);
+                try { ws.close(); } catch (e2) { /* ignore */ }
+                finish(true, `Local ST3215 server responded at ${url}`, null);
+            }
+        };
+
+        ws.onerror = function () {
+            clearTimeout(timer);
+            finish(false, `Could not connect to local server at ${url}`);
+        };
+    });
+}
+
+/**
+ * Updates the Settings tab "Local Raspberry Pi" panel visibility and status text.
+ * - Hidden on non-Pi systems.
+ * - Shown on Pi systems, with a status line indicating whether the local server is reachable.
+ */
+async function checkLocalPiServer() {
+    const panel = document.getElementById('localPiSettingsPanel');
+    const statusText = document.getElementById('localPiServerStatusText');
+    if (!panel || !statusText) {
+        return;
+    }
+
+    if (!isLikelyRaspberryPi()) {
+        panel.style.display = 'none';
+        return;
+    }
+
+    panel.style.display = 'block';
+    statusText.textContent = 'Checking...';
+
+    const portValue = parseInt(document.getElementById('piPort')?.value || '8080', 10);
+    const result = await probeLocalSt3215Server(isNaN(portValue) ? 8080 : portValue);
+    statusText.textContent = result.message;
+    statusText.style.color = result.ok ? '#27ae60' : '#e67e22';
+
+    // If the server returned network information, populate the extra fields.
+    try {
+        const hostnameSpan = document.getElementById('localPiHostname');
+        const ipSpan = document.getElementById('localPiIp');
+        const macSpan = document.getElementById('localPiMac');
+        const gwSpan = document.getElementById('localPiGateway');
+
+        if (hostnameSpan) {
+            hostnameSpan.textContent = (result.info && result.info.hostname) ? result.info.hostname : '-';
+        }
+
+        if (ipSpan || macSpan) {
+            let ipText = '-';
+            let macText = '-';
+            if (result.info && Array.isArray(result.info.interfaces) && result.info.interfaces.length > 0) {
+                // Prefer eth0, then wlan0, then first interface.
+                let chosen = null;
+                for (let i = 0; i < result.info.interfaces.length; i++) {
+                    const iface = result.info.interfaces[i];
+                    if (iface && iface.name === 'eth0') {
+                        chosen = iface;
+                        break;
+                    }
+                }
+                if (!chosen) {
+                    for (let i = 0; i < result.info.interfaces.length; i++) {
+                        const iface = result.info.interfaces[i];
+                        if (iface && iface.name === 'wlan0') {
+                            chosen = iface;
+                            break;
+                        }
+                    }
+                }
+                if (!chosen) {
+                    chosen = result.info.interfaces[0];
+                }
+
+                if (chosen && chosen.address) {
+                    ipText = chosen.address;
+                }
+                if (chosen && chosen.mac) {
+                    macText = chosen.mac;
+                }
+            }
+            if (ipSpan) ipSpan.textContent = ipText;
+            if (macSpan) macSpan.textContent = macText;
+        }
+
+        if (gwSpan) {
+            gwSpan.textContent = (result.info && result.info.gateway) ? result.info.gateway : '-';
+        }
+    } catch (e) {
+        console.warn('checkLocalPiServer: failed to update network info fields:', e);
+    }
+}
+
+/**
+ * Convenience button for when the app is running on the Pi:
+ * Set the connection address to localhost (127.0.0.1) and connect.
+ */
+function useLocalPiConnectionSettings() {
+    const addrInput = document.getElementById('piAddress');
+    if (addrInput) {
+        addrInput.value = '127.0.0.1';
+    }
+    const connectButton = document.getElementById('connectButton');
+    if (connectButton) {
+        connectButton.click();
+    }
+}
+
+/**
+ * Settings tab helper: update the Electron app's own git repo on the Pi.
+ * Calls into the main process which runs "git pull --ff-only" in the electron-app folder.
+ */
+async function updateElectronAppFromGit() {
+    const statusSpan = document.getElementById('localPiUpdateStatus');
+    if (statusSpan) {
+        statusSpan.textContent = 'Updating Electron app from git...';
+        statusSpan.style.color = '#e67e22';
+    }
+
+    if (!window.electronAPI || typeof window.electronAPI.updateFromGit !== 'function') {
+        if (statusSpan) {
+            statusSpan.textContent = 'Electron update API is not available in this build.';
+            statusSpan.style.color = '#e74c3c';
+        }
+        return;
+    }
+
+    const result = await window.electronAPI.updateFromGit('electron');
+    if (statusSpan) {
+        statusSpan.textContent = result.message || (result.ok ? 'Update finished.' : 'Update failed.');
+        statusSpan.style.color = result.ok ? '#27ae60' : '#e74c3c';
+    }
+}
+
+/**
+ * Settings tab helper: ask the ST3215 Pi server to update itself from git.
+ * Sends a WebSocket command "updatePiServerFromGit" and displays the result.
+ */
+async function updateSt3215FromGit() {
+    const statusSpan = document.getElementById('localPiUpdateStatus');
+    if (statusSpan) {
+        statusSpan.textContent = 'Updating ST3215 server from git...';
+        statusSpan.style.color = '#e67e22';
+    }
+
+    try {
+        if (!robotArmClient || typeof robotArmClient.sendRawCommand !== 'function') {
+            if (statusSpan) {
+                statusSpan.textContent = 'ST3215 client does not support raw commands in this version.';
+                statusSpan.style.color = '#e74c3c';
+            }
+            return;
+        }
+
+        // Wrap the raw command/send in a small promise so we can await it here.
+        const message = await new Promise((resolve) => {
+            try {
+                robotArmClient.sendRawCommand(
+                    { command: 'updatePiServerFromGit' },
+                    function onMessage(data) {
+                        // Expect an "updateResult" response
+                        if (data && data.type === 'updateResult') {
+                            resolve(
+                                (data.ok ? 'ST3215 update OK: ' : 'ST3215 update failed: ') +
+                                (data.message || '')
+                            );
+                            return true; // tell client this message was handled
+                        }
+                        return false;
+                    },
+                    15000 // 15s timeout
+                );
+            } catch (e) {
+                resolve('Failed to send update command to ST3215 server: ' + (e.message || e));
+            }
+        });
+
+        if (statusSpan) {
+            const ok = message && message.indexOf('failed') === -1;
+            statusSpan.textContent = message;
+            statusSpan.style.color = ok ? '#27ae60' : '#e74c3c';
+        }
+    } catch (e) {
+        if (statusSpan) {
+            statusSpan.textContent = 'Error updating ST3215 server: ' + (e.message || e);
+            statusSpan.style.color = '#e74c3c';
+        }
+    }
+}
 
 /**
  * Saves settings to localStorage

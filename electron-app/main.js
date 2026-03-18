@@ -7,6 +7,7 @@
 
 const { app, BrowserWindow, screen, ipcMain } = require('electron');
 const path = require('path');
+const { exec } = require('child_process');
 
 // Keep a global reference of the window object
 let mainWindow;
@@ -119,6 +120,39 @@ ipcMain.handle('open-visualisation-window', () => {
 
     visualisationWindow.on('closed', () => {
         visualisationWindow = null;
+    });
+});
+
+/**
+ * Handle requests from the renderer to update local git repositories.
+ * For safety this only supports a small set of known folders.
+ */
+ipcMain.handle('update-from-git', async (event, args) => {
+    const which = args && args.which;
+    let targetDir = null;
+    if (which === 'electron') {
+        // electron-app is the folder that contains this main.js
+        targetDir = __dirname;
+    } else {
+        return { ok: false, message: `Unknown repository key: ${which}` };
+    }
+
+    return await new Promise((resolve) => {
+        exec('git pull --ff-only', { cwd: targetDir }, (error, stdout, stderr) => {
+            if (error) {
+                console.error('[main] update-from-git error:', error);
+                resolve({
+                    ok: false,
+                    message: `git pull failed in ${targetDir}: ${stderr || error.message}`
+                });
+            } else {
+                console.log('[main] update-from-git output:', stdout);
+                resolve({
+                    ok: true,
+                    message: `git pull completed in ${targetDir}: ${stdout.trim()}`
+                });
+            }
+        });
     });
 });
 

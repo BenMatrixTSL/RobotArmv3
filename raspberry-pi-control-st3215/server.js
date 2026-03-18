@@ -14,6 +14,9 @@
  */
 
 const WebSocket = require('ws');
+const os = require('os');
+const fs = require('fs');
+const { exec } = require('child_process');
 const RobotArm = require('./robotArmST3215');
 
 // Configuration
@@ -380,6 +383,105 @@ async function handleCommand(ws, data) {
     
     // Handle different commands
     switch (command) {
+        case 'getPiNetworkInfo': {
+            // Return basic network information for display in the Electron app
+            try {
+                const hostname = os.hostname();
+                const interfaces = os.networkInterfaces() || {};
+
+                // Collect a simple list of IPv4 addresses with MACs
+                const ifaceSummaries = [];
+                Object.keys(interfaces).forEach((name) => {
+                    (interfaces[name] || []).forEach((info) => {
+                        if (info && info.family === 'IPv4' && !info.internal) {
+                            ifaceSummaries.push({
+                                name: name,
+                                address: info.address,
+                                mac: info.mac || null
+                            });
+                        }
+                    });
+                });
+
+                // Try to read default gateway from /proc/net/route (Linux-specific)
+                let gateway = null;
+                try {
+                    const routeText = fs.readFileSync('/proc/net/route', 'utf8');
+                    const lines = routeText.trim().split('\n');
+                    // Skip header line
+                    for (let i = 1; i < lines.length; i++) {
+                        const parts = lines[i].trim().split(/\s+/);
+                        if (parts.length >= 3) {
+                            const dest = parts[1];
+                            const gwHex = parts[2];
+                            const flags = parseInt(parts[3] || '0', 16);
+                            // Destination 00000000 and flag 0x2 means default route
+                            if (dest === '00000000' && (flags & 0x2)) {
+                                const gwNum = parseInt(gwHex, 16);
+                                const b1 = gwNum & 0xFF;
+                                const b2 = (gwNum >> 8) & 0xFF;
+                                const b3 = (gwNum >> 16) & 0xFF;
+                                const b4 = (gwNum >> 24) & 0xFF;
+                                gateway = `${b1}.${b2}.${b3}.${b4}`;
+                                break;
+                            }
+                        }
+                    }
+                } catch (e) {
+                    // If we cannot read the route table, just leave gateway as null
+                    if (DEBUG) {
+                        console.warn('getPiNetworkInfo: could not read /proc/net/route:', e.message || e);
+                    }
+                }
+
+                ws.send(JSON.stringify({
+                    type: 'networkInfo',
+                    hostname: hostname,
+                    interfaces: ifaceSummaries,
+                    gateway: gateway
+                }));
+            } catch (error) {
+                ws.send(JSON.stringify({
+                    type: 'error',
+                    message: 'Failed to read network info: ' + (error.message || error)
+                }));
+            }
+            break;
+        }
+
+        case 'updatePiServerFromGit': {
+            // Run "git pull --ff-only" in this folder (raspberry-pi-control-st3215)
+            exec('git pull --ff-only', { cwd: __dirname }, (error, stdout, stderr) => {
+                if (error) {
+                    console.error('updatePiServerFromGit error:', error);
+                    ws.send(JSON.stringify({
+                        type: 'updateResult',
+                        ok: false,
+                        target: 'st3215',
+                        message: `git pull failed: ${stderr || error.message}`
+                    }));
+                } else {
+                    console.log('updatePiServerFromGit output:', stdout);
+                    ws.send(JSON.stringify({
+                        type: 'updateResult',
+                        ok: true,
+                        target: 'st3215',
+                        message: stdout.trim()
+                    }));
+
+                    // Restart Node.js so the updated code is loaded.
+                    // systemd is configured with Restart=always, so exiting here is enough.
+                    setTimeout(function () {
+                        try {
+                            process.exit(0);
+                        } catch (e) {
+                            // If exit fails for some reason, we just do nothing.
+                        }
+                    }, 500);
+                }
+            });
+            break;
+        }
         case 'getJointConfigs':
             // Return the number of servos discovered and their basic configuration
             const discoveredServos = servos.filter(s => s !== null).length;

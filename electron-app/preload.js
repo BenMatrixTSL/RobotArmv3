@@ -55,6 +55,20 @@ contextBridge.exposeInMainWorld('electronAPI', {
         } catch (e) {
             console.error('[preload] openVisualisationWindow failed:', e);
         }
+    },
+
+    /**
+     * Ask the main process to update one of the local git repositories.
+     * Valid values for "which" are:
+     *  - 'electron'  → update the electron-app folder
+     */
+    updateFromGit: async (which) => {
+        try {
+            return await ipcRenderer.invoke('update-from-git', { which });
+        } catch (e) {
+            console.error('[preload] updateFromGit failed:', e);
+            return { ok: false, message: e.message || String(e) };
+        }
     }
 });
 

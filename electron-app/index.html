@@ -851,6 +851,57 @@
                 <div id="calibrationStatus" class="calibration-status"></div>
                 <div id="calibrationProgress" class="calibration-progress"></div>
             </div>
+
+            <!-- Local Raspberry Pi Panel (only shown when running on the Pi) -->
+            <div class="settings-panel" id="localPiSettingsPanel" style="display: none;">
+                <h3>Local Raspberry Pi (ST3215)</h3>
+                <p class="info-text">
+                    This section only appears when the app is running on a Raspberry Pi.
+                    It helps when the ST3215 control server is running on the same Pi.
+                </p>
+                <div class="settings-grid">
+                    <div class="setting-item" style="grid-column: 1 / -1;">
+                        <label>Local server status:</label>
+                        <div>
+                            <span id="localPiServerStatusText">Checking...</span>
+                        </div>
+                    </div>
+                    <div class="setting-item">
+                        <label>Hostname:</label>
+                        <div><span id="localPiHostname">-</span></div>
+                    </div>
+                    <div class="setting-item">
+                        <label>IP address:</label>
+                        <div><span id="localPiIp">-</span></div>
+                    </div>
+                    <div class="setting-item">
+                        <label>MAC address:</label>
+                        <div><span id="localPiMac">-</span></div>
+                    </div>
+                    <div class="setting-item">
+                        <label>Gateway:</label>
+                        <div><span id="localPiGateway">-</span></div>
+                    </div>
+                </div>
+                <div style="margin-top: 10px;">
+                    <button class="btn btn-secondary" onclick="checkLocalPiServer()">Re-check Local Server</button>
+                    <button class="btn btn-primary" onclick="useLocalPiConnectionSettings()">Use Localhost Connection</button>
+                </div>
+                <div style="margin-top: 15px; border-top: 1px solid #ddd; padding-top: 10px;">
+                    <h4>Update from GitHub</h4>
+                    <p class="info-text">
+                        These buttons run <code>git pull --ff-only</code> on the Raspberry Pi.
+                        Make sure both folders are git clones with a configured <code>origin</code> remote.
+                    </p>
+                    <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px;">
+                        <button class="btn btn-small btn-secondary" onclick="updateElectronAppFromGit()">Update Electron App</button>
+                        <button class="btn btn-small btn-secondary" onclick="updateSt3215FromGit()">Update ST3215 Server</button>
+                    </div>
+                    <div style="margin-top: 6px;">
+                        <span id="localPiUpdateStatus" class="status-text"></span>
+                    </div>
+                </div>
+            </div>
                 
             <button class="btn btn-primary" onclick="saveSettings()">Save Settings</button>
         </div> <!-- end settings-tab -->
