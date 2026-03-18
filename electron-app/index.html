@@ -1,0 +1,1099 @@
+<!DOCTYPE html>
+<!--
+    Robot Arm Control Application - Main HTML Interface
+    
+    This is the main HTML file for the Electron-based robot arm control application.
+    It provides a comprehensive interface for:
+    - Pendant control (real-time joint movement)
+    - G-code processing and execution
+    - 3D visualisation of the robot arm
+    - Visual programming with Blockly
+    - Stored position management
+    - Settings and calibration
+    
+    The application is designed to work offline after initial setup.
+    All external libraries are bundled locally in the libs/ directory.
+-->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Robot Arm Control - Pendant & G-Code</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Main Application Container -->
+    <div class="container">
+        <!-- Application Header: Shows logo, title, and connection status -->
+        <header>
+            <div class="header-left">
+                <img src="Matrix 2024 White_Allcode Robot Arm.svg" alt="Matrix Robot Arm Logo" class="header-logo">
+                <h1>Robot Arm Control System</h1>
+            </div>
+            <div class="connection-status" id="connectionStatus">
+                <span class="status-indicator" id="statusIndicator"></span>
+                <span id="statusText">Disconnected</span>
+            </div>
+        </header>
+
+        <!-- Connection Settings -->
+        <section class="connection-panel">
+            <h2>Connection Settings</h2>
+            <div class="connection-form">
+                <label>
+                    Raspberry Pi Address:
+                    <input type="text" id="piAddress" value="192.168.1.160" placeholder="192.168.1.160">
+                </label>
+                <label>
+                    Port:
+                    <input type="number" id="piPort" value="8080" placeholder="8080">
+                </label>
+                <button id="connectButton" class="btn btn-primary">Connect</button>
+                <button id="autoDetectButton" class="btn btn-secondary">Auto-Detect Pi</button>
+                <button id="disconnectButton" class="btn btn-secondary" disabled>Disconnect</button>
+                <div id="autoDetectStatus" class="auto-detect-status"></div>
+            </div>
+        </section>
+
+        <!-- Simple toast-style message area -->
+        <div id="appMessage" class="app-message" style="display: none;"></div>
+
+        <!-- Main Content Area: Sidebar navigation + page content -->
+        <div class="main-layout">
+            <!-- Sidebar Tabs -->
+            <div class="tabs">
+                <button class="tab-button active" data-tab="pendant">Joint Control</button>
+                <button class="tab-button" data-tab="pendant-ui">Pendant Control</button>
+                <button class="tab-button" data-tab="gcode">G-Code Control</button>
+                <button class="tab-button" data-tab="rapid">RAPID</button>
+                <button class="tab-button" data-tab="blockly">Visual Programming</button>
+                <button class="tab-button" data-tab="visualization">3D Visualisation</button>
+                <button class="tab-button" data-tab="kinematics">Kinematics</button>
+                <button class="tab-button" data-tab="positions">Stored Positions</button>
+                <button class="tab-button" data-tab="deadzones">Dead Zones</button>
+                <button class="tab-button" data-tab="settings">Settings</button>
+            </div>
+
+            <!-- Main Tab Content -->
+            <div class="tab-content-container">
+
+        <!-- Joint Control Tab -->
+        <div id="pendant-tab" class="tab-content active">
+            <h2>Joint Control</h2>
+            
+            <!-- Joint Status Display -->
+            <div class="joint-status-grid" id="jointStatusGrid">
+                <!-- Joint status cards will be generated dynamically -->
+            </div>
+
+            <!-- Manual Control -->
+            <div class="control-panel">
+                <h3>Manual Joint Control</h3>
+                <div class="joint-controls" id="jointControlsContainer">
+                    <!-- Joint controls will be generated dynamically -->
+                </div>
+                
+                <div class="control-buttons">
+                    <button class="btn btn-danger" onclick="stopAllJoints()">Emergency Stop</button>
+                    <button class="btn btn-secondary" onclick="homeAllJoints()">Home All Joints</button>
+                    <button class="btn btn-warning torque-toggle-button" id="torqueToggleButton" onclick="toggleTorqueAll()">Torque: On</button>
+                </div>
+            </div>
+
+            <!-- XYZ Position Control -->
+            <div class="control-panel">
+                <h3>XYZ Position Control</h3>
+                <div class="xyz-status">
+                    <div class="xyz-status-display">
+                        <h4>Current End Effector Position</h4>
+                        <div class="xyz-values">
+                            <div class="xyz-value">
+                                <label>X:</label>
+                                <span id="currentX">-</span> mm
+                            </div>
+                            <div class="xyz-value">
+                                <label>Y:</label>
+                                <span id="currentY">-</span> mm
+                            </div>
+                            <div class="xyz-value">
+                                <label>Z:</label>
+                                <span id="currentZ">-</span> mm
+                            </div>
+                        </div>
+                        <p class="info-text">Position calculated from current joint angles using forward kinematics.</p>
+                    </div>
+                </div>
+                
+                <div class="xyz-controls">
+                    <h4>Move to XYZ Position</h4>
+                    <div class="xyz-inputs">
+                        <div class="xyz-input-group">
+                            <label>X (mm):</label>
+                            <input type="text" id="targetX" value="0">
+                            <button class="btn btn-small" onclick="quickMoveXYZ('X', -1)">-</button>
+                            <button class="btn btn-small" onclick="quickMoveXYZ('X', 1)">+</button>
+                        </div>
+                        <div class="xyz-input-group">
+                            <label>Y (mm):</label>
+                            <input type="text" id="targetY" value="0">
+                            <button class="btn btn-small" onclick="quickMoveXYZ('Y', -1)">-</button>
+                            <button class="btn btn-small" onclick="quickMoveXYZ('Y', 1)">+</button>
+                        </div>
+                        <div class="xyz-input-group">
+                            <label>Z (mm):</label>
+                            <input type="text" id="targetZ" value="0">
+                            <button class="btn btn-small" onclick="quickMoveXYZ('Z', -1)">-</button>
+                            <button class="btn btn-small" onclick="quickMoveXYZ('Z', 1)">+</button>
+                        </div>
+                    </div>
+                    <div class="xyz-buttons">
+                        <button class="btn btn-primary" onclick="moveToXYZ()">Move to Position</button>
+                        <button class="btn btn-secondary" onclick="copyCurrentXYZ()">Copy Current Position</button>
+                        <div class="xyz-step-size">
+                            <label>Step Size (mm):</label>
+                            <input type="text" id="xyzStepSize" value="5">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Joystick Controls (Optional - can be added later) -->
+            <div class="joystick-area">
+                <h3>Quick Joint Movement Controls</h3>
+                <div class="joystick-controls">
+                    <div class="direction-grid" id="quickMovementButtons">
+                        <!-- Quick movement buttons will be generated dynamically -->
+                    </div>
+                    <div class="step-size">
+                        <label>Step Size (degrees):</label>
+                        <input type="text" id="stepSize" value="1">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Touchscreen Pendant Tab -->
+        <div id="pendant-ui-tab" class="tab-content">
+            <h2>Pendant Control (Touchscreen)</h2>
+            <p class="info-text">
+                This page is designed for touchscreens. Use the large arrow buttons to jog the robot in XYZ,
+                return to home, and perform common actions without needing a keyboard or mouse.
+            </p>
+
+            <div class="pendant-layout">
+                <div class="pendant-panel">
+                    <h3>Current Position</h3>
+                    <div class="pendant-position">
+                        <div class="pendant-pos-line">X: <span id="pendantX">-</span> mm</div>
+                        <div class="pendant-pos-line">Y: <span id="pendantY">-</span> mm</div>
+                        <div class="pendant-pos-line">Z: <span id="pendantZ">-</span> mm</div>
+                    </div>
+                </div>
+
+                <div class="pendant-panel">
+                    <h3>XY Jog</h3>
+                    <div class="pendant-xy-wheel">
+                        <button class="btn pendant-btn pendant-xy-btn pendant-xy-up" onclick="quickMoveXYZ('Y', 1)">Y+</button>
+                        <button class="btn pendant-btn pendant-xy-btn pendant-xy-down" onclick="quickMoveXYZ('Y', -1)">Y-</button>
+                        <button class="btn pendant-btn pendant-xy-btn pendant-xy-left" onclick="quickMoveXYZ('X', -1)">X-</button>
+                        <button class="btn pendant-btn pendant-xy-btn pendant-xy-right" onclick="quickMoveXYZ('X', 1)">X+</button>
+                        <button class="btn pendant-btn pendant-xy-btn pendant-xy-center" onclick="copyCurrentXYZ()">Home</button>
+                    </div>
+                </div>
+
+                <div class="pendant-panel">
+                    <h3>Z Jog</h3>
+                    <div class="pendant-z-grid">
+                        <button class="btn pendant-btn" onclick="quickMoveXYZ('Z', 1)">Z+ ▲</button>
+                        <button class="btn pendant-btn" onclick="quickMoveXYZ('Z', -1)">▼ Z-</button>
+                    </div>
+                </div>
+
+                <div class="pendant-panel">
+                    <h3>Quick Actions</h3>
+                    <div class="pendant-actions">
+                        <button class="btn btn-secondary pendant-wide-btn" onclick="homeAllJoints()">Home All Joints</button>
+                        <button class="btn btn-danger pendant-wide-btn" onclick="stopAllJoints()">Emergency Stop</button>
+                        <button class="btn btn-primary pendant-wide-btn" onclick="moveToXYZ()">Move to Target XYZ</button>
+                    </div>
+                    <div class="pendant-step-settings">
+                        <label>
+                            Jog Step (mm):
+                            <input type="text" id="xyzStepSize" value="5">
+                        </label>
+                    </div>
+                </div>
+
+                <div class="pendant-panel">
+                    <h3>Move to Stored Position</h3>
+                    <div class="pendant-stored-pos">
+                        <label for="pendantPositionSelect">Stored Position:</label>
+                        <select id="pendantPositionSelect">
+                            <option value="">Select position</option>
+                        </select>
+                        <button class="btn btn-primary pendant-wide-btn" onclick="moveToStoredPositionFromPendant()">Move to Position</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- G-Code Control Tab -->
+        <div id="gcode-tab" class="tab-content">
+            <h2>G-Code Control</h2>
+            
+            <!-- File Selection -->
+            <div class="file-panel">
+                <h3>Load G-Code File</h3>
+                <div class="file-controls">
+                    <input type="file" id="gcodeFileInput" accept=".gcode,.nc,.txt" style="display: none;">
+                    <button class="btn btn-primary" onclick="document.getElementById('gcodeFileInput').click()">Select G-Code File</button>
+                    <button class="btn btn-secondary" onclick="loadDefaultGCode()">Load Default Example</button>
+                    <span id="fileName" class="file-name">No file selected</span>
+                </div>
+            </div>
+
+            <!-- G-Code Preview -->
+            <div class="gcode-preview">
+                <h3>G-Code Editor</h3>
+                <div class="gcode-editor-controls">
+                    <button class="btn btn-small" onclick="applyGCodeChanges()">Apply Changes</button>
+                    <button class="btn btn-small" onclick="reloadGCodeFromEditor()">Reload from File</button>
+                </div>
+                <textarea id="gcodeContent" placeholder="Load a G-Code file or type G-code here..."></textarea>
+                <div class="gcode-info">
+                    <span>Lines: <span id="gcodeLineCount">0</span></span>
+                    <span>Commands: <span id="gcodeCommandCount">0</span></span>
+                    <span id="gcodeModified" style="color: #e74c3c; display: none;">● Modified</span>
+                </div>
+            </div>
+
+            <!-- G-Code Control -->
+            <div class="gcode-controls">
+                <h3>Execution Control</h3>
+                <div class="control-buttons">
+                    <button class="btn btn-primary" id="startGcodeButton" onclick="startGcode()" disabled>Start Execution</button>
+                    <button class="btn btn-warning" id="pauseGcodeButton" onclick="togglePauseResume()" disabled>Pause</button>
+                    <button class="btn btn-danger" id="stopGcodeButton" onclick="stopGcode()" disabled>Stop</button>
+                </div>
+                <div class="execution-status">
+                    <div>Status: <span id="gcodeStatus">Ready</span></div>
+                    <div>Current Line: <span id="currentLine">-</span> / <span id="totalLines">-</span></div>
+                    <div>Progress: <span id="gcodeProgress">0</span>%</div>
+                </div>
+            </div>
+
+            <!-- G-Code Log -->
+            <div class="gcode-log">
+                <h3>Execution Log</h3>
+                <div id="gcodeLog" class="log-content"></div>
+            </div>
+
+            <!-- G-Code Cheat Sheet -->
+            <div class="settings-panel" style="margin-top: 20px;">
+                <h3>G-Code Cheat Sheet (Supported Commands)</h3>
+                <p class="info-text">
+                    The app supports a small, beginner-friendly subset of G-code.
+                    Use this list as a quick reference while you are editing your program.
+                </p>
+                <table class="kinematics-step-info">
+                    <tbody>
+                        <tr>
+                            <td><strong>G0</strong>, <strong>G1</strong></td>
+                            <td>
+                                Linear move command. Supports multiple modes:<br>
+                                • <strong>Stored position (by number):</strong> <code>G1 P5 F60</code> → move to stored position 5 at 60 deg/s<br>
+                                • <strong>Stored position (by name):</strong> <code>G1 P"Home" F60</code> → move to stored position named "Home"<br>
+                                • <strong>Joint-space moves:</strong> <code>G1 J1=45 J2=20 F60</code> → move joints 1 and 2 to 45° and 20°<br>
+                                • <strong>Cartesian XYZ:</strong> <code>G1 X150 Y0 Z200 F60</code> → move TCP to XYZ position (requires kinematics)<br>
+                                The <code>P</code> parameter can be a number (0-99) or a quoted string (position name) from the Stored Positions tab.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>G28</strong></td>
+                            <td>
+                                Home all joints to 0° (uses optional <code>F</code> for speed in deg/s).<br>
+                                <code>G28 F45</code> → home joints at 45&nbsp;deg/s.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>Joint moves</strong></td>
+                            <td>
+                                Move specific joints directly using <code>J1</code>…<code>J5</code> with angles in degrees.<br>
+                                <code>J1=45 J2=-30 F60</code> → move J1 and J2 to 45° and −30° at 60&nbsp;deg/s (scaled so they finish together).
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>M0</strong>, <strong>M1</strong></td>
+                            <td>
+                                Pause the program.<br>
+                                <code>M0</code> or <code>M1</code> → pause for 2000&nbsp;ms (2&nbsp;s).<br>
+                                <code>M0 P5000</code> → pause for 5000&nbsp;ms (5&nbsp;s).
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>M204</strong></td>
+                            <td>
+                                Set servo acceleration (0–254, in units of 100&nbsp;step/s²).<br>
+                                <code>M204 A80</code> → set acceleration for all joints to 80.<br>
+                                <code>M204 J3 A100</code> → set acceleration for joint&nbsp;3 only.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>M30</strong>, <strong>M2</strong></td>
+                            <td>
+                                Program end marker. Execution stops when these are reached.<br>
+                                <code>M30</code> or <code>M2</code>.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>Comments</strong></td>
+                            <td>
+                                Use <code>;</code> or <code>( ... )</code> for comments:<br>
+                                <code>G1 X10 Y0 Z0 ; move to start</code><br>
+                                <code>(This is a comment line)</code>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- RAPID Control Tab -->
+        <div id="rapid-tab" class="tab-content">
+            <h2>ABB RAPID Control (Simple Subset)</h2>
+            <p class="info-text">
+                This tab lets you experiment with a very small, beginner-friendly subset of ABB&apos;s RAPID language.
+                At the moment we only support simple joint moves using <code>MoveJ</code> with a list of joint angles.
+            </p>
+
+            <div class="gcode-preview">
+                <h3>RAPID Editor</h3>
+                <div class="gcode-editor-controls">
+                    <button class="btn btn-small" onclick="loadDefaultRapid()">Load RAPID Example</button>
+                    <button class="btn btn-small" onclick="runRapidProgram()">Run RAPID Program</button>
+                </div>
+                <textarea id="rapidContent" placeholder="Type simple RAPID code here...&#10;Example:&#10;! Absolute joint move&#10;MoveJ [[0,10,20,0,0]];&#10;! Cartesian move&#10;MoveLXYZ [[150,0,200]];"></textarea>
+            </div>
+
+            <div class="settings-panel" style="margin-top: 20px;">
+                <h3>RAPID Cheat Sheet (Supported Subset)</h3>
+                <p class="info-text">
+                    This is not a full RAPID interpreter. It only supports a tiny subset that maps cleanly to your 5‑axis arm.
+                </p>
+                <table class="kinematics-step-info">
+                    <tbody>
+                        <tr>
+                            <td><strong>Comments</strong></td>
+                            <td>
+                                Start a line with <code>!</code> for a comment.<br>
+                                <code>! This is a comment</code>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>MoveJ</strong></td>
+                            <td>
+                                Joint move using 5 joint angles in degrees.<br>
+                                <code>MoveJ [[J1,J2,J3,J4,J5]];</code><br>
+                                Example: <code>MoveJ [[0,10,20,0,0]];</code> → move to J1=0°, J2=10°, J3=20°, J4=0°, J5=0° (default speed).
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>MoveAbsJ</strong></td>
+                            <td>
+                                Absolute joint move (same behaviour as <code>MoveJ</code>, just a different name).<br>
+                                <code>MoveAbsJ [[0,0,30,0,0]];</code>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>MoveJOffs</strong></td>
+                            <td>
+                                Joint move using offsets added to the current joint angles.<br>
+                                <code>MoveJOffs [[dJ1,dJ2,dJ3,dJ4,dJ5]];</code><br>
+                                Example: <code>MoveJOffs [[0,-5,-10,0,0]];</code> → subtract 5° from J2 and 10° from J3.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>MoveLXYZ</strong></td>
+                            <td>
+                                Cartesian move to an absolute XYZ position (in mm). Uses the kinematics solver internally.<br>
+                                <code>MoveLXYZ [[X,Y,Z]];</code><br>
+                                Example: <code>MoveLXYZ [[150,0,200]];</code> → move TCP to X=150&nbsp;mm, Y=0&nbsp;mm, Z=200&nbsp;mm.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>MoveLOffs</strong></td>
+                            <td>
+                                Cartesian offset move relative to the current XYZ position (in mm).<br>
+                                <code>MoveLOffs [[dX,dY,dZ]];</code><br>
+                                Example: <code>MoveLOffs [[0,0,50]];</code> → move the TCP 50&nbsp;mm upwards from where it is now.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>WaitTime</strong></td>
+                            <td>
+                                Pause the program for a number of seconds.<br>
+                                <code>WaitTime 2;</code> → wait for 2&nbsp;seconds.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>SetDO</strong></td>
+                            <td>
+                                Set a (simulated) digital output channel to 0 or 1.<br>
+                                <code>SetDO 1, 1;</code> → turn output 1 on.<br>
+                                <code>SetDO 1, 0;</code> → turn output 1 off.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>Home</strong></td>
+                            <td>
+                                Convenience command that moves all joints back to 0°.<br>
+                                <code>Home;</code>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 3D Visualisation Tab -->
+        <div id="visualization-tab" class="tab-content">
+            <h2>3D Robot Arm Visualisation</h2>
+            
+                <div class="visualization-panel">
+                <div class="visualization-controls">
+                    <button class="btn btn-primary" onclick="update3DVisualization()">Update Visualisation</button>
+                    <button class="btn btn-secondary" onclick="reset3DCamera()">Reset Camera</button>
+                    <button class="btn btn-small" onclick="debug3DVisualization()">Debug Info</button>
+                    <button class="btn btn-small" onclick="openVisualisationPopup()">Open 3D in Separate Window</button>
+                    <div class="view-buttons">
+                        <button class="btn btn-small" onclick="set3DView('front')">Front</button>
+                        <button class="btn btn-small" onclick="set3DView('side')">Side</button>
+                        <button class="btn btn-small" onclick="set3DView('top')">Top</button>
+                        <button class="btn btn-small" onclick="set3DView('iso')">Isometric</button>
+                    </div>
+                    <div class="visualization-toggles">
+                        <label>
+                            <input type="checkbox" id="showDeadZonesCheckbox" checked>
+                            <span>Show Dead Zones</span>
+                        </label>
+                        <label>
+                            <input type="checkbox" id="showStoredPositionsCheckbox" checked>
+                            <span>Show Stored Positions</span>
+                        </label>
+                        <label>
+                            <input type="checkbox" id="showEnvelopeCheckbox" checked>
+                            <span>Show Movement Envelope</span>
+                        </label>
+                        <label>
+                            <input type="checkbox" id="showEndEffectorTraceCheckbox">
+                            <span>Show End Effector Trace</span>
+                        </label>
+                        <label>
+                            <input type="checkbox" id="showJointTracesCheckbox">
+                            <span>Show Joint Traces</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="visualization-info">
+                    <p class="info-text">
+                        The 3D visualization shows the robot arm based on kinematics parameters and current joint angles.
+                        Make sure to load joint configurations from the Settings tab first.
+                    </p>
+                </div>
+                
+                <!-- Simulation Mode Controls -->
+                <div class="simulation-panel">
+                    <h3>Joint Angle Control</h3>
+                    <div class="simulation-controls">
+                        <label class="simulation-toggle">
+                            <input type="checkbox" id="useSimulatedAngles" onchange="toggleSimulationMode()">
+                            <span>Use Simulated Angles (Override Robot)</span>
+                        </label>
+                        <p class="info-text" id="simulationModeText">
+                            Currently showing real robot joint angles. Enable simulation to manually set angles.
+                        </p>
+                    </div>
+                    
+                    <div id="simulatedAnglesPanel" class="simulated-angles-panel" style="display: none;">
+                        <h4>Simulated Joint Angles</h4>
+                        <div class="simulated-angles-grid" id="simulatedAnglesGrid">
+                            <!-- Simulated angle controls will be generated dynamically -->
+                        </div>
+                        <div class="simulation-buttons">
+                            <button class="btn btn-small" onclick="resetSimulatedAngles()">Reset to 0°</button>
+                            <button class="btn btn-small" onclick="copyRealAnglesToSim()">Copy from Robot</button>
+                    <button class="btn btn-small" onclick="updateSimulatedVisualization()">Update Visualisation</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="robotArm3DContainer" class="robot-arm-3d-container">
+                    <!-- Three.js canvas will be inserted here -->
+                </div>
+                
+                <div class="visualization-status">
+                    <div>Status: <span id="visualizationStatus">Ready</span></div>
+                    <div>End Effector Position: <span id="endEffectorPos">-</span></div>
+                    <div>Mode: <span id="visualizationMode">Real Robot</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Kinematics Tab -->
+        <div id="kinematics-tab" class="tab-content">
+            <h2>Kinematics and Transform Matrices</h2>
+            <div class="simulation-panel">
+                <h3>Simulated Joint Angles (for Kinematics)</h3>
+                <p class="info-text">
+                    These angles are the same ones used by the 3D visualisation when "Use Simulated Angles" is enabled.
+                    Adjust them here to see how the transforms and XYZ positions change.
+                </p>
+                <div class="simulated-angles-grid" id="kinematicsAnglesGrid">
+                    <!-- Kinematics angle controls will be generated dynamically -->
+                </div>
+                <div class="simulation-buttons">
+                    <button class="btn btn-small" onclick="resetSimulatedAnglesForKinematics()">Reset to 0°</button>
+                    <button class="btn btn-small" onclick="copyRealAnglesToSimForKinematics()">Copy from Robot</button>
+                    <button class="btn btn-small" onclick="updateKinematicsFromAngles()">Update Matrices</button>
+                </div>
+            </div>
+            <p class="info-text">
+                This tab shows how forward kinematics builds up from the base to the end effector.
+                For each joint, we apply a transform
+                T<sub>i</sub> = Origin<sub>i</sub> · Rotation(axis<sub>i</sub>, angle<sub>i</sub>),
+                and multiply them to get the cumulative transform.
+            </p>
+            <div class="kinematics-matrix-legend">
+                <p class="info-text"><strong>4×4 transform layout</strong></p>
+                <table class="kinematics-matrix">
+                    <tbody>
+                        <tr>
+                            <td>R<sub>11</sub></td>
+                            <td>R<sub>12</sub></td>
+                            <td>R<sub>13</sub></td>
+                            <td>T<sub>x</sub> (mm)</td>
+                        </tr>
+                        <tr>
+                            <td>R<sub>21</sub></td>
+                            <td>R<sub>22</sub></td>
+                            <td>R<sub>23</sub></td>
+                            <td>T<sub>y</sub> (mm)</td>
+                        </tr>
+                        <tr>
+                            <td>R<sub>31</sub></td>
+                            <td>R<sub>32</sub></td>
+                            <td>R<sub>33</sub></td>
+                            <td>T<sub>z</sub> (mm)</td>
+                        </tr>
+                        <tr>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>1</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <p class="info-text">
+                    The top-left 3×3 entries R<sub>ij</sub> form the rotation matrix.
+                    The last column holds the translation in millimetres (internally stored in metres).
+                </p>
+            </div>
+            <div id="kinematicsMatricesDisplay" class="kinematics-matrices-display"></div>
+        </div>
+
+        <!-- Stored Positions Tab -->
+        <div id="positions-tab" class="tab-content">
+            <h2>Stored Positions</h2>
+            <p class="info-text">
+                Define preset positions (0-99) with custom labels. These positions can be referenced in Blockly programs.
+            </p>
+            
+            <div class="positions-panel">
+                <div class="positions-controls">
+                    <div class="position-input-group">
+                        <label>Position Number (0-99):</label>
+                        <input type="number" id="positionNumber" min="0" max="99" value="0" style="width: 80px;">
+                    </div>
+                    <div class="position-input-group">
+                        <label>Label:</label>
+                        <input type="text" id="positionLabel" placeholder="e.g., Home, Pick, Place" style="width: 200px;">
+                    </div>
+                    <button class="btn btn-primary" onclick="savePosition()">Save Position</button>
+                    <button class="btn btn-secondary" onclick="loadPosition()">Load Position</button>
+                    <button class="btn btn-small" onclick="loadCurrentRobotAngles()">Load from Robot</button>
+                    <button class="btn btn-danger" onclick="deletePosition()">Delete Position</button>
+                    <button class="btn btn-warning torque-toggle-button" onclick="toggleTorqueAll()">Torque: On</button>
+                </div>
+                
+                <div class="positions-joints">
+                    <h3>Joint Angles (degrees)</h3>
+                    <div id="positionJointsGrid" class="positions-joints-grid">
+                        <!-- Joint angle inputs will be generated dynamically -->
+                    </div>
+                </div>
+                
+                <div class="positions-list">
+                    <h3>Saved Positions</h3>
+                    <div class="positions-list-controls">
+                        <button class="btn btn-small" onclick="refreshPositionsList()">Refresh List</button>
+                        <button class="btn btn-small" onclick="exportPositions()">Export All</button>
+                        <button class="btn btn-small" onclick="importPositions()">Import All</button>
+                    </div>
+                    <div id="positionsList" class="positions-list-content">
+                        <!-- List of saved positions will be displayed here -->
+                    </div>
+                </div>
+                
+                <div class="positions-status">
+                    <div>Status: <span id="positionsStatus">Ready</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dead Zones Tab -->
+        <div id="deadzones-tab" class="tab-content">
+            <h2>Dead Zones</h2>
+            <p class="info-text">
+                Define rectangular XYZ regions that the robot arm must avoid. Moves that would pass through a dead zone
+                can be routed over a safe Z height.
+            </p>
+
+            <div class="settings-panel">
+                <h3>Add / Edit Dead Zone</h3>
+                <div class="settings-grid">
+                    <div class="setting-item">
+                        <label>Name:</label>
+                        <input type="text" id="deadZoneName" placeholder="e.g., Vice, Fixture">
+                    </div>
+                    <div class="setting-item">
+                        <label>Min X (mm):</label>
+                        <input type="text" id="deadZoneMinX" value="0">
+                    </div>
+                    <div class="setting-item">
+                        <label>Max X (mm):</label>
+                        <input type="text" id="deadZoneMaxX" value="100">
+                    </div>
+                    <div class="setting-item">
+                        <label>Min Y (mm):</label>
+                        <input type="text" id="deadZoneMinY" value="-50">
+                    </div>
+                    <div class="setting-item">
+                        <label>Max Y (mm):</label>
+                        <input type="text" id="deadZoneMaxY" value="50">
+                    </div>
+                    <div class="setting-item">
+                        <label>Min Z (mm):</label>
+                        <input type="text" id="deadZoneMinZ" value="0">
+                    </div>
+                    <div class="setting-item">
+                        <label>Max Z (mm):</label>
+                        <input type="text" id="deadZoneMaxZ" value="150">
+                    </div>
+                    <div class="setting-item">
+                        <label>Safe Z Height (mm):</label>
+                        <input type="text" id="deadZoneSafeZ" value="300">
+                    </div>
+                </div>
+                <button class="btn btn-primary" id="addDeadZoneButton">Add / Update Dead Zone</button>
+            </div>
+
+            <div class="settings-panel">
+                <h3>Defined Dead Zones</h3>
+                <p class="info-text">Enabled dead zones will be checked when planning XYZ moves.</p>
+                <table class="deadzone-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>X Min</th>
+                            <th>X Max</th>
+                            <th>Y Min</th>
+                            <th>Y Max</th>
+                            <th>Z Min</th>
+                            <th>Z Max</th>
+                            <th>Enabled</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="deadZonesTableBody">
+                        <!-- Populated by app.js -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Visual Programming (Blockly) Tab -->
+        <div id="blockly-tab" class="tab-content">
+            <h2>Visual Programming</h2>
+            <p class="info-text">
+                Drag and drop blocks to create control programs for your robot arm. 
+                Click "Run Program" to execute your program.
+            </p>
+            
+            <div id="blockly-loading" class="blockly-loading">
+                <p>Loading Blockly library...</p>
+            </div>
+            
+            <div class="blockly-controls" id="blocklyControls" style="display: none;">
+                <button class="btn btn-primary" id="runBlocklyButton" onclick="runBlocklyProgram()">Run Program</button>
+                <button class="btn btn-warning" id="pauseBlocklyButton" onclick="toggleBlocklyPauseResume()" disabled>Pause</button>
+                <button class="btn btn-danger" id="stopBlocklyButton" onclick="stopBlocklyProgram()" disabled>Stop</button>
+                <button class="btn btn-secondary" onclick="clearBlocklyWorkspace()">Clear</button>
+                <button class="btn btn-small" onclick="loadBlocklyExample()">Load Example</button>
+                <button class="btn btn-small" onclick="saveBlocklyProgram()">Save Program</button>
+                <button class="btn btn-small" onclick="loadBlocklyProgram()">Load Program</button>
+                <button class="btn btn-small" onclick="setAllJointAccelerations()">Set All Accelerations</button>
+                <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #ddd;">
+                    <strong>Convert to:</strong>
+                    <button class="btn btn-small btn-primary" onclick="convertBlocklyToGCodeAndOpen()">Convert to G-Code</button>
+                    <button class="btn btn-small btn-primary" onclick="convertBlocklyToRapidAndOpen()">Convert to RAPID</button>
+                </div>
+            </div>
+            
+            <div id="blockly-workspace" class="blockly-workspace"></div>
+            
+            <div class="blockly-status">
+                <div>Status: <span id="blocklyStatus">Initializing...</span></div>
+                <div>Program Output:</div>
+                <div id="blocklyOutput" class="blockly-output"></div>
+            </div>
+        </div>
+
+        <!-- Settings Tab -->
+        <div id="settings-tab" class="tab-content">
+            <h2>Settings</h2>
+            
+            <div class="settings-panel">
+                <h3>Connection Settings</h3>
+                <div class="settings-grid">
+                    <div class="setting-item">
+                        <label>Number of Joints:</label>
+                        <input type="number" id="numJoints" value="5" min="1" max="6" onchange="generateSimulatedAngleControls()">
+                    </div>
+                    <div class="setting-item">
+                        <label>Update Interval (ms):</label>
+                        <input type="number" id="updateInterval" value="50" min="20" max="1000">
+                    </div>
+                    <div class="setting-item">
+                        <label>Default Step Size (degrees):</label>
+                        <input type="text" id="defaultStepSize" value="1">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Kinematics Configuration Panel -->
+            <div class="settings-panel">
+                <h3>Joint Kinematics Configuration</h3>
+                <div class="kinematics-controls">
+                    <button class="btn btn-primary" onclick="loadJointConfigs()">Load from Robot</button>
+                    <button class="btn btn-primary" onclick="loadDemoConfig()">Load Demo Configuration</button>
+                    <button class="btn btn-secondary" onclick="applyKinematicsConfig()">Apply to Kinematics</button>
+                    <span id="kinematicsStatus" class="status-text"></span>
+                </div>
+                
+                <div id="kinematicsConfigDisplay" class="kinematics-display">
+                    <!-- Joint configurations will be displayed here -->
+                    <p class="info-text">
+                        Click "Load from Robot" to read joint configurations from PIC controllers, 
+                        or "Load Demo Configuration" to load a typical 4-joint robot arm setup for testing.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Forward/Inverse Kinematics Test Panel -->
+            <div class="settings-panel">
+                <h3>Kinematics Testing</h3>
+                <div class="kinematics-test">
+                    <div class="test-section">
+                        <h4>Forward Kinematics</h4>
+                        <p>Calculate end effector position from joint angles:</p>
+                        <div class="test-inputs">
+                            <label>Joint Angles (degrees, comma-separated):</label>
+                            <input type="text" id="fkAngles" placeholder="0, 90, 45, 0" style="width: 300px;">
+                            <button class="btn btn-small" onclick="testForwardKinematics()">Calculate</button>
+                        </div>
+                        <div id="fkResult" class="test-result"></div>
+                    </div>
+                    
+                    <div class="test-section">
+                        <h4>Inverse Kinematics</h4>
+                        <p>Calculate joint angles from end effector position:</p>
+                        <div class="test-inputs">
+                            <label>Target Position (mm):</label>
+                            <input type="text" id="ikX" placeholder="X" style="width: 80px;">,
+                            <input type="text" id="ikY" placeholder="Y" style="width: 80px;">,
+                            <input type="text" id="ikZ" placeholder="Z" style="width: 80px;">
+                            <button class="btn btn-small" onclick="testInverseKinematics()">Calculate</button>
+                        </div>
+                        <div id="ikResult" class="test-result"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AS5600 Sensor Calibration Panel -->
+            <div class="settings-panel">
+                <h3>AS5600 Sensor Calibration</h3>
+                <p class="info-text">
+                    Calibrate the AS5600 sensor for a joint. The calibration routine will:
+                    <br>1. Move forward until hitting the mechanical end stop
+                    <br>2. Move backward until hitting the other mechanical end stop
+                    <br>3. Move to the middle position
+                    <br>4. Reset the AS5600 absolute angle to 0° at the center position
+                </p>
+                <div class="calibration-controls">
+                    <div class="calibration-input">
+                        <label>Joint Number:</label>
+                        <input type="number" id="calibrationJoint" value="1" min="1" max="6" style="width: 80px;">
+                    </div>
+                    <button class="btn btn-primary" id="startCalibrationButton" onclick="startCalibration()">Start Calibration</button>
+                    <button class="btn btn-danger" id="stopCalibrationButton" onclick="stopCalibration()" style="display: none;">Stop Calibration</button>
+                </div>
+                <div id="calibrationStatus" class="calibration-status"></div>
+                <div id="calibrationProgress" class="calibration-progress"></div>
+            </div>
+                
+            <button class="btn btn-primary" onclick="saveSettings()">Save Settings</button>
+        </div> <!-- end settings-tab -->
+
+            </div> <!-- end tab-content-container -->
+        </div> <!-- end main-layout -->
+
+        <!-- Footer -->
+        <footer class="app-footer">
+            <p>
+                <a href="https://www.matrixtsl.com/robot-arm/" target="_blank" rel="noopener noreferrer">
+                    Click here for curriculum and resources
+                </a>
+            </p>
+        </footer>
+    </div>
+
+    <!-- Scripts -->
+    <!-- 
+        External Libraries - Loaded from local libs/ directory for offline functionality
+        These libraries are bundled with the application and don't require internet connection.
+        
+        Setup: Run "npm install" and "npm run setup-libs" to copy libraries to libs/ directory.
+        The setup script runs automatically after npm install.
+    -->
+    
+    <!-- Three.js library for 3D visualization -->
+    <!-- Loads from local libs/ directory first, falls back to CDN if not available -->
+    <script>
+        (function() {
+            const threeScript = document.createElement('script');
+            // Try local libs/ directory first (offline mode)
+            threeScript.src = './libs/three.min.js';
+            threeScript.onerror = function() {
+                // Fallback to CDN if local file not found (requires internet)
+                console.warn('Three.js not found locally, trying CDN...');
+                const cdnScript = document.createElement('script');
+                cdnScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
+                cdnScript.onerror = function() {
+                    console.error('Failed to load Three.js library from CDN. Run "npm run setup-libs" for offline use.');
+                };
+                document.head.appendChild(cdnScript);
+            };
+            document.head.appendChild(threeScript);
+        })();
+    </script>
+
+    <!-- URDFLoader library for loading URDF robots into Three.js -->
+    <!-- Loads from local libs/ directory first, falls back to CDN if not available -->
+    <script>
+        (function() {
+            const urdfScript = document.createElement('script');
+            // Try local libs/ directory first (offline mode)
+            urdfScript.src = './libs/URDFLoader.js';
+            urdfScript.onerror = function() {
+                // Fallback to CDN if local file not found (requires internet)
+                console.warn('URDFLoader not found locally, trying CDN...');
+                const cdnScript = document.createElement('script');
+                cdnScript.src = 'https://unpkg.com/urdf-loader@0.8.2/dist/urdf-loader.js';
+                cdnScript.onerror = function() {
+                    console.error('Failed to load URDFLoader library. For offline use, download URDFLoader.js into the libs/ folder.');
+                };
+                document.head.appendChild(cdnScript);
+            };
+            document.head.appendChild(urdfScript);
+        })();
+    </script>
+    
+    <!-- Blockly library for visual programming -->
+    <!-- Loads from local libs/ directory first, falls back to CDN if not available -->
+    <script>
+        (function() {
+            const blocklyScript = document.createElement('script');
+            // Try local libs/ directory first (offline mode)
+            blocklyScript.src = './libs/blockly.min.js';
+            blocklyScript.onload = function() {
+                // Load XML module first (needed for save/load functionality)
+                const xmlScript = document.createElement('script');
+                xmlScript.src = './libs/xml_compressed.js';
+                xmlScript.onload = function() {
+                    console.log('Blockly XML module loaded from local files');
+                    // Load JavaScript generator after XML module loads
+                    const jsGen = document.createElement('script');
+                    jsGen.src = './libs/javascript_compressed.js';
+                    jsGen.onload = function() {
+                        console.log('Blockly loaded successfully from local files (offline mode)');
+                        // Verify XML module is available
+                        if (typeof Blockly !== 'undefined' && typeof Blockly.Xml !== 'undefined') {
+                            console.log('Blockly.Xml is available:', typeof Blockly.Xml.textToDom);
+                        } else {
+                            console.warn('Blockly.Xml is not available after loading');
+                        }
+                    };
+                    jsGen.onerror = function() {
+                        // Fallback to CDN for JavaScript generator
+                        console.warn('Blockly JS generator not found locally, trying CDN...');
+                        const cdnJsGen = document.createElement('script');
+                        cdnJsGen.src = 'https://unpkg.com/blockly@9.3.3/javascript_compressed.js';
+                        cdnJsGen.onerror = function() {
+                            console.error('Failed to load Blockly JavaScript generator. Run "npm run setup-libs" for offline use.');
+                        };
+                        document.head.appendChild(cdnJsGen);
+                    };
+                    document.head.appendChild(jsGen);
+                };
+                xmlScript.onerror = function() {
+                    // Fallback to CDN for XML module
+                    console.warn('Blockly XML module not found locally, trying CDN...');
+                    const cdnXmlScript = document.createElement('script');
+                        cdnXmlScript.src = 'https://unpkg.com/blockly@9.3.3/xml_compressed.js';
+                    cdnXmlScript.onload = function() {
+                        console.log('Blockly XML module loaded from CDN');
+                        // Load JavaScript generator after XML module loads
+                        const jsGen = document.createElement('script');
+                        jsGen.src = './libs/javascript_compressed.js';
+                        jsGen.onload = function() {
+                            console.log('Blockly loaded successfully');
+                        };
+                        jsGen.onerror = function() {
+                            const cdnJsGen = document.createElement('script');
+                            cdnJsGen.src = 'https://unpkg.com/blockly@9.3.3/javascript_compressed.js';
+                            document.head.appendChild(cdnJsGen);
+                        };
+                        document.head.appendChild(jsGen);
+                    };
+                    cdnXmlScript.onerror = function() {
+                        console.error('Failed to load Blockly XML module from CDN. Save/load functionality will not work.');
+                    };
+                    document.head.appendChild(cdnXmlScript);
+                };
+                document.head.appendChild(xmlScript);
+            };
+            blocklyScript.onerror = function() {
+                // Fallback to CDN if local file not found (requires internet)
+                console.warn('Blockly not found locally, trying CDN...');
+                const cdnScript = document.createElement('script');
+                cdnScript.src = 'https://unpkg.com/blockly@9.3.3/blockly.min.js';
+                cdnScript.onload = function() {
+                    // Load XML module first
+                    const xmlScript = document.createElement('script');
+                    xmlScript.src = 'https://unpkg.com/blockly@9.3.3/xml_compressed.js';
+                    xmlScript.onload = function() {
+                        console.log('Blockly XML module loaded from CDN (main fallback)');
+                        // Load JavaScript generator after XML module loads
+                        const jsGen = document.createElement('script');
+                        jsGen.src = 'https://unpkg.com/blockly@9.3.3/javascript_compressed.js';
+                        jsGen.onload = function() {
+                            console.log('Blockly loaded successfully from CDN');
+                            // Verify XML module is available
+                            if (typeof Blockly !== 'undefined' && typeof Blockly.Xml !== 'undefined') {
+                                console.log('Blockly.Xml is available:', typeof Blockly.Xml.textToDom);
+                            } else {
+                                console.warn('Blockly.Xml is not available after loading');
+                            }
+                        };
+                        jsGen.onerror = function() {
+                            console.error('Failed to load Blockly JS generator from CDN');
+                        };
+                        document.head.appendChild(jsGen);
+                    };
+                    xmlScript.onerror = function() {
+                        console.error('Failed to load Blockly XML module from CDN. Save/load functionality will not work.');
+                    };
+                    document.head.appendChild(xmlScript);
+                };
+                cdnScript.onerror = function() {
+                    console.error('Failed to load Blockly from CDN. Run "npm run setup-libs" for offline use.');
+                    if (document.getElementById('blockly-loading')) {
+                        document.getElementById('blockly-loading').innerHTML = 
+                            '<p style="color:red;font-weight:bold;">Error: Could not load Blockly library.</p>' +
+                            '<p>For offline use, run "npm install" and "npm run setup-libs" to copy libraries locally.</p>';
+                    }
+                };
+                document.head.appendChild(cdnScript);
+            };
+            document.head.appendChild(blocklyScript);
+        })();
+    </script>
+    
+    <!-- Application Scripts - Loaded in order -->
+    <!-- Robot Arm Client: Handles WebSocket communication with Raspberry Pi -->
+    <script src="robotArmClient.js"></script>
+    <!-- G-Code Processor: Parses and executes G-code commands -->
+    <script src="gcodeProcessor.js"></script>
+    <!-- Kinematics: Forward and inverse kinematics calculations -->
+    <script src="urdfParser.js"></script>
+    <script src="kinematics.js"></script>
+    <!-- 3D Visualization: Three.js-based 3D robot arm visualization -->
+    <script src="robotArm3D.js"></script>
+    <!-- Blockly Integration: Visual programming interface for robot control -->
+    <script src="blocklyRobotArm.js"></script>
+    <!-- Positions Manager: Manages stored preset positions (0-99) -->
+    <script src="positionsManager.js"></script>
+    <!-- Main Application: UI logic and event handlers -->
+    <script src="app.js"></script>
+    
+    <!-- Check if Blockly loaded after page load -->
+    <!-- This verifies that Blockly loaded successfully and hides the loading message -->
+    <script>
+        // Function to check if Blockly is loaded and trigger generator registration
+        function checkBlocklyLoaded() {
+            if (typeof Blockly !== 'undefined' && typeof Blockly.JavaScript !== 'undefined') {
+                console.log('Blockly library loaded successfully');
+                const loadingDiv = document.getElementById('blockly-loading');
+                if (loadingDiv) {
+                    loadingDiv.style.display = 'none';
+                }
+                // Trigger generator registration if function exists
+                if (typeof registerBlocklyGenerators === 'function') {
+                    registerBlocklyGenerators();
+                }
+                return true;
+            }
+            return false;
+        }
+        
+        window.addEventListener('load', function() {
+            // Check immediately
+            if (checkBlocklyLoaded()) {
+                return;
+            }
+            
+            // Wait a bit for async scripts to load, check multiple times
+            let attempts = 0;
+            const maxAttempts = 20; // Check for up to 4 seconds (20 * 200ms)
+            const checkInterval = setInterval(function() {
+                attempts++;
+                if (checkBlocklyLoaded()) {
+                    clearInterval(checkInterval);
+                } else if (attempts >= maxAttempts) {
+                    clearInterval(checkInterval);
+                    console.error('Blockly failed to load after multiple attempts');
+                    const loadingDiv = document.getElementById('blockly-loading');
+                    if (loadingDiv) {
+                        loadingDiv.innerHTML = 
+                            '<p style="color: red; font-weight: bold;">Error: Blockly library failed to load.</p>' +
+                            '<p>For offline use, run "npm install" and "npm run setup-libs" to copy libraries locally.</p>' +
+                            '<p>Otherwise, an internet connection is required to load from CDN.</p>';
+                    }
+                }
+            }, 200); // Check every 200ms
+        });
+    </script>
+</body>
+</html>
+

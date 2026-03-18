@@ -1,0 +1,29 @@
+{
+  "name": "robot-arm-control-app",
+  "version": "1.0.0",
+  "description": "Electron app for robot arm pendant control and G-code processing",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "setup-libs": "node setup-libs.js",
+    "postinstall": "npm run setup-libs"
+  },
+  "keywords": [
+    "robot",
+    "electron",
+    "gcode"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "ws": "^8.16.0",
+    "blockly": "^10.0.0",
+    "three": "^0.128.0"
+  },
+  "devDependencies": {
+    "electron": "^28.0.0"
+  }
+}
+
+
