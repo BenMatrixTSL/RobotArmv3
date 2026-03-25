@@ -1,0 +1,10 @@
+OS Debian Trixie x64 04/12/25
+
+root
+Matrix_Pass567834
+
+ben
+
+
+robotarm
+robotarm123

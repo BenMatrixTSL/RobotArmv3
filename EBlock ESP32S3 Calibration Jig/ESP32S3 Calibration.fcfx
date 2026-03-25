@@ -1,0 +1,1801 @@
+<root>
+<document scada='0' projtype='1' schema='103' license='1,82702381,95CJQR' title='New Embedded Project' description='Autodetected info:
+
+	Name:	E-Blocks3 ESP32S3 Programmer
+	Code:	BL6390
+	Family:	ESP
+
+
+Connected boards:
+
+	PORTA:	
+	PORTB:	
+	PORTC:	
+	PORTD:	
+	Internal:	GLCD
+	Internal:	DisplayManager
+	Internal:	UART
+	Internal:	Bluetooth
+	Internal:	Wifi
+' fcversion='720896' target='ESP.ESP32.E-Blocks3 ESP32S3 Programmer' >
+	<config data='' clkspd='240000000' simspd='0' usewdt='0' constif='0' commport='27' SSH_IP='DD6171BB7AD97877' SSH_User='DD6171BB7AD97877' SSH_Pass='DD6171BB7AD97877' Use3V3='0' />
+	<plugins >
+		<dll_models enabled='1' />
+	</plugins>
+	<supplement use='0' head='' body='' />
+	<debug />
+	<traces />
+	<ghost >
+		<FK2 >
+			<data name='FK2D0' port='4294967295' pin='4294967295' />
+			<data name='FK2D1' port='4294967295' pin='4294967295' />
+			<data name='FK2D2' port='4294967295' pin='4294967295' />
+			<data name='FK2D3' port='4294967295' pin='4294967295' />
+			<data name='FK2D4' port='4294967295' pin='4294967295' />
+			<data name='FK2D5' port='4294967295' pin='4294967295' />
+			<data name='FK2D6' port='4294967295' pin='4294967295' />
+			<data name='FK2D7' port='4294967295' pin='4294967295' />
+			<data name='FK2D8' port='4294967295' pin='4294967295' />
+			<data name='FK2D9' port='4294967295' pin='4294967295' />
+			<data name='FK2D10' port='4294967295' pin='4294967295' />
+			<data name='FK2D11' port='4294967295' pin='4294967295' />
+			<data name='FK2D12' port='4294967295' pin='4294967295' />
+			<data name='FK2D13' port='4294967295' pin='4294967295' />
+			<data name='FK2D14' port='4294967295' pin='4294967295' />
+			<data name='FK2D15' port='4294967295' pin='4294967295' />
+			<data name='FK2A0' port='4294967295' pin='4294967295' />
+			<data name='FK2A1' port='4294967295' pin='4294967295' />
+			<data name='FK2A2' port='4294967295' pin='4294967295' />
+			<data name='FK2A3' port='4294967295' pin='4294967295' />
+			<data name='FK2A4' port='4294967295' pin='4294967295' />
+			<data name='FK2A5' port='4294967295' pin='4294967295' />
+		</FK2>
+		<ICD >
+			<data name='AnalogPrescaleValue' value='19' />
+			<data name='DigitalSampleRate' value='100000' />
+			<data name='BreakpointCount' value='8' />
+			<data name='CallStackDepthCount' value='8' />
+			<data name='ClockPort' value='1' />
+			<data name='ClockPin' value='6' />
+			<data name='DataPort' value='1' />
+			<data name='DataPin' value='7' />
+			<data name='UseDefaultPins' value='1' />
+			<data name='WrapEnabled' value='1' />
+			<data name='CommsDelayOverridden' value='0' />
+			<data name='CommsDelay' value='1' />
+			<data name='CalculatedCommsDelay' value='1' />
+			<data name='AnalogEB2PrescaleValue' value='2' />
+			<data name='DigitalEB2SampleRate' value='100000' />
+		</ICD>
+		<pins >
+			<digital A='0' B='0' C='0' D='0' E='0' F='0' G='0' H='0' I='0' J='0' K='0' L='0' M='0' N='0' O='0' P='0' Q='0' R='0' S='0' T='0' U='0' V='0' W='0' X='0' Y='0' Z='0' />
+			<analog A='0' B='0' C='0' D='0' E='0' F='0' G='0' H='0' I='0' J='0' K='0' L='0' M='0' N='0' O='0' P='0' Q='0' R='0' S='0' T='0' U='0' V='0' W='0' X='0' Y='0' Z='0' />
+		</pins>
+	</ghost>
+	<components >
+		<settings autoimg='0' center='1' unitscale='0' fixedscale='0' fixedx='25' fixedy='25' fixedz='25' headcode='0' />
+		<definition guid='7d2b2d7a-2d61-4384-baa3-ea5acd5c34b7' vstate='40' vmin='0' vmaj='1' srcleaf='' visiblename='' description='' category='' category2='' category3='' bIs2dOnly='0' bIs3dOnly='0' bIsWysiwyg='0' catenable='1' author='' manuname='' manucode='' sysinfo='0' keywords='' dynamic='1' scadaCompatible='0' embeddedCompatible='1' showmacros='1' iconpath='' />
+		<component class_type='root' codename='ComponentRoot' panelId='-1' x='0' y='0' z='0' xsz='1' ysz='1' zsz='1' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='0' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
+			<resources />
+			<properties />
+			<values />
+			<events />
+			<apis />
+			<variables >
+				<variable public='0' >
+					<def class_type='variable' name='Touched' type='b1' description='' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='Str' type='T8' description='' isconst='0' isHidden='0' isinit='1' usrinit='&quot;&quot;' setinit='&quot;&quot;' >
+						<array size='100' />
+					</def>
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='Posiition' type='u16' description='' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='ServoCount' type='u8' description='' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='false' type='b1' description='' isconst='1' isHidden='0' isinit='1' usrinit='0' setinit='0' />
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='IsMoving' type='b1' description='' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='RetVal' type='b1' description='' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='Coords' type='u16' description='' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='{0}' >
+						<array size='2' />
+					</def>
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='IDs' type='u8' description='' isconst='0' isHidden='0' isinit='1' usrinit='&quot; 1,2,3,4,5,6 &quot;' setinit='{1,2,3,4,5,6}' >
+						<array size='6' />
+					</def>
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='true' type='b1' description='' isconst='1' isHidden='0' isinit='1' usrinit='1' setinit='1' />
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='Flag' type='b1' description='' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
+				</variable>
+			</variables>
+			<macros >
+				<macro >
+					<flowline name='SetCenterPoint' description='' statediag='0' >
+						<return name='Return' type='v0' description='' isconst='0' isHidden='0' isinit='0' usrinit='' setinit='' />
+						<local name='Position' type='u16' description='' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
+						<local name='Str' type='T8' description='' isconst='0' isHidden='0' isinit='1' usrinit='&quot;&quot;' setinit='&quot;&quot;' >
+							<array size='20' />
+						</local>
+						<local name='idx' type='u8' description='' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
+						<command class_type='loop' title='Loop' type='2' forvar='.idx' exp='ServoCount' >
+							<flowline >
+								<command class_type='call' title='Component Macro' component='ST3215' macro='ReadPosition' >
+									<return exp='.Position' />
+									<argument exp='IDs[.idx]' />
+								</command>
+								<command class_type='calculation' title='Calculation' >
+									<exp exp='.Str = &quot;Position: &quot; + ToString$(.Position)' />
+								</command>
+								<command class_type='call' title='Component Macro' component='InfoText' macro='SetTextLabel' >
+									<argument exp='.Str' />
+								</command>
+								<command class_type='delay' title='Delay' exp='2' type='2' />
+								<command class_type='call' title='Component Macro' component='ST3215' macro='DefineMiddle' >
+									<argument exp='IDs[.idx]' />
+								</command>
+								<command class_type='call' title='Component Macro' component='InfoText' macro='SetTextLabel' >
+									<argument exp='&quot;Center Point Set&quot;' />
+								</command>
+								<command class_type='delay' title='Delay' exp='2' type='2' />
+							</flowline>
+						</command>
+					</flowline>
+				</macro>
+				<macro >
+					<flowline name='AssignActiveServo' description='' statediag='0' >
+						<return name='Return' type='v0' description='' isconst='0' isHidden='0' isinit='0' usrinit='' setinit='' />
+						<param name='Index' type='u8' description='' isconst='0' isHidden='0' isinit='0' usrinit='0' setinit='' />
+						<local name='Str' type='T8' description='' isconst='0' isHidden='0' isinit='1' usrinit='&quot;&quot;' setinit='&quot;&quot;' >
+							<array size='20' />
+						</local>
+						<local name='idx' type='u8' description='' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
+						<command class_type='decision' title='Decision' exp='.Index &gt; 6' swap='0' >
+							<flowline >
+								<command class_type='calculation' title='Calculation' >
+									<exp exp='.Index = 1' />
+								</command>
+							</flowline>
+							<flowline >
+								<command class_type='decision' title='Decision' exp='.Index = 0' swap='0' >
+									<flowline >
+										<command class_type='calculation' title='Calculation' >
+											<exp exp='.Index = 1' />
+										</command>
+									</flowline>
+									<flowline />
+								</command>
+							</flowline>
+						</command>
+						<command class_type='calculation' title='Calculation' >
+							<exp exp='IDs[0] = .Index' />
+						</command>
+						<command class_type='calculation' title='Calculation' >
+							<exp exp='.Str = &quot;Servo Selected: &quot; + ToString$(.Index)' />
+						</command>
+						<command class_type='call' title='Component Macro' component='InfoText' macro='SetTextLabel' >
+							<argument exp='.Str' />
+						</command>
+						<command class_type='loop' title='Loop' type='2' forvar='.idx' exp='6' >
+							<flowline >
+								<command class_type='switch' title='Switch' textarea='36,25,36,25' exp='.idx' >
+									<case >
+										<flowline >
+											<command class_type='decision' title='Decision' exp='.idx = (.Index - 1)' swap='0' >
+												<flowline >
+													<command class_type='call' title='Component Macro' component='ButtonID1' macro='ModifyColour' >
+														<argument exp='3' />
+														<argument exp='0xC0' />
+														<argument exp='0' />
+														<argument exp='0' />
+														<argument exp='1' />
+													</command>
+												</flowline>
+												<flowline >
+													<command class_type='call' title='Component Macro' component='ButtonID1' macro='ModifyColour' >
+														<argument exp='3' />
+														<argument exp='0x5A' />
+														<argument exp='0x5A' />
+														<argument exp='0x5A' />
+														<argument exp='1' />
+													</command>
+												</flowline>
+											</command>
+											<command class_type='call' title='Component Macro' component='ButtonID1' macro='SetTextLabel' >
+												<argument exp='&quot;S1&quot;' />
+											</command>
+										</flowline>
+									</case>
+									<case exp='1' >
+										<flowline >
+											<command class_type='decision' title='Decision' exp='.idx = (.Index - 1)' swap='0' >
+												<flowline >
+													<command class_type='call' title='Component Macro' component='ButtonID2' macro='ModifyColour' >
+														<argument exp='3' />
+														<argument exp='0xC0' />
+														<argument exp='0' />
+														<argument exp='0' />
+														<argument exp='1' />
+													</command>
+												</flowline>
+												<flowline >
+													<command class_type='call' title='Component Macro' component='ButtonID2' macro='ModifyColour' >
+														<argument exp='3' />
+														<argument exp='0x5A' />
+														<argument exp='0x5A' />
+														<argument exp='0x5A' />
+														<argument exp='1' />
+													</command>
+												</flowline>
+											</command>
+											<command class_type='call' title='Component Macro' component='ButtonID2' macro='SetTextLabel' >
+												<argument exp='&quot;S2&quot;' />
+											</command>
+										</flowline>
+									</case>
+									<case exp='2' >
+										<flowline >
+											<command class_type='decision' title='Decision' exp='.idx = (.Index - 1)' swap='0' >
+												<flowline >
+													<command class_type='call' title='Component Macro' component='ButtonID3' macro='ModifyColour' >
+														<argument exp='3' />
+														<argument exp='0xC0' />
+														<argument exp='0' />
+														<argument exp='0' />
+														<argument exp='1' />
+													</command>
+												</flowline>
+												<flowline >
+													<command class_type='call' title='Component Macro' component='ButtonID3' macro='ModifyColour' >
+														<argument exp='3' />
+														<argument exp='0x5A' />
+														<argument exp='0x5A' />
+														<argument exp='0x5A' />
+														<argument exp='1' />
+													</command>
+												</flowline>
+											</command>
+											<command class_type='call' title='Component Macro' component='ButtonID3' macro='SetTextLabel' >
+												<argument exp='&quot;S3&quot;' />
+											</command>
+										</flowline>
+									</case>
+									<case exp='3' >
+										<flowline >
+											<command class_type='decision' title='Decision' exp='.idx = (.Index - 1)' swap='0' >
+												<flowline >
+													<command class_type='call' title='Component Macro' component='ButtonID4' macro='ModifyColour' >
+														<argument exp='3' />
+														<argument exp='0xC0' />
+														<argument exp='0' />
+														<argument exp='0' />
+														<argument exp='1' />
+													</command>
+												</flowline>
+												<flowline >
+													<command class_type='call' title='Component Macro' component='ButtonID4' macro='ModifyColour' >
+														<argument exp='3' />
+														<argument exp='0x5A' />
+														<argument exp='0x5A' />
+														<argument exp='0x5A' />
+														<argument exp='1' />
+													</command>
+												</flowline>
+											</command>
+											<command class_type='call' title='Component Macro' component='ButtonID4' macro='SetTextLabel' >
+												<argument exp='&quot;S4&quot;' />
+											</command>
+										</flowline>
+									</case>
+									<case exp='4' >
+										<flowline >
+											<command class_type='decision' title='Decision' exp='.idx = (.Index - 1)' swap='0' >
+												<flowline >
+													<command class_type='call' title='Component Macro' component='ButtonID5' macro='ModifyColour' >
+														<argument exp='3' />
+														<argument exp='0xC0' />
+														<argument exp='0' />
+														<argument exp='0' />
+														<argument exp='1' />
+													</command>
+												</flowline>
+												<flowline >
+													<command class_type='call' title='Component Macro' component='ButtonID5' macro='ModifyColour' >
+														<argument exp='3' />
+														<argument exp='0x5A' />
+														<argument exp='0x5A' />
+														<argument exp='0x5A' />
+														<argument exp='1' />
+													</command>
+												</flowline>
+											</command>
+											<command class_type='call' title='Component Macro' component='ButtonID5' macro='SetTextLabel' >
+												<argument exp='&quot;S5&quot;' />
+											</command>
+										</flowline>
+									</case>
+									<case exp='5' >
+										<flowline >
+											<command class_type='decision' title='Decision' exp='.idx = (.Index - 1)' swap='0' >
+												<flowline >
+													<command class_type='call' title='Component Macro' component='ButtonID6' macro='ModifyColour' >
+														<argument exp='3' />
+														<argument exp='0xC0' />
+														<argument exp='0' />
+														<argument exp='0' />
+														<argument exp='1' />
+													</command>
+												</flowline>
+												<flowline >
+													<command class_type='call' title='Component Macro' component='ButtonID6' macro='ModifyColour' >
+														<argument exp='3' />
+														<argument exp='0x5A' />
+														<argument exp='0x5A' />
+														<argument exp='0x5A' />
+														<argument exp='1' />
+													</command>
+												</flowline>
+											</command>
+											<command class_type='call' title='Component Macro' component='ButtonID6' macro='SetTextLabel' >
+												<argument exp='&quot;S6&quot;' />
+											</command>
+										</flowline>
+									</case>
+								</command>
+							</flowline>
+						</command>
+					</flowline>
+				</macro>
+				<macro >
+					<flowline name='DetectServos' description='' statediag='0' >
+						<return name='Return' type='v0' description='' isconst='0' isHidden='0' isinit='0' usrinit='' setinit='' />
+						<local name='idx' type='u8' description='' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
+						<command class_type='call' title='Component Macro' component='InfoText' macro='SetTextLabel' >
+							<argument exp='&quot;Detecting - please wait&quot;' />
+						</command>
+						<command class_type='call' title='Component Macro' component='ST3215' macro='ListServos' >
+							<return exp='ServoCount' />
+							<argument exp='IDs' />
+							<argument exp='6' />
+						</command>
+						<command class_type='calculation' title='Calculation' >
+							<exp exp='Str = ToString$(ServoCount) + &quot; Servo Found -&quot;' />
+						</command>
+						<command class_type='loop' title='Loop' type='2' forvar='.idx' exp='ServoCount' >
+							<flowline >
+								<command class_type='calculation' title='Calculation' >
+									<exp exp='Str = Str + &quot; &quot;' />
+									<exp exp='Str = Str + ToString$(IDs[.idx])' />
+								</command>
+							</flowline>
+						</command>
+						<command class_type='call' title='Component Macro' component='InfoText' macro='SetTextLabel' >
+							<argument exp='Str' />
+						</command>
+						<command class_type='decision' title='Decision' exp='ServoCount &gt; 0' swap='0' >
+							<flowline >
+								<command class_type='call' title='Component Macro' component='ST3215' macro='SetMode' >
+									<return exp='RetVal' />
+									<argument exp='IDs[0]' />
+									<argument exp='0' />
+								</command>
+								<command class_type='call' title='User Macro' macro='AssignActiveServo' >
+									<argument exp='IDs[0]' />
+								</command>
+							</flowline>
+							<flowline />
+						</command>
+					</flowline>
+				</macro>
+				<macro >
+					<flowline name='AssignID' description='' statediag='0' >
+						<return name='Return' type='v0' description='' isconst='0' isHidden='0' isinit='0' usrinit='' setinit='' />
+						<param name='NewID' type='u8' description='' isconst='0' isHidden='0' isinit='0' usrinit='0' setinit='' />
+						<local name='Retval' type='u8' description='' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
+						<local name='Str' type='T8' description='' isconst='0' isHidden='0' isinit='1' usrinit='&quot;&quot;' setinit='&quot;&quot;' >
+							<array size='20' />
+						</local>
+						<command class_type='call' title='Component Macro' component='InfoText' macro='SetTextLabel' >
+							<argument exp='&quot;Change ID&quot;' />
+						</command>
+						<command class_type='call' title='Component Macro' component='ST3215' macro='UnlockEEPROM' >
+							<return exp='.Retval' />
+							<argument exp='IDs[0]' />
+						</command>
+						<command class_type='calculation' title='Calculation' >
+							<exp exp='.Str = &quot;Unlock EE : &quot; + ToString$(.Retval)' />
+						</command>
+						<command class_type='call' title='Component Macro' component='InfoText' macro='SetTextLabel' >
+							<argument exp='.Str' />
+						</command>
+						<command class_type='delay' title='Delay' exp='2' type='2' />
+						<command class_type='call' title='Component Macro' component='ST3215' macro='ChangeID' >
+							<return exp='.Retval' />
+							<argument exp='IDs[0]' />
+							<argument exp='.NewID' />
+						</command>
+						<command class_type='calculation' title='Calculation' >
+							<exp exp='.Str = &quot;Change ID : &quot; + ToString$(.Retval)' />
+						</command>
+						<command class_type='call' title='Component Macro' component='InfoText' macro='SetTextLabel' >
+							<argument exp='.Str' />
+						</command>
+						<command class_type='delay' title='Delay' exp='2' type='2' />
+						<command class_type='call' title='User Macro' macro='AssignActiveServo' >
+							<argument exp='.NewID' />
+						</command>
+						<command class_type='delay' title='Delay' exp='2' type='2' />
+						<command class_type='call' title='Component Macro' component='ST3215' macro='LockEEPROM' >
+							<return exp='.Retval' />
+							<argument exp='IDs[0]' />
+						</command>
+						<command class_type='calculation' title='Calculation' >
+							<exp exp='.Str = &quot;Lock EE : &quot; + ToString$(.Retval)' />
+						</command>
+						<command class_type='call' title='Component Macro' component='InfoText' macro='SetTextLabel' >
+							<argument exp='.Str' />
+						</command>
+						<command class_type='delay' title='Delay' exp='2' type='2' />
+						<command class_type='call' title='Component Macro' component='InfoText' macro='SetTextLabel' >
+							<argument exp='&quot;ID Change Complete&quot;' />
+						</command>
+					</flowline>
+				</macro>
+				<macro >
+					<flowline name='SwitchInterrupt' description='' statediag='0' >
+						<return name='Return' type='v0' description='' isconst='0' isHidden='0' isinit='0' usrinit='' setinit='' />
+						<command class_type='calculation' title='Calculation' >
+							<exp exp='Flag = 1' />
+						</command>
+					</flowline>
+				</macro>
+				<macro >
+					<flowline name='MoveServoBy' description='' statediag='0' >
+						<return name='Return' type='v0' description='' isconst='0' isHidden='0' isinit='0' usrinit='' setinit='' />
+						<param name='Movement' type='s16' description='' isconst='0' isHidden='0' isinit='0' usrinit='0' setinit='' />
+						<local name='Position' type='u16' description='' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
+						<local name='Str' type='T8' description='' isconst='0' isHidden='0' isinit='1' usrinit='&quot;&quot;' setinit='&quot;&quot;' >
+							<array size='40' />
+						</local>
+						<command class_type='call' title='Component Macro' component='InfoText' macro='SetTextLabel' >
+							<argument exp='&quot;Moving - please wait&quot;' />
+						</command>
+						<command class_type='call' title='Component Macro' component='ST3215' macro='StartServo' >
+							<return exp='RetVal' />
+							<argument exp='IDs[0]' />
+						</command>
+						<command class_type='delay' title='Delay' exp='10' type='1' />
+						<command class_type='call' title='Component Macro' component='ST3215' macro='SetSpeed' >
+							<return exp='RetVal' />
+							<argument exp='IDs[0]' />
+							<argument exp='10' />
+						</command>
+						<command class_type='delay' title='Delay' exp='10' type='1' />
+						<command class_type='call' title='Component Macro' component='ST3215' macro='ReadPosition' >
+							<return exp='.Position' />
+							<argument exp='IDs[0]' />
+						</command>
+						<command class_type='calculation' title='Calculation' >
+							<exp exp='.Str = &quot;Current Pos: &quot; + ToString$(.Position) + &quot; + &quot; + ToString$(.Movement)' />
+						</command>
+						<command class_type='call' title='Component Macro' component='InfoText' macro='SetTextLabel' >
+							<argument exp='.Str' />
+						</command>
+						<command class_type='calculation' title='Calculation' >
+							<exp exp='.Position = (.Position + .Movement) &amp; 4095' />
+						</command>
+						<command class_type='delay' title='Delay' exp='10' type='1' />
+						<command class_type='call' title='Component Macro' component='ST3215' macro='SetPosition' >
+							<argument exp='IDs[0]' />
+							<argument exp='.Position' />
+						</command>
+						<command class_type='delay' title='Delay' exp='10' type='1' />
+						<command class_type='loop' title='Loop' type='0' exp='ST3215::IsMoving(IDs[0])' >
+							<flowline />
+						</command>
+					</flowline>
+				</macro>
+				<macro >
+					<flowline name='DC_Touched' description='Optional macro called by the DisplayManager::CheckForTouch component macro when the defined area is touched' statediag='0' >
+						<return name='Return' type='v0' description='' isconst='0' isHidden='0' isinit='0' usrinit='' setinit='' />
+						<param name='Handle' type='h32' description='The handle of the component that was clicked' isconst='0' isHidden='0' isinit='0' usrinit='0' setinit='' />
+						<command class_type='decision' title='Decision' exp='.Handle = ButtonDetect' swap='0' >
+							<flowline >
+								<command class_type='call' title='User Macro' macro='DetectServos' />
+							</flowline>
+							<flowline />
+						</command>
+						<command class_type='decision' title='Decision' exp='.Handle = ButtonPlus50' swap='0' >
+							<flowline >
+								<command class_type='call' title='User Macro' macro='MoveServoBy' >
+									<argument exp='50' />
+								</command>
+							</flowline>
+							<flowline />
+						</command>
+						<command class_type='decision' title='Decision' exp='.Handle = ButtonPlus10' swap='0' >
+							<flowline >
+								<command class_type='call' title='User Macro' macro='MoveServoBy' >
+									<argument exp='10' />
+								</command>
+							</flowline>
+							<flowline />
+						</command>
+						<command class_type='decision' title='Decision' exp='.Handle = ButtonPlus1' swap='0' >
+							<flowline >
+								<command class_type='call' title='User Macro' macro='MoveServoBy' >
+									<argument exp='1' />
+								</command>
+							</flowline>
+							<flowline />
+						</command>
+						<command class_type='decision' title='Decision' exp='.Handle = ButtonMinus50' swap='0' >
+							<flowline >
+								<command class_type='call' title='User Macro' macro='MoveServoBy' >
+									<argument exp='-50' />
+								</command>
+							</flowline>
+							<flowline />
+						</command>
+						<command class_type='decision' title='Decision' exp='.Handle = ButtonMinus10' swap='0' >
+							<flowline >
+								<command class_type='call' title='User Macro' macro='MoveServoBy' >
+									<argument exp='-10' />
+								</command>
+							</flowline>
+							<flowline />
+						</command>
+						<command class_type='decision' title='Decision' exp='.Handle = ButtonMinus1' swap='0' >
+							<flowline >
+								<command class_type='call' title='User Macro' macro='MoveServoBy' >
+									<argument exp='-1' />
+								</command>
+							</flowline>
+							<flowline />
+						</command>
+						<command class_type='decision' title='Decision' exp='.Handle = ButtonAssign1' swap='0' >
+							<flowline >
+								<command class_type='call' title='User Macro' macro='AssignID' >
+									<argument exp='1' />
+								</command>
+							</flowline>
+							<flowline />
+						</command>
+						<command class_type='decision' title='Decision' exp='.Handle = ButtonAssign2' swap='0' >
+							<flowline >
+								<command class_type='call' title='User Macro' macro='AssignID' >
+									<argument exp='2' />
+								</command>
+							</flowline>
+							<flowline />
+						</command>
+						<command class_type='decision' title='Decision' exp='.Handle = ButtonAssign3' swap='0' >
+							<flowline >
+								<command class_type='call' title='User Macro' macro='AssignID' >
+									<argument exp='3' />
+								</command>
+							</flowline>
+							<flowline />
+						</command>
+						<command class_type='decision' title='Decision' exp='.Handle = ButtonAssign4' swap='0' >
+							<flowline >
+								<command class_type='call' title='User Macro' macro='AssignID' >
+									<argument exp='4' />
+								</command>
+							</flowline>
+							<flowline />
+						</command>
+						<command class_type='decision' title='Decision' exp='.Handle = ButtonAssign5' swap='0' >
+							<flowline >
+								<command class_type='call' title='User Macro' macro='AssignID' >
+									<argument exp='5' />
+								</command>
+							</flowline>
+							<flowline />
+						</command>
+						<command class_type='decision' title='Decision' exp='.Handle = ButtonAssign6' swap='0' >
+							<flowline >
+								<command class_type='call' title='User Macro' macro='AssignID' >
+									<argument exp='6' />
+								</command>
+							</flowline>
+							<flowline />
+						</command>
+						<command class_type='decision' title='Decision' exp='.Handle = ButtonSetCenter' swap='0' >
+							<flowline >
+								<command class_type='call' title='User Macro' macro='SetCenterPoint' />
+							</flowline>
+							<flowline />
+						</command>
+						<command class_type='decision' title='Decision' exp='.Handle = ButtonID1' swap='0' >
+							<flowline >
+								<command class_type='call' title='User Macro' macro='AssignActiveServo' >
+									<argument exp='1' />
+								</command>
+							</flowline>
+							<flowline />
+						</command>
+						<command class_type='decision' title='Decision' exp='.Handle = ButtonID2' swap='0' >
+							<flowline >
+								<command class_type='call' title='User Macro' macro='AssignActiveServo' >
+									<argument exp='2' />
+								</command>
+							</flowline>
+							<flowline />
+						</command>
+						<command class_type='decision' title='Decision' exp='.Handle = ButtonID3' swap='0' >
+							<flowline >
+								<command class_type='call' title='User Macro' macro='AssignActiveServo' >
+									<argument exp='3' />
+								</command>
+							</flowline>
+							<flowline />
+						</command>
+						<command class_type='decision' title='Decision' exp='.Handle = ButtonID4' swap='0' >
+							<flowline >
+								<command class_type='call' title='User Macro' macro='AssignActiveServo' >
+									<argument exp='4' />
+								</command>
+							</flowline>
+							<flowline />
+						</command>
+						<command class_type='decision' title='Decision' exp='.Handle = ButtonID5' swap='0' >
+							<flowline >
+								<command class_type='call' title='User Macro' macro='AssignActiveServo' >
+									<argument exp='5' />
+								</command>
+							</flowline>
+							<flowline />
+						</command>
+						<command class_type='decision' title='Decision' exp='.Handle = ButtonID6' swap='0' >
+							<flowline >
+								<command class_type='call' title='User Macro' macro='AssignActiveServo' >
+									<argument exp='6' />
+								</command>
+							</flowline>
+							<flowline />
+						</command>
+					</flowline>
+				</macro>
+				<macro >
+					<flowline name='Main' description='' statediag='0' >
+						<return name='Return' type='v0' description='' isconst='0' isHidden='0' isinit='0' usrinit='' setinit='' />
+						<command class_type='call' title='Component Macro' component='gLCD_EB3' macro='Initialise' />
+						<command class_type='call' title='Component Macro' component='DisplayManager1' macro='Initialise' />
+						<command class_type='call' title='Component Macro' component='DisplayManager1' macro='DrawScene' >
+							<argument exp='0' />
+						</command>
+						<command class_type='call' title='Component Macro' component='ST3215' macro='Initialise' />
+						<command class_type='loop' title='Loop' type='3' exp='1' >
+							<flowline >
+								<command class_type='call' title='Component Macro' component='gLCD_EB3' macro='TouchCheck' >
+									<return exp='Touched' />
+								</command>
+								<command class_type='decision' title='Decision' exp='Touched' swap='0' >
+									<flowline >
+										<command class_type='call' title='Component Macro' component='gLCD_EB3' macro='TouchReadCoord' >
+											<return exp='Coords[0]' />
+											<argument exp='0' />
+										</command>
+										<command class_type='call' title='Component Macro' component='gLCD_EB3' macro='TouchReadCoord' >
+											<return exp='Coords[1]' />
+											<argument exp='1' />
+										</command>
+										<command class_type='call' title='Component Macro' component='DisplayManager1' macro='CheckForTouch' >
+											<argument exp='Coords[0]' />
+											<argument exp='Coords[1]' />
+										</command>
+									</flowline>
+									<flowline >
+										<command class_type='call' title='Component Macro' component='DisplayManager1' macro='NoTouch' />
+									</flowline>
+								</command>
+								<command class_type='delay' title='Delay' exp='10' type='1' />
+							</flowline>
+						</command>
+					</flowline>
+				</macro>
+			</macros>
+			<component class_type='ref' guid='ac3375c7-acf3-4160-8c3e-3011735116aa' vmin='0' vmaj='1' codename='gLCD_EB3' panelId='0' x='380.5' y='-170.5' z='0' xsz='25.0204' ysz='25.0651' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='1' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
+				<resources />
+				<properties />
+				<values >
+					<value target='pixel_width' data='320' />
+					<value target='pixel_height' data='480' />
+					<value target='monochrome' data='0' />
+					<value target='foreground_colour' data='16777215' />
+					<value target='background_colour' data='0' />
+					<value target='colour_bit_depth' data='16' />
+					<value target='red_bit_depth' data='5' />
+					<value target='green_bit_depth' data='6' />
+					<value target='blue_bit_depth' data='5' />
+					<value target='UART1::CHANNEL' data='3' />
+					<value target='UART1::TX' data='$PORTA.2' />
+					<value target='UART1::RX' data='$PORTA.1' />
+					<value target='EB3_WebMirror' data='0' />
+					<value target='BitmapURL' data='' />
+					<value target='WifiName' data='' />
+					<value target='WifiPassword' data='' />
+					<value target='Base_GLCD::FontCount' data='002' />
+					<value target='FontCount' data='002' />
+					<value target='Base_GLCD::gLCD_Font1::Font' data='001' />
+					<value target='Base_GLCD::gLCD_Font1::CustomFontFile' data='$(caldir)\LIB\Font_Type0.c' />
+					<value target='FontFile0' data='Ari14.bin' />
+					<value target='Base_GLCD::gLCD_Font1::BytesRequired' data='1193' />
+					<value target='Base_GLCD::gLCD_Font1::FontSpace' data='1' />
+					<value target='Base_GLCD::gLCD_Font1::SpaceWidth' data='5' />
+					<value target='Spacing0' data='1' />
+					<value target='SpaceWidth0' data='5' />
+					<value target='Base_GLCD::gLCD_Font2::Font' data='050' />
+					<value target='Base_GLCD::gLCD_Font2::CustomFontFile' data='C:\Users\BenR\Desktop\customfont.h.c' />
+					<value target='FontFile1' data='AriB32.bin' />
+					<value target='Base_GLCD::gLCD_Font2::BytesRequired' data='5756' />
+					<value target='Base_GLCD::gLCD_Font2::FontSpace' data='001' />
+					<value target='Base_GLCD::gLCD_Font2::SpaceWidth' data='6' />
+					<value target='Spacing1' data='001' />
+					<value target='SpaceWidth1' data='6' />
+					<value target='Base_GLCD::gLCD_Font3::Font' data='088' />
+					<value target='Base_GLCD::gLCD_Font3::CustomFontFile' data='$(caldir)\LIB\Font_Type2.c' />
+					<value target='FontFile2' data='AriB14.bin' />
+					<value target='Base_GLCD::gLCD_Font3::BytesRequired' data='0' />
+					<value target='Base_GLCD::gLCD_Font3::FontSpace' data='2' />
+					<value target='Base_GLCD::gLCD_Font3::SpaceWidth' data='10' />
+					<value target='Spacing2' data='2' />
+					<value target='SpaceWidth2' data='10' />
+					<value target='Base_GLCD::gLCD_Font4::Font' data='090' />
+					<value target='Base_GLCD::gLCD_Font4::CustomFontFile' data='$(caldir)\LIB\Font_Type3.c' />
+					<value target='FontFile3' data='' />
+					<value target='Base_GLCD::gLCD_Font4::BytesRequired' data='0' />
+					<value target='Base_GLCD::gLCD_Font4::FontSpace' data='001' />
+					<value target='Base_GLCD::gLCD_Font4::SpaceWidth' data='17' />
+					<value target='Spacing3' data='001' />
+					<value target='SpaceWidth3' data='17' />
+					<value target='Base_GLCD::gLCD_Font5::Font' data='063' />
+					<value target='Base_GLCD::gLCD_Font5::CustomFontFile' data='' />
+					<value target='FontFile4' data='' />
+					<value target='Base_GLCD::gLCD_Font5::BytesRequired' data='27405' />
+					<value target='Base_GLCD::gLCD_Font5::FontSpace' data='3' />
+					<value target='Base_GLCD::gLCD_Font5::SpaceWidth' data='8' />
+					<value target='Spacing4' data='3' />
+					<value target='SpaceWidth4' data='8' />
+					<value target='Base_GLCD::gLCD_Font6::Font' data='051' />
+					<value target='Base_GLCD::gLCD_Font6::CustomFontFile' data='' />
+					<value target='FontFile5' data='' />
+					<value target='Base_GLCD::gLCD_Font6::BytesRequired' data='8999' />
+					<value target='Base_GLCD::gLCD_Font6::FontSpace' data='3' />
+					<value target='Base_GLCD::gLCD_Font6::SpaceWidth' data='004' />
+					<value target='Spacing5' data='3' />
+					<value target='SpaceWidth5' data='004' />
+					<value target='Base_GLCD::gLCD_Font7::Font' data='056' />
+					<value target='Base_GLCD::gLCD_Font7::CustomFontFile' data='' />
+					<value target='FontFile6' data='' />
+					<value target='Base_GLCD::gLCD_Font7::BytesRequired' data='58501' />
+					<value target='Base_GLCD::gLCD_Font7::FontSpace' data='3' />
+					<value target='Base_GLCD::gLCD_Font7::SpaceWidth' data='8' />
+					<value target='Spacing6' data='3' />
+					<value target='SpaceWidth6' data='8' />
+					<value target='Base_GLCD::gLCD_Font8::Font' data='030' />
+					<value target='Base_GLCD::gLCD_Font8::CustomFontFile' data='' />
+					<value target='FontFile7' data='' />
+					<value target='Base_GLCD::gLCD_Font8::BytesRequired' data='6554' />
+					<value target='Base_GLCD::gLCD_Font8::FontSpace' data='3' />
+					<value target='Base_GLCD::gLCD_Font8::SpaceWidth' data='004' />
+					<value target='Spacing7' data='3' />
+					<value target='SpaceWidth7' data='004' />
+					<value target='Base_GLCD::ComponentLabel' data='001' />
+					<value target='Base_GLCD::GdiText1::sText' data='E-Blocks 3 CAPACITIVE TOUCH DISPLAY' />
+					<value target='Base_GLCD::GdiText1::dScale' data='1.000000' />
+					<value target='DisplayMethod' data='000' />
+					<value target='Base_GLCD::PhysicalOrientation' data='001' />
+					<value target='BitmapsFolder' data='$(srcdir)' />
+					<value target='Base_GLCD::ExportBinFonts' data='0' />
+					<value target='EB3_Display' data='1' />
+					<value target='UARTidx' data='3' />
+				</values>
+				<events />
+				<apis />
+				<variables />
+				<macros />
+			</component>
+			<component class_type='ref' guid='cbfb3c21-f13d-488d-9b90-400c8d4fc605' vmin='0' vmaj='24' codename='DisplayManager1' panelId='0' x='84' y='-95.5556' z='1' xsz='25.0001' ysz='25.4015' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='1' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
+				<resources />
+				<properties />
+				<values >
+					<value target='GLCDComponent' data='13' />
+					<value target='LibraryComponent1::OutputIcon::LinkTo' data='1' />
+					<value target='LibraryComponent1::InputIcon::LinkTo' data='000' />
+					<value target='RamUsage' data='560' />
+					<value target='TextAlignOffset' data='4' />
+					<value target='BackgroundColour' data='8388626' />
+					<value target='DisplayType' data='0' />
+					<value target='LibraryType' data='0' />
+					<value target='IsSim' data='0' />
+					<value target='PostInit' data='1' />
+					<value target='EB3_Display' data='1' />
+					<value target='EB3_WebMirror' data='0' />
+					<value target='MaxObjects' data='20' />
+					<value target='ObjThemeCount' data='0' />
+					<value target='Obj_Fg_0' data='0' />
+					<value target='Obj_Bg_0' data='16777215' />
+					<value target='Obj_Fg_1' data='16711680' />
+					<value target='Obj_Bg_1' data='16776960' />
+					<value target='Obj_Fg_2' data='65280' />
+					<value target='Obj_Bg_2' data='0' />
+					<value target='Obj_Fg_3' data='16711680' />
+					<value target='Obj_Bg_3' data='65535' />
+					<value target='Obj_Fg_4' data='16777215' />
+					<value target='Obj_Bg_4' data='0' />
+					<value target='Obj_Fg_5' data='' />
+					<value target='Obj_Bg_5' data='' />
+					<value target='Obj_Fg_6' data='' />
+					<value target='Obj_Bg_6' data='' />
+					<value target='Obj_Fg_7' data='' />
+					<value target='Obj_Bg_7' data='' />
+					<value target='MaxWidgets' data='20' />
+					<value target='TouchRepeatRate' data='10' />
+					<value target='WidgetThemeCount' data='0' />
+					<value target='Btn_Fg_0' data='' />
+					<value target='Btn_Bg_0' data='16777215' />
+					<value target='Btn_Hl_0' data='5921370' />
+					<value target='Btn_Ll_0' data='9868950' />
+					<value target='Btn_Fg_1' data='16711680' />
+					<value target='Btn_Bg_1' data='16776960' />
+					<value target='Btn_Hl_1' data='16729600' />
+					<value target='Btn_Ll_1' data='16744448' />
+					<value target='Btn_Fg_2' data='16711680' />
+					<value target='Btn_Bg_2' data='65535' />
+					<value target='Btn_Hl_2' data='16711935' />
+					<value target='Btn_Ll_2' data='65280' />
+					<value target='Btn_Fg_3' data='255' />
+					<value target='Btn_Bg_3' data='16776960' />
+					<value target='Btn_Hl_3' data='65535' />
+					<value target='Btn_Ll_3' data='16711680' />
+					<value target='Btn_Fg_4' data='0' />
+					<value target='Btn_Bg_4' data='16776960' />
+					<value target='Btn_Hl_4' data='255' />
+					<value target='Btn_Ll_4' data='49407' />
+					<value target='Btn_Fg_5' data='' />
+					<value target='Btn_Bg_5' data='' />
+					<value target='Btn_Hl_5' data='' />
+					<value target='Btn_Ll_5' data='' />
+					<value target='Btn_Fg_6' data='' />
+					<value target='Btn_Bg_6' data='' />
+					<value target='Btn_Hl_6' data='' />
+					<value target='Btn_Ll_6' data='' />
+					<value target='Btn_Fg_7' data='' />
+					<value target='Btn_Bg_7' data='' />
+					<value target='Btn_Hl_7' data='' />
+					<value target='Btn_Ll_7' data='' />
+					<value target='DC_Enabled' data='1' />
+					<value target='EnableCallbacks' data='1' />
+					<value target='Orientation' data='001' />
+					<value target='SceneCount' data='1' />
+					<value target='Scene0' data='1' />
+					<value target='Layout0' data='67,210,210,210,79,1,10,0,4,0,204,1,35,0,0,0,0,0,255,87,87,0,0,0,83,1,1,1,83,84,51,50,49,53,32,83,101,114,118,111,32,67,97,108,105,98,114,97,116,105,111,110,0,87,1,10,0,50,0,133,0,48,0,0,0,0,0,160,255,255,0,0,0,90,90,90,1,171,13,83,0,1,1,68,101,116,101,99,116,32,83,101,114,118,111,0,79,1,10,0,29,1,204,1,30,0,0,0,0,0,210,210,210,0,0,0,87,1,90,0,170,0,58,0,48,0,0,0,0,0,160,160,255,0,0,0,90,90,90,1,199,13,83,0,1,1,43,49,48,0,87,1,10,0,230,0,58,0,48,0,0,0,0,0,255,255,160,0,0,0,90,90,90,1,213,13,83,0,1,1,73,68,32,49,0,87,1,90,0,230,0,58,0,48,0,0,0,0,0,255,255,160,0,0,0,90,90,90,1,227,13,83,0,1,1,73,68,32,50,0,87,1,170,0,230,0,58,0,48,0,0,0,0,0,255,255,160,0,0,0,90,90,90,1,241,13,83,0,1,1,73,68,32,51,0,87,1,250,0,230,0,58,0,48,0,0,0,0,0,255,255,160,0,0,0,90,90,90,1,255,13,83,0,1,1,73,68,32,52,0,87,1,74,1,230,0,58,0,48,0,0,0,0,0,255,255,160,0,0,0,90,90,90,1,13,14,83,0,1,1,73,68,32,53,0,87,1,154,1,230,0,58,0,48,0,0,0,0,0,255,255,160,0,0,0,90,90,90,1,27,14,83,0,1,1,73,68,32,54,0,87,1,74,1,170,0,58,0,48,0,0,0,0,0,160,160,255,0,0,0,90,90,90,1,117,16,83,0,1,1,45,49,48,0,87,1,165,0,50,0,47,1,48,0,0,0,0,0,192,255,160,0,0,0,90,90,90,1,131,16,83,0,1,1,65,115,115,105,103,110,32,67,101,110,116,101,114,32,80,111,115,105,116,105,111,110,0,87,1,170,0,170,0,58,0,48,0,0,0,0,0,160,160,255,0,0,0,90,90,90,1,145,16,83,0,1,1,43,49,0,87,1,250,0,170,0,59,0,48,0,0,0,0,0,160,160,255,0,0,0,90,90,90,1,159,16,83,0,1,1,45,49,0,87,1,10,0,170,0,58,0,48,0,0,0,0,0,160,160,255,0,0,0,90,90,90,1,173,16,83,0,1,1,43,53,48,0,87,1,154,1,170,0,58,0,48,0,0,0,0,0,160,160,255,0,0,0,90,90,90,1,187,16,83,0,1,1,45,53,48,0,87,1,10,0,110,0,58,0,48,0,0,255,0,0,255,192,87,0,0,0,192,0,0,1,201,16,83,0,1,1,83,49,0,87,1,90,0,110,0,58,0,48,0,0,0,0,0,255,192,87,0,0,0,90,90,90,1,215,16,83,0,1,1,83,50,0,87,1,170,0,110,0,58,0,48,0,0,0,0,0,255,192,87,0,0,0,90,90,90,1,229,16,83,0,1,1,83,51,0,87,1,250,0,110,0,58,0,48,0,0,0,0,0,255,192,87,0,0,0,90,90,90,1,243,16,83,0,1,1,83,52,0,87,1,74,1,110,0,58,0,48,0,0,0,0,0,255,192,87,0,0,0,90,90,90,1,1,17,83,0,1,1,83,53,0,87,1,154,1,110,0,58,0,48,0,0,0,0,0,255,192,87,0,0,0,90,90,90,1,15,17,83,0,1,1,83,54,0,' />
+					<value target='Count0' data='779' />
+					<value target='Callback0' data='&amp;FCM_DC_Touched,&amp;FCM_DC_Touched,&amp;FCM_DC_Touched,&amp;FCM_DC_Touched,&amp;FCM_DC_Touched,&amp;FCM_DC_Touched,&amp;FCM_DC_Touched,&amp;FCM_DC_Touched,&amp;FCM_DC_Touched,&amp;FCM_DC_Touched,&amp;FCM_DC_Touched,&amp;FCM_DC_Touched,&amp;FCM_DC_Touched,&amp;FCM_DC_Touched,&amp;FCM_DC_Touched,&amp;FCM_DC_Touched,&amp;FCM_DC_Touched,&amp;FCM_DC_Touched,&amp;FCM_DC_Touched,&amp;FCM_DC_Touched' />
+					<value target='CBCount0' data='20' />
+					<value target='Scene1' data='2' />
+					<value target='Layout1' data='' />
+					<value target='Count1' data='0' />
+					<value target='Callback1' data='' />
+					<value target='CBCount1' data='' />
+					<value target='Scene2' data='3' />
+					<value target='Layout2' data='' />
+					<value target='Count2' data='' />
+					<value target='Callback2' data='' />
+					<value target='CBCount2' data='' />
+					<value target='Scene3' data='4' />
+					<value target='Layout3' data='' />
+					<value target='Count3' data='' />
+					<value target='Callback3' data='' />
+					<value target='CBCount3' data='' />
+					<value target='Scene4' data='5' />
+					<value target='Layout4' data='' />
+					<value target='Count4' data='' />
+					<value target='Callback4' data='' />
+					<value target='CBCount4' data='' />
+					<value target='Scene5' data='6' />
+					<value target='Layout5' data='' />
+					<value target='Count5' data='' />
+					<value target='Callback5' data='' />
+					<value target='CBCount5' data='' />
+					<value target='Scene6' data='7' />
+					<value target='Layout6' data='' />
+					<value target='Count6' data='' />
+					<value target='Callback6' data='' />
+					<value target='CBCount6' data='' />
+					<value target='Scene7' data='8' />
+					<value target='Layout7' data='' />
+					<value target='Count7' data='' />
+					<value target='Callback7' data='' />
+					<value target='CBCount7' data='' />
+					<value target='Scene8' data='9' />
+					<value target='Layout8' data='' />
+					<value target='Count8' data='' />
+					<value target='Callback8' data='' />
+					<value target='CBCount8' data='' />
+					<value target='Scene9' data='10' />
+					<value target='Layout9' data='' />
+					<value target='Count9' data='' />
+					<value target='Callback9' data='' />
+					<value target='CBCount9' data='' />
+					<value target='Scene10' data='11' />
+					<value target='Layout10' data='' />
+					<value target='Count10' data='' />
+					<value target='Callback10' data='' />
+					<value target='CBCount10' data='' />
+					<value target='Scene11' data='12' />
+					<value target='Layout11' data='' />
+					<value target='Count11' data='' />
+					<value target='Callback11' data='' />
+					<value target='CBCount11' data='' />
+					<value target='Scene12' data='13' />
+					<value target='Layout12' data='' />
+					<value target='Count12' data='' />
+					<value target='Callback12' data='' />
+					<value target='CBCount12' data='' />
+					<value target='Scene13' data='14' />
+					<value target='Layout13' data='' />
+					<value target='Count13' data='' />
+					<value target='Callback13' data='' />
+					<value target='CBCount13' data='' />
+					<value target='Scene14' data='15' />
+					<value target='Layout14' data='' />
+					<value target='Count14' data='' />
+					<value target='Callback14' data='' />
+					<value target='CBCount14' data='' />
+					<value target='Scene15' data='16' />
+					<value target='Layout15' data='' />
+					<value target='Count15' data='' />
+					<value target='Callback15' data='' />
+					<value target='CBCount15' data='' />
+					<value target='Scene16' data='17' />
+					<value target='Layout16' data='' />
+					<value target='Count16' data='' />
+					<value target='Callback16' data='' />
+					<value target='CBCount16' data='' />
+					<value target='Scene17' data='18' />
+					<value target='Layout17' data='' />
+					<value target='Count17' data='' />
+					<value target='Callback17' data='' />
+					<value target='CBCount17' data='' />
+					<value target='Scene18' data='19' />
+					<value target='Layout18' data='' />
+					<value target='Count18' data='' />
+					<value target='Callback18' data='' />
+					<value target='CBCount18' data='' />
+					<value target='Scene19' data='20' />
+					<value target='Layout19' data='' />
+					<value target='Count19' data='' />
+					<value target='Callback19' data='' />
+					<value target='CBCount19' data='' />
+					<value target='Scene20' data='21' />
+					<value target='Layout20' data='' />
+					<value target='Count20' data='' />
+					<value target='Callback20' data='' />
+					<value target='CBCount20' data='' />
+					<value target='Scene21' data='22' />
+					<value target='Layout21' data='' />
+					<value target='Count21' data='' />
+					<value target='Callback21' data='' />
+					<value target='CBCount21' data='' />
+					<value target='Scene22' data='23' />
+					<value target='Layout22' data='' />
+					<value target='Count22' data='' />
+					<value target='Callback22' data='' />
+					<value target='CBCount22' data='' />
+					<value target='Scene23' data='24' />
+					<value target='Layout23' data='' />
+					<value target='Count23' data='' />
+					<value target='Callback23' data='' />
+					<value target='CBCount23' data='' />
+					<value target='Scene24' data='25' />
+					<value target='Layout24' data='' />
+					<value target='Count24' data='' />
+					<value target='Callback24' data='' />
+					<value target='CBCount24' data='' />
+					<value target='Scene25' data='26' />
+					<value target='Layout25' data='' />
+					<value target='Count25' data='' />
+					<value target='Callback25' data='' />
+					<value target='CBCount25' data='' />
+					<value target='Scene26' data='' />
+					<value target='Layout26' data='27' />
+					<value target='Count26' data='' />
+					<value target='Callback26' data='' />
+					<value target='CBCount26' data='' />
+					<value target='Scene27' data='28' />
+					<value target='Layout27' data='' />
+					<value target='Count27' data='' />
+					<value target='Callback27' data='' />
+					<value target='CBCount27' data='' />
+					<value target='Scene28' data='29' />
+					<value target='Layout28' data='' />
+					<value target='Count28' data='' />
+					<value target='Callback28' data='' />
+					<value target='CBCount28' data='' />
+					<value target='Scene29' data='30' />
+					<value target='Layout29' data='' />
+					<value target='Count29' data='' />
+					<value target='Callback29' data='' />
+					<value target='CBCount29' data='' />
+					<value target='XPixels' data='320' />
+					<value target='YPixels' data='480' />
+				</values>
+				<events />
+				<apis />
+				<variables />
+				<macros />
+			</component>
+			<component class_type='ref' guid='81f24c15-ab7c-49ba-b55f-62d3cbfee92a' vmin='0' vmaj='1' codename='TitleText' panelId='1' x='260' y='-61.5' z='0' xsz='287.5' ysz='21.875' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
+				<resources />
+				<properties />
+				<values >
+					<value target='ID' data='1' />
+					<value target='DisplayManager' data='2083' />
+					<value target='ShapeType' data='1' />
+					<value target='Type' data='79' />
+					<value target='UseThemes' data='0' />
+					<value target='ObjectTheme' data='000' />
+					<value target='WidgetTheme' data='000' />
+					<value target='LineWidth' data='0' />
+					<value target='FgColour' data='0' />
+					<value target='BgColour' data='5724159' />
+					<value target='HlColour' data='5921370' />
+					<value target='Touchable' data='0' />
+					<value target='DrawHighlight' data='1' />
+					<value target='UseCallback' data='0' />
+					<value target='TouchCallback' data='' />
+					<value target='Text' data='ST3215 Servo Calibration' />
+					<value target='Font' data='001' />
+					<value target='HAlignment' data='001' />
+					<value target='VAlignment' data='001' />
+					<value target='TextTheme' data='000' />
+					<value target='TextColour' data='0' />
+				</values>
+				<events />
+				<apis />
+				<variables />
+				<macros />
+			</component>
+			<component class_type='ref' guid='81f24c15-ab7c-49ba-b55f-62d3cbfee92a' vmin='0' vmaj='1' codename='ButtonDetect' panelId='1' x='97.5' y='-115' z='1' xsz='84.375' ysz='31.25' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
+				<resources />
+				<properties />
+				<values >
+					<value target='ID' data='21' />
+					<value target='DisplayManager' data='2083' />
+					<value target='ShapeType' data='1' />
+					<value target='Type' data='87' />
+					<value target='UseThemes' data='0' />
+					<value target='ObjectTheme' data='000' />
+					<value target='WidgetTheme' data='000' />
+					<value target='LineWidth' data='0' />
+					<value target='FgColour' data='0' />
+					<value target='BgColour' data='16777120' />
+					<value target='HlColour' data='5921370' />
+					<value target='Touchable' data='1' />
+					<value target='DrawHighlight' data='1' />
+					<value target='UseCallback' data='1' />
+					<value target='TouchCallback' data='DC_Touched' />
+					<value target='Text' data='Detect Servo' />
+					<value target='Font' data='000' />
+					<value target='HAlignment' data='001' />
+					<value target='VAlignment' data='001' />
+					<value target='TextTheme' data='000' />
+					<value target='TextColour' data='0' />
+				</values>
+				<events />
+				<apis />
+				<variables />
+				<macros />
+			</component>
+			<component class_type='ref' guid='81f24c15-ab7c-49ba-b55f-62d3cbfee92a' vmin='0' vmaj='1' codename='InfoText' panelId='1' x='260' y='-340' z='2' xsz='287.5' ysz='18.75' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
+				<resources />
+				<properties />
+				<values >
+					<value target='ID' data='2' />
+					<value target='DisplayManager' data='2083' />
+					<value target='ShapeType' data='1' />
+					<value target='Type' data='79' />
+					<value target='UseThemes' data='0' />
+					<value target='ObjectTheme' data='000' />
+					<value target='WidgetTheme' data='000' />
+					<value target='LineWidth' data='0' />
+					<value target='FgColour' data='0' />
+					<value target='BgColour' data='13816530' />
+					<value target='HlColour' data='5921370' />
+					<value target='Touchable' data='0' />
+					<value target='DrawHighlight' data='1' />
+					<value target='UseCallback' data='0' />
+					<value target='TouchCallback' data='' />
+					<value target='Text' data='' />
+					<value target='Font' data='000' />
+					<value target='HAlignment' data='001' />
+					<value target='VAlignment' data='001' />
+					<value target='TextTheme' data='000' />
+					<value target='TextColour' data='0' />
+				</values>
+				<events />
+				<apis />
+				<variables />
+				<macros />
+			</component>
+			<component class_type='ref' guid='81f24c15-ab7c-49ba-b55f-62d3cbfee92a' vmin='0' vmaj='1' codename='ButtonPlus10' panelId='1' x='140' y='-235' z='3' xsz='37.5' ysz='31.25' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
+				<resources />
+				<properties />
+				<values >
+					<value target='ID' data='22' />
+					<value target='DisplayManager' data='2083' />
+					<value target='ShapeType' data='1' />
+					<value target='Type' data='87' />
+					<value target='UseThemes' data='0' />
+					<value target='ObjectTheme' data='000' />
+					<value target='WidgetTheme' data='000' />
+					<value target='LineWidth' data='0' />
+					<value target='FgColour' data='0' />
+					<value target='BgColour' data='16752800' />
+					<value target='HlColour' data='5921370' />
+					<value target='Touchable' data='1' />
+					<value target='DrawHighlight' data='1' />
+					<value target='UseCallback' data='1' />
+					<value target='TouchCallback' data='DC_Touched' />
+					<value target='Text' data='+10' />
+					<value target='Font' data='000' />
+					<value target='HAlignment' data='001' />
+					<value target='VAlignment' data='001' />
+					<value target='TextTheme' data='000' />
+					<value target='TextColour' data='0' />
+				</values>
+				<events />
+				<apis />
+				<variables />
+				<macros />
+			</component>
+			<component class_type='ref' guid='81f24c15-ab7c-49ba-b55f-62d3cbfee92a' vmin='0' vmaj='1' codename='ButtonAssign1' panelId='1' x='60' y='-295' z='4' xsz='37.5' ysz='31.25' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
+				<resources />
+				<properties />
+				<values >
+					<value target='ID' data='23' />
+					<value target='DisplayManager' data='2083' />
+					<value target='ShapeType' data='1' />
+					<value target='Type' data='87' />
+					<value target='UseThemes' data='0' />
+					<value target='ObjectTheme' data='000' />
+					<value target='WidgetTheme' data='000' />
+					<value target='LineWidth' data='0' />
+					<value target='FgColour' data='0' />
+					<value target='BgColour' data='10551295' />
+					<value target='HlColour' data='5921370' />
+					<value target='Touchable' data='1' />
+					<value target='DrawHighlight' data='1' />
+					<value target='UseCallback' data='1' />
+					<value target='TouchCallback' data='DC_Touched' />
+					<value target='Text' data='ID 1' />
+					<value target='Font' data='000' />
+					<value target='HAlignment' data='001' />
+					<value target='VAlignment' data='001' />
+					<value target='TextTheme' data='000' />
+					<value target='TextColour' data='0' />
+				</values>
+				<events />
+				<apis />
+				<variables />
+				<macros />
+			</component>
+			<component class_type='ref' guid='81f24c15-ab7c-49ba-b55f-62d3cbfee92a' vmin='0' vmaj='1' codename='ButtonAssign2' panelId='1' x='140' y='-295' z='5' xsz='37.5' ysz='31.25' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
+				<resources />
+				<properties />
+				<values >
+					<value target='ID' data='24' />
+					<value target='DisplayManager' data='2083' />
+					<value target='ShapeType' data='1' />
+					<value target='Type' data='87' />
+					<value target='UseThemes' data='0' />
+					<value target='ObjectTheme' data='000' />
+					<value target='WidgetTheme' data='000' />
+					<value target='LineWidth' data='0' />
+					<value target='FgColour' data='0' />
+					<value target='BgColour' data='10551295' />
+					<value target='HlColour' data='5921370' />
+					<value target='Touchable' data='1' />
+					<value target='DrawHighlight' data='1' />
+					<value target='UseCallback' data='1' />
+					<value target='TouchCallback' data='DC_Touched' />
+					<value target='Text' data='ID 2' />
+					<value target='Font' data='000' />
+					<value target='HAlignment' data='001' />
+					<value target='VAlignment' data='001' />
+					<value target='TextTheme' data='000' />
+					<value target='TextColour' data='0' />
+				</values>
+				<events />
+				<apis />
+				<variables />
+				<macros />
+			</component>
+			<component class_type='ref' guid='81f24c15-ab7c-49ba-b55f-62d3cbfee92a' vmin='0' vmaj='1' codename='ButtonAssign3' panelId='1' x='220' y='-295' z='6' xsz='37.5' ysz='31.25' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
+				<resources />
+				<properties />
+				<values >
+					<value target='ID' data='25' />
+					<value target='DisplayManager' data='2083' />
+					<value target='ShapeType' data='1' />
+					<value target='Type' data='87' />
+					<value target='UseThemes' data='0' />
+					<value target='ObjectTheme' data='000' />
+					<value target='WidgetTheme' data='000' />
+					<value target='LineWidth' data='0' />
+					<value target='FgColour' data='0' />
+					<value target='BgColour' data='10551295' />
+					<value target='HlColour' data='5921370' />
+					<value target='Touchable' data='1' />
+					<value target='DrawHighlight' data='1' />
+					<value target='UseCallback' data='1' />
+					<value target='TouchCallback' data='DC_Touched' />
+					<value target='Text' data='ID 3' />
+					<value target='Font' data='000' />
+					<value target='HAlignment' data='001' />
+					<value target='VAlignment' data='001' />
+					<value target='TextTheme' data='000' />
+					<value target='TextColour' data='0' />
+				</values>
+				<events />
+				<apis />
+				<variables />
+				<macros />
+			</component>
+			<component class_type='ref' guid='81f24c15-ab7c-49ba-b55f-62d3cbfee92a' vmin='0' vmaj='1' codename='ButtonAssign4' panelId='1' x='300' y='-295' z='7' xsz='37.5' ysz='31.25' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
+				<resources />
+				<properties />
+				<values >
+					<value target='ID' data='26' />
+					<value target='DisplayManager' data='2083' />
+					<value target='ShapeType' data='1' />
+					<value target='Type' data='87' />
+					<value target='UseThemes' data='0' />
+					<value target='ObjectTheme' data='000' />
+					<value target='WidgetTheme' data='000' />
+					<value target='LineWidth' data='0' />
+					<value target='FgColour' data='0' />
+					<value target='BgColour' data='10551295' />
+					<value target='HlColour' data='5921370' />
+					<value target='Touchable' data='1' />
+					<value target='DrawHighlight' data='1' />
+					<value target='UseCallback' data='1' />
+					<value target='TouchCallback' data='DC_Touched' />
+					<value target='Text' data='ID 4' />
+					<value target='Font' data='000' />
+					<value target='HAlignment' data='001' />
+					<value target='VAlignment' data='001' />
+					<value target='TextTheme' data='000' />
+					<value target='TextColour' data='0' />
+				</values>
+				<events />
+				<apis />
+				<variables />
+				<macros />
+			</component>
+			<component class_type='ref' guid='81f24c15-ab7c-49ba-b55f-62d3cbfee92a' vmin='0' vmaj='1' codename='ButtonAssign5' panelId='1' x='380' y='-295' z='8' xsz='37.5' ysz='31.25' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
+				<resources />
+				<properties />
+				<values >
+					<value target='ID' data='27' />
+					<value target='DisplayManager' data='2083' />
+					<value target='ShapeType' data='1' />
+					<value target='Type' data='87' />
+					<value target='UseThemes' data='0' />
+					<value target='ObjectTheme' data='000' />
+					<value target='WidgetTheme' data='000' />
+					<value target='LineWidth' data='0' />
+					<value target='FgColour' data='0' />
+					<value target='BgColour' data='10551295' />
+					<value target='HlColour' data='5921370' />
+					<value target='Touchable' data='1' />
+					<value target='DrawHighlight' data='1' />
+					<value target='UseCallback' data='1' />
+					<value target='TouchCallback' data='DC_Touched' />
+					<value target='Text' data='ID 5' />
+					<value target='Font' data='000' />
+					<value target='HAlignment' data='001' />
+					<value target='VAlignment' data='001' />
+					<value target='TextTheme' data='000' />
+					<value target='TextColour' data='0' />
+				</values>
+				<events />
+				<apis />
+				<variables />
+				<macros />
+			</component>
+			<component class_type='ref' guid='81f24c15-ab7c-49ba-b55f-62d3cbfee92a' vmin='0' vmaj='1' codename='ButtonAssign6' panelId='1' x='460' y='-295' z='9' xsz='37.5' ysz='31.25' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
+				<resources />
+				<properties />
+				<values >
+					<value target='ID' data='28' />
+					<value target='DisplayManager' data='2083' />
+					<value target='ShapeType' data='1' />
+					<value target='Type' data='87' />
+					<value target='UseThemes' data='0' />
+					<value target='ObjectTheme' data='000' />
+					<value target='WidgetTheme' data='000' />
+					<value target='LineWidth' data='0' />
+					<value target='FgColour' data='0' />
+					<value target='BgColour' data='10551295' />
+					<value target='HlColour' data='5921370' />
+					<value target='Touchable' data='1' />
+					<value target='DrawHighlight' data='1' />
+					<value target='UseCallback' data='1' />
+					<value target='TouchCallback' data='DC_Touched' />
+					<value target='Text' data='ID 6' />
+					<value target='Font' data='000' />
+					<value target='HAlignment' data='001' />
+					<value target='VAlignment' data='001' />
+					<value target='TextTheme' data='000' />
+					<value target='TextColour' data='0' />
+				</values>
+				<events />
+				<apis />
+				<variables />
+				<macros />
+			</component>
+			<component class_type='ref' guid='7b03c836-c1f9-4ab5-8bf2-787a55e792e0' vmin='0' vmaj='2' codename='ST3215' panelId='0' x='76.5' y='-240.5' z='2' xsz='25.18' ysz='25.1413' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
+				<resources />
+				<properties />
+				<values >
+					<value target='cal_uart::CHANNEL' data='002' />
+					<value target='cal_uart::TX' data='$PORTA.0' />
+					<value target='cal_uart::OutputPins' data='000' />
+					<value target='cal_uart::TXAlt' data='0' />
+					<value target='cal_uart::RX' data='$PORTA.1' />
+					<value target='cal_uart::InputPins' data='005' />
+					<value target='cal_uart::RXAlt' data='0' />
+					<value target='cal_uart::FLOWEN' data='000' />
+					<value target='cal_uart::RTS' data='$PORTB.3' />
+					<value target='cal_uart::CTS' data='$PORTB.4' />
+					<value target='cal_uart::BAUD_LIST' data='000' />
+					<value target='cal_uart::BAUD' data='1000000' />
+					<value target='UARTidx' data='002' />
+					<value target='label' data='ST3215' />
+					<value target='cal_uart::ScopeTraces' data='0' />
+					<value target='cal_uart::ConsoleData' data='0' />
+					<value target='cal_uart::ConsoleColumns' data='64' />
+					<value target='cal_uart::DataSource' data='000' />
+					<value target='cal_uart::com_port' data='000' />
+					<value target='cal_uart::Injector' data='000' />
+				</values>
+				<events />
+				<apis />
+				<variables />
+				<macros />
+			</component>
+			<component class_type='ref' guid='81f24c15-ab7c-49ba-b55f-62d3cbfee92a' vmin='0' vmaj='1' codename='ButtonMinus10' panelId='1' x='380' y='-235' z='10' xsz='37.5' ysz='31.25' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
+				<resources />
+				<properties />
+				<values >
+					<value target='ID' data='29' />
+					<value target='DisplayManager' data='2083' />
+					<value target='ShapeType' data='1' />
+					<value target='Type' data='87' />
+					<value target='UseThemes' data='0' />
+					<value target='ObjectTheme' data='000' />
+					<value target='WidgetTheme' data='000' />
+					<value target='LineWidth' data='0' />
+					<value target='FgColour' data='0' />
+					<value target='BgColour' data='16752800' />
+					<value target='HlColour' data='5921370' />
+					<value target='Touchable' data='1' />
+					<value target='DrawHighlight' data='1' />
+					<value target='UseCallback' data='1' />
+					<value target='TouchCallback' data='DC_Touched' />
+					<value target='Text' data='-10' />
+					<value target='Font' data='000' />
+					<value target='HAlignment' data='001' />
+					<value target='VAlignment' data='001' />
+					<value target='TextTheme' data='000' />
+					<value target='TextColour' data='0' />
+				</values>
+				<events />
+				<apis />
+				<variables />
+				<macros />
+			</component>
+			<component class_type='ref' guid='81f24c15-ab7c-49ba-b55f-62d3cbfee92a' vmin='0' vmaj='1' codename='ButtonSetCenter' panelId='1' x='337.5' y='-115' z='11' xsz='190.625' ysz='31.25' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
+				<resources />
+				<properties />
+				<values >
+					<value target='ID' data='30' />
+					<value target='DisplayManager' data='2083' />
+					<value target='ShapeType' data='1' />
+					<value target='Type' data='87' />
+					<value target='UseThemes' data='0' />
+					<value target='ObjectTheme' data='000' />
+					<value target='WidgetTheme' data='000' />
+					<value target='LineWidth' data='0' />
+					<value target='FgColour' data='0' />
+					<value target='BgColour' data='10551232' />
+					<value target='HlColour' data='5921370' />
+					<value target='Touchable' data='1' />
+					<value target='DrawHighlight' data='1' />
+					<value target='UseCallback' data='1' />
+					<value target='TouchCallback' data='DC_Touched' />
+					<value target='Text' data='Assign Center Position' />
+					<value target='Font' data='000' />
+					<value target='HAlignment' data='001' />
+					<value target='VAlignment' data='001' />
+					<value target='TextTheme' data='000' />
+					<value target='TextColour' data='0' />
+				</values>
+				<events />
+				<apis />
+				<variables />
+				<macros />
+			</component>
+			<component class_type='ref' guid='81f24c15-ab7c-49ba-b55f-62d3cbfee92a' vmin='0' vmaj='1' codename='ButtonPlus1' panelId='1' x='220' y='-235' z='12' xsz='37.5' ysz='31.25' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
+				<resources />
+				<properties />
+				<values >
+					<value target='ID' data='31' />
+					<value target='DisplayManager' data='2083' />
+					<value target='ShapeType' data='1' />
+					<value target='Type' data='87' />
+					<value target='UseThemes' data='0' />
+					<value target='ObjectTheme' data='000' />
+					<value target='WidgetTheme' data='000' />
+					<value target='LineWidth' data='0' />
+					<value target='FgColour' data='0' />
+					<value target='BgColour' data='16752800' />
+					<value target='HlColour' data='5921370' />
+					<value target='Touchable' data='1' />
+					<value target='DrawHighlight' data='1' />
+					<value target='UseCallback' data='1' />
+					<value target='TouchCallback' data='DC_Touched' />
+					<value target='Text' data='+1' />
+					<value target='Font' data='000' />
+					<value target='HAlignment' data='001' />
+					<value target='VAlignment' data='001' />
+					<value target='TextTheme' data='000' />
+					<value target='TextColour' data='0' />
+				</values>
+				<events />
+				<apis />
+				<variables />
+				<macros />
+			</component>
+			<component class_type='ref' guid='81f24c15-ab7c-49ba-b55f-62d3cbfee92a' vmin='0' vmaj='1' codename='ButtonMinus1' panelId='1' x='300.5' y='-235' z='13' xsz='38.125' ysz='31.25' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
+				<resources />
+				<properties />
+				<values >
+					<value target='ID' data='32' />
+					<value target='DisplayManager' data='2083' />
+					<value target='ShapeType' data='1' />
+					<value target='Type' data='87' />
+					<value target='UseThemes' data='0' />
+					<value target='ObjectTheme' data='000' />
+					<value target='WidgetTheme' data='000' />
+					<value target='LineWidth' data='0' />
+					<value target='FgColour' data='0' />
+					<value target='BgColour' data='16752800' />
+					<value target='HlColour' data='5921370' />
+					<value target='Touchable' data='1' />
+					<value target='DrawHighlight' data='1' />
+					<value target='UseCallback' data='1' />
+					<value target='TouchCallback' data='DC_Touched' />
+					<value target='Text' data='-1' />
+					<value target='Font' data='000' />
+					<value target='HAlignment' data='001' />
+					<value target='VAlignment' data='001' />
+					<value target='TextTheme' data='000' />
+					<value target='TextColour' data='0' />
+				</values>
+				<events />
+				<apis />
+				<variables />
+				<macros />
+			</component>
+			<component class_type='ref' guid='81f24c15-ab7c-49ba-b55f-62d3cbfee92a' vmin='0' vmaj='1' codename='ButtonPlus50' panelId='1' x='60' y='-235' z='14' xsz='37.5' ysz='31.25' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
+				<resources />
+				<properties />
+				<values >
+					<value target='ID' data='33' />
+					<value target='DisplayManager' data='2083' />
+					<value target='ShapeType' data='1' />
+					<value target='Type' data='87' />
+					<value target='UseThemes' data='0' />
+					<value target='ObjectTheme' data='000' />
+					<value target='WidgetTheme' data='000' />
+					<value target='LineWidth' data='0' />
+					<value target='FgColour' data='0' />
+					<value target='BgColour' data='16752800' />
+					<value target='HlColour' data='5921370' />
+					<value target='Touchable' data='1' />
+					<value target='DrawHighlight' data='1' />
+					<value target='UseCallback' data='1' />
+					<value target='TouchCallback' data='DC_Touched' />
+					<value target='Text' data='+50' />
+					<value target='Font' data='000' />
+					<value target='HAlignment' data='001' />
+					<value target='VAlignment' data='001' />
+					<value target='TextTheme' data='000' />
+					<value target='TextColour' data='0' />
+				</values>
+				<events />
+				<apis />
+				<variables />
+				<macros />
+			</component>
+			<component class_type='ref' guid='81f24c15-ab7c-49ba-b55f-62d3cbfee92a' vmin='0' vmaj='1' codename='ButtonMinus50' panelId='1' x='460' y='-235' z='15' xsz='37.5' ysz='31.25' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
+				<resources />
+				<properties />
+				<values >
+					<value target='ID' data='34' />
+					<value target='DisplayManager' data='2083' />
+					<value target='ShapeType' data='1' />
+					<value target='Type' data='87' />
+					<value target='UseThemes' data='0' />
+					<value target='ObjectTheme' data='000' />
+					<value target='WidgetTheme' data='000' />
+					<value target='LineWidth' data='0' />
+					<value target='FgColour' data='0' />
+					<value target='BgColour' data='16752800' />
+					<value target='HlColour' data='5921370' />
+					<value target='Touchable' data='1' />
+					<value target='DrawHighlight' data='1' />
+					<value target='UseCallback' data='1' />
+					<value target='TouchCallback' data='DC_Touched' />
+					<value target='Text' data='-50' />
+					<value target='Font' data='000' />
+					<value target='HAlignment' data='001' />
+					<value target='VAlignment' data='001' />
+					<value target='TextTheme' data='000' />
+					<value target='TextColour' data='0' />
+				</values>
+				<events />
+				<apis />
+				<variables />
+				<macros />
+			</component>
+			<component class_type='ref' guid='81f24c15-ab7c-49ba-b55f-62d3cbfee92a' vmin='0' vmaj='1' codename='ButtonID1' panelId='1' x='60' y='-175' z='16' xsz='37.5' ysz='31.25' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
+				<resources />
+				<properties />
+				<values >
+					<value target='ID' data='35' />
+					<value target='DisplayManager' data='2083' />
+					<value target='ShapeType' data='1' />
+					<value target='Type' data='87' />
+					<value target='UseThemes' data='0' />
+					<value target='ObjectTheme' data='000' />
+					<value target='WidgetTheme' data='000' />
+					<value target='LineWidth' data='0' />
+					<value target='FgColour' data='255' />
+					<value target='BgColour' data='5751039' />
+					<value target='HlColour' data='192' />
+					<value target='Touchable' data='1' />
+					<value target='DrawHighlight' data='1' />
+					<value target='UseCallback' data='1' />
+					<value target='TouchCallback' data='DC_Touched' />
+					<value target='Text' data='S1' />
+					<value target='Font' data='000' />
+					<value target='HAlignment' data='001' />
+					<value target='VAlignment' data='001' />
+					<value target='TextTheme' data='000' />
+					<value target='TextColour' data='0' />
+				</values>
+				<events />
+				<apis />
+				<variables />
+				<macros />
+			</component>
+			<component class_type='ref' guid='81f24c15-ab7c-49ba-b55f-62d3cbfee92a' vmin='0' vmaj='1' codename='ButtonID2' panelId='1' x='140' y='-175' z='17' xsz='37.5' ysz='31.25' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
+				<resources />
+				<properties />
+				<values >
+					<value target='ID' data='36' />
+					<value target='DisplayManager' data='2083' />
+					<value target='ShapeType' data='1' />
+					<value target='Type' data='87' />
+					<value target='UseThemes' data='0' />
+					<value target='ObjectTheme' data='000' />
+					<value target='WidgetTheme' data='000' />
+					<value target='LineWidth' data='0' />
+					<value target='FgColour' data='0' />
+					<value target='BgColour' data='5751039' />
+					<value target='HlColour' data='5921370' />
+					<value target='Touchable' data='1' />
+					<value target='DrawHighlight' data='1' />
+					<value target='UseCallback' data='1' />
+					<value target='TouchCallback' data='DC_Touched' />
+					<value target='Text' data='S2' />
+					<value target='Font' data='000' />
+					<value target='HAlignment' data='001' />
+					<value target='VAlignment' data='001' />
+					<value target='TextTheme' data='000' />
+					<value target='TextColour' data='0' />
+				</values>
+				<events />
+				<apis />
+				<variables />
+				<macros />
+			</component>
+			<component class_type='ref' guid='81f24c15-ab7c-49ba-b55f-62d3cbfee92a' vmin='0' vmaj='1' codename='ButtonID3' panelId='1' x='220' y='-175' z='18' xsz='37.5' ysz='31.25' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
+				<resources />
+				<properties />
+				<values >
+					<value target='ID' data='37' />
+					<value target='DisplayManager' data='2083' />
+					<value target='ShapeType' data='1' />
+					<value target='Type' data='87' />
+					<value target='UseThemes' data='0' />
+					<value target='ObjectTheme' data='000' />
+					<value target='WidgetTheme' data='000' />
+					<value target='LineWidth' data='0' />
+					<value target='FgColour' data='0' />
+					<value target='BgColour' data='5751039' />
+					<value target='HlColour' data='5921370' />
+					<value target='Touchable' data='1' />
+					<value target='DrawHighlight' data='1' />
+					<value target='UseCallback' data='1' />
+					<value target='TouchCallback' data='DC_Touched' />
+					<value target='Text' data='S3' />
+					<value target='Font' data='000' />
+					<value target='HAlignment' data='001' />
+					<value target='VAlignment' data='001' />
+					<value target='TextTheme' data='000' />
+					<value target='TextColour' data='0' />
+				</values>
+				<events />
+				<apis />
+				<variables />
+				<macros />
+			</component>
+			<component class_type='ref' guid='81f24c15-ab7c-49ba-b55f-62d3cbfee92a' vmin='0' vmaj='1' codename='ButtonID4' panelId='1' x='300' y='-175' z='19' xsz='37.5' ysz='31.25' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
+				<resources />
+				<properties />
+				<values >
+					<value target='ID' data='38' />
+					<value target='DisplayManager' data='2083' />
+					<value target='ShapeType' data='1' />
+					<value target='Type' data='87' />
+					<value target='UseThemes' data='0' />
+					<value target='ObjectTheme' data='000' />
+					<value target='WidgetTheme' data='000' />
+					<value target='LineWidth' data='0' />
+					<value target='FgColour' data='0' />
+					<value target='BgColour' data='5751039' />
+					<value target='HlColour' data='5921370' />
+					<value target='Touchable' data='1' />
+					<value target='DrawHighlight' data='1' />
+					<value target='UseCallback' data='1' />
+					<value target='TouchCallback' data='DC_Touched' />
+					<value target='Text' data='S4' />
+					<value target='Font' data='000' />
+					<value target='HAlignment' data='001' />
+					<value target='VAlignment' data='001' />
+					<value target='TextTheme' data='000' />
+					<value target='TextColour' data='0' />
+				</values>
+				<events />
+				<apis />
+				<variables />
+				<macros />
+			</component>
+			<component class_type='ref' guid='81f24c15-ab7c-49ba-b55f-62d3cbfee92a' vmin='0' vmaj='1' codename='ButtonID5' panelId='1' x='380' y='-175' z='20' xsz='37.5' ysz='31.25' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
+				<resources />
+				<properties />
+				<values >
+					<value target='ID' data='39' />
+					<value target='DisplayManager' data='2083' />
+					<value target='ShapeType' data='1' />
+					<value target='Type' data='87' />
+					<value target='UseThemes' data='0' />
+					<value target='ObjectTheme' data='000' />
+					<value target='WidgetTheme' data='000' />
+					<value target='LineWidth' data='0' />
+					<value target='FgColour' data='0' />
+					<value target='BgColour' data='5751039' />
+					<value target='HlColour' data='5921370' />
+					<value target='Touchable' data='1' />
+					<value target='DrawHighlight' data='1' />
+					<value target='UseCallback' data='1' />
+					<value target='TouchCallback' data='DC_Touched' />
+					<value target='Text' data='S5' />
+					<value target='Font' data='000' />
+					<value target='HAlignment' data='001' />
+					<value target='VAlignment' data='001' />
+					<value target='TextTheme' data='000' />
+					<value target='TextColour' data='0' />
+				</values>
+				<events />
+				<apis />
+				<variables />
+				<macros />
+			</component>
+			<component class_type='ref' guid='81f24c15-ab7c-49ba-b55f-62d3cbfee92a' vmin='0' vmaj='1' codename='ButtonID6' panelId='1' x='460' y='-175' z='21' xsz='37.5' ysz='31.25' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
+				<resources />
+				<properties />
+				<values >
+					<value target='ID' data='40' />
+					<value target='DisplayManager' data='2083' />
+					<value target='ShapeType' data='1' />
+					<value target='Type' data='87' />
+					<value target='UseThemes' data='0' />
+					<value target='ObjectTheme' data='000' />
+					<value target='WidgetTheme' data='000' />
+					<value target='LineWidth' data='0' />
+					<value target='FgColour' data='0' />
+					<value target='BgColour' data='5751039' />
+					<value target='HlColour' data='5921370' />
+					<value target='Touchable' data='1' />
+					<value target='DrawHighlight' data='1' />
+					<value target='UseCallback' data='1' />
+					<value target='TouchCallback' data='DC_Touched' />
+					<value target='Text' data='S6' />
+					<value target='Font' data='000' />
+					<value target='HAlignment' data='001' />
+					<value target='VAlignment' data='001' />
+					<value target='TextTheme' data='000' />
+					<value target='TextColour' data='0' />
+				</values>
+				<events />
+				<apis />
+				<variables />
+				<macros />
+			</component>
+		</component>
+	</components>
+	<scadaresourcelookup />
+	<keymap />
+	<panel2d shadows='0' lighting='2' brightness='0' >
+		<background rgb='7292207' img='' style='0' />
+		<camera xe='0' ye='0' ze='1668.72' xt='0' yt='0' zt='0' xquat='0' yquat='0' zquat='0' wquat='1' />
+		<viewport dx='388' dy='820' zoom='28.1341' fix_topleft='0' />
+		<page x='1000' y='1000' show='0' rgb='7360576' />
+		<winpos ID='7005' RectRecentFloat='0,458,644,873' RectRecentDocked='0,0,388,843' RecentFrameAlignment='16384' RecentRowIndex='0' IsFloating='0' MRUWidth='32767' PinState='0' IsMaximized='0' IsVisible='0' />
+	</panel2d>
+	<panel3d shadows='0' lighting='2' brightness='0' perspective='1' >
+		<background rgb='8409120' img='' style='0' />
+		<table rgb='7360576' img='' style='0' size='0' />
+		<camera xe='0' ye='0' ze='781.66' xt='0' yt='0' zt='0' xquat='0' yquat='0' zquat='0' wquat='1' />
+		<camerakey0 xe='0' ye='0' ze='300' xt='0' yt='0' zt='0' xquat='0' yquat='0' zquat='0' wquat='1' />
+		<camerakey1 xe='-3.67394e-14' ye='0' ze='-300' xt='0' yt='0' zt='0' xquat='0' yquat='1' zquat='0' wquat='6.12323e-17' />
+		<camerakey2 xe='0' ye='-300' ze='6.66134e-14' xt='0' yt='0' zt='0' xquat='-0.707107' yquat='0' zquat='0' wquat='0.707107' />
+		<camerakey3 xe='-3.67394e-14' ye='300' ze='6.66134e-14' xt='0' yt='0' zt='0' xquat='-4.32978e-17' yquat='0.707107' zquat='0.707107' wquat='4.32978e-17' />
+		<camerakey4 xe='-300' ye='-6.66134e-14' ze='6.66134e-14' xt='0' yt='0' zt='0' xquat='-0.5' yquat='0.5' zquat='0.5' wquat='0.5' />
+		<camerakey5 xe='300' ye='-6.66134e-14' ze='6.66134e-14' xt='0' yt='0' zt='0' xquat='-0.5' yquat='-0.5' zquat='-0.5' wquat='0.5' />
+		<camerakey6 xe='-173.205' ye='-173.205' ze='173.205' xt='0' yt='0' zt='0' xquat='-0.424708' yquat='0.17592' zquat='0.339851' wquat='0.820473' />
+		<winpos ID='7004' RectRecentFloat='764,124,1087,942' RectRecentDocked='0,0,261,872' RecentFrameAlignment='16384' RecentRowIndex='0' IsFloating='0' MRUWidth='32767' PinState='0' IsMaximized='0' IsVisible='0' />
+	</panel3d>
+	<panels2d count='2' >
+		<panel2d_0 id='0' name='2D Panel' type='0' >
+			<winpos ID='1171' RectRecentFloat='-721,89,-71,539' RectRecentDocked='764,141,1152,1005' RecentFrameAlignment='16384' RecentRowIndex='0' IsFloating='1' MRUWidth='32767' PinState='0' IsMaximized='0' IsVisible='0' />
+			<background fill='288230376151053813' showgrid='1' gridstyle='0' gridsize='5' gridbrush='71776119075691740' snaptogrid='1' fitcomp='0' disp_x='300' disp_y='400' scale='100' disp_col='16777215' />
+		</panel2d_0>
+		<panel2d_1 id='1' name='Scene0' type='1' >
+			<winpos ID='1172' RectRecentFloat='317,-612,858,-161' RectRecentDocked='764,141,1152,1005' RecentFrameAlignment='16384' RecentRowIndex='0' IsFloating='1' MRUWidth='32767' PinState='0' IsMaximized='0' IsVisible='1' />
+			<background fill='288230376151053813' showgrid='1' gridstyle='0' gridsize='5' gridbrush='71776119075691740' snaptogrid='1' fitcomp='0' disp_x='480' disp_y='320' scale='290' disp_col='13816530' />
+		</panel2d_1>
+	</panels2d>
+	<layout >
+		<view type='0' name='Main' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAAAwMAAFsDAAA' zoom='100' scrollx='0' scrolly='183' flags='0' />
+		<view type='0' name='DC_Touched' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAAAwMAAFsDAAA' zoom='85' scrollx='0' scrolly='2868' flags='0' />
+		<view type='0' name='SwitchInterrupt' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAAAwMAAFsDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
+		<view type='0' name='DetectServos' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAAAwMAAFsDAAA' zoom='100' scrollx='0' scrolly='48' flags='0' />
+		<view type='0' name='MoveServoBy' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAAAwMAAFsDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
+		<view type='0' name='AssignID' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAAAwMAAFsDAAA' zoom='100' scrollx='0' scrolly='325' flags='0' />
+		<view type='0' name='SetCenterPoint' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAAAwMAAFsDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
+		<view type='0' name='AssignActiveServo' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAAAwMAAFsDAAA' zoom='100' scrollx='0' scrolly='438' flags='0' />
+	</layout>
+</document>
+</root>
