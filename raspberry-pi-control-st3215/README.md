@@ -7,8 +7,10 @@ This project is similar to the I2C-based robot arm control system, but uses ST32
 ## Features
 
 - Control up to 6 ST3215 serial bus servo motors
+- Optional ESP32 end-tool node support on ST3215-compatible bus ID `64`
 - WebSocket server for communication with Electron desktop app
-- Set servo angles (0-360 degrees)
+- Runtime servo rescan and reinitialize command (`rescanServos`)
+- Set servo angles (-180 to +180 in current implementation)
 - Read servo status (position, speed, temperature, voltage, load)
 - Set speed and acceleration
 - Start/stop servo torque
@@ -58,15 +60,20 @@ This project is similar to the I2C-based robot arm control system, but uses ST32
    - `ws` - WebSocket library for client communication
 
 3. **Configure serial port**:
-   - Edit `server.js` and update `SERIAL_PORT` constant:
+   - Default is Raspberry Pi UART pins (`/dev/serial0`).
+   - To use a different port (for example USB serial), set environment variable `SERIAL_PORT`:
+     ```bash
+     SERIAL_PORT=/dev/ttyUSB0 node server.js
+     ```
+   - Or edit `server.js` and change the fallback value:
      ```javascript
-     const SERIAL_PORT = '/dev/ttyUSB0'; // Change to your serial port
+     const SERIAL_PORT = process.env.SERIAL_PORT || '/dev/serial0';
      ```
 
 4. **Configure servo IDs**:
-   - Edit `server.js` and update the `servoIds` array:
+   - Edit `server.js` and update the `SERVO_IDS` array:
      ```javascript
-     const servoIds = [1, 2, 3, 4, 5, 6]; // ST3215 servo IDs
+     const SERVO_IDS = [1, 2, 3, 4, 5, 6]; // ST3215 servo IDs
      ```
 
 5. **Set serial port permissions** (if needed):
@@ -92,11 +99,31 @@ Or directly:
 node server.js
 ```
 
+### Auto-start on boot (systemd)
+
+This project includes:
+- `install-service.sh` - installs dependencies and sets up systemd
+- `st3215-server.service` - service template used by installer
+
+Run:
+```bash
+cd raspberry-pi-control-st3215
+chmod +x install-service.sh
+sudo ./install-service.sh
+```
+
+After install:
+```bash
+sudo systemctl status st3215-server.service
+sudo journalctl -u st3215-server.service -f
+```
+
 The server will:
 1. Initialize all ST3215 servo controllers
-2. Enable torque on all servos
-3. Start WebSocket server on port 8080
-4. Wait for client connections
+2. Initialize optional end-tool controller (ID `64`)
+3. Enable torque on all responsive servos
+4. Start WebSocket server on port 8080
+5. Wait for client connections
 
 ### Test the Servos
 
@@ -257,6 +284,57 @@ Set servo acceleration.
 
 Acceleration range: 0-254 (unit: 100 step/s²)
 
+#### `rescanServos`
+Rescan configured servo IDs and reinitialize unavailable/unresponsive servos without restarting the server.
+
+**Request**:
+```json
+{
+  "command": "rescanServos"
+}
+```
+
+**Response**:
+```json
+{
+  "type": "servoRescan",
+  "joints": [
+    {
+      "joint": 1,
+      "servoId": 1,
+      "available": true,
+      "action": "kept_existing"
+    },
+    {
+      "joint": 2,
+      "servoId": 2,
+      "available": true,
+      "action": "recreated"
+    }
+  ]
+}
+```
+
+#### End-tool commands (ID `64`)
+The server includes optional end-tool commands:
+
+- `toolPing`
+- `toolGetIdentity`
+- `toolGetStatus`
+- `toolSetPwm`
+- `toolGetPwmState`
+- `toolReadCurrents`
+- `toolReadAdc`
+- `toolSetServoEnabled`
+- `toolSetServoPosition`
+- `toolSetServoAngle`
+- `toolGetServoState`
+- `toolSetWatchdog`
+- `toolClearFaults`
+- `toolReset`
+
+For full request/response examples, see `API_DOCUMENTATION.md`.
+
 ## Configuration
 
 ### Serial Port Settings
@@ -264,7 +342,7 @@ Acceleration range: 0-254 (unit: 100 step/s²)
 Edit `server.js` to configure:
 
 ```javascript
-const SERIAL_PORT = '/dev/ttyUSB0';  // Serial port path
+const SERIAL_PORT = process.env.SERIAL_PORT || '/dev/serial0';  // Serial port path
 const SERIAL_BAUDRATE = 1000000;      // Baud rate (1 Mbps default)
 ```
 
@@ -273,7 +351,7 @@ const SERIAL_BAUDRATE = 1000000;      // Baud rate (1 Mbps default)
 Edit `server.js` to configure servo IDs:
 
 ```javascript
-const servoIds = [1, 2, 3, 4, 5, 6];  // ST3215 servo IDs
+const SERVO_IDS = [1, 2, 3, 4, 5, 6];  // ST3215 servo IDs
 ```
 
 ### Number of Joints
@@ -339,6 +417,12 @@ This ST3215 version differs from the I2C version in several ways:
 3. **Position Range**: 0-4095 (12-bit) instead of angle-based
 4. **Multiple Servos**: All servos share the same serial port (daisy-chained)
 5. **No Sensor Reading**: ST3215 servos don't have external sensors like AS5600
+
+## Protocol and API References
+
+- ST3215 protocol reference: `ST3215_PROTOCOL_REFERENCE.md`
+- ESP32 end-tool bus/API spec: `ST3215_ESP32_END_TOOL_API.md`
+- Full WebSocket API (including tool and rescan commands): `API_DOCUMENTATION.md`
 
 ## License
 
