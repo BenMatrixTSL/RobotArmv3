@@ -379,6 +379,370 @@ Sets the acceleration for a specific joint.
 }
 ```
 
+### 11. End Tool Commands (ESP32 Node, ID 64)
+
+The server also supports an optional ST3215-compatible end-tool node on bus ID `64`.
+
+If the end tool is not connected or not initialized, these commands return:
+
+```json
+{
+  "type": "error",
+  "message": "End tool controller is not initialized"
+}
+```
+
+#### 11.1 `toolPing`
+
+Checks if the end tool responds on the bus.
+
+**Request:**
+```json
+{
+  "command": "toolPing"
+}
+```
+
+**Response:**
+```json
+{
+  "type": "toolPing",
+  "ok": true
+}
+```
+
+#### 11.2 `toolGetIdentity`
+
+Reads end-tool protocol and firmware identity bytes.
+
+**Request:**
+```json
+{
+  "command": "toolGetIdentity"
+}
+```
+
+**Response:**
+```json
+{
+  "type": "toolIdentity",
+  "id": 64,
+  "protocolVersion": 1,
+  "firmwareMajor": 1,
+  "firmwareMinor": 0,
+  "toolTypeId": 7
+}
+```
+
+#### 11.3 `toolGetStatus`
+
+Reads status flags, last error code, and low 16 bits of uptime.
+
+**Request:**
+```json
+{
+  "command": "toolGetStatus"
+}
+```
+
+**Response:**
+```json
+{
+  "type": "toolStatus",
+  "statusFlags": 0,
+  "lastErrorCode": 0,
+  "uptimeSecLow16": 1234
+}
+```
+
+#### 11.4 `toolSetPwm`
+
+Sets PWM duty for both FET channels and enable states.
+
+**Request:**
+```json
+{
+  "command": "toolSetPwm",
+  "pwm1Duty": 128,
+  "pwm2Duty": 64,
+  "enable1": true,
+  "enable2": true
+}
+```
+
+**Parameters:**
+- `pwm1Duty` (optional): PWM1 duty `0-255` (default `0`)
+- `pwm2Duty` (optional): PWM2 duty `0-255` (default `0`)
+- `enable1` (optional): enable PWM1 (`true` by default)
+- `enable2` (optional): enable PWM2 (`true` by default)
+
+**Response:**
+```json
+{
+  "type": "success",
+  "message": "Tool PWM outputs updated"
+}
+```
+
+#### 11.5 `toolGetPwmState`
+
+Reads current PWM register state.
+
+**Request:**
+```json
+{
+  "command": "toolGetPwmState"
+}
+```
+
+**Response:**
+```json
+{
+  "type": "toolPwmState",
+  "pwm1Duty": 128,
+  "pwm2Duty": 64,
+  "pwmControl": 3
+}
+```
+
+#### 11.6 `toolReadCurrents`
+
+Reads both PWM current-sense channels.
+
+**Request:**
+```json
+{
+  "command": "toolReadCurrents"
+}
+```
+
+**Response:**
+```json
+{
+  "type": "toolCurrents",
+  "pwm1CurrentRaw": 120,
+  "pwm2CurrentRaw": 95
+}
+```
+
+#### 11.7 `toolReadAdc`
+
+Reads both ADC channels (raw, mV, and resistance values).
+
+**Request:**
+```json
+{
+  "command": "toolReadAdc"
+}
+```
+
+**Response:**
+```json
+{
+  "type": "toolAdc",
+  "adc1Raw": 2345,
+  "adc2Raw": 1988,
+  "adc1mV": 1890,
+  "adc2mV": 1602,
+  "adc1Resistance": 4700,
+  "adc2Resistance": 10000
+}
+```
+
+#### 11.8 `toolSetServoEnabled`
+
+Enables or disables the end-tool hobby servo output.
+
+**Request:**
+```json
+{
+  "command": "toolSetServoEnabled",
+  "enabled": true
+}
+```
+
+**Response:**
+```json
+{
+  "type": "success",
+  "message": "Tool hobby servo enabled"
+}
+```
+
+#### 11.9 `toolSetServoPosition`
+
+Sets hobby servo position as an 8-bit value.
+
+**Request:**
+```json
+{
+  "command": "toolSetServoPosition",
+  "position": 200
+}
+```
+
+**Response:**
+```json
+{
+  "type": "success",
+  "message": "Tool hobby servo position set to 200"
+}
+```
+
+#### 11.10 `toolSetServoAngle`
+
+Sets hobby servo angle in degrees.
+
+**Request:**
+```json
+{
+  "command": "toolSetServoAngle",
+  "angle": 90
+}
+```
+
+**Response:**
+```json
+{
+  "type": "success",
+  "message": "Tool hobby servo angle set to 90"
+}
+```
+
+#### 11.11 `toolGetServoState`
+
+Reads current hobby servo state values from the end tool.
+
+**Request:**
+```json
+{
+  "command": "toolGetServoState"
+}
+```
+
+**Response:**
+```json
+{
+  "type": "toolServoState",
+  "currentPosition8bit": 200,
+  "currentAngle": 90
+}
+```
+
+#### 11.12 `toolSetWatchdog`
+
+Sets tool watchdog timeout in milliseconds (`0` disables watchdog).
+
+**Request:**
+```json
+{
+  "command": "toolSetWatchdog",
+  "timeoutMs": 500
+}
+```
+
+**Response:**
+```json
+{
+  "type": "success",
+  "message": "Tool watchdog timeout set to 500 ms"
+}
+```
+
+#### 11.13 `toolClearFaults`
+
+Sends command to clear latched tool faults.
+
+**Request:**
+```json
+{
+  "command": "toolClearFaults"
+}
+```
+
+**Response:**
+```json
+{
+  "type": "success",
+  "message": "Tool faults clear command sent"
+}
+```
+
+#### 11.14 `toolReset`
+
+Sends soft reset command to the end tool.
+
+**Request:**
+```json
+{
+  "command": "toolReset"
+}
+```
+
+**Response:**
+```json
+{
+  "type": "success",
+  "message": "Tool reset command sent"
+}
+```
+
+### 12. Rescan Servo Motors
+
+The server can rescan and reinitialize the configured ST3215 servo IDs at runtime.
+This is useful if a servo becomes unresponsive after startup and later recovers.
+
+#### 12.1 `rescanServos`
+
+Pings each configured servo ID and performs recovery:
+
+- keeps working controllers
+- recreates missing/unresponsive controllers
+- re-enables torque on responsive controllers
+- marks still-unavailable joints as unavailable
+
+**Request:**
+```json
+{
+  "command": "rescanServos"
+}
+```
+
+**Response:**
+```json
+{
+  "type": "servoRescan",
+  "joints": [
+    {
+      "joint": 1,
+      "servoId": 1,
+      "available": true,
+      "action": "kept_existing"
+    },
+    {
+      "joint": 2,
+      "servoId": 2,
+      "available": true,
+      "action": "recreated"
+    },
+    {
+      "joint": 3,
+      "servoId": 3,
+      "available": false,
+      "action": "missing",
+      "error": "Servo 3 (ID: 3) did not respond to ping"
+    }
+  ]
+}
+```
+
+**Action field meanings:**
+- `kept_existing`: existing controller responded and was kept
+- `created`: previously missing controller was successfully created
+- `recreated`: previously unresponsive controller was replaced and recovered
+- `missing`: no controller present and scan failed
+- `lost`: previous controller existed but recovery failed
+
 ## Example Code
 
 ### Python Example

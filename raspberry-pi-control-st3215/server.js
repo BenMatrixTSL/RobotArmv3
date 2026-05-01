@@ -17,12 +17,23 @@ const WebSocket = require('ws');
 const os = require('os');
 const fs = require('fs');
 const { exec } = require('child_process');
+const { execFile } = require('child_process');
+const { promisify } = require('util');
 const RobotArm = require('./robotArmST3215');
+const { robotKinematics } = require('./kinematicsService');
+const execFileAsync = promisify(execFile);
 
 // Configuration
 const PORT = 8080;
 const JOINT_COUNT = 6; // Number of robot arm joints (ST3215 servos)
-const SERIAL_PORT = '/dev/serial/by-id/usb-1a86_USB_Single_Serial_5AB0158625-if00'; // Serial port path (adjust as needed)
+const SERVO_IDS = [1, 2, 3, 4, 5, 6];
+// Serial port path:
+// - Default uses Raspberry Pi UART pins via /dev/serial0
+// - You can override with environment variable SERIAL_PORT, for example:
+//   SERIAL_PORT=/dev/ttyUSB0 node server.js
+const SERIAL_PORT = process.env.SERIAL_PORT || '/dev/serial0';
+//const SERIAL_PORT = '/dev/serial/by-id/usb-1a86_USB_Single_Serial_5AB0158625-if00'; // Serial port path (adjust as needed)
+
 const SERIAL_BAUDRATE = 1000000; // ST3215 default baud rate
 
 // Debug flag - set to true to enable verbose debug messages
@@ -32,6 +43,7 @@ const PERF_DEBUG = false;
 
 // Array to store servo controllers
 const servos = [];
+let endTool = null;
 
 /**
  * Shared serial port instance (all servos use the same port)
@@ -58,6 +70,158 @@ let isWriting = false;
 let commandQueue = [];
 let isProcessingCommand = false;
 const MAX_COMMAND_QUEUE_SIZE = 100; // Maximum queue size (status polls + moves)
+
+function refreshDataRoutingControllers() {
+    allServoControllers = servos.filter(s => s !== null);
+    if (endTool) {
+        allServoControllers.push(endTool);
+    }
+}
+
+function subnetMaskToPrefix(mask) {
+    if (typeof mask !== 'string') return null;
+    const parts = mask.trim().split('.');
+    if (parts.length !== 4) return null;
+    let prefix = 0;
+    for (let i = 0; i < 4; i++) {
+        const num = parseInt(parts[i], 10);
+        if (isNaN(num) || num < 0 || num > 255) return null;
+        let bits = num.toString(2);
+        while (bits.length < 8) bits = '0' + bits;
+        for (let b = 0; b < bits.length; b++) {
+            if (bits[b] === '1') {
+                prefix++;
+            }
+        }
+    }
+    return prefix;
+}
+
+function prefixToSubnetMask(prefix) {
+    const p = parseInt(prefix, 10);
+    if (isNaN(p) || p < 0 || p > 32) return null;
+    let bits = '';
+    for (let i = 0; i < 32; i++) {
+        bits += i < p ? '1' : '0';
+    }
+    const parts = [];
+    for (let i = 0; i < 4; i++) {
+        const chunk = bits.slice(i * 8, i * 8 + 8);
+        parts.push(parseInt(chunk, 2));
+    }
+    return parts.join('.');
+}
+
+async function runNmcli(args) {
+    const result = await execFileAsync('nmcli', args, { timeout: 5000 });
+    return (result.stdout || '').trim();
+}
+
+async function getEthernetSettings() {
+    const runningText = await runNmcli(['-t', '-f', 'RUNNING', 'general', 'status']);
+    if (runningText.toLowerCase() !== 'running') {
+        throw new Error('NetworkManager is not running');
+    }
+
+    const statusText = await runNmcli(['-t', '-f', 'DEVICE,TYPE,STATE,CONNECTION', 'device', 'status']);
+    const lines = statusText.split('\n').filter(line => line.trim().length > 0);
+
+    let selected = null;
+    for (let i = 0; i < lines.length; i++) {
+        const parts = lines[i].split(':');
+        if (parts.length < 4) continue;
+        const device = parts[0];
+        const type = parts[1];
+        const state = parts[2];
+        const connectionName = parts.slice(3).join(':');
+        if (type === 'ethernet') {
+            selected = { device, type, state, connectionName };
+            if (device === 'eth0') break;
+        }
+    }
+
+    if (!selected || !selected.connectionName || selected.connectionName === '--') {
+        throw new Error('No ethernet NetworkManager connection found');
+    }
+
+    const conn = selected.connectionName;
+    const connDataText = await runNmcli(['-g', 'ipv4.method,ipv4.addresses,ipv4.gateway,ipv4.dns', 'connection', 'show', conn]);
+    const connDataLines = connDataText.split('\n');
+    const ipv4Method = (connDataLines[0] || '').trim();
+    const ipv4Addresses = (connDataLines[1] || '').trim();
+    const ipv4Gateway = (connDataLines[2] || '').trim();
+    const ipv4Dns = (connDataLines[3] || '').trim();
+
+    let ipAddress = '';
+    let prefix = '';
+    let subnetMask = '';
+    if (ipv4Addresses) {
+        const first = ipv4Addresses.split(',')[0].trim();
+        const addressParts = first.split('/');
+        ipAddress = (addressParts[0] || '').trim();
+        prefix = (addressParts[1] || '').trim();
+        const mask = prefixToSubnetMask(prefix);
+        subnetMask = mask || '';
+    }
+
+    return {
+        connectionName: conn,
+        device: selected.device,
+        state: selected.state,
+        method: ipv4Method || 'auto',
+        ipAddress: ipAddress,
+        subnetMask: subnetMask,
+        prefix: prefix,
+        gateway: ipv4Gateway,
+        dns: ipv4Dns
+    };
+}
+
+async function setEthernetSettings(input) {
+    const current = await getEthernetSettings();
+    const conn = current.connectionName;
+
+    const mode = (input && typeof input.mode === 'string') ? input.mode.trim().toLowerCase() : '';
+    if (mode !== 'dhcp' && mode !== 'static') {
+        throw new Error('Mode must be "dhcp" or "static"');
+    }
+
+    if (mode === 'dhcp') {
+        await runNmcli(['connection', 'modify', conn, 'ipv4.method', 'auto', 'ipv4.addresses', '', 'ipv4.gateway', '', 'ipv4.dns', '']);
+        await runNmcli(['connection', 'up', conn]);
+        return await getEthernetSettings();
+    }
+
+    const ipAddress = (input && typeof input.ipAddress === 'string') ? input.ipAddress.trim() : '';
+    const subnetMask = (input && typeof input.subnetMask === 'string') ? input.subnetMask.trim() : '';
+    const gateway = (input && typeof input.gateway === 'string') ? input.gateway.trim() : '';
+    const dns = (input && typeof input.dns === 'string') ? input.dns.trim() : '';
+
+    if (!ipAddress) throw new Error('IP address is required for static mode');
+    if (!subnetMask) throw new Error('Subnet mask is required for static mode');
+    if (!gateway) throw new Error('Gateway is required for static mode');
+
+    const prefix = subnetMaskToPrefix(subnetMask);
+    if (prefix === null) {
+        throw new Error('Invalid subnet mask');
+    }
+    const addressWithPrefix = `${ipAddress}/${prefix}`;
+
+    const args = [
+        'connection', 'modify', conn,
+        'ipv4.method', 'manual',
+        'ipv4.addresses', addressWithPrefix,
+        'ipv4.gateway', gateway
+    ];
+    if (dns) {
+        args.push('ipv4.dns', dns);
+    } else {
+        args.push('ipv4.dns', '');
+    }
+    await runNmcli(args);
+    await runNmcli(['connection', 'up', conn]);
+    return await getEthernetSettings();
+}
 
 /**
  * Queue a write operation to the shared serial port
@@ -143,14 +307,10 @@ async function processCommandQueue() {
  */
 async function initializeServos() {
     console.log('Initializing ST3215 servo controllers...');
-    
-    // ST3215 servo IDs (1-6 for 6 servos)
-    // Each servo must have a unique ID configured
-    const servoIds = [1, 2, 3, 4, 5, 6];
-    
-    if (servoIds.length < JOINT_COUNT) {
-        console.error(`Error: Need ${JOINT_COUNT} servo IDs but only ${servoIds.length} provided`);
-        console.error('Please configure more servo IDs in the servoIds array');
+
+    if (SERVO_IDS.length < JOINT_COUNT) {
+        console.error(`Error: Need ${JOINT_COUNT} servo IDs but only ${SERVO_IDS.length} provided`);
+        console.error('Please configure more servo IDs in the SERVO_IDS array');
         process.exit(1);
     }
     
@@ -207,14 +367,11 @@ async function initializeServos() {
     // Create servo controllers, all sharing the same serial port
     for (let i = 0; i < JOINT_COUNT; i++) {
         // Pass the shared SerialPort instance instead of the path
-        const servo = new RobotArm.ServoController(i + 1, sharedSerialPort, servoIds[i], SERIAL_BAUDRATE);
+        const servo = new RobotArm.ServoController(i + 1, sharedSerialPort, SERVO_IDS[i], SERIAL_BAUDRATE);
         
         try {
             // This will set up the data handler but won't try to open the port
             await servo.open();
-            
-            // Add servo to the list for data routing
-            allServoControllers.push(servo);
             
             // Add a delay between servo initializations to avoid simultaneous writes
             if (i > 0) {
@@ -222,14 +379,14 @@ async function initializeServos() {
             }
             
             // First, try to ping the servo to verify communication
-            console.log(`Pinging servo ${i + 1} (ST3215 ID: ${servoIds[i]})...`);
+            console.log(`Pinging servo ${i + 1} (ST3215 ID: ${SERVO_IDS[i]})...`);
             const pingResult = await servo.ping();
             if (!pingResult) {
-                console.log(`⚠️  Servo ${i + 1} (ID: ${servoIds[i]}) did not respond to ping - skipping`);
+                console.log(`⚠️  Servo ${i + 1} (ID: ${SERVO_IDS[i]}) did not respond to ping - skipping`);
                 servos.push(null);
                 continue;
             }
-            console.log(`✓ Servo ${i + 1} (ID: ${servoIds[i]}) responded to ping`);
+            console.log(`✓ Servo ${i + 1} (ID: ${SERVO_IDS[i]}) responded to ping`);
             
             // Small delay after ping
             await new Promise(resolve => setTimeout(resolve, 50));
@@ -238,15 +395,97 @@ async function initializeServos() {
             await servo.startServo();
             
             servos.push(servo);
-            console.log(`Servo ${i + 1} initialized (ST3215 ID: ${servoIds[i]})`);
+            console.log(`Servo ${i + 1} initialized (ST3215 ID: ${SERVO_IDS[i]})`);
         } catch (error) {
-            console.error(`Failed to initialize servo ${i + 1} (ST3215 ID: ${servoIds[i]}):`, error.message);
+            console.error(`Failed to initialize servo ${i + 1} (ST3215 ID: ${SERVO_IDS[i]}):`, error.message);
             // Create a placeholder so the array stays aligned
             servos.push(null);
         }
     }
     
     console.log(`Initialized ${servos.filter(s => s !== null).length} of ${JOINT_COUNT} servos`);
+
+    // Initialize optional ESP32 end-tool node (ID 64)
+    try {
+        const tool = new RobotArm.EndToolController(sharedSerialPort, SERIAL_BAUDRATE);
+        await tool.open();
+        endTool = tool;
+
+        const toolPing = await endTool.pingTool();
+        if (toolPing) {
+            console.log('✓ End tool node (ID 64) responded to ping');
+        } else {
+            console.log('⚠️  End tool node (ID 64) did not respond at startup (commands will still be available)');
+        }
+    } catch (error) {
+        console.error('Failed to initialize end tool controller:', error.message);
+        endTool = null;
+    }
+
+    refreshDataRoutingControllers();
+}
+
+async function createAndInitializeServo(jointIndex) {
+    const servoId = SERVO_IDS[jointIndex];
+    const servo = new RobotArm.ServoController(jointIndex + 1, sharedSerialPort, servoId, SERIAL_BAUDRATE);
+    await servo.open();
+    const alive = await servo.ping();
+    if (!alive) {
+        throw new Error(`Servo ${jointIndex + 1} (ID: ${servoId}) did not respond to ping`);
+    }
+    await servo.startServo();
+    return servo;
+}
+
+async function rescanServos() {
+    const results = [];
+
+    for (let i = 0; i < JOINT_COUNT; i++) {
+        const jointNumber = i + 1;
+        const servoId = SERVO_IDS[i];
+        const existing = servos[i] || null;
+
+        if (existing !== null) {
+            try {
+                const alive = await existing.isResponsive();
+                if (alive) {
+                    await existing.startServo();
+                    results.push({
+                        joint: jointNumber,
+                        servoId: servoId,
+                        available: true,
+                        action: 'kept_existing'
+                    });
+                    continue;
+                }
+            } catch (error) {
+                // Fall through to re-create path
+            }
+        }
+
+        try {
+            const replacement = await createAndInitializeServo(i);
+            servos[i] = replacement;
+            results.push({
+                joint: jointNumber,
+                servoId: servoId,
+                available: true,
+                action: existing ? 'recreated' : 'created'
+            });
+        } catch (error) {
+            servos[i] = null;
+            results.push({
+                joint: jointNumber,
+                servoId: servoId,
+                available: false,
+                action: existing ? 'lost' : 'missing',
+                error: error.message
+            });
+        }
+    }
+
+    refreshDataRoutingControllers();
+    return results;
 }
 
 /**
@@ -380,6 +619,20 @@ function startServer() {
  */
 async function handleCommand(ws, data) {
     const command = data.command;
+    const requestId = data.requestId;
+    const sendResponse = (payload) => {
+        if (requestId !== undefined) {
+            payload.requestId = requestId;
+        }
+        ws.send(JSON.stringify(payload));
+    };
+
+    const requireEndTool = () => {
+        if (!endTool) {
+            throw new Error('End tool controller is not initialized');
+        }
+        return endTool;
+    };
     
     // Handle different commands
     switch (command) {
@@ -434,17 +687,50 @@ async function handleCommand(ws, data) {
                     }
                 }
 
-                ws.send(JSON.stringify({
+                sendResponse({
                     type: 'networkInfo',
                     hostname: hostname,
                     interfaces: ifaceSummaries,
                     gateway: gateway
-                }));
+                });
             } catch (error) {
-                ws.send(JSON.stringify({
+                sendResponse({
                     type: 'error',
                     message: 'Failed to read network info: ' + (error.message || error)
-                }));
+                });
+            }
+            break;
+        }
+
+        case 'getPiEthernetSettings': {
+            try {
+                const ethernet = await getEthernetSettings();
+                sendResponse({
+                    type: 'ethernetSettings',
+                    ethernet: ethernet
+                });
+            } catch (error) {
+                sendResponse({
+                    type: 'error',
+                    message: 'Failed to get ethernet settings: ' + (error.message || error)
+                });
+            }
+            break;
+        }
+
+        case 'setPiEthernetSettings': {
+            try {
+                const ethernet = await setEthernetSettings(data || {});
+                sendResponse({
+                    type: 'ethernetSettingsUpdated',
+                    ethernet: ethernet,
+                    message: 'Ethernet settings updated'
+                });
+            } catch (error) {
+                sendResponse({
+                    type: 'error',
+                    message: 'Failed to set ethernet settings: ' + (error.message || error)
+                });
             }
             break;
         }
@@ -454,20 +740,20 @@ async function handleCommand(ws, data) {
             exec('git pull --ff-only', { cwd: __dirname }, (error, stdout, stderr) => {
                 if (error) {
                     console.error('updatePiServerFromGit error:', error);
-                    ws.send(JSON.stringify({
+                    sendResponse({
                         type: 'updateResult',
                         ok: false,
                         target: 'st3215',
                         message: `git pull failed: ${stderr || error.message}`
-                    }));
+                    });
                 } else {
                     console.log('updatePiServerFromGit output:', stdout);
-                    ws.send(JSON.stringify({
+                    sendResponse({
                         type: 'updateResult',
                         ok: true,
                         target: 'st3215',
                         message: stdout.trim()
-                    }));
+                    });
 
                     // Restart Node.js so the updated code is loaded.
                     // systemd is configured with Restart=always, so exiting here is enough.
@@ -498,22 +784,427 @@ async function handleCommand(ws, data) {
                 }
             }
             
-            ws.send(JSON.stringify({
+            sendResponse({
                 type: 'jointConfigs',
                 count: discoveredServos,
                 total: servos.length,
                 joints: jointConfigs
-            }));
+            });
             break;
+
+        case 'kinematicsLoadURDF': {
+            try {
+                const urdfXml = data.urdfXml;
+                if (typeof urdfXml !== 'string' || !urdfXml.trim()) {
+                    throw new Error('URDF text is empty');
+                }
+                const info = robotKinematics.loadURDF(urdfXml);
+                sendResponse({
+                    type: 'kinematicsLoaded',
+                    configured: info.configured,
+                    jointCount: info.jointCount,
+                    joints: info.joints,
+                    urdfData: info.urdfData,
+                    maxReachMm: info.maxReachMm
+                });
+            } catch (error) {
+                sendResponse({
+                    type: 'error',
+                    message: `Failed to load URDF: ${error.message}`
+                });
+            }
+            break;
+        }
+
+        case 'kinematicsForwardKinematics': {
+            try {
+                const angles = data.jointAngles;
+                const result = robotKinematics.forwardKinematics(angles);
+                sendResponse({
+                    type: 'kinematicsForwardResult',
+                    result: result
+                });
+            } catch (error) {
+                sendResponse({
+                    type: 'error',
+                    message: `Forward kinematics failed: ${error.message}`
+                });
+            }
+            break;
+        }
+
+        case 'kinematicsForwardKinematicsSteps': {
+            try {
+                const angles = data.jointAngles;
+                const result = robotKinematics.getForwardKinematicsSteps(angles);
+                sendResponse({
+                    type: 'kinematicsForwardStepsResult',
+                    result: result
+                });
+            } catch (error) {
+                sendResponse({
+                    type: 'error',
+                    message: `Forward kinematics steps failed: ${error.message}`
+                });
+            }
+            break;
+        }
+
+        case 'kinematicsForwardKinematicsBatch': {
+            try {
+                const jointAnglesList = data.jointAnglesList;
+                if (!Array.isArray(jointAnglesList)) {
+                    throw new Error('jointAnglesList must be an array');
+                }
+
+                const positions = [];
+                for (let i = 0; i < jointAnglesList.length; i++) {
+                    const angles = jointAnglesList[i];
+                    const fk = robotKinematics.forwardKinematics(angles);
+                    positions.push(fk.position);
+                }
+
+                sendResponse({
+                    type: 'kinematicsForwardBatchResult',
+                    positions: positions
+                });
+            } catch (error) {
+                sendResponse({
+                    type: 'error',
+                    message: `Forward kinematics batch failed: ${error.message}`
+                });
+            }
+            break;
+        }
+
+        case 'kinematicsInverseKinematics': {
+            try {
+                const targetPose = data.targetPose;
+                const initialAngles = data.initialAngles;
+                const result = robotKinematics.inverseKinematics(targetPose, initialAngles);
+                sendResponse({
+                    type: 'kinematicsInverseResult',
+                    result: result
+                });
+            } catch (error) {
+                sendResponse({
+                    type: 'error',
+                    message: `Inverse kinematics failed: ${error.message}`
+                });
+            }
+            break;
+        }
+
+        case 'kinematicsRefineOrientationWithAccuracy': {
+            try {
+                const targetPose = data.targetPose;
+                const baseAngles = data.baseAngles;
+                const desiredOrientation = data.desiredOrientation;
+                const result = robotKinematics.refineOrientationWithAccuracy(targetPose, baseAngles, desiredOrientation);
+                sendResponse({
+                    type: 'kinematicsRefineOrientationResult',
+                    result: result
+                });
+            } catch (error) {
+                sendResponse({
+                    type: 'error',
+                    message: `Refine orientation failed: ${error.message}`
+                });
+            }
+            break;
+        }
+
+        case 'kinematicsGetInfo': {
+            try {
+                const info = robotKinematics.getKinematicsInfo();
+                sendResponse({
+                    type: 'kinematicsInfo',
+                    configured: info.configured,
+                    jointCount: info.jointCount,
+                    joints: info.joints,
+                    urdfData: info.urdfData,
+                    maxReachMm: info.maxReachMm
+                });
+            } catch (error) {
+                sendResponse({
+                    type: 'error',
+                    message: `Failed to get kinematics info: ${error.message}`
+                });
+            }
+            break;
+        }
             
         case 'getStatus':
             // Send status of all servos
             const statuses = await getAllServoStatus();
-            ws.send(JSON.stringify({
+            sendResponse({
                 type: 'status',
                 joints: statuses
-            }));
+            });
             break;
+
+        case 'rescanServos': {
+            try {
+                const scanResults = await rescanServos();
+                sendResponse({
+                    type: 'servoRescan',
+                    joints: scanResults
+                });
+            } catch (error) {
+                sendResponse({
+                    type: 'error',
+                    message: `Failed to rescan servos: ${error.message}`
+                });
+            }
+            break;
+        }
+
+        case 'toolPing': {
+            try {
+                const tool = requireEndTool();
+                const ok = await tool.pingTool();
+                sendResponse({
+                    type: 'toolPing',
+                    ok: ok
+                });
+            } catch (error) {
+                sendResponse({
+                    type: 'error',
+                    message: `Failed to ping tool: ${error.message}`
+                });
+            }
+            break;
+        }
+
+        case 'toolGetIdentity': {
+            try {
+                const tool = requireEndTool();
+                const identity = await tool.getToolIdentity();
+                sendResponse({
+                    type: 'toolIdentity',
+                    ...identity
+                });
+            } catch (error) {
+                sendResponse({
+                    type: 'error',
+                    message: `Failed to read tool identity: ${error.message}`
+                });
+            }
+            break;
+        }
+
+        case 'toolGetStatus': {
+            try {
+                const tool = requireEndTool();
+                const status = await tool.getToolStatus();
+                sendResponse({
+                    type: 'toolStatus',
+                    ...status
+                });
+            } catch (error) {
+                sendResponse({
+                    type: 'error',
+                    message: `Failed to read tool status: ${error.message}`
+                });
+            }
+            break;
+        }
+
+        case 'toolSetPwm': {
+            try {
+                const tool = requireEndTool();
+                const pwm1Duty = Number.isFinite(data.pwm1Duty) ? data.pwm1Duty : 0;
+                const pwm2Duty = Number.isFinite(data.pwm2Duty) ? data.pwm2Duty : 0;
+                const enable1 = data.enable1 !== false;
+                const enable2 = data.enable2 !== false;
+
+                await tool.setPwmOutputs(pwm1Duty, pwm2Duty, enable1, enable2);
+                sendResponse({
+                    type: 'success',
+                    message: 'Tool PWM outputs updated'
+                });
+            } catch (error) {
+                sendResponse({
+                    type: 'error',
+                    message: `Failed to set tool PWM: ${error.message}`
+                });
+            }
+            break;
+        }
+
+        case 'toolGetPwmState': {
+            try {
+                const tool = requireEndTool();
+                const pwm = await tool.getPwmState();
+                sendResponse({
+                    type: 'toolPwmState',
+                    ...pwm
+                });
+            } catch (error) {
+                sendResponse({
+                    type: 'error',
+                    message: `Failed to read tool PWM state: ${error.message}`
+                });
+            }
+            break;
+        }
+
+        case 'toolReadCurrents': {
+            try {
+                const tool = requireEndTool();
+                const currents = await tool.readPwmCurrents();
+                sendResponse({
+                    type: 'toolCurrents',
+                    ...currents
+                });
+            } catch (error) {
+                sendResponse({
+                    type: 'error',
+                    message: `Failed to read tool currents: ${error.message}`
+                });
+            }
+            break;
+        }
+
+        case 'toolReadAdc': {
+            try {
+                const tool = requireEndTool();
+                const adc = await tool.readAdcData();
+                sendResponse({
+                    type: 'toolAdc',
+                    ...adc
+                });
+            } catch (error) {
+                sendResponse({
+                    type: 'error',
+                    message: `Failed to read tool ADC data: ${error.message}`
+                });
+            }
+            break;
+        }
+
+        case 'toolSetServoEnabled': {
+            try {
+                const tool = requireEndTool();
+                const enabled = data.enabled !== false;
+                await tool.setHobbyServoEnabled(enabled);
+                sendResponse({
+                    type: 'success',
+                    message: `Tool hobby servo ${enabled ? 'enabled' : 'disabled'}`
+                });
+            } catch (error) {
+                sendResponse({
+                    type: 'error',
+                    message: `Failed to set tool servo enable: ${error.message}`
+                });
+            }
+            break;
+        }
+
+        case 'toolSetServoPosition': {
+            try {
+                const tool = requireEndTool();
+                const position = Number.isFinite(data.position) ? data.position : 0;
+                await tool.setHobbyServoPosition(position);
+                sendResponse({
+                    type: 'success',
+                    message: `Tool hobby servo position set to ${position}`
+                });
+            } catch (error) {
+                sendResponse({
+                    type: 'error',
+                    message: `Failed to set tool servo position: ${error.message}`
+                });
+            }
+            break;
+        }
+
+        case 'toolSetServoAngle': {
+            try {
+                const tool = requireEndTool();
+                const angleValue = Number.isFinite(data.angle) ? data.angle : 0;
+                await tool.setHobbyServoAngle(angleValue);
+                sendResponse({
+                    type: 'success',
+                    message: `Tool hobby servo angle set to ${angleValue}`
+                });
+            } catch (error) {
+                sendResponse({
+                    type: 'error',
+                    message: `Failed to set tool servo angle: ${error.message}`
+                });
+            }
+            break;
+        }
+
+        case 'toolGetServoState': {
+            try {
+                const tool = requireEndTool();
+                const servoState = await tool.getHobbyServoState();
+                sendResponse({
+                    type: 'toolServoState',
+                    ...servoState
+                });
+            } catch (error) {
+                sendResponse({
+                    type: 'error',
+                    message: `Failed to read tool servo state: ${error.message}`
+                });
+            }
+            break;
+        }
+
+        case 'toolSetWatchdog': {
+            try {
+                const tool = requireEndTool();
+                const timeoutMs = Number.isFinite(data.timeoutMs) ? data.timeoutMs : 0;
+                await tool.setWatchdogTimeout(timeoutMs);
+                sendResponse({
+                    type: 'success',
+                    message: `Tool watchdog timeout set to ${timeoutMs} ms`
+                });
+            } catch (error) {
+                sendResponse({
+                    type: 'error',
+                    message: `Failed to set tool watchdog: ${error.message}`
+                });
+            }
+            break;
+        }
+
+        case 'toolClearFaults': {
+            try {
+                const tool = requireEndTool();
+                await tool.clearToolFaults();
+                sendResponse({
+                    type: 'success',
+                    message: 'Tool faults clear command sent'
+                });
+            } catch (error) {
+                sendResponse({
+                    type: 'error',
+                    message: `Failed to clear tool faults: ${error.message}`
+                });
+            }
+            break;
+        }
+
+        case 'toolReset': {
+            try {
+                const tool = requireEndTool();
+                await tool.resetTool();
+                sendResponse({
+                    type: 'success',
+                    message: 'Tool reset command sent'
+                });
+            } catch (error) {
+                sendResponse({
+                    type: 'error',
+                    message: `Failed to reset tool: ${error.message}`
+                });
+            }
+            break;
+        }
             
         case 'moveJoint':
             // Move a servo to a specific angle
@@ -523,33 +1214,33 @@ async function handleCommand(ws, data) {
             const moveSpeed = (typeof data.speed === 'number' && !isNaN(data.speed) && data.speed >= 0) ? data.speed : 1500;
             
             if (jointNumber < 0 || jointNumber >= servos.length) {
-                ws.send(JSON.stringify({
+                sendResponse({
                     type: 'error',
                     message: `Invalid joint number: ${data.joint}`
-                }));
+                });
                 return;
             }
             
             const servo = servos[jointNumber];
             if (servo === null) {
-                ws.send(JSON.stringify({
+                sendResponse({
                     type: 'error',
                     message: `Servo ${data.joint} is not available`
-                }));
+                });
                 return;
             }
             
             try {
                 await servo.moveToAngle(angle, moveSpeed);
-                ws.send(JSON.stringify({
+                sendResponse({
                     type: 'success',
                     message: `Servo ${data.joint} moving to ${angle}° at ${moveSpeed} step/s`
-                }));
+                });
             } catch (error) {
-                ws.send(JSON.stringify({
+                sendResponse({
                     type: 'error',
                     message: `Failed to move servo ${data.joint}: ${error.message}`
-                }));
+                });
             }
             break;
             
@@ -558,33 +1249,33 @@ async function handleCommand(ws, data) {
             const stopJointNumber = data.joint - 1;
             
             if (stopJointNumber < 0 || stopJointNumber >= servos.length) {
-                ws.send(JSON.stringify({
+                sendResponse({
                     type: 'error',
                     message: `Invalid joint number: ${data.joint}`
-                }));
+                });
                 return;
             }
             
             const stopServo = servos[stopJointNumber];
             if (stopServo === null) {
-                ws.send(JSON.stringify({
+                sendResponse({
                     type: 'error',
                     message: `Servo ${data.joint} is not available`
-                }));
+                });
                 return;
             }
             
             try {
                 await stopServo.stopServo();
-                ws.send(JSON.stringify({
+                sendResponse({
                     type: 'success',
                     message: `Servo ${data.joint} stopped`
-                }));
+                });
             } catch (error) {
-                ws.send(JSON.stringify({
+                sendResponse({
                     type: 'error',
                     message: `Failed to stop servo ${data.joint}: ${error.message}`
-                }));
+                });
             }
             break;
             
@@ -596,15 +1287,15 @@ async function handleCommand(ws, data) {
                         await servos[i].stopServo();
                     }
                 }
-                ws.send(JSON.stringify({
+                sendResponse({
                     type: 'success',
                     message: 'All servos stopped'
-                }));
+                });
             } catch (error) {
-                ws.send(JSON.stringify({
+                sendResponse({
                     type: 'error',
                     message: `Failed to stop all servos: ${error.message}`
-                }));
+                });
             }
             break;
             
@@ -614,33 +1305,33 @@ async function handleCommand(ws, data) {
             const servoAngle = data.angle;
             
             if (servoJointNumber < 0 || servoJointNumber >= servos.length) {
-                ws.send(JSON.stringify({
+                sendResponse({
                     type: 'error',
                     message: `Invalid joint number: ${data.joint}`
-                }));
+                });
                 return;
             }
             
             const servoJoint = servos[servoJointNumber];
             if (servoJoint === null) {
-                ws.send(JSON.stringify({
+                sendResponse({
                     type: 'error',
                     message: `Servo ${data.joint} is not available`
-                }));
+                });
                 return;
             }
             
             try {
                 await servoJoint.moveToAngle(servoAngle);
-                ws.send(JSON.stringify({
+                sendResponse({
                     type: 'success',
                     message: `Servo ${data.joint} set to ${servoAngle}°`
-                }));
+                });
             } catch (error) {
-                ws.send(JSON.stringify({
+                sendResponse({
                     type: 'error',
                     message: `Failed to set servo angle: ${error.message}`
-                }));
+                });
             }
             break;
             
@@ -650,33 +1341,33 @@ async function handleCommand(ws, data) {
             const speed = data.speed;
             
             if (speedJointNumber < 0 || speedJointNumber >= servos.length) {
-                ws.send(JSON.stringify({
+                sendResponse({
                     type: 'error',
                     message: `Invalid joint number: ${data.joint}`
-                }));
+                });
                 return;
             }
             
             const speedServo = servos[speedJointNumber];
             if (speedServo === null) {
-                ws.send(JSON.stringify({
+                sendResponse({
                     type: 'error',
                     message: `Servo ${data.joint} is not available`
-                }));
+                });
                 return;
             }
             
             try {
                 await speedServo.setSpeed(speed);
-                ws.send(JSON.stringify({
+                sendResponse({
                     type: 'success',
                     message: `Servo ${data.joint} speed set to ${speed} step/s`
-                }));
+                });
             } catch (error) {
-                ws.send(JSON.stringify({
+                sendResponse({
                     type: 'error',
                     message: `Failed to set speed: ${error.message}`
-                }));
+                });
             }
             break;
             
@@ -690,15 +1381,15 @@ async function handleCommand(ws, data) {
                         await servos[i].setSpeed(speedAll);
                     }
                 }
-                ws.send(JSON.stringify({
+                sendResponse({
                     type: 'success',
                     message: `All servos speed set to ${speedAll} step/s`
-                }));
+                });
             } catch (error) {
-                ws.send(JSON.stringify({
+                sendResponse({
                     type: 'error',
                     message: `Failed to set servo speeds: ${error.message}`
-                }));
+                });
             }
             break;
             
@@ -716,15 +1407,15 @@ async function handleCommand(ws, data) {
                         }
                     }
                 }
-                ws.send(JSON.stringify({
+                sendResponse({
                     type: 'success',
                     message: `All servos torque ${torqueEnabled ? 'enabled' : 'disabled'}`
-                }));
+                });
             } catch (error) {
-                ws.send(JSON.stringify({
+                sendResponse({
                     type: 'error',
                     message: `Failed to ${torqueEnabled ? 'enable' : 'disable'} torque: ${error.message}`
-                }));
+                });
             }
             break;
             
@@ -734,41 +1425,41 @@ async function handleCommand(ws, data) {
             const acc = data.acceleration;
             
             if (accJointNumber < 0 || accJointNumber >= servos.length) {
-                ws.send(JSON.stringify({
+                sendResponse({
                     type: 'error',
                     message: `Invalid joint number: ${data.joint}`
-                }));
+                });
                 return;
             }
             
             const accServo = servos[accJointNumber];
             if (accServo === null) {
-                ws.send(JSON.stringify({
+                sendResponse({
                     type: 'error',
                     message: `Servo ${data.joint} is not available`
-                }));
+                });
                 return;
             }
             
             try {
                 await accServo.setAcceleration(acc);
-                ws.send(JSON.stringify({
+                sendResponse({
                     type: 'success',
                     message: `Servo ${data.joint} acceleration set to ${acc}`
-                }));
+                });
             } catch (error) {
-                ws.send(JSON.stringify({
+                sendResponse({
                     type: 'error',
                     message: `Failed to set acceleration: ${error.message}`
-                }));
+                });
             }
             break;
             
         default:
-            ws.send(JSON.stringify({
+            sendResponse({
                 type: 'error',
                 message: `Unknown command: ${command}`
-            }));
+            });
     }
 }
 

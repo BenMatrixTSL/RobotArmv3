@@ -69,6 +69,50 @@ const STEPS_PER_DEGREE = 2048 / 180;  // Steps per degree (11.377...)
 const MIN_ANGLE = -180;  // Minimum angle in degrees
 const MAX_ANGLE = 180;   // Maximum angle in degrees
 
+// ESP32 end-tool constants (ST3215-compatible node on same bus)
+const END_TOOL_ID = 64;
+
+// Identity and status registers
+const TOOL_PROTOCOL_VERSION = 0x00;
+const TOOL_FIRMWARE_MAJOR = 0x01;
+const TOOL_FIRMWARE_MINOR = 0x02;
+const TOOL_TYPE_ID = 0x03;
+const TOOL_STATUS_FLAGS = 0x04;
+const TOOL_CONFIG_FLAGS = 0x05;
+const WATCHDOG_TIMEOUT_L = 0x06;
+
+// PWM and current registers
+const PWM1_DUTY = 0x10;
+const PWM2_DUTY = 0x11;
+const PWM_CONTROL = 0x12;
+const PWM1_CURRENT_RAW_L = 0x14;
+const PWM2_CURRENT_RAW_L = 0x16;
+
+// ADC registers
+const ADC1_RAW_L = 0x20;
+const ADC2_RAW_L = 0x22;
+const ADC1_MV_L = 0x24;
+const ADC2_MV_L = 0x26;
+const ADC1_RESISTANCE_L = 0x28;
+const ADC2_RESISTANCE_L = 0x2A;
+
+// Hobby servo registers
+const SERVO_ENABLE = 0x30;
+const SERVO_POSITION_8BIT = 0x31;
+const SERVO_ANGLE_DEG = 0x32;
+const SERVO_CURRENT_POSITION_8BIT = 0x37;
+const SERVO_CURRENT_ANGLE = 0x38;
+
+// Control and diagnostics registers
+const DEVICE_RESET_CMD = 0x40;
+const FAULT_CLEAR_CMD = 0x41;
+const UPTIME_SEC_L = 0x42;
+const LAST_ERROR_CODE = 0x44;
+
+// Tool write command magic values
+const RESET_MAGIC_VALUE = 0xA5;
+const CLEAR_FAULTS_MAGIC_VALUE = 0x5A;
+
 /**
  * ServoController class - controls one ST3215 servo motor
  * 
@@ -670,6 +714,34 @@ class ServoController {
     }
 
     /**
+     * Check if this device is currently responsive on the bus.
+     * Simple wrapper around ping() for readability in higher-level logic.
+     * @returns {boolean} True if responsive
+     */
+    async isResponsive() {
+        return await this.ping();
+    }
+
+    /**
+     * Try to reinitialize this device after a communication issue.
+     * For ST3215 servos this means: ping, then enable torque.
+     * For other compatible nodes, subclasses can override as needed.
+     * @returns {boolean} True if successfully reinitialized
+     */
+    async reinitialize() {
+        const alive = await this.ping();
+        if (!alive) {
+            return false;
+        }
+        try {
+            await this.startServo();
+            return true;
+        } catch (error) {
+            return false;
+        }
+    }
+
+    /**
      * Enable torque (start servo)
      * @returns {boolean} True if successful
      */
@@ -1038,9 +1110,260 @@ class ServoController {
     }
 }
 
+/**
+ * EndToolController class - controls the ESP32 end-tool node (ID 64)
+ *
+ * This class reuses the same packet transport as ServoController so it can
+ * share the ST3215 bus safely. It only talks to ID 64.
+ */
+class EndToolController extends ServoController {
+    /**
+     * Creates a new end-tool controller for tool node ID 64
+     *
+     * @param {string|SerialPort} serialPortPathOrInstance - Serial port path or shared SerialPort instance
+     * @param {number} baudRate - Serial baud rate (default: 1000000)
+     */
+    constructor(serialPortPathOrInstance, baudRate = DEFAULT_BAUDRATE) {
+        super('TOOL', serialPortPathOrInstance, END_TOOL_ID, baudRate);
+    }
+
+    /**
+     * Ping the tool node
+     * @returns {boolean} True if tool responds
+     */
+    async pingTool() {
+        return await this.ping();
+    }
+
+    /**
+     * Read identity information from tool node
+     * @returns {Object} { id, protocolVersion, firmwareMajor, firmwareMinor, toolTypeId }
+     */
+    async getToolIdentity() {
+        const data = await this.readData(TOOL_PROTOCOL_VERSION, 4);
+        if (!data || data.length < 4) {
+            throw new Error('Invalid tool identity data');
+        }
+
+        return {
+            id: END_TOOL_ID,
+            protocolVersion: data[0],
+            firmwareMajor: data[1],
+            firmwareMinor: data[2],
+            toolTypeId: data[3]
+        };
+    }
+
+    /**
+     * Read current tool type ID byte
+     * @returns {number} Tool type ID (0-255)
+     */
+    async getToolTypeId() {
+        const data = await this.readData(TOOL_TYPE_ID, 1);
+        if (!data || data.length < 1) {
+            throw new Error('Invalid tool type ID data');
+        }
+        return data[0];
+    }
+
+    /**
+     * Set tool type ID byte
+     * @param {number} toolTypeId - Tool type ID (0-255)
+     */
+    async setToolTypeId(toolTypeId) {
+        let value = toolTypeId;
+        if (value < 0) value = 0;
+        if (value > 255) value = 255;
+        await this.writeData(TOOL_TYPE_ID, [value & 0xFF]);
+    }
+
+    /**
+     * Set both PWM channels and enable bits in one simple call
+     * @param {number} pwm1Duty - PWM1 duty (0-255)
+     * @param {number} pwm2Duty - PWM2 duty (0-255)
+     * @param {boolean} enable1 - Enable PWM1 output
+     * @param {boolean} enable2 - Enable PWM2 output
+     */
+    async setPwmOutputs(pwm1Duty, pwm2Duty, enable1 = true, enable2 = true) {
+        let duty1 = pwm1Duty;
+        let duty2 = pwm2Duty;
+        if (duty1 < 0) duty1 = 0;
+        if (duty1 > 255) duty1 = 255;
+        if (duty2 < 0) duty2 = 0;
+        if (duty2 > 255) duty2 = 255;
+
+        let control = 0;
+        if (enable1) control |= 0x01;
+        if (enable2) control |= 0x02;
+
+        await this.writeData(PWM1_DUTY, [duty1 & 0xFF]);
+        await this.writeData(PWM2_DUTY, [duty2 & 0xFF]);
+        await this.writeData(PWM_CONTROL, [control & 0xFF]);
+    }
+
+    /**
+     * Read current PWM duty values and control register
+     * @returns {Object} { pwm1Duty, pwm2Duty, pwmControl }
+     */
+    async getPwmState() {
+        const data = await this.readData(PWM1_DUTY, 3);
+        if (!data || data.length < 3) {
+            throw new Error('Invalid PWM state data');
+        }
+        return {
+            pwm1Duty: data[0],
+            pwm2Duty: data[1],
+            pwmControl: data[2]
+        };
+    }
+
+    /**
+     * Read current sense channels (16-bit little-endian each)
+     * @returns {Object} { pwm1CurrentRaw, pwm2CurrentRaw }
+     */
+    async readPwmCurrents() {
+        const ch1 = await this.readData(PWM1_CURRENT_RAW_L, 2);
+        const ch2 = await this.readData(PWM2_CURRENT_RAW_L, 2);
+        if (!ch1 || ch1.length < 2 || !ch2 || ch2.length < 2) {
+            throw new Error('Invalid PWM current data');
+        }
+
+        return {
+            pwm1CurrentRaw: this.makeWord(ch1[0], ch1[1]),
+            pwm2CurrentRaw: this.makeWord(ch2[0], ch2[1])
+        };
+    }
+
+    /**
+     * Read both ADC raw values, millivolts, and resistance values
+     * @returns {Object}
+     */
+    async readAdcData() {
+        const adc1RawData = await this.readData(ADC1_RAW_L, 2);
+        const adc2RawData = await this.readData(ADC2_RAW_L, 2);
+        const adc1mVData = await this.readData(ADC1_MV_L, 2);
+        const adc2mVData = await this.readData(ADC2_MV_L, 2);
+        const adc1ResData = await this.readData(ADC1_RESISTANCE_L, 2);
+        const adc2ResData = await this.readData(ADC2_RESISTANCE_L, 2);
+
+        if (!adc1RawData || adc1RawData.length < 2 ||
+            !adc2RawData || adc2RawData.length < 2 ||
+            !adc1mVData || adc1mVData.length < 2 ||
+            !adc2mVData || adc2mVData.length < 2 ||
+            !adc1ResData || adc1ResData.length < 2 ||
+            !adc2ResData || adc2ResData.length < 2) {
+            throw new Error('Invalid ADC data');
+        }
+
+        return {
+            adc1Raw: this.makeWord(adc1RawData[0], adc1RawData[1]),
+            adc2Raw: this.makeWord(adc2RawData[0], adc2RawData[1]),
+            adc1mV: this.makeWord(adc1mVData[0], adc1mVData[1]),
+            adc2mV: this.makeWord(adc2mVData[0], adc2mVData[1]),
+            adc1Resistance: this.makeWord(adc1ResData[0], adc1ResData[1]),
+            adc2Resistance: this.makeWord(adc2ResData[0], adc2ResData[1])
+        };
+    }
+
+    /**
+     * Enable or disable hobby servo output
+     * @param {boolean} enabled - True to enable, false to disable
+     */
+    async setHobbyServoEnabled(enabled) {
+        await this.writeData(SERVO_ENABLE, [enabled ? 1 : 0]);
+    }
+
+    /**
+     * Set hobby servo by raw 8-bit position
+     * @param {number} position - 0 to 255
+     */
+    async setHobbyServoPosition(position) {
+        let pos = position;
+        if (pos < 0) pos = 0;
+        if (pos > 255) pos = 255;
+        await this.writeData(SERVO_POSITION_8BIT, [pos & 0xFF]);
+    }
+
+    /**
+     * Set hobby servo by angle in degrees
+     * @param {number} angle - 0 to 180
+     */
+    async setHobbyServoAngle(angle) {
+        let degrees = angle;
+        if (degrees < 0) degrees = 0;
+        if (degrees > 180) degrees = 180;
+        await this.writeData(SERVO_ANGLE_DEG, [degrees & 0xFF]);
+    }
+
+    /**
+     * Read last applied hobby servo position and angle
+     * @returns {Object} { currentPosition8bit, currentAngle }
+     */
+    async getHobbyServoState() {
+        const data = await this.readData(SERVO_CURRENT_POSITION_8BIT, 2);
+        if (!data || data.length < 2) {
+            throw new Error('Invalid hobby servo state data');
+        }
+        return {
+            currentPosition8bit: data[0],
+            currentAngle: data[1]
+        };
+    }
+
+    /**
+     * Set watchdog timeout in milliseconds (0 disables)
+     * @param {number} timeoutMs - 0 to 65535 ms
+     */
+    async setWatchdogTimeout(timeoutMs) {
+        let timeout = timeoutMs;
+        if (timeout < 0) timeout = 0;
+        if (timeout > 65535) timeout = 65535;
+        const data = [this.stsLobyte(timeout), this.stsHibyte(timeout)];
+        await this.writeData(WATCHDOG_TIMEOUT_L, data);
+    }
+
+    /**
+     * Read status, last error code, and uptime
+     * @returns {Object} { statusFlags, lastErrorCode, uptimeSecLow16 }
+     */
+    async getToolStatus() {
+        const statusData = await this.readData(TOOL_STATUS_FLAGS, 1);
+        const errorData = await this.readData(LAST_ERROR_CODE, 1);
+        const uptimeData = await this.readData(UPTIME_SEC_L, 2);
+
+        if (!statusData || statusData.length < 1 ||
+            !errorData || errorData.length < 1 ||
+            !uptimeData || uptimeData.length < 2) {
+            throw new Error('Invalid tool status data');
+        }
+
+        return {
+            statusFlags: statusData[0],
+            lastErrorCode: errorData[0],
+            uptimeSecLow16: this.makeWord(uptimeData[0], uptimeData[1])
+        };
+    }
+
+    /**
+     * Clear latched tool faults using documented magic value
+     */
+    async clearToolFaults() {
+        await this.writeData(FAULT_CLEAR_CMD, [CLEAR_FAULTS_MAGIC_VALUE]);
+    }
+
+    /**
+     * Request a tool soft reset using documented magic value
+     */
+    async resetTool() {
+        await this.writeData(DEVICE_RESET_CMD, [RESET_MAGIC_VALUE]);
+    }
+}
+
 // Export the module
 module.exports = {
     ServoController: ServoController,
+    EndToolController: EndToolController,
+    END_TOOL_ID: END_TOOL_ID,
     // Export conversion constants and functions for external use
     CENTER_POSITION: CENTER_POSITION,
     STEPS_PER_DEGREE: STEPS_PER_DEGREE,
