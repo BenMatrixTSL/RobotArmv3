@@ -1,0 +1,1419 @@
+<root>
+<document scada='0' projtype='1' schema='103' license='1,82702381,95CJQR' title='New Embedded Project' description='' fcversion='720897' target='ESP.ESP32.ESP32_WROOM_32' >
+	<config data='' clkspd='240000000' simspd='0' usewdt='0' constif='0' Use3V3='0' />
+	<plugins >
+		<dll_models enabled='1' />
+	</plugins>
+	<supplement use='0' head='' body='' />
+	<debug />
+	<traces />
+	<ghost >
+		<FK2 >
+			<data name='FK2D0' port='4294967295' pin='4294967295' />
+			<data name='FK2D1' port='4294967295' pin='4294967295' />
+			<data name='FK2D2' port='4294967295' pin='4294967295' />
+			<data name='FK2D3' port='4294967295' pin='4294967295' />
+			<data name='FK2D4' port='4294967295' pin='4294967295' />
+			<data name='FK2D5' port='4294967295' pin='4294967295' />
+			<data name='FK2D6' port='4294967295' pin='4294967295' />
+			<data name='FK2D7' port='4294967295' pin='4294967295' />
+			<data name='FK2D8' port='4294967295' pin='4294967295' />
+			<data name='FK2D9' port='4294967295' pin='4294967295' />
+			<data name='FK2D10' port='4294967295' pin='4294967295' />
+			<data name='FK2D11' port='4294967295' pin='4294967295' />
+			<data name='FK2D12' port='4294967295' pin='4294967295' />
+			<data name='FK2D13' port='4294967295' pin='4294967295' />
+			<data name='FK2D14' port='4294967295' pin='4294967295' />
+			<data name='FK2D15' port='4294967295' pin='4294967295' />
+			<data name='FK2A0' port='4294967295' pin='4294967295' />
+			<data name='FK2A1' port='4294967295' pin='4294967295' />
+			<data name='FK2A2' port='4294967295' pin='4294967295' />
+			<data name='FK2A3' port='4294967295' pin='4294967295' />
+			<data name='FK2A4' port='4294967295' pin='4294967295' />
+			<data name='FK2A5' port='4294967295' pin='4294967295' />
+		</FK2>
+		<ICD >
+			<data name='AnalogPrescaleValue' value='19' />
+			<data name='DigitalSampleRate' value='100000' />
+			<data name='BreakpointCount' value='8' />
+			<data name='CallStackDepthCount' value='8' />
+			<data name='ClockPort' value='1' />
+			<data name='ClockPin' value='6' />
+			<data name='DataPort' value='1' />
+			<data name='DataPin' value='7' />
+			<data name='UseDefaultPins' value='1' />
+			<data name='WrapEnabled' value='1' />
+			<data name='CommsDelayOverridden' value='0' />
+			<data name='CommsDelay' value='1' />
+			<data name='CalculatedCommsDelay' value='1' />
+			<data name='AnalogEB2PrescaleValue' value='2' />
+			<data name='DigitalEB2SampleRate' value='100000' />
+		</ICD>
+		<pins >
+			<digital A='0' B='0' C='0' D='0' E='0' F='0' G='0' H='0' I='0' J='0' K='0' L='0' M='0' N='0' O='0' P='0' Q='0' R='0' S='0' T='0' U='0' V='0' W='0' X='0' Y='0' Z='0' />
+			<analog A='0' B='0' C='0' D='0' E='0' F='0' G='0' H='0' I='0' J='0' K='0' L='0' M='0' N='0' O='0' P='0' Q='0' R='0' S='0' T='0' U='0' V='0' W='0' X='0' Y='0' Z='0' />
+		</pins>
+	</ghost>
+	<components >
+		<settings autoimg='0' center='1' unitscale='0' fixedscale='0' fixedx='25' fixedy='25' fixedz='25' headcode='0' />
+		<definition guid='e450119d-64ac-4cce-815b-afacc64e62de' vstate='40' vmin='0' vmaj='1' srcleaf='' visiblename='' description='' category='' category2='' category3='' bIs2dOnly='0' bIs3dOnly='0' bIsWysiwyg='0' catenable='1' author='' manuname='' manucode='' sysinfo='0' keywords='' dynamic='1' scadaCompatible='0' embeddedCompatible='1' showmacros='1' iconpath='' />
+		<component class_type='root' codename='ComponentRoot' panelId='-1' x='0' y='0' z='0' xsz='1' ysz='1' zsz='1' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='0' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
+			<resources />
+			<properties />
+			<values />
+			<events />
+			<apis />
+			<variables >
+				<variable public='0' >
+					<def class_type='variable' name='LastAddress' type='u8' description='Address field from last valid read/write command' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='Shunt2Volts' type='f32' description='Latest differential shunt voltage for PWM2 path' isconst='0' isHidden='0' isinit='1' usrinit='0.0' setinit='0.0' />
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='RegAdc0mV_L' type='u8' description='Register 19: ADC0 millivolts low byte' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='TxChecksumSum' type='u16' description='Running checksum sum while building TX packet' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='RegPwmControl' type='u8' description='Register 7: bit0 PWM1 enable, bit1 PWM2 enable' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='PacketParamCount' type='u8' description='Number of parameter bytes expected' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='RegPwm1Duty' type='u8' description='Register 5: PWM1 duty cycle 0-255' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='Current2A' type='f32' description='Latest current for PWM2 in amps' isconst='0' isHidden='0' isinit='1' usrinit='0.0' setinit='0.0' />
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='Adc0mV' type='u16' description='Latest ADC0 voltage in mV' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='PacketErrorCount' type='u32' description='Count of parse/checksum errors' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='RegFirmwareMinor' type='u8' description='Register 2: firmware minor version' isconst='1' isHidden='0' isinit='1' usrinit='1' setinit='1' />
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='Current1mA' type='u16' description='Latest current for PWM1 in milliamps (0-2000)' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='RegAdc0mV_H' type='u8' description='Register 20: ADC0 millivolts high byte' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='RegAdc1mV_L' type='u8' description='Register 21: ADC1 millivolts low byte' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='RegPwm2Duty' type='u8' description='Register 6: PWM2 duty cycle 0-255' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='Adc1Raw' type='u16' description='Latest ADC1 raw reading' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='false' type='b1' description='' isconst='1' isHidden='0' isinit='1' usrinit='0' setinit='0' />
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='AdcReferencemV' type='u16' description='ADC reference voltage in millivolts' isconst='1' isHidden='0' isinit='1' usrinit='2450' setinit='2450' />
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='BusDeviceID' type='u8' description='End-tool node ID on the ST3215 bus' isconst='1' isHidden='0' isinit='1' usrinit='64' setinit='64' />
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='RegAdc1mV_H' type='u8' description='Register 22: ADC1 millivolts high byte' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='TxLength' type='u8' description='Length field used for response packets' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='PacketChecksumCalc' type='u16' description='Running checksum sum before NOT' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='TxError' type='u8' description='Error/status byte used for response packets' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='AdcMaxCounts' type='u16' description='ADC full-scale raw count for 12-bit ADC' isconst='1' isHidden='0' isinit='1' usrinit='4095' setinit='4095' />
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='RegAdc1Raw_L' type='u8' description='Register 17: ADC1 raw low byte' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='PacketValidCount' type='u32' description='Count of valid packets parsed for this node' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='TxDataByte' type='u8' description='Single response data byte for helper TX macro' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='PacketInstruction' type='u8' description='Current packet instruction byte' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='Adc1mV' type='u16' description='Latest ADC1 voltage in mV' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='RegAdc1Raw_H' type='u8' description='Register 18: ADC1 raw high byte' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='PacketChecksumRx' type='u8' description='Received checksum byte' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='PacketBuffer' type='u8' description='Parameter bytes from currently parsed packet' isconst='0' isHidden='0' isinit='0' usrinit='&quot;&quot;' setinit='' >
+						<array size='32' />
+					</def>
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='Current2mA' type='u16' description='Latest current for PWM2 in milliamps (0-2000)' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='AdcChannel' type='b1' description='' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='DebugEnabled' type='b1' description='Set to 1 to enable UART_ProgDebug messages' isconst='1' isHidden='0' isinit='1' usrinit='1' setinit='1' />
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='DebugCounter' type='u8' description='Loop counter used for periodic debug status output' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='PacketParamIndex' type='u8' description='Current parameter index while parsing' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='STS_HEADER' type='u8' description='STS header byte value' isconst='1' isHidden='0' isinit='1' usrinit='255' setinit='255' />
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='ParserState' type='u8' description='Packet parser state' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='Shunt1Volts' type='f32' description='Latest differential shunt voltage for PWM1 path' isconst='0' isHidden='0' isinit='1' usrinit='0.0' setinit='0.0' />
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='LoopCounter' type='u8' description='' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='RegStatusFlags' type='u8' description='Register 4: status flag bits' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='RegToolTypeId' type='u8' description='Register 3: writable tool type ID' isconst='0' isHidden='0' isinit='1' usrinit='1' setinit='1' />
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='RegCurrent1mA_L' type='u8' description='Register 11: PWM1 current low byte (mA)' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='AdcGainSetting' type='u8' description='ADS1220 PGA gain: 6 = 64x for low shunt voltage' isconst='1' isHidden='0' isinit='1' usrinit='6' setinit='6' />
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='CurrentChannel' type='b1' description='' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='Registers' type='u8' description='' isconst='0' isHidden='0' isinit='1' usrinit='&quot; 0 &quot;' setinit='{0}' >
+						<array size='32' />
+					</def>
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='ShuntResistanceOhms' type='f32' description='Shunt resistor value in ohms' isconst='1' isHidden='0' isinit='1' usrinit='0.004999999888241291046142578125' setinit='0.005' />
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='CurrentCalibrationGain' type='f32' description='Software gain trim for current calibration' isconst='1' isHidden='0' isinit='1' usrinit='0.015625' setinit='1.0 / FLOAT (1 &lt;&lt; AdcGainSetting)' />
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='PacketID' type='u8' description='Current packet ID' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='LastDataLength' type='u8' description='Requested/read data length from last valid command' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='RegFirmwareMajor' type='u8' description='Register 1: firmware major version' isconst='1' isHidden='0' isinit='1' usrinit='0' setinit='0' />
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='RegCurrent1mA_H' type='u8' description='Register 12: PWM1 current high byte (mA)' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='RegCurrent2mA_L' type='u8' description='Register 13: PWM2 current low byte (mA)' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='DebugLevel' type='u8' description='Debug level: 0=off, 1=basic, 2=verbose command logs' isconst='1' isHidden='0' isinit='1' usrinit='2' setinit='2' />
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='Adc0Raw' type='u16' description='Latest ADC0 raw reading' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='LastInstruction' type='u8' description='Most recent valid instruction for this node' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='RegAdc0Raw_L' type='u8' description='Register 15: ADC0 raw low byte' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='ReadValue' type='u8' description='Single-byte value returned by basic READ' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='RegCurrent2mA_H' type='u8' description='Register 14: PWM2 current high byte (mA)' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='true' type='b1' description='' isconst='1' isHidden='0' isinit='1' usrinit='1' setinit='1' />
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='PacketLength' type='u8' description='Current packet LENGTH field' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='RegProtocolVersion' type='u8' description='Register 0: protocol version' isconst='1' isHidden='0' isinit='1' usrinit='1' setinit='1' />
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='Current1A' type='f32' description='Latest current for PWM1 in amps' isconst='0' isHidden='0' isinit='1' usrinit='0.0' setinit='0.0' />
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='RegAdc0Raw_H' type='u8' description='Register 16: ADC0 raw high byte' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
+				</variable>
+			</variables>
+			<macros >
+				<macro >
+					<flowline name='RefreshRegisterArrayFromVariables' description='' statediag='0' >
+						<return name='Return' type='v0' description='' isconst='0' isHidden='0' isinit='0' usrinit='' setinit='' />
+						<command class_type='calculation' title='Copy identity, status and PWM values into register array' >
+							<exp exp='Registers[0] = RegProtocolVersion' />
+							<exp exp='Registers[1] = RegFirmwareMajor' />
+							<exp exp='Registers[2] = RegFirmwareMinor' />
+							<exp exp='Registers[3] = RegToolTypeId' />
+							<exp exp='Registers[4] = RegStatusFlags' />
+							<exp exp='Registers[5] = RegPwm1Duty' />
+							<exp exp='Registers[6] = RegPwm2Duty' />
+							<exp exp='Registers[7] = RegPwmControl' />
+						</command>
+						<command class_type='calculation' title='Copy current measurement bytes into register array' >
+							<exp exp='Registers[11] = RegCurrent1mA_L' />
+							<exp exp='Registers[12] = RegCurrent1mA_H' />
+							<exp exp='Registers[13] = RegCurrent2mA_L' />
+							<exp exp='Registers[14] = RegCurrent2mA_H' />
+						</command>
+						<command class_type='calculation' title='Copy ADC telemetry bytes into register array' >
+							<exp exp='Registers[15] = RegAdc0Raw_L' />
+							<exp exp='Registers[16] = RegAdc0Raw_H' />
+							<exp exp='Registers[17] = RegAdc1Raw_L' />
+							<exp exp='Registers[18] = RegAdc1Raw_H' />
+							<exp exp='Registers[19] = RegAdc0mV_L' />
+							<exp exp='Registers[20] = RegAdc0mV_H' />
+							<exp exp='Registers[21] = RegAdc1mV_L' />
+							<exp exp='Registers[22] = RegAdc1mV_H' />
+						</command>
+					</flowline>
+				</macro>
+				<macro >
+					<flowline name='UpdateAdcTelemetry' description='' statediag='0' >
+						<return name='Return' type='v0' description='' isconst='0' isHidden='0' isinit='0' usrinit='' setinit='' />
+						<command class_type='comment' title='' comment='Refresh local ADC telemetry values each loop' textarea='12,0,12,0' />
+						<command class_type='decision' title='Decision' exp='AdcChannel &amp; 0x01' swap='0' >
+							<flowline >
+								<command class_type='call' title='Read ADC1 raw value (0-4095)' component='ADC1' macro='GetInt' >
+									<return exp='Adc1Raw' />
+								</command>
+								<command class_type='decision' title='Clamp ADC1 raw to max count' exp='Adc1Raw &gt; AdcMaxCounts' swap='0' >
+									<flowline >
+										<command class_type='calculation' title='Force ADC1 raw into valid range' >
+											<exp exp='Adc1Raw = AdcMaxCounts' />
+										</command>
+									</flowline>
+									<flowline />
+								</command>
+								<command class_type='calculation' title='Convert raw counts to millivolts using configured reference' >
+									<exp exp='Adc1mV = Adc1Raw * AdcReferencemV / AdcMaxCounts' />
+								</command>
+								<command class_type='calculation' title='Store ADC telemetry in low/high byte registers' >
+									<exp exp='RegAdc1Raw_L = Adc1Raw &amp; 255' />
+									<exp exp='RegAdc1Raw_H = Adc1Raw &gt;&gt; 8' />
+									<exp exp='RegAdc1mV_L = Adc1mV &amp; 255' />
+									<exp exp='RegAdc1mV_H = Adc1mV &gt;&gt; 8' />
+								</command>
+							</flowline>
+							<flowline >
+								<command class_type='call' title='Read ADC0 raw value (0-4095)' component='ADC0' macro='GetInt' >
+									<return exp='Adc0Raw' />
+								</command>
+								<command class_type='decision' title='Clamp ADC0 raw to max count' exp='Adc0Raw &gt; AdcMaxCounts' swap='0' >
+									<flowline >
+										<command class_type='calculation' title='Force ADC0 raw into valid range' >
+											<exp exp='Adc0Raw = AdcMaxCounts' />
+										</command>
+									</flowline>
+									<flowline />
+								</command>
+								<command class_type='calculation' title='Convert raw counts to millivolts using configured reference' >
+									<exp exp='Adc0mV = Adc0Raw * AdcReferencemV / AdcMaxCounts' />
+								</command>
+								<command class_type='calculation' title='Store ADC telemetry in low/high byte registers' >
+									<exp exp='RegAdc0Raw_L = Adc0Raw &amp; 255' />
+									<exp exp='RegAdc0Raw_H = Adc0Raw &gt;&gt; 8' />
+									<exp exp='RegAdc0mV_L = Adc0mV &amp; 255' />
+									<exp exp='RegAdc0mV_H = Adc0mV &gt;&gt; 8' />
+								</command>
+							</flowline>
+						</command>
+						<command class_type='calculation' title='Move to next channel' >
+							<exp exp='AdcChannel = AdcChannel + 1' />
+						</command>
+					</flowline>
+				</macro>
+				<macro >
+					<flowline name='ProcessCommsByte' description='' statediag='0' >
+						<return name='Return' type='v0' description='' isconst='0' isHidden='0' isinit='0' usrinit='' setinit='' />
+						<local name='rx' type='u8' description='' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
+						<command class_type='call' title='Get next received byte from circular buffer' component='CircularBuffer1' macro='GetByte' >
+							<return exp='.rx' />
+						</command>
+						<command class_type='decision' title='Parser state 0: wait for header byte 1 (0xFF)' exp='ParserState = 0' swap='0' >
+							<flowline >
+								<command class_type='decision' title='Byte equals header value' exp='.rx = STS_HEADER' swap='0' >
+									<flowline >
+										<command class_type='calculation' title='Move to parser state 1 (wait for second header byte)' >
+											<exp exp='ParserState = 1' />
+										</command>
+									</flowline>
+									<flowline />
+								</command>
+							</flowline>
+							<flowline >
+								<command class_type='decision' title='Parser state 1: wait for header byte 2 (0xFF)' exp='ParserState = 1' swap='0' >
+									<flowline >
+										<command class_type='decision' title='Second header matched' exp='.rx = STS_HEADER' swap='0' >
+											<flowline >
+												<command class_type='calculation' title='Move to parser state 2 (read packet ID)' >
+													<exp exp='ParserState = 2' />
+												</command>
+											</flowline>
+											<flowline >
+												<command class_type='calculation' title='Header mismatch: reset parser (or restart if new header)' >
+													<exp exp='ParserState = 0' />
+												</command>
+												<command class_type='decision' title='If this byte is 0xFF, treat as possible first header' exp='.rx = STS_HEADER' swap='0' >
+													<flowline >
+														<command class_type='calculation' title='Restart at state 1' >
+															<exp exp='ParserState = 1' />
+														</command>
+													</flowline>
+													<flowline />
+												</command>
+											</flowline>
+										</command>
+									</flowline>
+									<flowline >
+										<command class_type='decision' title='Parser state 2: read packet ID' exp='ParserState = 2' swap='0' >
+											<flowline >
+												<command class_type='calculation' title='Store packet ID and start checksum sum' >
+													<exp exp='PacketID = .rx' />
+													<exp exp='PacketChecksumCalc = .rx' />
+													<exp exp='ParserState = 3' />
+												</command>
+											</flowline>
+											<flowline >
+												<command class_type='decision' title='Parser state 3: read packet LENGTH' exp='ParserState = 3' swap='0' >
+													<flowline >
+														<command class_type='calculation' title='Store LENGTH and compute expected parameter count' >
+															<exp exp='PacketLength = .rx' />
+															<exp exp='PacketChecksumCalc = PacketChecksumCalc + .rx' />
+															<exp exp='PacketParamCount = PacketLength - 2' />
+															<exp exp='PacketParamIndex = 0' />
+															<exp exp='ParserState = 4' />
+														</command>
+													</flowline>
+													<flowline >
+														<command class_type='decision' title='Parser state 4: read instruction byte' exp='ParserState = 4' swap='0' >
+															<flowline >
+																<command class_type='calculation' title='Store instruction and update checksum sum' >
+																	<exp exp='PacketInstruction = .rx' />
+																	<exp exp='PacketChecksumCalc = PacketChecksumCalc + .rx' />
+																</command>
+																<command class_type='decision' title='If there are parameters, move to state 5, else read checksum in state 6' exp='PacketParamCount &gt; 0' swap='0' >
+																	<flowline >
+																		<command class_type='calculation' title='Go to parameter parsing state' >
+																			<exp exp='ParserState = 5' />
+																		</command>
+																	</flowline>
+																	<flowline >
+																		<command class_type='calculation' title='No parameters, go to checksum state' >
+																			<exp exp='ParserState = 6' />
+																		</command>
+																	</flowline>
+																</command>
+															</flowline>
+															<flowline >
+																<command class_type='decision' title='Parser state 5: read parameter bytes' exp='ParserState = 5' swap='0' >
+																	<flowline >
+																		<command class_type='decision' title='Protect parameter buffer against overflow' exp='PacketParamIndex &lt; 32' swap='0' >
+																			<flowline >
+																				<command class_type='calculation' title='Store parameter byte' >
+																					<exp exp='PacketBuffer[PacketParamIndex] = .rx' />
+																				</command>
+																			</flowline>
+																			<flowline />
+																		</command>
+																		<command class_type='calculation' title='Update checksum and parameter index' >
+																			<exp exp='PacketChecksumCalc = PacketChecksumCalc + .rx' />
+																			<exp exp='PacketParamIndex = PacketParamIndex + 1' />
+																		</command>
+																		<command class_type='decision' title='All parameters received' exp='PacketParamIndex &gt;= PacketParamCount' swap='0' >
+																			<flowline >
+																				<command class_type='calculation' title='Move to checksum state' >
+																					<exp exp='ParserState = 6' />
+																				</command>
+																			</flowline>
+																			<flowline />
+																		</command>
+																	</flowline>
+																	<flowline >
+																		<command class_type='decision' title='Parser state 6: read and validate checksum' exp='ParserState = 6' swap='0' >
+																			<flowline >
+																				<command class_type='calculation' title='Store received checksum' >
+																					<exp exp='PacketChecksumRx = .rx' />
+																				</command>
+																				<command class_type='calculation' title='Calculate expected checksum (~sum &amp; 0xFF)' >
+																					<exp exp='PacketChecksumCalc = ~PacketChecksumCalc' />
+																					<exp exp='PacketChecksumCalc = PacketChecksumCalc &amp; 255' />
+																				</command>
+																				<command class_type='decision' title='Valid checksum and packet addressed to this node' exp='(PacketChecksumRx = PacketChecksumCalc) &amp;&amp; (PacketID = BusDeviceID)' swap='0' >
+																					<flowline >
+																						<command class_type='calculation' title='Track valid packet and basic decoded fields' >
+																							<exp exp='PacketValidCount = PacketValidCount + 1' />
+																							<exp exp='LastInstruction = PacketInstruction' />
+																						</command>
+																						<command class_type='decision' title='Handle READ instruction (2)' exp='(PacketInstruction = 2) &amp;&amp; (PacketParamCount &gt;= 2)' swap='0' >
+																							<flowline >
+																								<command class_type='calculation' title='Store READ address and requested length' >
+																									<exp exp='LastAddress = PacketBuffer[0]' />
+																									<exp exp='LastDataLength = PacketBuffer[1]' />
+																								</command>
+																								<command class_type='decision' title='Verbose debug READ command' exp='(DebugEnabled = 1) &amp;&amp; (DebugLevel &gt;= 2)' swap='0' >
+																									<flowline >
+																										<command class_type='call' title='Debug READ prefix' component='UART_ProgDebug' macro='SendString' >
+																											<argument exp='&quot;DBG cmd READ addr=&quot;' />
+																										</command>
+																										<command class_type='call' title='Debug READ address' component='UART_ProgDebug' macro='SendNumber' >
+																											<argument exp='LastAddress' />
+																										</command>
+																										<command class_type='call' title='Debug READ len prefix' component='UART_ProgDebug' macro='SendString' >
+																											<argument exp='&quot; len=&quot;' />
+																										</command>
+																										<command class_type='call' title='Debug READ length' component='UART_ProgDebug' macro='SendNumber' >
+																											<argument exp='LastDataLength' />
+																										</command>
+																										<command class_type='call' title='Debug line ending' component='UART_ProgDebug' macro='SendString' >
+																											<argument exp='&quot;\r\n&quot;' />
+																										</command>
+																									</flowline>
+																									<flowline />
+																								</command>
+																								<command class_type='decision' title='Only basic 1-byte READ is supported in first version' exp='LastDataLength = 1' swap='0' >
+																									<flowline >
+																										<command class_type='call' title='Map address to a register byte' macro='ReadRegisterIntoReadValue' />
+																										<command class_type='calculation' title='Send READ status packet with one data byte' >
+																											<exp exp='TxLength = 3' />
+																											<exp exp='TxError = 0' />
+																											<exp exp='TxChecksumSum = BusDeviceID + TxLength + TxError + ReadValue' />
+																											<exp exp='TxChecksumSum = ~TxChecksumSum' />
+																											<exp exp='TxChecksumSum = TxChecksumSum &amp; 255' />
+																										</command>
+																										<command class_type='calculation' title='Set helper TX data byte from read value' >
+																											<exp exp='TxDataByte = ReadValue' />
+																										</command>
+																										<command class_type='call' title='Send status packet with one data byte' macro='SendStatusPacketWithData' />
+																									</flowline>
+																									<flowline >
+																										<command class_type='calculation' title='Unsupported READ length: send error status packet' >
+																											<exp exp='TxLength = 2' />
+																											<exp exp='TxError = 2' />
+																											<exp exp='TxChecksumSum = BusDeviceID + TxLength + TxError' />
+																											<exp exp='TxChecksumSum = ~TxChecksumSum' />
+																											<exp exp='TxChecksumSum = TxChecksumSum &amp; 255' />
+																										</command>
+																										<command class_type='call' title='Send status packet without data byte' macro='SendStatusPacketNoData' />
+																									</flowline>
+																								</command>
+																							</flowline>
+																							<flowline >
+																								<command class_type='decision' title='Handle WRITE instruction (3)' exp='(PacketInstruction = 3) &amp;&amp; (PacketParamCount &gt;= 1)' swap='0' >
+																									<flowline >
+																										<command class_type='calculation' title='Store WRITE address and data length' >
+																											<exp exp='LastAddress = PacketBuffer[0]' />
+																											<exp exp='LastDataLength = PacketParamCount - 1' />
+																										</command>
+																										<command class_type='decision' title='Verbose debug WRITE command' exp='(DebugEnabled = 1) &amp;&amp; (DebugLevel &gt;= 2)' swap='0' >
+																											<flowline >
+																												<command class_type='call' title='Debug WRITE prefix' component='UART_ProgDebug' macro='SendString' >
+																													<argument exp='&quot;DBG cmd WRITE addr=&quot;' />
+																												</command>
+																												<command class_type='call' title='Debug WRITE address' component='UART_ProgDebug' macro='SendNumber' >
+																													<argument exp='LastAddress' />
+																												</command>
+																												<command class_type='call' title='Debug WRITE len prefix' component='UART_ProgDebug' macro='SendString' >
+																													<argument exp='&quot; len=&quot;' />
+																												</command>
+																												<command class_type='call' title='Debug WRITE length' component='UART_ProgDebug' macro='SendNumber' >
+																													<argument exp='LastDataLength' />
+																												</command>
+																												<command class_type='call' title='Debug line ending' component='UART_ProgDebug' macro='SendString' >
+																													<argument exp='&quot;\r\n&quot;' />
+																												</command>
+																											</flowline>
+																											<flowline />
+																										</command>
+																										<command class_type='decision' title='WRITE needs at least one data byte in this basic version' exp='PacketParamCount &gt;= 2' swap='0' >
+																											<flowline >
+																												<command class_type='decision' title='Only registers 3 to 7 are writable' exp='(LastAddress &gt;= 3) &amp;&amp; (LastAddress &lt;= 7)' swap='0' >
+																													<flowline >
+																														<command class_type='calculation' title='Write byte into register array' >
+																															<exp exp='Registers[LastAddress] = PacketBuffer[1]' />
+																														</command>
+																														<command class_type='call' title='Apply writable register values to variables and hardware' macro='ApplyWritableRegistersToVariablesAndHardware' />
+																														<command class_type='decision' title='Verbose debug WRITE applied values' exp='(DebugEnabled = 1) &amp;&amp; (DebugLevel &gt;= 2)' swap='0' >
+																															<flowline >
+																																<command class_type='call' title='Debug WRITE applied prefix' component='UART_ProgDebug' macro='SendString' >
+																																	<argument exp='&quot;DBG write applied pwm1=&quot;' />
+																																</command>
+																																<command class_type='call' title='Debug PWM1 duty value' component='UART_ProgDebug' macro='SendNumber' >
+																																	<argument exp='RegPwm1Duty' />
+																																</command>
+																																<command class_type='call' title='Debug PWM2 prefix' component='UART_ProgDebug' macro='SendString' >
+																																	<argument exp='&quot; pwm2=&quot;' />
+																																</command>
+																																<command class_type='call' title='Debug PWM2 duty value' component='UART_ProgDebug' macro='SendNumber' >
+																																	<argument exp='RegPwm2Duty' />
+																																</command>
+																																<command class_type='call' title='Debug control prefix' component='UART_ProgDebug' macro='SendString' >
+																																	<argument exp='&quot; ctrl=&quot;' />
+																																</command>
+																																<command class_type='call' title='Debug PWM control value' component='UART_ProgDebug' macro='SendNumber' >
+																																	<argument exp='RegPwmControl' />
+																																</command>
+																																<command class_type='call' title='Debug line ending' component='UART_ProgDebug' macro='SendString' >
+																																	<argument exp='&quot;\r\n&quot;' />
+																																</command>
+																															</flowline>
+																															<flowline />
+																														</command>
+																													</flowline>
+																													<flowline />
+																												</command>
+																												<command class_type='calculation' title='Send WRITE acknowledge status packet' >
+																													<exp exp='TxLength = 2' />
+																													<exp exp='TxError = 0' />
+																													<exp exp='TxChecksumSum = BusDeviceID + TxLength + TxError' />
+																													<exp exp='TxChecksumSum = ~TxChecksumSum' />
+																													<exp exp='TxChecksumSum = TxChecksumSum &amp; 255' />
+																												</command>
+																											</flowline>
+																											<flowline >
+																												<command class_type='calculation' title='WRITE missing data: send error status packet' >
+																													<exp exp='TxLength = 2' />
+																													<exp exp='TxError = 2' />
+																													<exp exp='TxChecksumSum = BusDeviceID + TxLength + TxError' />
+																													<exp exp='TxChecksumSum = ~TxChecksumSum' />
+																													<exp exp='TxChecksumSum = TxChecksumSum &amp; 255' />
+																												</command>
+																											</flowline>
+																										</command>
+																									</flowline>
+																									<flowline >
+																										<command class_type='decision' title='Handle PING instruction (1)' exp='PacketInstruction = 1' swap='0' >
+																											<flowline >
+																												<command class_type='calculation' title='PING has no address/data fields and sends status response' >
+																													<exp exp='LastAddress = 0' />
+																													<exp exp='LastDataLength = 0' />
+																													<exp exp='TxLength = 2' />
+																													<exp exp='TxError = 0' />
+																													<exp exp='TxChecksumSum = BusDeviceID + TxLength + TxError' />
+																													<exp exp='TxChecksumSum = ~TxChecksumSum' />
+																													<exp exp='TxChecksumSum = TxChecksumSum &amp; 255' />
+																												</command>
+																												<command class_type='decision' title='Verbose debug PING command' exp='(DebugEnabled = 1) &amp;&amp; (DebugLevel &gt;= 2)' swap='0' >
+																													<flowline >
+																														<command class_type='call' title='Debug PING message' component='UART_ProgDebug' macro='SendString' >
+																															<argument exp='&quot;DBG cmd PING\r\n&quot;' />
+																														</command>
+																													</flowline>
+																													<flowline />
+																												</command>
+																											</flowline>
+																											<flowline >
+																												<command class_type='calculation' title='Unsupported instruction: send error status packet' >
+																													<exp exp='TxLength = 2' />
+																													<exp exp='TxError = 2' />
+																													<exp exp='TxChecksumSum = BusDeviceID + TxLength + TxError' />
+																													<exp exp='TxChecksumSum = ~TxChecksumSum' />
+																													<exp exp='TxChecksumSum = TxChecksumSum &amp; 255' />
+																												</command>
+																												<command class_type='decision' title='Verbose debug unknown command' exp='(DebugEnabled = 1) &amp;&amp; (DebugLevel &gt;= 2)' swap='0' >
+																													<flowline >
+																														<command class_type='call' title='Debug unknown prefix' component='UART_ProgDebug' macro='SendString' >
+																															<argument exp='&quot;DBG cmd UNKNOWN inst=&quot;' />
+																														</command>
+																														<command class_type='call' title='Debug unknown instruction value' component='UART_ProgDebug' macro='SendNumber' >
+																															<argument exp='PacketInstruction' />
+																														</command>
+																														<command class_type='call' title='Debug line ending' component='UART_ProgDebug' macro='SendString' >
+																															<argument exp='&quot;\r\n&quot;' />
+																														</command>
+																													</flowline>
+																													<flowline />
+																												</command>
+																											</flowline>
+																										</command>
+																									</flowline>
+																								</command>
+																								<command class_type='call' title='Send status packet without data byte' macro='SendStatusPacketNoData' />
+																							</flowline>
+																						</command>
+																					</flowline>
+																					<flowline >
+																						<command class_type='calculation' title='Invalid packet for this node or checksum mismatch' >
+																							<exp exp='PacketErrorCount = PacketErrorCount + 1' />
+																						</command>
+																						<command class_type='decision' title='Debug invalid packet notice enabled' exp='(DebugEnabled = 1) &amp;&amp; (DebugLevel &gt;= 1)' swap='0' >
+																							<flowline >
+																								<command class_type='call' title='Debug invalid packet message' component='UART_ProgDebug' macro='SendString' >
+																									<argument exp='&quot;DBG invalid packet\r\n&quot;' />
+																								</command>
+																							</flowline>
+																							<flowline />
+																						</command>
+																					</flowline>
+																				</command>
+																				<command class_type='calculation' title='Reset parser for next packet' >
+																					<exp exp='ParserState = 0' />
+																				</command>
+																			</flowline>
+																			<flowline />
+																		</command>
+																	</flowline>
+																</command>
+															</flowline>
+														</command>
+													</flowline>
+												</command>
+											</flowline>
+										</command>
+									</flowline>
+								</command>
+							</flowline>
+						</command>
+					</flowline>
+				</macro>
+				<macro >
+					<flowline name='UpdateCurrentMeasurements' description='' statediag='0' >
+						<return name='Return' type='v0' description='' isconst='0' isHidden='0' isinit='0' usrinit='' setinit='' />
+						<command class_type='comment' title='' comment='Refresh ADS1220 current measurements each loop' textarea='12,0,12,0' />
+						<command class_type='decision' title='Decision' exp='CurrentChannel &amp; 1' swap='0' >
+							<flowline >
+								<command class_type='call' title='Read PWM2 shunt voltage (AN0 single ended)' component='ADS1220' macro='SampleSglVolts' >
+									<return exp='Shunt2Volts' />
+									<argument exp='1' />
+									<argument exp='AdcGainSetting' />
+								</command>
+								<command class_type='calculation' title='Convert shunt volts to current in amps (I=V/R)' >
+									<exp exp='Current2A = Shunt2Volts / ShuntResistanceOhms' />
+									<exp exp='Current2A = Current2A * CurrentCalibrationGain' />
+								</command>
+								<command class_type='decision' title='Clamp PWM2 current lower bound to 0A' exp='Current2A &lt; 0' swap='0' >
+									<flowline >
+										<command class_type='calculation' title='Set PWM2 current to 0A if negative' >
+											<exp exp='Current2A = 0' />
+										</command>
+									</flowline>
+									<flowline />
+								</command>
+								<command class_type='calculation' title='Convert amps to milliamps' >
+									<exp exp='Current2mA = Current2A * 1000' />
+								</command>
+								<command class_type='decision' title='Clamp PWM2 current upper bound to 2000mA (2A)' exp='Current2mA &gt; 2000' swap='0' >
+									<flowline >
+										<command class_type='calculation' title='Set PWM2 current to 2000mA if above range' >
+											<exp exp='Current2mA = 2000' />
+										</command>
+									</flowline>
+									<flowline />
+								</command>
+								<command class_type='calculation' title='Store milliamps in low/high byte register pairs' >
+									<exp exp='RegCurrent2mA_L = Current2mA &amp; 255' />
+									<exp exp='RegCurrent2mA_H = Current2mA &gt;&gt; 8' />
+								</command>
+							</flowline>
+							<flowline >
+								<command class_type='call' title='Read PWM1 shunt voltage (AN0 single ended)' component='ADS1220' macro='SampleSglRaw' >
+									<return exp='Shunt1Volts' />
+									<argument exp='0' />
+									<argument exp='AdcGainSetting' />
+								</command>
+								<command class_type='calculation' title='Convert shunt volts to current in amps (I=V/R)' >
+									<exp exp='Current1A = Shunt1Volts / ShuntResistanceOhms' />
+									<exp exp='Current1A = Current1A * CurrentCalibrationGain' />
+								</command>
+								<command class_type='decision' title='Clamp PWM1 current lower bound to 0A' exp='Current1A &lt; 0' swap='0' >
+									<flowline >
+										<command class_type='calculation' title='Set PWM1 current to 0A if negative' >
+											<exp exp='Current1A = 0' />
+										</command>
+									</flowline>
+									<flowline />
+								</command>
+								<command class_type='calculation' title='Convert amps to milliamps' >
+									<exp exp='Current1mA = Current1A * 1000' />
+								</command>
+								<command class_type='decision' title='Clamp PWM1 current upper bound to 2000mA (2A)' exp='Current1mA &gt; 2000' swap='0' >
+									<flowline >
+										<command class_type='calculation' title='Set PWM1 current to 2000mA if above range' >
+											<exp exp='Current1mA = 2000' />
+										</command>
+									</flowline>
+									<flowline />
+								</command>
+								<command class_type='calculation' title='Store milliamps in low/high byte register pairs' >
+									<exp exp='RegCurrent1mA_L = Current1mA &amp; 255' />
+									<exp exp='RegCurrent1mA_H = Current1mA &gt;&gt; 8' />
+								</command>
+							</flowline>
+						</command>
+						<command class_type='calculation' title='Move to next channel' >
+							<exp exp='CurrentChannel = CurrentChannel + 1' />
+						</command>
+					</flowline>
+				</macro>
+				<macro >
+					<flowline name='ServoBus_RX' description='' statediag='0' >
+						<return name='Return' type='v0' description='' isconst='0' isHidden='0' isinit='0' usrinit='' setinit='' />
+						<local name='rx' type='u8' description='' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
+						<command class_type='call' title='Read byte from Serial servo bus' component='UART_ServoBus' macro='ReceiveChar' >
+							<return exp='.rx' />
+							<argument exp='0' />
+						</command>
+						<command class_type='call' title='Add byte to circular buffer for processing' component='CircularBuffer1' macro='PutByte' >
+							<argument exp='.rx' />
+						</command>
+					</flowline>
+				</macro>
+				<macro >
+					<flowline name='SendStatusPacketNoData' description='' statediag='0' >
+						<return name='Return' type='v0' description='' isconst='0' isHidden='0' isinit='0' usrinit='' setinit='' />
+						<command class_type='call' title='TX Header 1' component='UART_ServoBus' macro='SendChar' >
+							<argument exp='255' />
+						</command>
+						<command class_type='call' title='TX Header 2' component='UART_ServoBus' macro='SendChar' >
+							<argument exp='255' />
+						</command>
+						<command class_type='call' title='TX ID' component='UART_ServoBus' macro='SendChar' >
+							<argument exp='BusDeviceID' />
+						</command>
+						<command class_type='call' title='TX LENGTH' component='UART_ServoBus' macro='SendChar' >
+							<argument exp='TxLength' />
+						</command>
+						<command class_type='call' title='TX ERROR' component='UART_ServoBus' macro='SendChar' >
+							<argument exp='TxError' />
+						</command>
+						<command class_type='call' title='TX CHECKSUM' component='UART_ServoBus' macro='SendChar' >
+							<argument exp='TxChecksumSum' />
+						</command>
+					</flowline>
+				</macro>
+				<macro >
+					<flowline name='SendStatusPacketWithData' description='' statediag='0' >
+						<return name='Return' type='v0' description='' isconst='0' isHidden='0' isinit='0' usrinit='' setinit='' />
+						<command class_type='call' title='TX Header 1' component='UART_ServoBus' macro='SendChar' >
+							<argument exp='255' />
+						</command>
+						<command class_type='call' title='TX Header 2' component='UART_ServoBus' macro='SendChar' >
+							<argument exp='255' />
+						</command>
+						<command class_type='call' title='TX ID' component='UART_ServoBus' macro='SendChar' >
+							<argument exp='BusDeviceID' />
+						</command>
+						<command class_type='call' title='TX LENGTH' component='UART_ServoBus' macro='SendChar' >
+							<argument exp='TxLength' />
+						</command>
+						<command class_type='call' title='TX ERROR' component='UART_ServoBus' macro='SendChar' >
+							<argument exp='TxError' />
+						</command>
+						<command class_type='call' title='TX DATA BYTE' component='UART_ServoBus' macro='SendChar' >
+							<argument exp='TxDataByte' />
+						</command>
+						<command class_type='call' title='TX CHECKSUM' component='UART_ServoBus' macro='SendChar' >
+							<argument exp='TxChecksumSum' />
+						</command>
+					</flowline>
+				</macro>
+				<macro >
+					<flowline name='ApplyWritableRegistersToVariablesAndHardware' description='' statediag='0' >
+						<return name='Return' type='v0' description='' isconst='0' isHidden='0' isinit='0' usrinit='' setinit='' />
+						<command class_type='calculation' title='Apply writable register bytes to named variables' >
+							<exp exp='RegToolTypeId = Registers[3]' />
+							<exp exp='RegStatusFlags = Registers[4]' />
+							<exp exp='RegPwm1Duty = Registers[5]' />
+							<exp exp='RegPwm2Duty = Registers[6]' />
+							<exp exp='RegPwmControl = Registers[7]' />
+						</command>
+						<command class_type='comment' title='' comment='Apply PWM1 register values to hardware output' textarea='12,0,12,0' />
+						<command class_type='decision' title='PWM1 enabled bit is set' exp='(RegPwmControl &amp; 1) &gt; 0' swap='0' >
+							<flowline >
+								<command class_type='call' title='Enable PWM1 output' component='PWM1' macro='Enable' />
+								<command class_type='call' title='Apply PWM1 duty cycle' component='PWM1' macro='SetDutyCycle' >
+									<argument exp='RegPwm1Duty' />
+								</command>
+							</flowline>
+							<flowline >
+								<command class_type='call' title='Disable PWM1 output' component='PWM1' macro='Disable' />
+							</flowline>
+						</command>
+						<command class_type='comment' title='' comment='Apply PWM2 register values to hardware output' textarea='12,0,12,0' />
+						<command class_type='decision' title='PWM2 enabled bit is set' exp='(RegPwmControl &amp; 2) &gt; 0' swap='0' >
+							<flowline >
+								<command class_type='call' title='Enable PWM2 output' component='PWM2' macro='Enable' />
+								<command class_type='call' title='Apply PWM2 duty cycle' component='PWM2' macro='SetDutyCycle' >
+									<argument exp='RegPwm2Duty' />
+								</command>
+							</flowline>
+							<flowline >
+								<command class_type='call' title='Disable PWM2 output' component='PWM2' macro='Disable' />
+							</flowline>
+						</command>
+					</flowline>
+				</macro>
+				<macro >
+					<flowline name='Main' description='' statediag='0' >
+						<return name='Return' type='v0' description='' isconst='0' isHidden='0' isinit='0' usrinit='' setinit='' />
+						<command class_type='call' title='Component Macro' component='UART_ServoBus' macro='Initialise' />
+						<command class_type='call' title='Component Macro' component='UART_ProgDebug' macro='Initialise' />
+						<command class_type='call' title='Component Macro' component='ADS1220' macro='Initialise' />
+						<command class_type='call' title='Component Macro' component='Servo_Controller1' macro='Initialise' />
+						<command class_type='decision' title='Debug enabled at startup' exp='(DebugEnabled = 1) &amp;&amp; (DebugLevel &gt;= 1)' swap='0' >
+							<flowline >
+								<command class_type='call' title='Debug boot banner' component='UART_ProgDebug' macro='SendString' >
+									<argument exp='&quot;DBG boot\r\n&quot;' />
+								</command>
+							</flowline>
+							<flowline />
+						</command>
+						<command class_type='comment' title='' comment='Start with PWM outputs disabled and duty set to 0' textarea='12,0,12,0' />
+						<command class_type='call' title='Set PWM1 duty to initial register value' component='PWM1' macro='SetDutyCycle' >
+							<argument exp='RegPwm1Duty' />
+						</command>
+						<command class_type='call' title='Set PWM2 duty to initial register value' component='PWM2' macro='SetDutyCycle' >
+							<argument exp='RegPwm2Duty' />
+						</command>
+						<command class_type='call' title='Disable PWM1 at startup' component='PWM1' macro='Disable' />
+						<command class_type='call' title='Disable PWM2 at startup' component='PWM2' macro='Disable' />
+						<command class_type='interrupt' title='Interrupt on Servo Bus Enable' enable='1' name='RXINT1' call='ServoBus_RX' >
+							<settings timer='0' prescale='-1' postscale='-1' rollover='-1' bitcount='-1' trigger='3' ppsport='-1' ppspin='-1' maskhi='--------------------------------------------------------------------------------------------------------------------------------------------------------------------------8' masklo='--------------------------------------------------------------------------------------------------------------------------------------------------------------------------8' >
+								<option value='0' />
+								<option value='0' />
+								<option value='0' />
+								<option value='0' />
+								<option value='0' />
+								<option value='0' />
+								<option value='0' />
+								<option value='0' />
+							</settings>
+						</command>
+						<command class_type='comment' title='' comment='Main program loop' textarea='12,0,12,0' />
+						<command class_type='loop' title='Loop' type='3' exp='1' >
+							<flowline >
+								<command class_type='decision' title='Decision' exp='LoopCounter = 5' swap='0' >
+									<flowline >
+										<command class_type='call' title='Update ADS1220-based current registers' macro='UpdateCurrentMeasurements' />
+									</flowline>
+									<flowline />
+								</command>
+								<command class_type='decision' title='Decision' exp='LoopCounter = 10' swap='0' >
+									<flowline >
+										<command class_type='call' title='Update ADC0/ADC1 telemetry registers' macro='UpdateAdcTelemetry' />
+										<command class_type='calculation' title='Calculation' >
+											<exp exp='LoopCounter = 0' />
+										</command>
+									</flowline>
+									<flowline >
+										<command class_type='calculation' title='Calculation' >
+											<exp exp='LoopCounter++' />
+										</command>
+									</flowline>
+								</command>
+								<command class_type='call' title='Refresh register array from named variables' macro='RefreshRegisterArrayFromVariables' />
+								<command class_type='decision' title='Debug periodic status output enabled' exp='(DebugEnabled = 1) &amp;&amp; (DebugLevel &gt;= 1)' swap='0' >
+									<flowline >
+										<command class_type='calculation' title='Increment debug counter' >
+											<exp exp='DebugCounter++' />
+										</command>
+										<command class_type='decision' title='Every 100 loops send system status' exp='DebugCounter &gt;= 100' swap='0' >
+											<flowline >
+												<command class_type='calculation' title='Reset debug counter' >
+													<exp exp='DebugCounter = 0' />
+												</command>
+												<command class_type='call' title='Debug status prefix' component='UART_ProgDebug' macro='SendString' >
+													<argument exp='&quot;DBG ok valid=&quot;' />
+												</command>
+												<command class_type='call' title='Debug valid packet count' component='UART_ProgDebug' macro='SendNumber' >
+													<argument exp='PacketValidCount' />
+												</command>
+												<command class_type='call' title='Debug error separator' component='UART_ProgDebug' macro='SendString' >
+													<argument exp='&quot; err=&quot;' />
+												</command>
+												<command class_type='call' title='Debug error count' component='UART_ProgDebug' macro='SendNumber' >
+													<argument exp='PacketErrorCount' />
+												</command>
+												<command class_type='call' title='Debug line ending' component='UART_ProgDebug' macro='SendString' >
+													<argument exp='&quot;\r\n&quot;' />
+												</command>
+											</flowline>
+											<flowline />
+										</command>
+									</flowline>
+									<flowline />
+								</command>
+								<command class_type='loop' title='Process all bytes currently waiting in circular buffer' type='0' exp='CircularBuffer1::GetNumberBytes() &gt; 0' >
+									<flowline >
+										<command class_type='call' title='User Macro' macro='ProcessCommsByte' />
+									</flowline>
+								</command>
+								<command class_type='delay' title='Delay to keep watchdog timer happy' exp='10' type='1' />
+							</flowline>
+						</command>
+					</flowline>
+				</macro>
+				<macro >
+					<flowline name='ReadRegisterIntoReadValue' description='' statediag='0' >
+						<return name='Return' type='v0' description='' isconst='0' isHidden='0' isinit='0' usrinit='' setinit='' />
+						<command class_type='decision' title='Read address is inside register array range' exp='LastAddress &lt; 32' swap='0' >
+							<flowline >
+								<command class_type='calculation' title='Read byte directly from register array' >
+									<exp exp='ReadValue = Registers[LastAddress]' />
+								</command>
+							</flowline>
+							<flowline >
+								<command class_type='calculation' title='Out-of-range addresses return zero' >
+									<exp exp='ReadValue = 0' />
+								</command>
+							</flowline>
+						</command>
+					</flowline>
+				</macro>
+			</macros>
+			<component class_type='ref' guid='444fb704-814c-4707-a15c-759ba088505c' vmin='0' vmaj='12' codename='PWM1' panelId='0' x='66.5' y='-147' z='0' xsz='25.18' ysz='25.2432' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='1' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
+				<resources />
+				<properties />
+				<values >
+					<value target='channel' data='001' />
+					<value target='altpin' data='0' />
+					<value target='pwm_pin' data='$PORTA.22' />
+					<value target='RemapPin' data='020' />
+					<value target='timer' data='002' />
+					<value target='period' data='65535' />
+					<value target='prescale' data='0' />
+					<value target='period_calc' data='936.228577' />
+					<value target='frequency_calc2' data='1068.115234' />
+					<value target='frequency_calc' data='1.068115' />
+					<value target='pwm_prescale' data='1' />
+					<value target='ReqFreq' data='100.000000' />
+					<value target='OldReqFreq' data='100.000000' />
+					<value target='CalcFreq' data='100.004570' />
+					<value target='CalcPeriod' data='10936' />
+					<value target='CalcScaler' data='64' />
+					<value target='Apply' data='0' />
+					<value target='ClockSpeed' data='240000000' />
+					<value target='SimRep' data='000' />
+					<value target='Family' data='ESP' />
+					<value target='ModifiedConnection' data='A.22' />
+					<value target='IsESP' data='1' />
+				</values>
+				<events />
+				<apis />
+				<variables />
+				<macros />
+			</component>
+			<component class_type='ref' guid='444fb704-814c-4707-a15c-759ba088505c' vmin='0' vmaj='12' codename='PWM2' panelId='0' x='186.5' y='-147' z='1' xsz='25.18' ysz='25.2432' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='1' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
+				<resources />
+				<properties />
+				<values >
+					<value target='channel' data='002' />
+					<value target='altpin' data='0' />
+					<value target='pwm_pin' data='$PORTA.23' />
+					<value target='RemapPin' data='021' />
+					<value target='timer' data='002' />
+					<value target='period' data='65535' />
+					<value target='prescale' data='0' />
+					<value target='period_calc' data='936.228577' />
+					<value target='frequency_calc2' data='1068.115234' />
+					<value target='frequency_calc' data='1.068115' />
+					<value target='pwm_prescale' data='1' />
+					<value target='ReqFreq' data='100.000000' />
+					<value target='OldReqFreq' data='100.000000' />
+					<value target='CalcFreq' data='100.004570' />
+					<value target='CalcPeriod' data='10936' />
+					<value target='CalcScaler' data='64' />
+					<value target='Apply' data='0' />
+					<value target='ClockSpeed' data='240000000' />
+					<value target='SimRep' data='000' />
+					<value target='Family' data='ESP' />
+					<value target='ModifiedConnection' data='A.23' />
+					<value target='IsESP' data='1' />
+				</values>
+				<events />
+				<apis />
+				<variables />
+				<macros />
+			</component>
+			<component class_type='ref' guid='ee11c499-8a22-4987-ba57-c7d5d2224a39' vmin='0' vmaj='1' codename='ADS1220' panelId='0' x='306.246' y='-145.5' z='2' xsz='25.0671' ysz='24.9668' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
+				<resources />
+				<properties />
+				<values >
+					<value target='cal_spi1::CHANNEL' data='001' />
+					<value target='cal_spi1::PR_SCALE' data='064' />
+					<value target='cal_spi1::MOSI' data='$PORTA.12' />
+					<value target='cal_spi1::MOSIPins' data='006' />
+					<value target='cal_spi1::MISO' data='$PORTA.13' />
+					<value target='cal_spi1::MISOPins' data='013' />
+					<value target='cal_spi1::CLK' data='$PORTA.14' />
+					<value target='cal_spi1::CLKPins' data='005' />
+					<value target='cal_spi1::SS' data='$PORTA.15' />
+					<value target='UseReady' data='1' />
+					<value target='DRDYPin' data='$PORTA.5' />
+					<value target='DataRate' data='000' />
+					<value target='OperatingMode' data='000' />
+					<value target='ConversionMode' data='000' />
+					<value target='PGAGain' data='000' />
+					<value target='VRef' data='001' />
+					<value target='ReferenceVoltage' data='2.048' />
+					<value target='FIRFilter' data='001' />
+					<value target='IDACCurrent' data='001' />
+					<value target='I1MUX' data='003' />
+					<value target='I2MUX' data='004' />
+					<value target='RTDType' data='001' />
+					<value target='RTDConfig' data='001' />
+					<value target='RefResistor' data='4700' />
+					<value target='TempCoefficient' data='0.00385055' />
+					<value target='SimComms' data='0' />
+					<value target='IsSim' data='0' />
+					<value target='cal_spi1::ScopeTraces' data='1' />
+					<value target='cal_spi1::ConsoleData' data='1' />
+					<value target='cal_spi1::Injector' data='000' />
+				</values>
+				<events />
+				<apis />
+				<variables />
+				<macros />
+			</component>
+			<component class_type='ref' guid='3d8f329f-3bf9-4c90-8797-05100f6419f8' vmin='0' vmaj='1' codename='ADC0' panelId='0' x='595.5' y='-180.5' z='3' xsz='25.2309' ysz='25.0183' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
+				<resources />
+				<properties />
+				<values >
+					<value target='adc_base1::channel' data='6' />
+					<value target='adc_base1::vrefvol' data='245' />
+					<value target='adc_base1::vrefop' data='000' />
+					<value target='adc_base1::convspd' data='003' />
+					<value target='adc_base1::actime' data='40' />
+					<value target='adc_base1::bits' data='12' />
+					<value target='VrefForCalculations' data='' />
+					<value target='BitDepth' data='12' />
+					<value target='SetValue' data='5.000050' />
+					<value target='RetainValue' data='1' />
+					<value target='ModifiedConnection' data='An 6' />
+					<value target='ComponentLabel' data='000' />
+					<value target='GdiText2::sText' data='ADC0' />
+					<value target='ConnectionLabels' data='1' />
+					<value target='ShowPinValue' data='1' />
+					<value target='LabelColour' data='7895160' />
+					<value target='GdiGauge1::nStyle' data='  1' />
+					<value target='GdiGauge1::nPointerLinear' data='  0' />
+					<value target='UpperBoundValue' data='2.450025' />
+					<value target='adc_base1::ScopeTraces' data='0' />
+					<value target='GdiGauge1::brFill' data='71776119061217280' />
+					<value target='GdiGauge1::colFrameOutline' data='16777215' />
+					<value target='GdiGauge1::brFrameFill' data='251262225375821824' />
+					<value target='GdiGauge1::colPointerOutline' data='16777215' />
+					<value target='GdiGauge1::brPointerFill' data='251262225375821824' />
+					<value target='GdiGauge1::colText' data='16777215' />
+					<value target='GdiGauge1::colTickMarkOutline' data='16777215' />
+					<value target='GdiGauge1::brTickMarkFill' data='288090190566653952' />
+					<value target='GdiGauge1::colCapOutline' data='16777215' />
+					<value target='GdiGauge1::brCapFill' data='288090190566653952' />
+					<value target='GdiGauge1::sMainImage' data='' />
+					<value target='GdiGauge1::sCapImage' data='' />
+					<value target='FlowcodeType' data='0' />
+					<value target='Enabled' data='1' />
+					<value target='Product' data='ESP' />
+				</values>
+				<events />
+				<apis />
+				<variables />
+				<macros />
+			</component>
+			<component class_type='ref' guid='3d8f329f-3bf9-4c90-8797-05100f6419f8' vmin='0' vmaj='1' codename='ADC1' panelId='0' x='666' y='-181' z='4' xsz='25.5863' ysz='25.0917' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
+				<resources />
+				<properties />
+				<values >
+					<value target='adc_base1::channel' data='7' />
+					<value target='adc_base1::vrefvol' data='2450' />
+					<value target='adc_base1::vrefop' data='000' />
+					<value target='adc_base1::convspd' data='003' />
+					<value target='adc_base1::actime' data='40' />
+					<value target='adc_base1::bits' data='12' />
+					<value target='VrefForCalculations' data='' />
+					<value target='BitDepth' data='12' />
+					<value target='SetValue' data='5.000050' />
+					<value target='RetainValue' data='1' />
+					<value target='ModifiedConnection' data='An 7' />
+					<value target='ComponentLabel' data='000' />
+					<value target='GdiText2::sText' data='ADC1' />
+					<value target='ConnectionLabels' data='1' />
+					<value target='ShowPinValue' data='1' />
+					<value target='LabelColour' data='7895160' />
+					<value target='GdiGauge1::nStyle' data='  1' />
+					<value target='GdiGauge1::nPointerLinear' data='  0' />
+					<value target='UpperBoundValue' data='24.500246' />
+					<value target='adc_base1::ScopeTraces' data='0' />
+					<value target='GdiGauge1::brFill' data='71776119061217280' />
+					<value target='GdiGauge1::colFrameOutline' data='16777215' />
+					<value target='GdiGauge1::brFrameFill' data='251262225375821824' />
+					<value target='GdiGauge1::colPointerOutline' data='16777215' />
+					<value target='GdiGauge1::brPointerFill' data='251262225375821824' />
+					<value target='GdiGauge1::colText' data='16777215' />
+					<value target='GdiGauge1::colTickMarkOutline' data='16777215' />
+					<value target='GdiGauge1::brTickMarkFill' data='288090190566653952' />
+					<value target='GdiGauge1::colCapOutline' data='16777215' />
+					<value target='GdiGauge1::brCapFill' data='288090190566653952' />
+					<value target='GdiGauge1::sMainImage' data='' />
+					<value target='GdiGauge1::sCapImage' data='' />
+					<value target='FlowcodeType' data='0' />
+					<value target='Enabled' data='1' />
+					<value target='Product' data='ESP' />
+				</values>
+				<events />
+				<apis />
+				<variables />
+				<macros />
+			</component>
+			<component class_type='ref' guid='9202a62e-0a42-4780-adce-16b701e5ec53' vmin='8' vmaj='8' codename='Servo_Controller1' panelId='0' x='992.322' y='-146' z='5' xsz='25.18' ysz='25.059' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
+				<resources />
+				<properties />
+				<values >
+					<value target='Channel_Count' data='001' />
+					<value target='pin0' data='$PORTB.0' />
+					<value target='pin1' data='$PORTB.0' />
+					<value target='pin2' data='$PORTB.0' />
+					<value target='pin3' data='$PORTB.0' />
+					<value target='pin4' data='$PORTB.0' />
+					<value target='pin5' data='$PORTB.0' />
+					<value target='pin6' data='$PORTB.0' />
+					<value target='pin7' data='$PORTB.0' />
+					<value target='Peripherals' data='PWM1 - PWMn' />
+					<value target='TrimMode' data='001' />
+					<value target='trim0' data='000' />
+					<value target='trim1' data='0' />
+					<value target='trim2' data='0' />
+					<value target='trim3' data='0' />
+					<value target='trim4' data='0' />
+					<value target='trim5' data='0' />
+					<value target='trim6' data='000' />
+					<value target='trim7' data='0' />
+					<value target='min_pulse_width' data='1000' />
+					<value target='max_pulse_width' data='2000' />
+					<value target='CCPLo' data='216' />
+					<value target='CCPHi' data='234' />
+					<value target='Servo_Clock_Count_25' data='6000' />
+					<value target='Servo_Clock_Count_1280' data='30030' />
+					<value target='Servo_Clock_Count_2500' data='60120' />
+					<value target='Servo_Period_Multiplier' data='117' />
+					<value target='IntRange' data='0 - 29951' />
+					<value target='Divider' data='1' />
+					<value target='RoundUp' data='1' />
+					<value target='IntScaler' data='0.133715' />
+					<value target='MaxPeriod' data='29835' />
+					<value target='sim0' data='' />
+					<value target='sim1' data='' />
+					<value target='sim2' data='' />
+					<value target='sim3' data='' />
+					<value target='sim4' data='' />
+					<value target='sim5' data='' />
+					<value target='sim6' data='' />
+					<value target='sim7' data='' />
+				</values>
+				<events />
+				<apis />
+				<variables />
+				<macros />
+			</component>
+			<component class_type='ref' guid='c73616d1-7ad0-45d9-aada-69ccfa4c5efc' vmin='0' vmaj='3' codename='UART_ServoBus' panelId='0' x='904' y='-75' z='6' xsz='25.1778' ysz='25.1392' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='1' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
+				<resources />
+				<properties />
+				<values >
+					<value target='cal_uart::CHANNEL' data='002' />
+					<value target='cal_uart::BAUD_LIST' data='000' />
+					<value target='cal_uart::BAUD' data='1000000' />
+					<value target='cal_uart::DBITS' data='008' />
+					<value target='cal_uart::RETURN' data='001' />
+					<value target='cal_uart::ECHO' data='000' />
+					<value target='cal_uart::UseTX' data='1' />
+					<value target='cal_uart::TX' data='$PORTA.17' />
+					<value target='cal_uart::OutputPins' data='013' />
+					<value target='cal_uart::TXAlt' data='0' />
+					<value target='cal_uart::UseRX' data='1' />
+					<value target='cal_uart::RX' data='$PORTA.16' />
+					<value target='cal_uart::InputPins' data='016' />
+					<value target='cal_uart::RXAlt' data='0' />
+					<value target='cal_uart::FLOWEN' data='000' />
+					<value target='cal_uart::RTS' data='$PORTB.2' />
+					<value target='cal_uart::CTS' data='$PORTB.1' />
+					<value target='label' data='UART' />
+					<value target='cal_uart::ScopeTraces' data='0' />
+					<value target='cal_uart::ConsoleData' data='1' />
+					<value target='cal_uart::ConsoleFormat' data='000' />
+					<value target='cal_uart::ConsoleColumns' data='64' />
+					<value target='cal_uart::DataSource' data='000' />
+					<value target='cal_uart::com_port' data='000' />
+					<value target='cal_uart::Injector' data='000' />
+					<value target='cal_uart::APIUseDDR' data='' />
+					<value target='cal_uart::APIDDRPin' data='' />
+					<value target='cal_uart::APIDDRRXState' data='' />
+					<value target='cal_uart::APIUseFC' data='' />
+					<value target='cal_uart::APICTSPin' data='' />
+					<value target='cal_uart::APIRTSPin' data='' />
+				</values>
+				<events />
+				<apis />
+				<variables />
+				<macros />
+			</component>
+			<component class_type='ref' guid='c73616d1-7ad0-45d9-aada-69ccfa4c5efc' vmin='0' vmaj='3' codename='UART_ProgDebug' panelId='0' x='904' y='-215' z='7' xsz='25.1778' ysz='25.1392' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='1' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
+				<resources />
+				<properties />
+				<values >
+					<value target='cal_uart::CHANNEL' data='001' />
+					<value target='cal_uart::BAUD_LIST' data='009' />
+					<value target='cal_uart::BAUD' data='115200' />
+					<value target='cal_uart::DBITS' data='008' />
+					<value target='cal_uart::RETURN' data='001' />
+					<value target='cal_uart::ECHO' data='000' />
+					<value target='cal_uart::UseTX' data='1' />
+					<value target='cal_uart::TX' data='$PORTA.1' />
+					<value target='cal_uart::OutputPins' data='000' />
+					<value target='cal_uart::TXAlt' data='0' />
+					<value target='cal_uart::UseRX' data='1' />
+					<value target='cal_uart::RX' data='$PORTA.3' />
+					<value target='cal_uart::InputPins' data='001' />
+					<value target='cal_uart::RXAlt' data='0' />
+					<value target='cal_uart::FLOWEN' data='000' />
+					<value target='cal_uart::RTS' data='$PORTB.2' />
+					<value target='cal_uart::CTS' data='$PORTB.1' />
+					<value target='label' data='UART' />
+					<value target='cal_uart::ScopeTraces' data='0' />
+					<value target='cal_uart::ConsoleData' data='1' />
+					<value target='cal_uart::ConsoleFormat' data='000' />
+					<value target='cal_uart::ConsoleColumns' data='64' />
+					<value target='cal_uart::DataSource' data='000' />
+					<value target='cal_uart::com_port' data='000' />
+					<value target='cal_uart::Injector' data='000' />
+					<value target='cal_uart::APIUseDDR' data='' />
+					<value target='cal_uart::APIDDRPin' data='' />
+					<value target='cal_uart::APIDDRRXState' data='' />
+					<value target='cal_uart::APIUseFC' data='' />
+					<value target='cal_uart::APICTSPin' data='' />
+					<value target='cal_uart::APIRTSPin' data='' />
+				</values>
+				<events />
+				<apis />
+				<variables />
+				<macros />
+			</component>
+			<component class_type='ref' guid='975b2770-cfa8-4c76-b8ca-c008735e366d' vmin='0' vmaj='14' codename='DeviceID' panelId='0' x='183.887' y='-319.047' z='8' xsz='25.064' ysz='25.0216' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
+				<resources />
+				<properties />
+				<values >
+					<value target='count' data='003' />
+					<value target='AppDevDetected' data='0' />
+					<value target='SimulationOnly' data='0' />
+					<value target='InputMode' data='011' />
+					<value target='PortByte' data='$PORTA' />
+					<value target='pin0' data='$PORTA.25' />
+					<value target='pin1' data='$PORTA.26' />
+					<value target='pin2' data='$PORTA.27' />
+					<value target='pin3' data='$PORTA.3' />
+					<value target='pin4' data='$PORTA.4' />
+					<value target='pin5' data='$PORTA.5' />
+					<value target='pin6' data='$PORTA.6' />
+					<value target='pin7' data='$PORTA.7' />
+					<value target='Polarity' data='000' />
+					<value target='debounce' data='0' />
+					<value target='Latching' data='001' />
+					<value target='Label' data='000' />
+					<value target='SwitchSlide1::GdiText2::sText' data='DeviceID' />
+					<value target='SwitchSlide2::GdiText2::sText' data='' />
+					<value target='SwitchSlide3::GdiText2::sText' data='' />
+					<value target='SwitchSlide4::GdiText2::sText' data='' />
+					<value target='SwitchSlide5::GdiText2::sText' data='' />
+					<value target='SwitchSlide6::GdiText2::sText' data='' />
+					<value target='SwitchSlide7::GdiText2::sText' data='' />
+					<value target='SwitchSlide8::GdiText2::sText' data='' />
+					<value target='SwitchLayout' data='000' />
+					<value target='DistanceBetweenSwitches' data='60' />
+					<value target='Style' data='000' />
+					<value target='nType' data='002' />
+					<value target='sLabelOn' data='On' />
+					<value target='sLabelOff' data='Off' />
+					<value target='LabelColour' data='3947580' />
+					<value target='ShowConnectionLabel' data='1' />
+					<value target='ShowPinValue' data='0' />
+				</values>
+				<events />
+				<apis />
+				<variables />
+				<macros />
+			</component>
+			<component class_type='ref' guid='c34f9b8a-a915-4f75-ad0c-87f2ad670a8a' vmin='6' vmaj='1' codename='CircularBuffer1' panelId='0' x='1036' y='-76' z='9' xsz='1' ysz='1' zsz='1' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
+				<resources />
+				<properties />
+				<values >
+					<value target='BufferSize' data='128' />
+					<value target='StorageType' data='000' />
+					<value target='MemType' data='000' />
+					<value target='RETURN' data='000' />
+					<value target='Console' data='1' />
+				</values>
+				<events />
+				<apis />
+				<variables />
+				<macros />
+			</component>
+		</component>
+	</components>
+	<scadaresourcelookup />
+	<keymap />
+	<panel2d shadows='0' lighting='2' brightness='0' >
+		<background rgb='7292207' img='' style='0' />
+		<camera xe='0' ye='0' ze='2297.53' xt='0' yt='0' zt='0' xquat='0' yquat='0' zquat='0' wquat='1' />
+		<viewport dx='491' dy='820' zoom='25.8586' fix_topleft='0' />
+		<page x='1000' y='1000' show='0' rgb='7360576' />
+		<winpos ID='7005' RectRecentFloat='1134,71,1725,945' RectRecentDocked='0,0,491,843' RecentFrameAlignment='16384' RecentRowIndex='0' IsFloating='0' MRUWidth='32767' PinState='0' IsMaximized='0' IsVisible='0' />
+	</panel2d>
+	<panel3d shadows='1' lighting='2' brightness='128' perspective='1' >
+		<background rgb='16777120' img='' style='0' />
+		<table rgb='7360576' img='' style='0' size='0' />
+		<camera xe='0' ye='0' ze='781.66' xt='0' yt='0' zt='0' xquat='0' yquat='0' zquat='0' wquat='1' />
+		<camerakey0 xe='0' ye='0' ze='300' xt='0' yt='0' zt='0' xquat='0' yquat='0' zquat='0' wquat='1' />
+		<camerakey1 xe='-3.67394e-14' ye='0' ze='-300' xt='0' yt='0' zt='0' xquat='0' yquat='1' zquat='0' wquat='6.12323e-17' />
+		<camerakey2 xe='0' ye='-300' ze='6.66134e-14' xt='0' yt='0' zt='0' xquat='-0.707107' yquat='0' zquat='0' wquat='0.707107' />
+		<camerakey3 xe='-3.67394e-14' ye='300' ze='6.66134e-14' xt='0' yt='0' zt='0' xquat='-4.32978e-17' yquat='0.707107' zquat='0.707107' wquat='4.32978e-17' />
+		<camerakey4 xe='-300' ye='-6.66134e-14' ze='6.66134e-14' xt='0' yt='0' zt='0' xquat='-0.5' yquat='0.5' zquat='0.5' wquat='0.5' />
+		<camerakey5 xe='300' ye='-6.66134e-14' ze='6.66134e-14' xt='0' yt='0' zt='0' xquat='-0.5' yquat='-0.5' zquat='-0.5' wquat='0.5' />
+		<camerakey6 xe='-173.205' ye='-173.205' ze='173.205' xt='0' yt='0' zt='0' xquat='-0.424708' yquat='0.17592' zquat='0.339851' wquat='0.820473' />
+		<winpos ID='7004' RectRecentFloat='575,270,1225,720' RectRecentDocked='0,0,392,866' RecentFrameAlignment='16384' RecentRowIndex='0' IsFloating='0' MRUWidth='32767' PinState='0' IsMaximized='0' IsVisible='0' />
+	</panel3d>
+	<panels2d count='1' >
+		<panel2d_0 id='0' name='2D Panel' type='0' >
+			<winpos ID='1171' RectRecentFloat='334,-697,1462,-64' RectRecentDocked='994,141,1489,1061' RecentFrameAlignment='16384' RecentRowIndex='0' IsFloating='1' MRUWidth='32767' PinState='0' IsMaximized='0' IsVisible='1' />
+			<background fill='288230376151053813' showgrid='1' gridstyle='0' gridsize='5' gridbrush='71776119075691740' snaptogrid='1' fitcomp='0' disp_x='300' disp_y='400' scale='100' disp_col='16777215' />
+		</panel2d_0>
+	</panels2d>
+	<layout >
+		<view type='0' name='Main' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA2QMAAJMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
+		<view type='0' name='ServoBus_RX' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA2QMAAJMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
+		<view type='0' name='UpdateCurrentMeasurements' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA2QMAAJMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
+		<view type='0' name='ReadRegisterIntoReadValue' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA2QMAAJMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
+		<view type='0' name='SendStatusPacketNoData' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA2QMAAJMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
+		<view type='0' name='SendStatusPacketWithData' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA2QMAAJMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
+		<view type='0' name='UpdateAdcTelemetry' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA2QMAAJMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
+		<view type='0' name='RefreshRegisterArrayFromVariables' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA2QMAAJMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
+		<view type='0' name='ProcessCommsByte' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA2QMAAJMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
+	</layout>
+</document>
+</root>
