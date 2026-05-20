@@ -273,6 +273,9 @@
 					<def class_type='variable' name='ResponseSent' type='b1' description='Set when a status reply was already transmitted for this packet' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
 				</variable>
 				<variable public='0' >
+					<def class_type='variable' name='ServoApplyPending' type='b1' description='Apply hobby servo hardware in main loop (not during packet handler)' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
+				</variable>
+				<variable public='0' >
 					<def class_type='variable' name='LastInstruction' type='u8' description='Most recent valid instruction for this node' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
 				</variable>
 				<variable public='0' >
@@ -1081,7 +1084,6 @@
 								<command class_type='call' title='Disable PWM2 output' component='PWM2' macro='Disable' />
 							</flowline>
 						</command>
-						<command class_type='comment' title='' comment='Apply hobby servo registers (48+) to Servo_Controller1' textarea='12,0,12,0' />
 						<command class_type='calculation' title='Load hobby servo variables from register array' >
 							<exp exp='RegServoEnable = Registers[48]' />
 							<exp exp='RegServoPosition8bit = Registers[49]' />
@@ -1091,6 +1093,19 @@
 							<exp exp='RegServoPulseMax_L = Registers[53]' />
 							<exp exp='RegServoPulseMax_H = Registers[54]' />
 						</command>
+						<command class_type='decision' title='Defer hobby servo hardware if this WRITE touched servo registers' exp='(LastAddress &gt;= 48) &amp;&amp; (LastAddress &lt;= 54)' swap='0' >
+							<flowline >
+								<command class_type='calculation' title='Apply servo on main loop after bus reply is sent' >
+									<exp exp='ServoApplyPending = 1' />
+								</command>
+							</flowline>
+							<flowline />
+						</command>
+					</flowline>
+				</macro>
+				<macro >
+					<flowline name='ApplyPendingHobbyServo' description='' statediag='0' >
+						<return name='Return' type='v0' description='' isconst='0' isHidden='0' isinit='0' usrinit='' setinit='' />
 						<command class_type='decision' title='Hobby servo output enabled' exp='RegServoEnable &gt; 0' swap='0' >
 							<flowline >
 								<command class_type='call' title='Enable hobby servo channel' component='Servo_Controller1' macro='EnableServo' >
@@ -1098,23 +1113,29 @@
 								</command>
 								<command class_type='decision' title='Last write was angle register (50)' exp='LastAddress = 50' swap='0' >
 									<flowline >
-										<command class_type='call' title='Move hobby servo to angle in degrees' component='Servo_Controller1' macro='MoveToAngle' >
+										<command class_type='calculation' title='Map angle 0-180 to position 0-255' >
+											<exp exp='RegServoPosition8bit = RegServoAngleDeg * 255 / 180' />
+										</command>
+										<command class_type='call' title='Jump servo directly to position (fast)' component='Servo_Controller1' macro='SetPosition' >
 											<argument exp='HobbyServoChannel' />
-											<argument exp='RegServoAngleDeg' />
+											<argument exp='RegServoPosition8bit' />
 										</command>
 									</flowline>
 									<flowline >
 										<command class_type='decision' title='Last write was position register (49)' exp='LastAddress = 49' swap='0' >
 											<flowline >
-												<command class_type='call' title='Move hobby servo to 8-bit position' component='Servo_Controller1' macro='SetPosition' >
+												<command class_type='call' title='Set hobby servo 8-bit position' component='Servo_Controller1' macro='SetPosition' >
 													<argument exp='HobbyServoChannel' />
 													<argument exp='RegServoPosition8bit' />
 												</command>
 											</flowline>
 											<flowline >
-												<command class_type='call' title='Default: apply current angle when enable-only write' component='Servo_Controller1' macro='MoveToAngle' >
+												<command class_type='calculation' title='Map stored angle to position for enable-only write' >
+													<exp exp='RegServoPosition8bit = RegServoAngleDeg * 255 / 180' />
+												</command>
+												<command class_type='call' title='Enable write: apply current angle as position' component='Servo_Controller1' macro='SetPosition' >
 													<argument exp='HobbyServoChannel' />
-													<argument exp='RegServoAngleDeg' />
+													<argument exp='RegServoPosition8bit' />
 												</command>
 											</flowline>
 										</command>
@@ -1189,6 +1210,15 @@
 											<exp exp='LoopCounter++' />
 										</command>
 									</flowline>
+								</command>
+								<command class_type='decision' title='Apply deferred hobby servo move from last WRITE' exp='ServoApplyPending = 1' swap='0' >
+									<flowline >
+										<command class_type='call' title='Run pending hobby servo hardware update' macro='ApplyPendingHobbyServo' />
+										<command class_type='calculation' title='Clear pending flag' >
+											<exp exp='ServoApplyPending = 0' />
+										</command>
+									</flowline>
+									<flowline />
 								</command>
 								<command class_type='call' title='Refresh register array from named variables' macro='RefreshRegisterArrayFromVariables' />
 								<command class_type='decision' title='Debug periodic status output enabled' exp='(DebugEnabled = 1) &amp;&amp; (DebugLevel &gt;= 1)' swap='0' >

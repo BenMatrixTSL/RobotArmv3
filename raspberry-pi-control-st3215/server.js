@@ -305,9 +305,8 @@ async function processCommandQueue() {
     
     try {
         const result = await commandFn();
-        // Reduced delay after command completes - only 5ms instead of 10ms
-        // This helps prevent response conflicts while reducing accumulated lag
-        await new Promise(resolve => setTimeout(resolve, 5));
+        // Short gap before next bus command (end tool needs a little longer)
+        await new Promise(resolve => setTimeout(resolve, 25));
         resolve(result);
     } catch (error) {
         reject(error);

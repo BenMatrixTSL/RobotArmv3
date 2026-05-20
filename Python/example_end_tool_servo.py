@@ -65,6 +65,9 @@ def main():
         arm.tool_set_servo_enabled(True)
         print("  Enabled.\n")
 
+        # Give the ESP32 a moment to apply the enable before angle commands
+        time.sleep(0.3)
+
         # Step 4: Move through demo angles
         print("Moving end-effector servo through demo angles:")
         for angle in DEMO_ANGLES:

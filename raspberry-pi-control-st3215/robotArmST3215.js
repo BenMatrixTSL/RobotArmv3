@@ -577,7 +577,7 @@ class ServoController {
      * Write data to servo
      * @private
      */
-    async writeData(address, data) {
+    async writeData(address, data, allowRetry = true) {
         // Prepare write parameters: address (1 byte) + data bytes
         // Python: txpacket[PKT_PARAMETER0] = address (single byte)
         //         txpacket[PKT_PARAMETER0 + 1: PKT_PARAMETER0 + 1 + length] = data
@@ -637,8 +637,29 @@ class ServoController {
         // Now send write instruction
         await this.sendPacket(INST_WRITE, parameters);
 
+        // Brief pause so the ESP32 can reply before we wait (shared half-duplex bus)
+        if (this.servoIdNumber === END_TOOL_ID) {
+            await new Promise(resolve => setTimeout(resolve, 20));
+        }
+
         // Wait for response and return true on success
-        const result = await writePromise;
+        let result;
+        try {
+            result = await writePromise;
+        } catch (firstError) {
+            if (allowRetry && this.servoIdNumber === END_TOOL_ID && firstError.message === 'Write timeout') {
+                // One retry for end tool (servo apply may have delayed the first reply)
+                this.pendingResponse = null;
+                this.responseResolve = null;
+                this.responseReject = null;
+                if (this.responseTimeout) {
+                    clearTimeout(this.responseTimeout);
+                    this.responseTimeout = null;
+                }
+                return await this.writeData(address, data, false);
+            }
+            throw firstError;
+        }
         return true;
     }
 
