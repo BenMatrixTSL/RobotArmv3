@@ -1,0 +1,2 @@
+Add a command to recheck which motors are online
+Add Hamed's reverse kinematics mod to prevent 180 degree flipping when going from +x to -x

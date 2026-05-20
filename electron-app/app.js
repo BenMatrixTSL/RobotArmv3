@@ -39,6 +39,7 @@ let statusUpdateInterval = null;
 let robotArm3D = null; // 3D visualization instance
 let useSimulatedAngles = false; // Whether to use simulated angles instead of real robot angles
 let simulatedAngles = [0, 0, 0, 0]; // Simulated joint angles
+const PI_SERVER_PORT = 8080; // ST3215 server port is fixed
 
 // If the preload bridge did not run, we provide a simple fallback here
 // so that window.electronAPI is still available when nodeIntegration is enabled.
@@ -251,17 +252,123 @@ function updateKinematicsMatrices(jointAnglesOverride) {
 
 // ===== Helper Functions =====
 
+/** Default number of motorised joints (servos) on the arm */
+const DEFAULT_NUM_JOINTS = 6;
+
 /**
- * Gets the number of joints from settings
- * @returns {number} Number of joints (default: 4)
+ * Gets the number of controllable joints (servos) from settings.
+ * @returns {number} Number of joints (default: 6)
  */
 function getNumJoints() {
     const numJointsInput = document.getElementById('numJoints');
     if (numJointsInput) {
-        const num = parseInt(numJointsInput.value);
-        return isNaN(num) || num < 1 ? 4 : num; // Default to 4 if invalid
+        const num = parseInt(numJointsInput.value, 10);
+        return isNaN(num) || num < 1 ? DEFAULT_NUM_JOINTS : num;
     }
-    return 4; // Default
+    return DEFAULT_NUM_JOINTS;
+}
+
+/**
+ * Revolute joint count from loaded URDF, or settings if URDF not loaded.
+ * @returns {number}
+ */
+function getRevoluteJointCount() {
+    if (typeof robotKinematics !== 'undefined' &&
+        robotKinematics &&
+        typeof robotKinematics.isConfigured === 'function' &&
+        robotKinematics.isConfigured()) {
+        return robotKinematics.getJointCount();
+    }
+    return getNumJoints();
+}
+
+/**
+ * True when URDF defines a fixed tool-mount frame (7th kinematic coordinate, not a servo).
+ * @returns {boolean}
+ */
+function hasToolMountCoordinate() {
+    return typeof robotKinematics !== 'undefined' &&
+        robotKinematics &&
+        robotKinematics.fixedToolJoints &&
+        robotKinematics.fixedToolJoints.length > 0;
+}
+
+/**
+ * Tool-mount offset from the last link, in millimetres (read-only coordinate 7).
+ * @returns {{ name: string, x: number, y: number, z: number }|null}
+ */
+function getToolMountOffsetMm() {
+    if (!hasToolMountCoordinate()) {
+        return null;
+    }
+    const toolJoint = robotKinematics.fixedToolJoints[0];
+    if (!toolJoint || !toolJoint.origin) {
+        return null;
+    }
+    return {
+        name: toolJoint.name || 'tool_mount',
+        x: (toolJoint.origin.x || 0) * 1000,
+        y: (toolJoint.origin.y || 0) * 1000,
+        z: (toolJoint.origin.z || 0) * 1000
+    };
+}
+
+/**
+ * Total kinematic coordinates: revolute joints plus optional fixed tool mount.
+ * @returns {number}
+ */
+function getKinematicCoordinateCount() {
+    let count = getRevoluteJointCount();
+    if (hasToolMountCoordinate()) {
+        count += 1;
+    }
+    return count;
+}
+
+/**
+ * How many joint angle inputs to show (revolute only; tool mount has no angle).
+ * @returns {number}
+ */
+function getJointAngleControlCount() {
+    return getRevoluteJointCount();
+}
+
+/**
+ * True if a G-code command specifies any J1..Jn joint angles.
+ * @param {Object} params
+ * @returns {boolean}
+ */
+function commandHasJointAngleParams(params) {
+    if (!params) {
+        return false;
+    }
+    const numJoints = getNumJoints();
+    for (let i = 1; i <= numJoints; i++) {
+        if (params['J' + i] !== undefined) {
+            return true;
+        }
+    }
+    return false;
+}
+
+/**
+ * HTML for read-only tool-mount coordinate (coordinate 7).
+ * @returns {string}
+ */
+function buildToolMountCoordinateHtml() {
+    const offset = getToolMountOffsetMm();
+    if (!offset) {
+        return '';
+    }
+    const coordNum = getRevoluteJointCount() + 1;
+    return (
+        '<div class="simulated-angle-control tool-mount-coordinate">' +
+        '<label>Coordinate ' + coordNum + ' - Tool mount (fixed, no servo):</label>' +
+        '<span class="tool-mount-offset">' +
+        offset.name + ': X ' + offset.x.toFixed(1) + ' mm, Y ' + offset.y.toFixed(1) +
+        ' mm, Z ' + offset.z.toFixed(1) + ' mm' +
+        '</span></div>'
+    );
 }
 
 /**
@@ -405,28 +512,7 @@ function generateSimulatedAngleControls() {
     const container = document.getElementById('simulatedAnglesGrid');
     if (!container) return;
     
-    // Use kinematics configuration count if available, otherwise use numJoints setting
-    // For 5-axis robot: 5 joints (tool offset doesn't need angle control)
-    let numJoints = 5; // Default to 5 for 5-axis robot
-    
-    // Try to get count from kinematics configuration
-    if (robotKinematics && robotKinematics.jointConfigs && robotKinematics.jointConfigs.length > 0) {
-        // If we have 6 configs (5 joints + tool), use 5; otherwise use the count
-        const configCount = robotKinematics.jointConfigs.length;
-        if (configCount === 6) {
-            numJoints = 5; // 5 joints + 1 tool offset
-        } else {
-            numJoints = configCount;
-        }
-    } else {
-        // Fallback to input field value
-        numJoints = getNumJoints();
-        // Ensure at least 5 for 5-axis robot
-        if (numJoints < 5) {
-            numJoints = 5;
-        }
-    }
-    
+    const numJoints = getJointAngleControlCount();
     let html = '';
     
     for (let i = 1; i <= numJoints; i++) {
@@ -439,6 +525,7 @@ function generateSimulatedAngleControls() {
         `;
     }
     
+    html += buildToolMountCoordinateHtml();
     container.innerHTML = html;
 }
 
@@ -479,6 +566,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Local Raspberry Pi panel (only shown on the Pi)
     try {
+        if (typeof toggleLocalPiEthernetModeFields === 'function') {
+            toggleLocalPiEthernetModeFields();
+        }
         // Give the DOM a moment to settle, then check local server.
         setTimeout(function () {
             if (typeof checkLocalPiServer === 'function') {
@@ -803,16 +893,7 @@ function generateKinematicsAngleControls() {
     const container = document.getElementById('kinematicsAnglesGrid');
     if (!container) return;
 
-    // Decide how many joints to show
-    let numJoints = 5; // Default
-    if (robotKinematics && robotKinematics.jointConfigs && robotKinematics.jointConfigs.length > 0) {
-        const configCount = robotKinematics.jointConfigs.length;
-        // Ignore fixed tool joint if present
-        numJoints = configCount === 6 ? 5 : configCount;
-    } else {
-        numJoints = getNumJoints();
-        if (numJoints < 5) numJoints = 5;
-    }
+    const numJoints = getJointAngleControlCount();
 
     // Ensure simulatedAngles length matches
     while (simulatedAngles.length < numJoints) {
@@ -833,6 +914,7 @@ function generateKinematicsAngleControls() {
         `;
     }
 
+    html += buildToolMountCoordinateHtml();
     container.innerHTML = html;
 }
 
@@ -1124,7 +1206,7 @@ function initializeConnection() {
     connectButton.addEventListener('click', async function() {
             console.log('Connect button clicked');
         const address = document.getElementById('piAddress').value;
-        const port = parseInt(document.getElementById('piPort').value);
+        const port = PI_SERVER_PORT;
             
             console.log('Connection parameters:', { address, port });
         
@@ -1825,7 +1907,7 @@ function quickMove(jointNumber, direction) {
  * Updates the XYZ position display based on current joint angles
  * @param {Array} jointAngles - Array of joint angles in degrees
  */
-function updateXYZPosition(jointAngles) {
+async function updateXYZPosition(jointAngles) {
     // Check if kinematics is configured
     if (!robotKinematics.isConfigured() || !jointAngles || jointAngles.length === 0) {
         const currentXSpan = document.getElementById('currentX');
@@ -1845,8 +1927,14 @@ function updateXYZPosition(jointAngles) {
     }
     
     try {
-        // Calculate forward kinematics to get current end effector position
-        const pose = robotKinematics.forwardKinematics(jointAngles);
+        // Calculate forward kinematics on the Pi server when connected.
+        // Fallback to local kinematics only if the server is not connected.
+        let pose = null;
+        if (robotArmClient && robotArmClient.isConnected && typeof robotArmClient.forwardKinematics === 'function') {
+            pose = await robotArmClient.forwardKinematics(jointAngles);
+        } else {
+            pose = robotKinematics.forwardKinematics(jointAngles);
+        }
         const pos = pose.position;
         
         // Update main XYZ display (Joint Control tab)
@@ -1892,7 +1980,12 @@ function updateXYZPosition(jointAngles) {
         // Joint traces: use step-by-step forward kinematics to get each joint position
         if (jointTracesEnabled) {
             try {
-                const fkSteps = robotKinematics.getForwardKinematicsSteps(jointAngles);
+                let fkSteps = null;
+                if (robotArmClient && robotArmClient.isConnected && typeof robotArmClient.forwardKinematicsSteps === 'function') {
+                    fkSteps = await robotArmClient.forwardKinematicsSteps(jointAngles);
+                } else {
+                    fkSteps = robotKinematics.getForwardKinematicsSteps(jointAngles);
+                }
                 const steps = fkSteps.steps || [];
 
                 // Ensure jointTracesPoints has one array per step
@@ -1992,33 +2085,45 @@ async function moveToXYZ() {
             return;
         }
         
-        // For each waypoint, run IK with iterative refinement and move the joints.
-        // Seed IK with the previous waypoint's refined angles so we don't get stuck on the wrong side (e.g. base yaw 0° when we need 180°).
+        // For each waypoint, run IK on the Pi server and move the joints.
+        // Seed IK with previous waypoint angles to keep motion consistent.
         let lastAccuracy = null;
         let previousRefinedAngles = null;
         for (let w = 0; w < waypoints.length; w++) {
             const wp = waypoints[w];
-            const baseAngles = robotKinematics.inverseKinematics(
-                { x: wp.x, y: wp.y, z: wp.z },
+            let baseAngles = null;
+            let refined = null;
+
+            if (!robotArmClient || !robotArmClient.isConnected || typeof robotArmClient.inverseKinematics !== 'function' || typeof robotArmClient.refineOrientationWithAccuracy !== 'function') {
+                showAppMessage('Server kinematics is not available. Connect to Raspberry Pi and reload URDF.');
+                return;
+            }
+
+            baseAngles = await robotArmClient.inverseKinematics(
+                { x: wp.x, y: wp.y, z: wp.z, orientation: currentToolOrientation },
                 previousRefinedAngles
             );
-            if (!baseAngles) {
+            if (baseAngles) {
+                refined = await robotArmClient.refineOrientationWithAccuracy(
+                    { x: wp.x, y: wp.y, z: wp.z },
+                    baseAngles,
+                    currentToolOrientation
+                );
+            }
+
+            const jointAngles = refined && Array.isArray(refined.angles) ? refined.angles : baseAngles;
+
+            if (!jointAngles) {
                 showAppMessage(`Target position (${wp.x}, ${wp.y}, ${wp.z}) is unreachable. Please choose a different position.`);
                 return;
             }
 
-            const refined = robotKinematics.refineOrientationWithAccuracy(
-                { x: wp.x, y: wp.y, z: wp.z },
-                baseAngles,
-                currentToolOrientation
-            );
-            const jointAngles = refined.angles;
             previousRefinedAngles = jointAngles.slice();
-            lastAccuracy = refined;
+            lastAccuracy = refined || { positionErrorMm: 0, orientationErrorDeg: 0 };
 
             console.log(`Moving to XYZ waypoint ${w + 1}/${waypoints.length}: (${wp.x}, ${wp.y}, ${wp.z})`);
             console.log(`Joint angles: ${jointAngles.map((a, i) => `J${i+1}:${a.toFixed(2)}°`).join(', ')}`);
-            console.log(`Accuracy: position ${refined.positionErrorMm.toFixed(2)} mm, orientation ${refined.orientationErrorDeg.toFixed(1)}°`);
+            console.log(`Accuracy: position ${lastAccuracy.positionErrorMm.toFixed(2)} mm, orientation ${lastAccuracy.orientationErrorDeg.toFixed(1)}°`);
 
             for (let i = 0; i < jointAngles.length; i++) {
                 robotArmClient.moveJoint(i + 1, jointAngles[i]);
@@ -2225,16 +2330,18 @@ function planSafePathAroundDeadZones(start, target, zones, safeZMm) {
     ];
 
     // Helper function to check if a waypoint is reachable
+    // Beginner-friendly reachability check:
+    // Instead of running full IK (slow / async), we use an approximate
+    // distance-to-reach heuristic based on the URDF-derived max reach.
     const isReachable = function(wp) {
-        if (!robotKinematics || !robotKinematics.isConfigured()) {
+        if (!robotKinematics || typeof robotKinematics.maxReachMm !== 'number' || !isFinite(robotKinematics.maxReachMm)) {
             return true; // Can't check, assume reachable
         }
-        const ikResult = robotKinematics.inverseKinematics({
-            x: wp.x,
-            y: wp.y,
-            z: wp.z
-        });
-        return ikResult !== null;
+        const dx = wp.x || 0;
+        const dy = wp.y || 0;
+        const dz = wp.z || 0;
+        const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        return distance <= robotKinematics.maxReachMm + 20;
     };
 
     // Try each safe Z option until we find reachable waypoints
@@ -2334,13 +2441,7 @@ function planSafePathAroundDeadZones(start, target, zones, safeZMm) {
             // Strategy 1: Try lifting straight up from start, then moving to target
             const liftWp = { x: start.x, y: start.y, z: testZ };
             
-            if (robotKinematics && robotKinematics.isConfigured()) {
-                const liftIk = robotKinematics.inverseKinematics({
-                    x: liftWp.x,
-                    y: liftWp.y,
-                    z: liftWp.z
-                });
-                if (liftIk) {
+            if (isReachable(liftWp)) {
                     // Found a reachable lift height!
                     // Check if path from lift to target avoids dead zone
                     if (!segmentIntersectsAnyZone(liftWp, target, zones)) {
@@ -2379,12 +2480,7 @@ function planSafePathAroundDeadZones(start, target, zones, safeZMm) {
                             
                             // Check if intermediate waypoint avoids dead zone
                             if (!pointInAnyZone(intermediateWp, zones)) {
-                                const intermediateIk = robotKinematics.inverseKinematics({
-                                    x: intermediateWp.x,
-                                    y: intermediateWp.y,
-                                    z: intermediateWp.z
-                                });
-                                if (intermediateIk) {
+                                if (isReachable(intermediateWp)) {
                                     // Found a reachable intermediate waypoint!
                                     // Check if paths avoid dead zone
                                     if (!segmentIntersectsAnyZone(liftWp, intermediateWp, zones) &&
@@ -2413,12 +2509,7 @@ function planSafePathAroundDeadZones(start, target, zones, safeZMm) {
                     
                     // Strategy 3: Try moving horizontally at this Z first, then down to target
                     const horizontalWp = { x: target.x, y: target.y, z: testZ };
-                    const horizontalIk = robotKinematics.inverseKinematics({
-                        x: horizontalWp.x,
-                        y: horizontalWp.y,
-                        z: horizontalWp.z
-                    });
-                    if (horizontalIk && !segmentIntersectsAnyZone(horizontalWp, target, zones)) {
+                    if (isReachable(horizontalWp) && !segmentIntersectsAnyZone(horizontalWp, target, zones)) {
                         const simpleWaypoints = [];
                         if (Math.abs(start.z - testZ) > 1) {
                             simpleWaypoints.push(liftWp);
@@ -2429,7 +2520,6 @@ function planSafePathAroundDeadZones(start, target, zones, safeZMm) {
                         return simpleWaypoints;
                     }
                 }
-            }
         }
         
         // If we still couldn't find a reachable path, try going directly to target
@@ -2454,7 +2544,7 @@ function planSafePathAroundDeadZones(start, target, zones, safeZMm) {
  * @param {number} [samples=40] - Number of interpolation samples
  * @returns {boolean} True if any sample lies inside a dead zone
  */
-function jointPathIntersectsDeadZone(currentAngles, targetAngles, zones, samples) {
+async function jointPathIntersectsDeadZone(currentAngles, targetAngles, zones, samples) {
     if (!zones || zones.length === 0) return false;
     if (!robotKinematics || !robotKinematics.isConfigured()) return false;
 
@@ -2469,13 +2559,39 @@ function jointPathIntersectsDeadZone(currentAngles, targetAngles, zones, samples
         tgt.push(typeof targetAngles[i] === 'number' ? targetAngles[i] : 0);
     }
 
+    // If we have the Pi server connected, ask it to compute all FK positions in one batch.
+    const canUseServer = robotArmClient &&
+        robotArmClient.isConnected &&
+        typeof robotArmClient.forwardKinematicsBatch === 'function';
+
+    const interpAnglesList = [];
     for (let s = 0; s <= steps; s++) {
         const t = s / steps;
         const interpAngles = [];
         for (let j = 0; j < numJoints; j++) {
             interpAngles.push(cur[j] + (tgt[j] - cur[j]) * t);
         }
+        interpAnglesList.push(interpAngles);
+    }
 
+    if (canUseServer) {
+        try {
+            const positions = await robotArmClient.forwardKinematicsBatch(interpAnglesList);
+            for (let i = 0; i < positions.length; i++) {
+                if (pointInAnyZone(positions[i], zones)) {
+                    return true;
+                }
+            }
+            return false;
+        } catch (e) {
+            console.warn('jointPathIntersectsDeadZone: server batch FK failed, falling back to local FK', e);
+        }
+    }
+
+    // Fallback: compute locally sample-by-sample.
+    for (let s = 0; s <= steps; s++) {
+        const t = s / steps;
+        const interpAngles = interpAnglesList[s];
         try {
             const fk = robotKinematics.forwardKinematics(interpAngles);
             const p = fk.position;
@@ -2553,7 +2669,7 @@ async function moveJointsToAnglesWithDeadZones(targetAngles, speedDegreesPerSeco
     }
 
     // Check if the joint-space path intersects any dead zone
-    const intersects = jointPathIntersectsDeadZone(currentAngles, tgt, deadZones, 40);
+    const intersects = await jointPathIntersectsDeadZone(currentAngles, tgt, deadZones, 40);
 
     if (!intersects) {
         // Straight joint-space move is safe
@@ -2565,8 +2681,12 @@ async function moveJointsToAnglesWithDeadZones(targetAngles, speedDegreesPerSeco
 
     // Joint path would go through a dead zone: convert to a Cartesian safe path
     try {
-        const startFk = robotKinematics.forwardKinematics(currentAngles);
-        const targetFk = robotKinematics.forwardKinematics(tgt);
+        if (!robotArmClient || !robotArmClient.isConnected || typeof robotArmClient.forwardKinematics !== 'function') {
+            showAppMessage('Server kinematics is not available. Connect to Raspberry Pi and reload URDF.');
+            return;
+        }
+        const startFk = await robotArmClient.forwardKinematics(currentAngles);
+        const targetFk = await robotArmClient.forwardKinematics(tgt);
         const startPose = startFk.position;
         const targetPose = targetFk.position;
 
@@ -2617,28 +2737,52 @@ async function moveJointsToAnglesWithDeadZones(targetAngles, speedDegreesPerSeco
 
         for (let w = 0; w < waypoints.length; w++) {
             const wp = waypoints[w];
-            const baseAngles = robotKinematics.inverseKinematics({
-                x: wp.x,
-                y: wp.y,
-                z: wp.z
-            }, initialAngles);
-            const refined = baseAngles
-                ? robotKinematics.refineOrientationWithAccuracy({ x: wp.x, y: wp.y, z: wp.z }, baseAngles, currentToolOrientation)
-                : null;
-            const ikAngles = refined ? refined.angles : null;
+            let baseAngles = null;
+            let refined = null;
+
+            if (!robotArmClient || !robotArmClient.isConnected || typeof robotArmClient.inverseKinematics !== 'function' || typeof robotArmClient.refineOrientationWithAccuracy !== 'function') {
+                showAppMessage('Server kinematics is not available. Connect to Raspberry Pi and reload URDF.');
+                return;
+            }
+
+            baseAngles = await robotArmClient.inverseKinematics(
+                { x: wp.x, y: wp.y, z: wp.z, orientation: currentToolOrientation },
+                initialAngles
+            );
+            if (baseAngles) {
+                refined = await robotArmClient.refineOrientationWithAccuracy(
+                    { x: wp.x, y: wp.y, z: wp.z },
+                    baseAngles,
+                    currentToolOrientation
+                );
+            }
+
+            const ikAngles = refined && Array.isArray(refined.angles) ? refined.angles : baseAngles;
             if (!ikAngles) {
                 if (w < waypoints.length - 1) {
                     console.warn(`Waypoint ${w + 1} (${wp.x}, ${wp.y}, ${wp.z}) is unreachable, trying to skip to target`);
                     const finalWp = waypoints[waypoints.length - 1];
-                    const finalBaseAngles = robotKinematics.inverseKinematics({
-                        x: finalWp.x,
-                        y: finalWp.y,
-                        z: finalWp.z
-                    }, initialAngles);
-                    const finalRefined = finalBaseAngles
-                        ? robotKinematics.refineOrientationWithAccuracy({ x: finalWp.x, y: finalWp.y, z: finalWp.z }, finalBaseAngles, currentToolOrientation)
-                        : null;
-                    const finalIk = finalRefined ? finalRefined.angles : null;
+                    let finalBaseAngles = null;
+                    let finalRefined = null;
+
+                    if (!robotArmClient || !robotArmClient.isConnected || typeof robotArmClient.inverseKinematics !== 'function' || typeof robotArmClient.refineOrientationWithAccuracy !== 'function') {
+                        showAppMessage('Server kinematics is not available. Connect to Raspberry Pi and reload URDF.');
+                        return;
+                    }
+
+                    finalBaseAngles = await robotArmClient.inverseKinematics(
+                        { x: finalWp.x, y: finalWp.y, z: finalWp.z, orientation: currentToolOrientation },
+                        initialAngles
+                    );
+                    if (finalBaseAngles) {
+                        finalRefined = await robotArmClient.refineOrientationWithAccuracy(
+                            { x: finalWp.x, y: finalWp.y, z: finalWp.z },
+                            finalBaseAngles,
+                            currentToolOrientation
+                        );
+                    }
+
+                    const finalIk = finalRefined && Array.isArray(finalRefined.angles) ? finalRefined.angles : finalBaseAngles;
                     if (finalIk) {
                         for (let i = 0; i < numJoints && i < finalIk.length; i++) {
                             await robotArmClient.moveJoint(i + 1, finalIk[i], speedStepsPerSecond);
@@ -2678,7 +2822,7 @@ function loadDefaultGCode() {
 ; This script demonstrates basic joint movements and speed control
 ; 
 ; Commands used:
-;   J1=angle J2=angle J3=angle J4=angle J5=angle - Move individual or multiple joints simultaneously
+;   J1=angle J2=angle J3=angle J4=angle J5=angle J6=angle - Move individual or multiple joints simultaneously
 ;   F speed - Set movement speed in degrees/s (0-300, default: 45)
 ;   G28 - Home all joints to 0 degrees
 ;   M0 - Pause (default: 2 seconds)
@@ -2715,8 +2859,8 @@ M0
 J1=45 J2=30 F45
 M0
 
-; Move all 5 joints simultaneously at fast speed
-J1=30 J2=20 J3=15 J4=10 J5=0 F60
+; Move all 6 joints simultaneously at fast speed
+J1=30 J2=20 J3=15 J4=10 J5=0 J6=0 F60
 M0
 
 ; Move joints to negative angles
@@ -2991,13 +3135,8 @@ async function executeGCodeCommand(command) {
             return;
         }
         
-        // If the command specifies joint angles (J1..J5), treat this as a joint move.
-        const hasJointParams =
-            command.params.J1 !== undefined ||
-            command.params.J2 !== undefined ||
-            command.params.J3 !== undefined ||
-            command.params.J4 !== undefined ||
-            command.params.J5 !== undefined;
+        // If the command specifies joint angles (J1..J6), treat this as a joint move.
+        const hasJointParams = commandHasJointAngleParams(command.params);
         
         if (hasJointParams) {
             // Reuse the existing joint-move handler by creating a "J" command
@@ -3098,23 +3237,33 @@ async function executeGCodeCommand(command) {
                     }
                 }
 
-                // First solve for position only
-                const baseAngles = robotKinematics.inverseKinematics({
-                    x: wp.x,
-                    y: wp.y,
-                    z: wp.z
-                }, initialAngles);
-                if (!baseAngles) {
+                // First solve for position (and optionally orientation), then refine.
+                let baseAngles = null;
+                let jointAngles = null;
+
+                if (!robotArmClient || !robotArmClient.isConnected || typeof robotArmClient.inverseKinematics !== 'function' || typeof robotArmClient.refineOrientationWithAccuracy !== 'function') {
+                    gcodeProcessor.log('Error: Server kinematics is not available. Connect to Raspberry Pi and reload URDF.');
+                    return;
+                }
+                baseAngles = await robotArmClient.inverseKinematics(
+                    { x: wp.x, y: wp.y, z: wp.z, orientation: currentToolOrientation },
+                    initialAngles
+                );
+                if (baseAngles) {
+                    const refined = await robotArmClient.refineOrientationWithAccuracy(
+                        { x: wp.x, y: wp.y, z: wp.z },
+                        baseAngles,
+                        currentToolOrientation
+                    );
+                    jointAngles = refined && Array.isArray(refined.angles) ? refined.angles : null;
+                }
+
+                if (!jointAngles) {
                     gcodeProcessor.log(`Error: Target waypoint (${wp.x}, ${wp.y}, ${wp.z}) is unreachable`);
                     return;
                 }
 
-                // Then refine wrist joints to get closer to the desired tool orientation
-                const jointAngles = robotKinematics.refineOrientationWithWrist(
-                    { x: wp.x, y: wp.y, z: wp.z },
-                    baseAngles,
-                    currentToolOrientation
-                );
+                // `jointAngles` now contains the final IK solution
 
                 gcodeProcessor.log(`Moving to waypoint ${w + 1}/${waypoints.length}: X${wp.x} Y${wp.y} Z${wp.z} at speed ${speedDegreesPerSecond} degrees/s`);
                 gcodeProcessor.log(`Joint angles: ${jointAngles.map((a, i) => `J${i+1}:${a.toFixed(2)}°`).join(', ')}`);
@@ -3161,11 +3310,11 @@ async function executeGCodeCommand(command) {
             await new Promise(resolve => setTimeout(resolve, 1000));
         }
         
-    } else if (command.code.startsWith('J') || command.params.J1 !== undefined || command.params.J2 !== undefined || command.params.J3 !== undefined || command.params.J4 !== undefined || command.params.J5 !== undefined) {
-        // Joint command: J1, J2, J3, J4, J5 to move individual joints or multiple joints simultaneously
+    } else if (command.code.startsWith('J') || commandHasJointAngleParams(command.params)) {
+        // Joint command: J1..J6 to move individual joints or multiple joints simultaneously
         // Format: J1=angle J2=angle J3=angle F=speed or J1=45 F45
         // Example: J1=45 J2=-30 F45 (move joints 1 and 2 simultaneously at 45 degrees/s)
-        // Example: J1=45 J2=30 J3=20 J4=10 J5=0 F60 (move all 5 joints simultaneously)
+        // Example: J1=45 J2=30 J3=20 J4=10 J5=0 J6=0 F60 (move all 6 joints simultaneously)
         // Uses linear interpolation to scale speeds so all joints arrive simultaneously
         
         // Get speed from F parameter (in degrees/s)
@@ -3366,11 +3515,11 @@ function loadDefaultRapid() {
 Home;
 
 ! Raise the arm a little with an absolute joint move
-MoveAbsJ [[0,10,20,0,0]];
+MoveAbsJ [[0,10,20,0,0,0]];
 
 ! Move by joint offsets relative to the current pose
 ! (Here we lower joint 2 by 5 degrees and joint 3 by 10)
-MoveJOffs [[0,-5,-10,0,0]];
+MoveJOffs [[0,-5,-10,0,0,0]];
 
 ! Wait for 2 seconds
 WaitTime 2;
@@ -3632,23 +3781,33 @@ async function runRapidProgram() {
                     initialAngles = null;
                 }
 
-                // First solve for position only
-                const baseAngles = robotKinematics.inverseKinematics({
-                    x: wp.x,
-                    y: wp.y,
-                    z: wp.z
-                }, initialAngles);
-                if (!baseAngles) {
+                // First solve for position (and orientation), then refine.
+                let baseAngles = null;
+                let jointAngles = null;
+
+                if (!robotArmClient || !robotArmClient.isConnected || typeof robotArmClient.inverseKinematics !== 'function' || typeof robotArmClient.refineOrientationWithAccuracy !== 'function') {
+                    console.warn('RAPID: Server kinematics is not available. Connect to Raspberry Pi and reload URDF.');
+                    break;
+                }
+                baseAngles = await robotArmClient.inverseKinematics(
+                    { x: wp.x, y: wp.y, z: wp.z, orientation: currentToolOrientation },
+                    initialAngles
+                );
+                if (baseAngles) {
+                    const refined = await robotArmClient.refineOrientationWithAccuracy(
+                        { x: wp.x, y: wp.y, z: wp.z },
+                        baseAngles,
+                        currentToolOrientation
+                    );
+                    jointAngles = refined && Array.isArray(refined.angles) ? refined.angles : null;
+                }
+
+                if (!jointAngles) {
                     console.warn('RAPID: MoveLXYZ IK failed for waypoint', wp);
                     break;
                 }
 
-                // Then refine wrist joints to get closer to the desired tool orientation
-                const jointAngles = robotKinematics.refineOrientationWithWrist(
-                    { x: wp.x, y: wp.y, z: wp.z },
-                    baseAngles,
-                    currentToolOrientation
-                );
+                // `jointAngles` now contains the final IK solution
 
                 for (let j = 0; j < numJoints; j++) {
                     const targetAngle = jointAngles[j];
@@ -3717,23 +3876,33 @@ async function runRapidProgram() {
                     initialAngles2 = null;
                 }
 
-                // First solve for position only
-                const baseAngles2 = robotKinematics.inverseKinematics({
-                    x: wp.x,
-                    y: wp.y,
-                    z: wp.z
-                }, initialAngles2);
-                if (!baseAngles2) {
+                // First solve for position (and orientation), then refine.
+                let baseAngles2 = null;
+                let jointAngles2 = null;
+
+                if (!robotArmClient || !robotArmClient.isConnected || typeof robotArmClient.inverseKinematics !== 'function' || typeof robotArmClient.refineOrientationWithAccuracy !== 'function') {
+                    console.warn('RAPID: Server kinematics is not available. Connect to Raspberry Pi and reload URDF.');
+                    break;
+                }
+                baseAngles2 = await robotArmClient.inverseKinematics(
+                    { x: wp.x, y: wp.y, z: wp.z, orientation: currentToolOrientation },
+                    initialAngles2
+                );
+                if (baseAngles2) {
+                    const refined2 = await robotArmClient.refineOrientationWithAccuracy(
+                        { x: wp.x, y: wp.y, z: wp.z },
+                        baseAngles2,
+                        currentToolOrientation
+                    );
+                    jointAngles2 = refined2 && Array.isArray(refined2.angles) ? refined2.angles : null;
+                }
+
+                if (!jointAngles2) {
                     console.warn('RAPID: MoveLOffs IK failed for waypoint', wp);
                     break;
                 }
 
-                // Then refine wrist joints to get closer to the desired tool orientation
-                const jointAngles2 = robotKinematics.refineOrientationWithWrist(
-                    { x: wp.x, y: wp.y, z: wp.z },
-                    baseAngles2,
-                    currentToolOrientation
-                );
+                // `jointAngles2` now contains the final IK solution
 
                 for (let j = 0; j < numJoints; j++) {
                     const targetAngle = jointAngles2[j];
@@ -3931,8 +4100,7 @@ async function checkLocalPiServer() {
     panel.style.display = 'block';
     statusText.textContent = 'Checking...';
 
-    const portValue = parseInt(document.getElementById('piPort')?.value || '8080', 10);
-    const result = await probeLocalSt3215Server(isNaN(portValue) ? 8080 : portValue);
+    const result = await probeLocalSt3215Server(PI_SERVER_PORT);
     statusText.textContent = result.message;
     statusText.style.color = result.ok ? '#27ae60' : '#e67e22';
 
@@ -3990,6 +4158,15 @@ async function checkLocalPiServer() {
     } catch (e) {
         console.warn('checkLocalPiServer: failed to update network info fields:', e);
     }
+
+    // Also refresh ethernet settings when this panel is visible and server is reachable.
+    if (result.ok) {
+        try {
+            await refreshLocalPiEthernetSettings();
+        } catch (e) {
+            console.warn('checkLocalPiServer: failed to refresh ethernet settings:', e);
+        }
+    }
 }
 
 /**
@@ -4004,6 +4181,122 @@ function useLocalPiConnectionSettings() {
     const connectButton = document.getElementById('connectButton');
     if (connectButton) {
         connectButton.click();
+    }
+}
+
+/**
+ * Enables/disables static-IP input fields based on selected mode.
+ */
+function toggleLocalPiEthernetModeFields() {
+    const modeSelect = document.getElementById('localPiEthernetMode');
+    const ipInput = document.getElementById('localPiEthernetIp');
+    const maskInput = document.getElementById('localPiEthernetMask');
+    const gatewayInput = document.getElementById('localPiEthernetGateway');
+    const dnsInput = document.getElementById('localPiEthernetDns');
+
+    if (!modeSelect || !ipInput || !maskInput || !gatewayInput || !dnsInput) {
+        return;
+    }
+
+    const isStatic = modeSelect.value === 'static';
+    ipInput.disabled = !isStatic;
+    maskInput.disabled = !isStatic;
+    gatewayInput.disabled = !isStatic;
+    dnsInput.disabled = !isStatic;
+}
+
+/**
+ * Reads ethernet settings from the Pi server and updates the local Pi panel.
+ */
+async function refreshLocalPiEthernetSettings() {
+    const statusSpan = document.getElementById('localPiEthernetStatus');
+    const modeSelect = document.getElementById('localPiEthernetMode');
+    const connectionSpan = document.getElementById('localPiEthernetConnection');
+    const ipInput = document.getElementById('localPiEthernetIp');
+    const maskInput = document.getElementById('localPiEthernetMask');
+    const gatewayInput = document.getElementById('localPiEthernetGateway');
+    const dnsInput = document.getElementById('localPiEthernetDns');
+
+    if (!statusSpan || !modeSelect || !connectionSpan || !ipInput || !maskInput || !gatewayInput || !dnsInput) {
+        return;
+    }
+
+    if (!robotArmClient || !robotArmClient.isConnected || typeof robotArmClient.getPiEthernetSettings !== 'function') {
+        statusSpan.textContent = 'Connect to the local Pi server to read ethernet settings.';
+        statusSpan.style.color = '#e67e22';
+        return;
+    }
+
+    statusSpan.textContent = 'Reading ethernet settings...';
+    statusSpan.style.color = '#e67e22';
+
+    try {
+        const ethernet = await robotArmClient.getPiEthernetSettings();
+        const method = (ethernet && ethernet.method) ? String(ethernet.method).toLowerCase() : 'auto';
+        modeSelect.value = method === 'manual' ? 'static' : 'dhcp';
+        connectionSpan.textContent = ethernet && ethernet.connectionName ? ethernet.connectionName : '-';
+        ipInput.value = ethernet && ethernet.ipAddress ? ethernet.ipAddress : '';
+        maskInput.value = ethernet && ethernet.subnetMask ? ethernet.subnetMask : '';
+        gatewayInput.value = ethernet && ethernet.gateway ? ethernet.gateway : '';
+        dnsInput.value = ethernet && ethernet.dns ? ethernet.dns : '';
+        toggleLocalPiEthernetModeFields();
+        statusSpan.textContent = 'Ethernet settings loaded.';
+        statusSpan.style.color = '#27ae60';
+    } catch (error) {
+        statusSpan.textContent = 'Failed to read ethernet settings: ' + (error.message || error);
+        statusSpan.style.color = '#e74c3c';
+    }
+}
+
+/**
+ * Sends ethernet settings to the Pi server (DHCP or static mode).
+ */
+async function applyLocalPiEthernetSettings() {
+    const statusSpan = document.getElementById('localPiEthernetStatus');
+    const modeSelect = document.getElementById('localPiEthernetMode');
+    const ipInput = document.getElementById('localPiEthernetIp');
+    const maskInput = document.getElementById('localPiEthernetMask');
+    const gatewayInput = document.getElementById('localPiEthernetGateway');
+    const dnsInput = document.getElementById('localPiEthernetDns');
+
+    if (!statusSpan || !modeSelect || !ipInput || !maskInput || !gatewayInput || !dnsInput) {
+        return;
+    }
+
+    if (!robotArmClient || !robotArmClient.isConnected || typeof robotArmClient.setPiEthernetSettings !== 'function') {
+        statusSpan.textContent = 'Connect to the local Pi server to apply ethernet settings.';
+        statusSpan.style.color = '#e67e22';
+        return;
+    }
+
+    const mode = modeSelect.value === 'static' ? 'static' : 'dhcp';
+    const payload = {
+        mode: mode,
+        ipAddress: (ipInput.value || '').trim(),
+        subnetMask: (maskInput.value || '').trim(),
+        gateway: (gatewayInput.value || '').trim(),
+        dns: (dnsInput.value || '').trim()
+    };
+
+    if (mode === 'static') {
+        if (!payload.ipAddress || !payload.subnetMask || !payload.gateway) {
+            statusSpan.textContent = 'For static mode, IP address, subnet mask and gateway are required.';
+            statusSpan.style.color = '#e74c3c';
+            return;
+        }
+    }
+
+    statusSpan.textContent = 'Applying ethernet settings...';
+    statusSpan.style.color = '#e67e22';
+
+    try {
+        await robotArmClient.setPiEthernetSettings(payload);
+        statusSpan.textContent = 'Ethernet settings applied. Connection may briefly reset.';
+        statusSpan.style.color = '#27ae60';
+        await refreshLocalPiEthernetSettings();
+    } catch (error) {
+        statusSpan.textContent = 'Failed to apply ethernet settings: ' + (error.message || error);
+        statusSpan.style.color = '#e74c3c';
     }
 }
 
@@ -4097,8 +4390,7 @@ function saveSettings() {
         numJoints: parseInt(document.getElementById('numJoints').value),
         updateInterval: parseInt(document.getElementById('updateInterval').value),
         defaultStepSize: parseFloat(document.getElementById('defaultStepSize').value),
-        piAddress: document.getElementById('piAddress').value,
-        piPort: parseInt(document.getElementById('piPort').value)
+        piAddress: document.getElementById('piAddress').value
     };
     
     localStorage.setItem('robotArmSettings', JSON.stringify(settings));
@@ -4140,9 +4432,6 @@ function loadSettings() {
             }
             if (settings.piAddress) {
                 document.getElementById('piAddress').value = settings.piAddress;
-            }
-            if (settings.piPort) {
-                document.getElementById('piPort').value = settings.piPort;
             }
         } catch (error) {
             console.error('Error loading settings:', error);
@@ -4210,82 +4499,86 @@ function loadJointConfigs() {
 }
 
 /**
- * Default URDF for the 5-axis robot arm
+ * Fallback URDF when kinematics.urdf cannot be read (must stay in sync with that file).
  */
 const DEFAULT_URDF = `<?xml version="1.0"?>
-<robot name="five_dof_arm">
+<robot name="matrix_arm_v3">
 
   <!-- ================= LINKS ================= -->
-
   <link name="base_link"/>
   <link name="link1"/>
   <link name="link2"/>
   <link name="link3"/>
   <link name="link4"/>
   <link name="link5"/>
+  <link name="link6"/>
   <link name="tool_link"/>
 
   <!-- ================= JOINT 1 ================= -->
   <!-- Base Yaw -->
-
   <joint name="joint1_base_yaw" type="revolute">
     <parent link="base_link"/>
     <child link="link1"/>
-    <origin xyz="0 0 0.122" rpy="0 0 0"/>
+    <origin xyz="0 0 0.05" rpy="0 0 0"/>
     <axis xyz="0 0 1"/>
     <limit lower="-3.14" upper="3.14" effort="10" velocity="2"/>
   </joint>
 
   <!-- ================= JOINT 2 ================= -->
-  <!-- Shoulder Pitch (set zero_offset_degrees in demo-kinematics.urdf; fallback has none) -->
-
-  <joint name="joint2_shoulder_pitch" type="revolute">
+  <!-- Shoulder Pitch -->
+  <joint name="joint2_shoulder_pitch" type="revolute" zero_offset_degrees="-90">
     <parent link="link1"/>
     <child link="link2"/>
-    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <origin xyz="0 0 0.058" rpy="0 0 0"/>
     <axis xyz="0 1 0"/>
     <limit lower="-1.57" upper="1.57" effort="10" velocity="2"/>
   </joint>
 
   <!-- ================= JOINT 3 ================= -->
   <!-- Elbow Pitch -->
-
   <joint name="joint3_elbow_pitch" type="revolute">
     <parent link="link2"/>
     <child link="link3"/>
-    <origin xyz="0.16178 0 0" rpy="0 0 0"/>
-    <axis xyz="0 1 0"/>
-    <limit lower="-2.0" upper="2.0" effort="10" velocity="2"/>
+    <origin xyz="0.135 0 0" rpy="0 0 0"/>
+    <axis xyz="0 -1 0"/>
+    <limit lower="-1.74533" upper="1.74533" effort="10" velocity="2"/>
   </joint>
 
   <!-- ================= JOINT 4 ================= -->
-  <!-- Wrist Roll (inline with forearm) -->
-
+  <!-- Wrist Roll 1 -->
   <joint name="joint4_wrist_roll" type="revolute">
     <parent link="link3"/>
     <child link="link4"/>
-    <origin xyz="0.14820 0 0" rpy="0 0 0"/>
+    <origin xyz="0.0678 0 0" rpy="0 0 0"/>
     <axis xyz="1 0 0"/>
     <limit lower="-3.14" upper="3.14" effort="5" velocity="3"/>
   </joint>
 
   <!-- ================= JOINT 5 ================= -->
   <!-- Wrist Pitch -->
-
   <joint name="joint5_wrist_pitch" type="revolute">
     <parent link="link4"/>
     <child link="link5"/>
-    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <origin xyz="0.06285 0 0" rpy="0 0 0"/>
     <axis xyz="0 1 0"/>
     <limit lower="-1.57" upper="1.57" effort="5" velocity="3"/>
   </joint>
+  
+  <!-- ================= JOINT 6 ================= -->
+  <!-- Wrist Roll 2 -->
+  <joint name="joint6_wrist_roll_2" type="revolute">
+    <parent link="link5"/>
+    <child link="link6"/>
+    <origin xyz="0.0678 0 0" rpy="0 0 0"/>
+    <axis xyz="1 0 0"/>
+    <limit lower="-3.14" upper="3.14" effort="5" velocity="3"/>
+  </joint>
 
   <!-- ================= TOOL (Fixed) ================= -->
-
-  <joint name="tool_fixed" type="fixed">
-    <parent link="link5"/>
+  <joint name="tool_mount" type="fixed">
+    <parent link="link6"/>
     <child link="tool_link"/>
-    <origin xyz="0.030 0 0.04189" rpy="0 0 0"/>
+    <origin xyz="0.042 0 0" rpy="0 0 0"/>
   </joint>
 
 </robot>`;
@@ -4295,7 +4588,7 @@ const DEFAULT_URDF = `<?xml version="1.0"?>
  * @param {string} urdfText - Full URDF XML string
  * @param {string} source - Description for logging (e.g. 'file' or 'DEFAULT_URDF')
  */
-function applyLoadedUrdf(urdfText, source) {
+async function applyLoadedUrdf(urdfText, source) {
     if (!urdfText || !urdfText.trim()) {
         return;
     }
@@ -4304,12 +4597,78 @@ function applyLoadedUrdf(urdfText, source) {
     if (source !== 'DEFAULT_URDF') {
         console.log('Loaded URDF from', source, '(zero_offset in file:', zeroOffsetValue, ')');
     }
+    // Load locally first so the UI has joint limits immediately.
     robotKinematics.loadURDF(urdfText);
-    if (!robotKinematics.urdfData || !robotKinematics.urdfData.joints) {
+
+    const numJointsInput = document.getElementById('numJoints');
+    if (numJointsInput && robotKinematics.getJointCount() > 0) {
+        numJointsInput.value = robotKinematics.getJointCount();
+    }
+
+    let allJoints = [];
+    let revoluteJoints = [];
+
+    if (robotKinematics.urdfData && robotKinematics.urdfData.joints) {
+        allJoints = robotKinematics.urdfData.joints;
+        revoluteJoints = robotKinematics.getJointConfigs();
+    }
+
+    // Load on the Pi server in the background.
+    // We do NOT await this, so the UI is updated immediately using local kinematics.
+    if (robotArmClient && robotArmClient.isConnected && typeof robotArmClient.loadKinematicsURDF === 'function') {
+        robotArmClient.loadKinematicsURDF(urdfText)
+            .then(function (loaded) {
+                if (!loaded) return;
+                const serverAllJoints = (loaded.urdfData && loaded.urdfData.joints && loaded.urdfData.joints.length > 0)
+                    ? loaded.urdfData.joints
+                    : null;
+                const serverRevoluteJoints = (Array.isArray(loaded.joints) && loaded.joints.length > 0)
+                    ? loaded.joints
+                    : null;
+
+                if (!serverAllJoints || !serverRevoluteJoints) return;
+
+                allJoints = serverAllJoints;
+                revoluteJoints = serverRevoluteJoints;
+
+                robotArmClient.jointConfigs = revoluteJoints.map(joint => ({
+                    name: joint.name,
+                    type: joint.type,
+                    origin: joint.origin,
+                    axis: joint.axis
+                }));
+
+                displayJointConfigs(allJoints);
+                document.getElementById('kinematicsStatus').textContent = '✓ URDF demo configuration loaded (server)';
+                document.getElementById('kinematicsStatus').style.color = '#27ae60';
+
+                if (typeof updateJointUI === 'function') {
+                    updateJointUI();
+                }
+
+                // Update 3D visualization with the new server-parsed joint list.
+                if (robotArm3D) {
+                    const numRevoluteJoints = robotKinematics.getJointCount();
+                    const currentAngles = Array(numRevoluteJoints).fill(0);
+                    try {
+                        robotArm3D.update(allJoints, currentAngles);
+                        const pose = robotKinematics.forwardKinematics(currentAngles);
+                        const pos = pose.position;
+                        document.getElementById('endEffectorPos').textContent =
+                            'X: ' + pos.x.toFixed(1) + 'mm, Y: ' + pos.y.toFixed(1) + 'mm, Z: ' + pos.z.toFixed(1) + 'mm';
+                    } catch (error) {
+                        // If local FK fails for some reason, just skip end-effector text update.
+                    }
+                }
+            })
+            .catch(function (e) {
+                console.warn('Pi kinematics load failed, using local kinematics for UI:', e);
+            });
+    }
+
+    if (!allJoints || allJoints.length === 0) {
         throw new Error('URDF data not properly loaded');
     }
-    const allJoints = robotKinematics.urdfData.joints;
-    const revoluteJoints = robotKinematics.getJointConfigs();
     robotArmClient.jointConfigs = revoluteJoints.map(joint => ({
         name: joint.name,
         type: joint.type,
@@ -4364,7 +4723,7 @@ function applyLoadedUrdf(urdfText, source) {
  * Tries: 1) electronAPI.readTextFile (preload), 2) fetch (same folder as page), 3) DEFAULT_URDF.
  */
 function loadDemoConfig() {
-    const urdfFilename = 'demo-kinematics.urdf';
+    const urdfFilename = 'kinematics.urdf';
     let urdfText = null;
 
     // 1) Try preload file read (Electron)
@@ -4374,7 +4733,9 @@ function loadDemoConfig() {
 
     if (urdfText && urdfText.trim()) {
         try {
-            applyLoadedUrdf(urdfText, urdfFilename);
+            applyLoadedUrdf(urdfText, urdfFilename).catch(function (error) {
+                console.error('Error applying URDF from preload:', error);
+            });
             return;
         } catch (error) {
             console.error('Error applying URDF from preload:', error);
@@ -4392,20 +4753,26 @@ function loadDemoConfig() {
         .then(function (text) {
             if (text && text.trim()) {
                 console.log('Loaded URDF via fetch from', urdfFilename);
-                applyLoadedUrdf(text, urdfFilename);
+                applyLoadedUrdf(text, urdfFilename).catch(function (error) {
+                    console.error('Error applying URDF from fetch:', error);
+                });
             } else {
                 useDefaultUrdf();
             }
         })
         .catch(function (err) {
-            console.warn('Could not load demo-kinematics.urdf (fetch failed: ' + (err.message || err) + '), falling back to built-in DEFAULT_URDF.');
+            console.warn('Could not load kinematics.urdf (fetch failed: ' + (err.message || err) + '), falling back to built-in DEFAULT_URDF.');
             useDefaultUrdf();
         });
     return;
 
     function useDefaultUrdf() {
         try {
-            applyLoadedUrdf(DEFAULT_URDF, 'DEFAULT_URDF');
+            applyLoadedUrdf(DEFAULT_URDF, 'DEFAULT_URDF').catch(function (error) {
+                console.error('Error loading URDF:', error);
+                document.getElementById('kinematicsStatus').textContent = '✗ Error loading URDF: ' + error.message;
+                document.getElementById('kinematicsStatus').style.color = '#e74c3c';
+            });
         } catch (error) {
             console.error('Error loading URDF:', error);
             document.getElementById('kinematicsStatus').textContent = '✗ Error loading URDF: ' + error.message;
@@ -4630,7 +4997,7 @@ function testForwardKinematics() {
 /**
  * Tests inverse kinematics
  */
-function testInverseKinematics() {
+async function testInverseKinematics() {
     if (!robotKinematics.isConfigured()) {
         showAppMessage('Kinematics not configured. Load joint configurations first.');
         return;
@@ -4647,15 +5014,20 @@ function testInverseKinematics() {
     }
     
     try {
-        // First solve for position only
-        const baseAngles = robotKinematics.inverseKinematics({
+        if (!robotArmClient || !robotArmClient.isConnected || typeof robotArmClient.inverseKinematics !== 'function' || typeof robotArmClient.refineOrientationWithAccuracy !== 'function') {
+            document.getElementById('ikResult').innerHTML = '<span class="error-text">Server kinematics is not available. Connect to Raspberry Pi and reload URDF.</span>';
+            return;
+        }
+
+        const baseAngles = await robotArmClient.inverseKinematics({
             x: x,
             y: y,
-            z: z
+            z: z,
+            orientation: currentToolOrientation
         });
 
         const refined = baseAngles
-            ? robotKinematics.refineOrientationWithAccuracy({ x: x, y: y, z: z }, baseAngles, currentToolOrientation)
+            ? await robotArmClient.refineOrientationWithAccuracy({ x: x, y: y, z: z }, baseAngles, currentToolOrientation)
             : null;
         const angles = refined ? refined.angles : null;
 
@@ -5071,11 +5443,10 @@ function updateSimulatedVisualization() {
         return;
     }
 
-    // Get simulated angles from input fields
-    // For 5-axis robot: collect angles for 5 joints, then add 0 for tool offset
+    // Get simulated angles from input fields (6 revolute joints; tool mount is fixed in URDF)
     simulatedAngles = [];
     
-    // Determine how many joint angle controls exist (should be 5 for 5-axis robot)
+    // Determine how many joint angle controls exist
     let numJointControls = 0;
     for (let i = 1; i <= 10; i++) { // Check up to 10 joints
         const inputElement = document.getElementById(`simJoint${i}`);
@@ -5097,15 +5468,11 @@ function updateSimulatedVisualization() {
         }
     }
     
-    // If we have 6 configs (5 joints + tool), ensure we have 6 angles (tool angle is always 0)
-    // If we have 5 configs, use 5 angles
-    // Otherwise, pad or trim to match config count
-    while (simulatedAngles.length < configs.length) {
-        // Add 0 for tool offset or missing joints
+    const revoluteCount = getRevoluteJointCount();
+    while (simulatedAngles.length < revoluteCount) {
         simulatedAngles.push(0);
     }
-    while (simulatedAngles.length > configs.length) {
-        // Remove extra angles if we have too many
+    while (simulatedAngles.length > revoluteCount) {
         simulatedAngles.pop();
     }
 
@@ -5461,7 +5828,7 @@ async function getCurrentJointStatus(jointNumber) {
  * @returns {Promise<string|null>} IP address if found, null otherwise
  */
 async function autoDetectRaspberryPi() {
-    const port = parseInt(document.getElementById('piPort').value) || 8080;
+    const port = PI_SERVER_PORT;
     const timeout = 2000; // 2 seconds timeout per attempt
     
     // Method 1: Try mDNS hostname (raspberrypi.local)

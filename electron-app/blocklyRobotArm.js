@@ -446,6 +446,9 @@ function defineCustomBlocks() {
             this.appendValueInput('JOINT5')
                 .setCheck('Number')
                 .appendField('Joint 5 (degrees)');
+            this.appendValueInput('JOINT6')
+                .setCheck('Number')
+                .appendField('Joint 6 (degrees)');
             this.appendDummyInput()
                 .appendField('at speed')
                 .appendField(new Blockly.FieldNumber(45, 0, 300, 1), 'SPEED')
@@ -902,6 +905,12 @@ function loadBlocklyExample() {
     num1_5.render();
     moveAll1.getInput('JOINT5').connection.connect(num1_5.outputConnection);
     
+    const num1_6 = blocklyWorkspace.newBlock('math_number');
+    num1_6.setFieldValue('0', 'NUM');
+    num1_6.initSvg();
+    num1_6.render();
+    moveAll1.getInput('JOINT6').connection.connect(num1_6.outputConnection);
+    
     moveAll1.setFieldValue('45', 'SPEED');
     moveAll1.initSvg();
     moveAll1.render();
@@ -958,6 +967,12 @@ function loadBlocklyExample() {
     num2_5.initSvg();
     num2_5.render();
     moveAll2.getInput('JOINT5').connection.connect(num2_5.outputConnection);
+    
+    const num2_6 = blocklyWorkspace.newBlock('math_number');
+    num2_6.setFieldValue('0', 'NUM');
+    num2_6.initSvg();
+    num2_6.render();
+    moveAll2.getInput('JOINT6').connection.connect(num2_6.outputConnection);
     
     moveAll2.setFieldValue('45', 'SPEED');
     moveAll2.initSvg();
@@ -1176,8 +1191,8 @@ function setAllJointAccelerations() {
 
     const accelerationValue = parsed;
 
-    // Get number of joints (falls back to 5 if function not available)
-    let numJoints = 5;
+    // Get number of joints (falls back to 6 if function not available)
+    let numJoints = 6;
     if (typeof getNumJoints === 'function') {
         const n = getNumJoints();
         if (!isNaN(n) && n > 0) {
@@ -1280,6 +1295,7 @@ function registerBlocklyGenerators() {
         const joint3 = Blockly.JavaScript.valueToCode(block, 'JOINT3', Blockly.JavaScript.ORDER_ATOMIC) || '0';
         const joint4 = Blockly.JavaScript.valueToCode(block, 'JOINT4', Blockly.JavaScript.ORDER_ATOMIC) || '0';
         const joint5 = Blockly.JavaScript.valueToCode(block, 'JOINT5', Blockly.JavaScript.ORDER_ATOMIC) || '0';
+        const joint6 = Blockly.JavaScript.valueToCode(block, 'JOINT6', Blockly.JavaScript.ORDER_ATOMIC) || '0';
         const speedDegreesPerSecond = block.getFieldValue('SPEED') || 45;
         // Sanitize block ID to make it a valid JavaScript identifier
         const sanitizedId = blockId.replace(/[^a-zA-Z0-9_]/g, '_');
@@ -1290,7 +1306,7 @@ function registerBlocklyGenerators() {
         highlightBlocklyBlock('${blockId}');
         await checkBlocklyPauseStop();
         {
-            const ${targetAnglesVar} = [${joint1}, ${joint2}, ${joint3}, ${joint4}, ${joint5}];
+            const ${targetAnglesVar} = [${joint1}, ${joint2}, ${joint3}, ${joint4}, ${joint5}, ${joint6}];
             appendBlocklyOutput('Moving all joints to [' + ${targetAnglesVar}.join(', ') + '] at speed ${speedDegreesPerSecond} degrees/s (dead-zone aware)');
             await moveJointsToAnglesWithDeadZones(${targetAnglesVar}, ${speedDegreesPerSecond});
         }
@@ -1570,19 +1586,22 @@ function registerBlocklyGenerators() {
                         initialAngles = null;
                     }
 
-                    // First solve for position only
-                    const baseAngles = robotKinematics.inverseKinematics({
-                        x: wp.x,
-                        y: wp.y,
-                        z: wp.z
-                    }, initialAngles);
+                    // Server-only kinematics
+                    if (!robotArmClient || !robotArmClient.isConnected || typeof robotArmClient.inverseKinematics !== 'function' || typeof robotArmClient.refineOrientationWithAccuracy !== 'function') {
+                        appendBlocklyOutput('Server kinematics is not available. Connect to Raspberry Pi and reload URDF.');
+                        break;
+                    }
+                    const baseAngles = await robotArmClient.inverseKinematics(
+                        { x: wp.x, y: wp.y, z: wp.z, orientation: currentToolOrientation },
+                        initialAngles
+                    );
                     if (!baseAngles) {
                         appendBlocklyOutput('Move TCP to XYZ failed: waypoint unreachable.');
                         break;
                     }
 
                     // Iterative refinement (coarse to fine) and get accuracy for reporting
-                    const refined = robotKinematics.refineOrientationWithAccuracy(
+                    const refined = await robotArmClient.refineOrientationWithAccuracy(
                         { x: wp.x, y: wp.y, z: wp.z },
                         baseAngles,
                         currentToolOrientation
@@ -1666,19 +1685,22 @@ function registerBlocklyGenerators() {
                         initialAngles = null;
                     }
 
-                    // First solve for position only
-                    const baseAngles = robotKinematics.inverseKinematics({
-                        x: wp.x,
-                        y: wp.y,
-                        z: wp.z
-                    }, initialAngles);
+                    // Server-only kinematics
+                    if (!robotArmClient || !robotArmClient.isConnected || typeof robotArmClient.inverseKinematics !== 'function' || typeof robotArmClient.refineOrientationWithAccuracy !== 'function') {
+                        appendBlocklyOutput('Server kinematics is not available. Connect to Raspberry Pi and reload URDF.');
+                        break;
+                    }
+                    const baseAngles = await robotArmClient.inverseKinematics(
+                        { x: wp.x, y: wp.y, z: wp.z, orientation: currentToolOrientation },
+                        initialAngles
+                    );
                     if (!baseAngles) {
                         appendBlocklyOutput('Move TCP by offset failed: waypoint unreachable.');
                         break;
                     }
 
                     // Iterative refinement (coarse to fine) and get accuracy for reporting
-                    const refined = robotKinematics.refineOrientationWithAccuracy(
+                    const refined = await robotArmClient.refineOrientationWithAccuracy(
                         { x: wp.x, y: wp.y, z: wp.z },
                         baseAngles,
                         currentToolOrientation

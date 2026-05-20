@@ -28,24 +28,27 @@ All multi-byte values are little-endian:
 - `12` - PWM1 current high byte (RO)
 - `13` - PWM2 current low byte (RO)
 - `14` - PWM2 current high byte (RO)
+- `15` - Servo current low byte (RO)
+- `16` - Servo current high byte (RO)
 
 Reconstruct:
 - `current1mA = (reg12 << 8) | reg11`
 - `current2mA = (reg14 << 8) | reg13`
+- `current3mA = (reg16 << 8) | reg15`
 
 ## ADC Telemetry
 
-- `15` - ADC0 raw low byte (RO)
-- `16` - ADC0 raw high byte (RO)
-- `17` - ADC1 raw low byte (RO)
-- `18` - ADC1 raw high byte (RO)
-- `19` - ADC0 millivolts low byte (RO)
-- `20` - ADC0 millivolts high byte (RO)
-- `21` - ADC1 millivolts low byte (RO)
-- `22` - ADC1 millivolts high byte (RO)
+- `17` - ADC0 raw low byte (RO)
+- `18` - ADC0 raw high byte (RO)
+- `19` - ADC1 raw low byte (RO)
+- `20` - ADC1 raw high byte (RO)
+- `21` - ADC0 millivolts low byte (RO)
+- `22` - ADC0 millivolts high byte (RO)
+- `23` - ADC1 millivolts low byte (RO)
+- `24` - ADC1 millivolts high byte (RO)
 
 Reconstruct:
-- `adc0Raw = (reg16 << 8) | reg15`
-- `adc1Raw = (reg18 << 8) | reg17`
-- `adc0mV = (reg20 << 8) | reg19`
-- `adc1mV = (reg22 << 8) | reg21`
+- `adc0Raw = (reg18 << 8) | reg17`
+- `adc1Raw = (reg20 << 8) | reg19`
+- `adc0mV = (reg22 << 8) | reg21`
+- `adc1mV = (reg24 << 8) | reg23`

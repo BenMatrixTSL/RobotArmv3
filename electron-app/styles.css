@@ -1974,6 +1974,19 @@ header h1 {
     font-size: 14px;
 }
 
+.tool-mount-coordinate {
+    grid-column: 1 / -1;
+    background: #f4f6f8;
+    border: 1px dashed #bdc3c7;
+    border-radius: 4px;
+    padding: 8px 10px;
+}
+
+.tool-mount-coordinate .tool-mount-offset {
+    font-size: 13px;
+    color: #5c6370;
+}
+
 .simulation-buttons {
     display: flex;
     gap: 10px;

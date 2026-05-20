@@ -507,7 +507,7 @@ Reads current PWM register state.
 
 #### 11.6 `toolReadCurrents`
 
-Reads both PWM current-sense channels.
+Reads PWM1, PWM2, and servo shunt current channels (milliamps, 16-bit little-endian each).
 
 **Request:**
 ```json
@@ -521,13 +521,14 @@ Reads both PWM current-sense channels.
 {
   "type": "toolCurrents",
   "pwm1CurrentRaw": 120,
-  "pwm2CurrentRaw": 95
+  "pwm2CurrentRaw": 95,
+  "servoCurrentRaw": 42
 }
 ```
 
 #### 11.7 `toolReadAdc`
 
-Reads both ADC channels (raw, mV, and resistance values).
+Reads ADC0 and ADC1 (raw counts and millivolts).
 
 **Request:**
 ```json
@@ -540,12 +541,10 @@ Reads both ADC channels (raw, mV, and resistance values).
 ```json
 {
   "type": "toolAdc",
-  "adc1Raw": 2345,
-  "adc2Raw": 1988,
-  "adc1mV": 1890,
-  "adc2mV": 1602,
-  "adc1Resistance": 4700,
-  "adc2Resistance": 10000
+  "adc0Raw": 2345,
+  "adc1Raw": 1988,
+  "adc0mV": 1890,
+  "adc1mV": 1602
 }
 ```
 

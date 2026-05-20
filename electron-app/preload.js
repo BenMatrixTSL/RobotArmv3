@@ -18,7 +18,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     /**
      * Reads a text file from the app directory (synchronously).
      * Tries several path bases so the file is found whether run from electron-app or parent folder.
-     * @param {string} relativePath - Path relative to the app (e.g. 'demo-kinematics.urdf')
+     * @param {string} relativePath - Path relative to the app (e.g. 'kinematics.urdf')
      * @returns {string|null} File contents, or null if read fails
      */
     readTextFile: (relativePath) => {

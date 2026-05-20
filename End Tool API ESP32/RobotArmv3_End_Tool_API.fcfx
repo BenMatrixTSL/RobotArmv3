@@ -1,6 +1,6 @@
 <root>
 <document scada='0' projtype='1' schema='103' license='1,82702381,95CJQR' title='New Embedded Project' description='' fcversion='720897' target='ESP.ESP32.ESP32_WROOM_32' >
-	<config data='' clkspd='240000000' simspd='0' usewdt='0' constif='0' Use3V3='0' />
+	<config data='' clkspd='240000000' simspd='0' usewdt='0' constif='0' commport='29' Use3V3='0' />
 	<plugins >
 		<dll_models enabled='1' />
 	</plugins>
@@ -68,6 +68,9 @@
 					<def class_type='variable' name='LastAddress' type='u8' description='Address field from last valid read/write command' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
 				</variable>
 				<variable public='0' >
+					<def class_type='variable' name='RegCurrent3mA_H' type='u8' description='' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
+				</variable>
+				<variable public='0' >
 					<def class_type='variable' name='Shunt2Volts' type='f32' description='Latest differential shunt voltage for PWM2 path' isconst='0' isHidden='0' isinit='1' usrinit='0.0' setinit='0.0' />
 				</variable>
 				<variable public='0' >
@@ -117,6 +120,9 @@
 				</variable>
 				<variable public='0' >
 					<def class_type='variable' name='AdcReferencemV' type='u16' description='ADC reference voltage in millivolts' isconst='1' isHidden='0' isinit='1' usrinit='2450' setinit='2450' />
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='Current3A' type='f32' description='' isconst='0' isHidden='0' isinit='1' usrinit='0.0' setinit='0.0' />
 				</variable>
 				<variable public='0' >
 					<def class_type='variable' name='BusDeviceID' type='u8' description='End-tool node ID on the ST3215 bus' isconst='1' isHidden='0' isinit='1' usrinit='64' setinit='64' />
@@ -175,6 +181,9 @@
 					<def class_type='variable' name='DebugCounter' type='u8' description='Loop counter used for periodic debug status output' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
 				</variable>
 				<variable public='0' >
+					<def class_type='variable' name='Shunt3Volts' type='f32' description='' isconst='0' isHidden='0' isinit='1' usrinit='0.0' setinit='0' />
+				</variable>
+				<variable public='0' >
 					<def class_type='variable' name='PacketParamIndex' type='u8' description='Current parameter index while parsing' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
 				</variable>
 				<variable public='0' >
@@ -231,6 +240,9 @@
 					<def class_type='variable' name='RegCurrent2mA_L' type='u8' description='Register 13: PWM2 current low byte (mA)' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
 				</variable>
 				<variable public='0' >
+					<def class_type='variable' name='Current3mA' type='u16' description='' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
+				</variable>
+				<variable public='0' >
 					<def class_type='variable' name='DebugLevel' type='u8' description='Debug level: 0=off, 1=basic, 2=verbose command logs' isconst='1' isHidden='0' isinit='1' usrinit='2' setinit='2' />
 				</variable>
 				<variable public='0' >
@@ -247,6 +259,9 @@
 				</variable>
 				<variable public='0' >
 					<def class_type='variable' name='RegCurrent2mA_H' type='u8' description='Register 14: PWM2 current high byte (mA)' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='RegCurrent3mA_L' type='u8' description='' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
 				</variable>
 				<variable public='0' >
 					<def class_type='variable' name='true' type='b1' description='' isconst='1' isHidden='0' isinit='1' usrinit='1' setinit='1' />
@@ -283,16 +298,18 @@
 							<exp exp='Registers[12] = RegCurrent1mA_H' />
 							<exp exp='Registers[13] = RegCurrent2mA_L' />
 							<exp exp='Registers[14] = RegCurrent2mA_H' />
+							<exp exp='Registers[15] = RegCurrent3mA_L' />
+							<exp exp='Registers[16] = RegCurrent3mA_H' />
 						</command>
 						<command class_type='calculation' title='Copy ADC telemetry bytes into register array' >
-							<exp exp='Registers[15] = RegAdc0Raw_L' />
-							<exp exp='Registers[16] = RegAdc0Raw_H' />
-							<exp exp='Registers[17] = RegAdc1Raw_L' />
-							<exp exp='Registers[18] = RegAdc1Raw_H' />
-							<exp exp='Registers[19] = RegAdc0mV_L' />
-							<exp exp='Registers[20] = RegAdc0mV_H' />
-							<exp exp='Registers[21] = RegAdc1mV_L' />
-							<exp exp='Registers[22] = RegAdc1mV_H' />
+							<exp exp='Registers[17] = RegAdc0Raw_L' />
+							<exp exp='Registers[18] = RegAdc0Raw_H' />
+							<exp exp='Registers[19] = RegAdc1Raw_L' />
+							<exp exp='Registers[20] = RegAdc1Raw_H' />
+							<exp exp='Registers[21] = RegAdc0mV_L' />
+							<exp exp='Registers[22] = RegAdc0mV_H' />
+							<exp exp='Registers[23] = RegAdc1mV_L' />
+							<exp exp='Registers[24] = RegAdc1mV_H' />
 						</command>
 					</flowline>
 				</macro>
@@ -698,78 +715,126 @@
 					<flowline name='UpdateCurrentMeasurements' description='' statediag='0' >
 						<return name='Return' type='v0' description='' isconst='0' isHidden='0' isinit='0' usrinit='' setinit='' />
 						<command class_type='comment' title='' comment='Refresh ADS1220 current measurements each loop' textarea='12,0,12,0' />
-						<command class_type='decision' title='Decision' exp='CurrentChannel &amp; 1' swap='0' >
-							<flowline >
-								<command class_type='call' title='Read PWM2 shunt voltage (AN0 single ended)' component='ADS1220' macro='SampleSglVolts' >
-									<return exp='Shunt2Volts' />
-									<argument exp='1' />
-									<argument exp='AdcGainSetting' />
-								</command>
-								<command class_type='calculation' title='Convert shunt volts to current in amps (I=V/R)' >
-									<exp exp='Current2A = Shunt2Volts / ShuntResistanceOhms' />
-									<exp exp='Current2A = Current2A * CurrentCalibrationGain' />
-								</command>
-								<command class_type='decision' title='Clamp PWM2 current lower bound to 0A' exp='Current2A &lt; 0' swap='0' >
-									<flowline >
-										<command class_type='calculation' title='Set PWM2 current to 0A if negative' >
-											<exp exp='Current2A = 0' />
-										</command>
-									</flowline>
-									<flowline />
-								</command>
-								<command class_type='calculation' title='Convert amps to milliamps' >
-									<exp exp='Current2mA = Current2A * 1000' />
-								</command>
-								<command class_type='decision' title='Clamp PWM2 current upper bound to 2000mA (2A)' exp='Current2mA &gt; 2000' swap='0' >
-									<flowline >
-										<command class_type='calculation' title='Set PWM2 current to 2000mA if above range' >
-											<exp exp='Current2mA = 2000' />
-										</command>
-									</flowline>
-									<flowline />
-								</command>
-								<command class_type='calculation' title='Store milliamps in low/high byte register pairs' >
-									<exp exp='RegCurrent2mA_L = Current2mA &amp; 255' />
-									<exp exp='RegCurrent2mA_H = Current2mA &gt;&gt; 8' />
-								</command>
-							</flowline>
-							<flowline >
-								<command class_type='call' title='Read PWM1 shunt voltage (AN0 single ended)' component='ADS1220' macro='SampleSglRaw' >
-									<return exp='Shunt1Volts' />
-									<argument exp='0' />
-									<argument exp='AdcGainSetting' />
-								</command>
-								<command class_type='calculation' title='Convert shunt volts to current in amps (I=V/R)' >
-									<exp exp='Current1A = Shunt1Volts / ShuntResistanceOhms' />
-									<exp exp='Current1A = Current1A * CurrentCalibrationGain' />
-								</command>
-								<command class_type='decision' title='Clamp PWM1 current lower bound to 0A' exp='Current1A &lt; 0' swap='0' >
-									<flowline >
-										<command class_type='calculation' title='Set PWM1 current to 0A if negative' >
-											<exp exp='Current1A = 0' />
-										</command>
-									</flowline>
-									<flowline />
-								</command>
-								<command class_type='calculation' title='Convert amps to milliamps' >
-									<exp exp='Current1mA = Current1A * 1000' />
-								</command>
-								<command class_type='decision' title='Clamp PWM1 current upper bound to 2000mA (2A)' exp='Current1mA &gt; 2000' swap='0' >
-									<flowline >
-										<command class_type='calculation' title='Set PWM1 current to 2000mA if above range' >
-											<exp exp='Current1mA = 2000' />
-										</command>
-									</flowline>
-									<flowline />
-								</command>
-								<command class_type='calculation' title='Store milliamps in low/high byte register pairs' >
-									<exp exp='RegCurrent1mA_L = Current1mA &amp; 255' />
-									<exp exp='RegCurrent1mA_H = Current1mA &gt;&gt; 8' />
-								</command>
-							</flowline>
+						<command class_type='switch' title='Switch' textarea='36,25,36,25' exp='CurrentChannel' >
+							<case >
+								<flowline >
+									<command class_type='call' title='Read PWM1 shunt voltage (AN0 single ended)' component='ADS1220' macro='SampleSglRaw' >
+										<return exp='Shunt1Volts' />
+										<argument exp='0' />
+										<argument exp='AdcGainSetting' />
+									</command>
+									<command class_type='calculation' title='Convert shunt volts to current in amps (I=V/R)' >
+										<exp exp='Current1A = Shunt1Volts / ShuntResistanceOhms' />
+										<exp exp='Current1A = Current1A * CurrentCalibrationGain' />
+									</command>
+									<command class_type='decision' title='Clamp PWM1 current lower bound to 0A' exp='Current1A &lt; 0' swap='0' >
+										<flowline >
+											<command class_type='calculation' title='Set PWM1 current to 0A if negative' >
+												<exp exp='Current1A = 0' />
+											</command>
+										</flowline>
+										<flowline />
+									</command>
+									<command class_type='calculation' title='Convert amps to milliamps' >
+										<exp exp='Current1mA = FLOAT (Current1A * 1000.0)' />
+									</command>
+									<command class_type='decision' title='Clamp PWM1 current upper bound to 2000mA (2A)' exp='Current1mA &gt; 2000' swap='0' >
+										<flowline >
+											<command class_type='calculation' title='Set PWM1 current to 2000mA if above range' >
+												<exp exp='Current1mA = 2000' />
+											</command>
+										</flowline>
+										<flowline />
+									</command>
+									<command class_type='calculation' title='Store milliamps in low/high byte register pairs' >
+										<exp exp='RegCurrent1mA_L = Current1mA &amp; 255' />
+										<exp exp='RegCurrent1mA_H = Current1mA &gt;&gt; 8' />
+									</command>
+								</flowline>
+							</case>
+							<case exp='1' >
+								<flowline >
+									<command class_type='call' title='Read PWM2 shunt voltage (AN1 single ended)' component='ADS1220' macro='SampleSglVolts' >
+										<return exp='Shunt2Volts' />
+										<argument exp='1' />
+										<argument exp='AdcGainSetting' />
+									</command>
+									<command class_type='calculation' title='Convert shunt volts to current in amps (I=V/R)' >
+										<exp exp='Current2A = Shunt2Volts / ShuntResistanceOhms' />
+										<exp exp='Current2A = Current2A * CurrentCalibrationGain' />
+									</command>
+									<command class_type='decision' title='Clamp PWM2 current lower bound to 0A' exp='Current2A &lt; 0' swap='0' >
+										<flowline >
+											<command class_type='calculation' title='Set PWM2 current to 0A if negative' >
+												<exp exp='Current2A = 0' />
+											</command>
+										</flowline>
+										<flowline />
+									</command>
+									<command class_type='calculation' title='Convert amps to milliamps' >
+										<exp exp='Current2mA = FLOAT (Current2A * 1000.0)' />
+									</command>
+									<command class_type='decision' title='Clamp PWM2 current upper bound to 2000mA (2A)' exp='Current2mA &gt; 2000' swap='0' >
+										<flowline >
+											<command class_type='calculation' title='Set PWM2 current to 2000mA if above range' >
+												<exp exp='Current2mA = 2000' />
+											</command>
+										</flowline>
+										<flowline />
+									</command>
+									<command class_type='calculation' title='Store milliamps in low/high byte register pairs' >
+										<exp exp='RegCurrent2mA_L = Current2mA &amp; 255' />
+										<exp exp='RegCurrent2mA_H = Current2mA &gt;&gt; 8' />
+									</command>
+								</flowline>
+							</case>
+							<case exp='2' >
+								<flowline >
+									<command class_type='call' title='Read Servo shunt voltage (AN2 single ended)' component='ADS1220' macro='SampleSglVolts' >
+										<return exp='Shunt3Volts' />
+										<argument exp='2' />
+										<argument exp='AdcGainSetting' />
+									</command>
+									<command class_type='calculation' title='Convert shunt volts to current in amps (I=V/R)' >
+										<exp exp='Current3A = Shunt3Volts / ShuntResistanceOhms' />
+										<exp exp='Current3A = Current3A * CurrentCalibrationGain' />
+									</command>
+									<command class_type='decision' title='Clamp Servo current lower bound to 0A' exp='Current3A &lt; 0' swap='0' >
+										<flowline >
+											<command class_type='calculation' title='Set Servo current to 0A if negative' >
+												<exp exp='Current3A = 0' />
+											</command>
+										</flowline>
+										<flowline />
+									</command>
+									<command class_type='calculation' title='Convert amps to milliamps' >
+										<exp exp='Current3mA = FLOAT (Current3A * 1000.0)' />
+									</command>
+									<command class_type='decision' title='Clamp Servo current upper bound to 2000mA (2A)' exp='Current3mA &gt; 2000' swap='0' >
+										<flowline >
+											<command class_type='calculation' title='Set Servo current to 2000mA if above range' >
+												<exp exp='Current3mA = 2000' />
+											</command>
+										</flowline>
+										<flowline />
+									</command>
+									<command class_type='calculation' title='Store milliamps in low/high byte register pairs' >
+										<exp exp='RegCurrent3mA_L = Current3mA &amp; 255' />
+										<exp exp='RegCurrent3mA_H = Current3mA &gt;&gt; 8' />
+									</command>
+								</flowline>
+							</case>
 						</command>
 						<command class_type='calculation' title='Move to next channel' >
 							<exp exp='CurrentChannel = CurrentChannel + 1' />
+						</command>
+						<command class_type='decision' title='Decision' exp='CurrentChannel &gt;= 3' swap='0' >
+							<flowline >
+								<command class_type='calculation' title='Move to next channel' >
+									<exp exp='CurrentChannel = 0' />
+								</command>
+							</flowline>
+							<flowline />
 						</command>
 					</flowline>
 				</macro>
@@ -993,11 +1058,11 @@
 				<resources />
 				<properties />
 				<values >
-					<value target='channel' data='001' />
+					<value target='channel' data='010' />
 					<value target='altpin' data='0' />
 					<value target='pwm_pin' data='$PORTA.22' />
 					<value target='RemapPin' data='020' />
-					<value target='timer' data='002' />
+					<value target='timer' data='000' />
 					<value target='period' data='65535' />
 					<value target='prescale' data='0' />
 					<value target='period_calc' data='936.228577' />
@@ -1025,11 +1090,11 @@
 				<resources />
 				<properties />
 				<values >
-					<value target='channel' data='002' />
+					<value target='channel' data='011' />
 					<value target='altpin' data='0' />
 					<value target='pwm_pin' data='$PORTA.23' />
 					<value target='RemapPin' data='021' />
-					<value target='timer' data='002' />
+					<value target='timer' data='000' />
 					<value target='period' data='65535' />
 					<value target='prescale' data='0' />
 					<value target='period_calc' data='936.228577' />
@@ -1058,7 +1123,7 @@
 				<properties />
 				<values >
 					<value target='cal_spi1::CHANNEL' data='001' />
-					<value target='cal_spi1::PR_SCALE' data='064' />
+					<value target='cal_spi1::PR_SCALE' data='020' />
 					<value target='cal_spi1::MOSI' data='$PORTA.12' />
 					<value target='cal_spi1::MOSIPins' data='006' />
 					<value target='cal_spi1::MISO' data='$PORTA.13' />
@@ -1068,16 +1133,16 @@
 					<value target='cal_spi1::SS' data='$PORTA.15' />
 					<value target='UseReady' data='1' />
 					<value target='DRDYPin' data='$PORTA.5' />
-					<value target='DataRate' data='000' />
+					<value target='DataRate' data='005' />
 					<value target='OperatingMode' data='000' />
 					<value target='ConversionMode' data='000' />
 					<value target='PGAGain' data='000' />
-					<value target='VRef' data='001' />
+					<value target='VRef' data='000' />
 					<value target='ReferenceVoltage' data='2.048' />
 					<value target='FIRFilter' data='001' />
-					<value target='IDACCurrent' data='001' />
-					<value target='I1MUX' data='003' />
-					<value target='I2MUX' data='004' />
+					<value target='IDACCurrent' data='000' />
+					<value target='I1MUX' data='000' />
+					<value target='I2MUX' data='000' />
 					<value target='RTDType' data='001' />
 					<value target='RTDConfig' data='001' />
 					<value target='RefResistor' data='4700' />
@@ -1380,10 +1445,10 @@
 	<keymap />
 	<panel2d shadows='0' lighting='2' brightness='0' >
 		<background rgb='7292207' img='' style='0' />
-		<camera xe='0' ye='0' ze='2297.53' xt='0' yt='0' zt='0' xquat='0' yquat='0' zquat='0' wquat='1' />
-		<viewport dx='491' dy='820' zoom='25.8586' fix_topleft='0' />
+		<camera xe='0' ye='0' ze='1796.85' xt='0' yt='0' zt='0' xquat='0' yquat='0' zquat='0' wquat='1' />
+		<viewport dx='384' dy='819' zoom='25.8586' fix_topleft='0' />
 		<page x='1000' y='1000' show='0' rgb='7360576' />
-		<winpos ID='7005' RectRecentFloat='1134,71,1725,945' RectRecentDocked='0,0,491,843' RecentFrameAlignment='16384' RecentRowIndex='0' IsFloating='0' MRUWidth='32767' PinState='0' IsMaximized='0' IsVisible='0' />
+		<winpos ID='7005' RectRecentFloat='1134,71,1725,945' RectRecentDocked='0,0,384,842' RecentFrameAlignment='16384' RecentRowIndex='0' IsFloating='0' MRUWidth='32767' PinState='0' IsMaximized='0' IsVisible='0' />
 	</panel2d>
 	<panel3d shadows='1' lighting='2' brightness='128' perspective='1' >
 		<background rgb='16777120' img='' style='0' />
@@ -1396,24 +1461,25 @@
 		<camerakey4 xe='-300' ye='-6.66134e-14' ze='6.66134e-14' xt='0' yt='0' zt='0' xquat='-0.5' yquat='0.5' zquat='0.5' wquat='0.5' />
 		<camerakey5 xe='300' ye='-6.66134e-14' ze='6.66134e-14' xt='0' yt='0' zt='0' xquat='-0.5' yquat='-0.5' zquat='-0.5' wquat='0.5' />
 		<camerakey6 xe='-173.205' ye='-173.205' ze='173.205' xt='0' yt='0' zt='0' xquat='-0.424708' yquat='0.17592' zquat='0.339851' wquat='0.820473' />
-		<winpos ID='7004' RectRecentFloat='575,270,1225,720' RectRecentDocked='0,0,392,866' RecentFrameAlignment='16384' RecentRowIndex='0' IsFloating='0' MRUWidth='32767' PinState='0' IsMaximized='0' IsVisible='0' />
+		<winpos ID='7004' RectRecentFloat='575,270,1225,720' RectRecentDocked='0,0,246,872' RecentFrameAlignment='16384' RecentRowIndex='0' IsFloating='0' MRUWidth='32767' PinState='0' IsMaximized='0' IsVisible='0' />
 	</panel3d>
 	<panels2d count='1' >
 		<panel2d_0 id='0' name='2D Panel' type='0' >
-			<winpos ID='1171' RectRecentFloat='334,-697,1462,-64' RectRecentDocked='994,141,1489,1061' RecentFrameAlignment='16384' RecentRowIndex='0' IsFloating='1' MRUWidth='32767' PinState='0' IsMaximized='0' IsVisible='1' />
+			<winpos ID='1171' RectRecentFloat='334,-697,1462,-64' RectRecentDocked='966,141,1470,1013' RecentFrameAlignment='16384' RecentRowIndex='0' IsFloating='1' MRUWidth='32767' PinState='0' IsMaximized='0' IsVisible='1' />
 			<background fill='288230376151053813' showgrid='1' gridstyle='0' gridsize='5' gridbrush='71776119075691740' snaptogrid='1' fitcomp='0' disp_x='300' disp_y='400' scale='100' disp_col='16777215' />
 		</panel2d_0>
 	</panels2d>
 	<layout >
-		<view type='0' name='Main' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA2QMAAJMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
-		<view type='0' name='ServoBus_RX' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA2QMAAJMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
-		<view type='0' name='UpdateCurrentMeasurements' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA2QMAAJMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
-		<view type='0' name='ReadRegisterIntoReadValue' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA2QMAAJMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
-		<view type='0' name='SendStatusPacketNoData' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA2QMAAJMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
-		<view type='0' name='SendStatusPacketWithData' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA2QMAAJMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
-		<view type='0' name='UpdateAdcTelemetry' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA2QMAAJMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
-		<view type='0' name='RefreshRegisterArrayFromVariables' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA2QMAAJMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
-		<view type='0' name='ProcessCommsByte' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA2QMAAJMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
+		<view type='0' name='Main' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA7AMAAGMDAAA' zoom='100' scrollx='0' scrolly='783' flags='0' />
+		<view type='0' name='ServoBus_RX' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA7AMAAGMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
+		<view type='0' name='UpdateCurrentMeasurements' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA7AMAAGMDAAA' zoom='100' scrollx='0' scrolly='117' flags='0' />
+		<view type='0' name='ReadRegisterIntoReadValue' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA7AMAAGMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
+		<view type='0' name='SendStatusPacketNoData' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA7AMAAGMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
+		<view type='0' name='SendStatusPacketWithData' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA7AMAAGMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
+		<view type='0' name='UpdateAdcTelemetry' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA7AMAAGMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
+		<view type='0' name='RefreshRegisterArrayFromVariables' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA7AMAAGMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
+		<view type='0' name='ProcessCommsByte' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA7AMAAGMDAAA' zoom='100' scrollx='2479' scrolly='1973' flags='0' />
+		<view type='0' name='ApplyWritableRegistersToVariablesAndHardware' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA7AMAAGMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
 	</layout>
 </document>
 </root>

@@ -1,10 +1,78 @@
-OS Debian Trixie x64 04/12/25
+==== OS ==== 
 
-root
-Matrix_Pass567834
+Debian Trixie x64 04/12/25
+
+==== Users ====
+
+adm      Allows access to log files in /var/log and using xconsole
+dialout  Allows access to serial ports/modem reconfiguration, etc.
+cdrom    Uncreatively, this group enables access to optical drives.
+sudo     Enables sudo access for the user.
+audio    Allows access to audio devices like microphones and soundcards
+video    Allows access to a video device like the framebuffer, the videocard or a webcam
+plugdev  Enables access to external storage devices
+games    Many games are SETGID to games so they can write their high score files. This is explained in policy.
+users    Appears to be a Pi-specific group enabling access to 
+         /opt/vc/src/hello_pi/ directory and contained files.
+input    Appears to give access to the /dev/input/mice folder and nothing else.
+netdev   Enables access to network interfaces
+gpio     Pi-specific group for GPIO pin access.
+i2c      Similar to the above, but for I2C access. 
+         Generated after installing i2c-tools.
+spi      Similar to the above, but for the SPI bus.
+lpadmin  CUPS printer administration.
+
+Username: mxadmin
+Password: matrixpass_567834
+Groups  : mxadmin adm dialout cdrom sudo audio video plugdev games users input render netdev spi i2c gpio
+
+Username: mxuser (default auto login)
+Password: mxpass123
+Groups  : mxuser dialout audio video plugdev users input netdev spi i2c gpio
+
+==== Firewall Enabled Incoming Ports List ====
+
+22 TCP - SSH - Limited 
+80 TCP - HTTP
+443 TCP - HTTPS
+8080 TCP - Electron Websocket
+
+==== Firewall Enabled Outgoing Ports List ====
+
+22 TCP - SSH
+53 - DNS
+80 TCP - HTTP
+123 UDP - NTP
+443 TCP - HTTPS
+8080 TCP - Electron Websocket
+
+==== Software Versions ====
+
+NodeJS - v20.19.2
+NPM - 9.2.0
+UFW - 0.36.2
+Fail2Ban - might not be setup properly - need a way to test this
+Automated Critical Security Updates
+
+==== Unique Hostname ====
+
+Add the required hostname prefix to the file in /boot/firmware/hostname-prefix.txt
+example: MATRIX-RobotArm
+On Reboot the hostname will become matrix-robotarm-xxxxxx
+An additional reboot may be needed to lock in the change.
+Note this will only run if the file /etc/hostname-set-flag does not exist
+
+
+==== Setup ====
+
+Server
+npm install
+node server.js
+
+
+
+
+
 
 ben
-
-
-robotarm
 robotarm123

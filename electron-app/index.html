@@ -36,25 +36,6 @@
             </div>
         </header>
 
-        <!-- Connection Settings -->
-        <section class="connection-panel">
-            <h2>Connection Settings</h2>
-            <div class="connection-form">
-                <label>
-                    Raspberry Pi Address:
-                    <input type="text" id="piAddress" value="192.168.1.160" placeholder="192.168.1.160">
-                </label>
-                <label>
-                    Port:
-                    <input type="number" id="piPort" value="8080" placeholder="8080">
-                </label>
-                <button id="connectButton" class="btn btn-primary">Connect</button>
-                <button id="autoDetectButton" class="btn btn-secondary">Auto-Detect Pi</button>
-                <button id="disconnectButton" class="btn btn-secondary" disabled>Disconnect</button>
-                <div id="autoDetectStatus" class="auto-detect-status"></div>
-            </div>
-        </section>
-
         <!-- Simple toast-style message area -->
         <div id="appMessage" class="app-message" style="display: none;"></div>
 
@@ -62,7 +43,8 @@
         <div class="main-layout">
             <!-- Sidebar Tabs -->
             <div class="tabs">
-                <button class="tab-button active" data-tab="pendant">Joint Control</button>
+                <button class="tab-button active" data-tab="connection">Connection</button>
+                <button class="tab-button" data-tab="pendant">Joint Control</button>
                 <button class="tab-button" data-tab="pendant-ui">Pendant Control</button>
                 <button class="tab-button" data-tab="gcode">G-Code Control</button>
                 <button class="tab-button" data-tab="rapid">RAPID</button>
@@ -77,8 +59,28 @@
             <!-- Main Tab Content -->
             <div class="tab-content-container">
 
+        <!-- Connection Tab -->
+        <div id="connection-tab" class="tab-content active">
+            <h2>Connection</h2>
+            <div class="connection-panel">
+                <p class="info-text">
+                    Connect to the Raspberry Pi server on port 8080.
+                </p>
+                <div class="connection-form">
+                    <label>
+                        Raspberry Pi Address:
+                        <input type="text" id="piAddress" value="192.168.1.160" placeholder="192.168.1.160">
+                    </label>
+                    <button id="connectButton" class="btn btn-primary">Connect</button>
+                    <button id="autoDetectButton" class="btn btn-secondary">Auto-Detect Pi</button>
+                    <button id="disconnectButton" class="btn btn-secondary" disabled>Disconnect</button>
+                    <div id="autoDetectStatus" class="auto-detect-status"></div>
+                </div>
+            </div>
+        </div>
+
         <!-- Joint Control Tab -->
-        <div id="pendant-tab" class="tab-content active">
+        <div id="pendant-tab" class="tab-content">
             <h2>Joint Control</h2>
             
             <!-- Joint Status Display -->
@@ -318,7 +320,7 @@
                         <tr>
                             <td><strong>Joint moves</strong></td>
                             <td>
-                                Move specific joints directly using <code>J1</code>…<code>J5</code> with angles in degrees.<br>
+                                Move specific joints directly using <code>J1</code>…<code>J6</code> with angles in degrees.<br>
                                 <code>J1=45 J2=-30 F60</code> → move J1 and J2 to 45° and −30° at 60&nbsp;deg/s (scaled so they finish together).
                             </td>
                         </tr>
@@ -372,13 +374,13 @@
                     <button class="btn btn-small" onclick="loadDefaultRapid()">Load RAPID Example</button>
                     <button class="btn btn-small" onclick="runRapidProgram()">Run RAPID Program</button>
                 </div>
-                <textarea id="rapidContent" placeholder="Type simple RAPID code here...&#10;Example:&#10;! Absolute joint move&#10;MoveJ [[0,10,20,0,0]];&#10;! Cartesian move&#10;MoveLXYZ [[150,0,200]];"></textarea>
+                <textarea id="rapidContent" placeholder="Type simple RAPID code here...&#10;Example:&#10;! Absolute joint move&#10;MoveJ [[0,10,20,0,0,0]];&#10;! Cartesian move&#10;MoveLXYZ [[150,0,200]];"></textarea>
             </div>
 
             <div class="settings-panel" style="margin-top: 20px;">
                 <h3>RAPID Cheat Sheet (Supported Subset)</h3>
                 <p class="info-text">
-                    This is not a full RAPID interpreter. It only supports a tiny subset that maps cleanly to your 5‑axis arm.
+                    This is not a full RAPID interpreter. It only supports a tiny subset that maps cleanly to your 6‑axis arm (plus fixed tool mount).
                 </p>
                 <table class="kinematics-step-info">
                     <tbody>
@@ -392,24 +394,24 @@
                         <tr>
                             <td><strong>MoveJ</strong></td>
                             <td>
-                                Joint move using 5 joint angles in degrees.<br>
-                                <code>MoveJ [[J1,J2,J3,J4,J5]];</code><br>
-                                Example: <code>MoveJ [[0,10,20,0,0]];</code> → move to J1=0°, J2=10°, J3=20°, J4=0°, J5=0° (default speed).
+                                Joint move using 6 joint angles in degrees.<br>
+                                <code>MoveJ [[J1,J2,J3,J4,J5,J6]];</code><br>
+                                Example: <code>MoveJ [[0,10,20,0,0,0]];</code> → move to J1=0°, J2=10°, J3=20°, J4=0°, J5=0°, J6=0° (default speed).
                             </td>
                         </tr>
                         <tr>
                             <td><strong>MoveAbsJ</strong></td>
                             <td>
                                 Absolute joint move (same behaviour as <code>MoveJ</code>, just a different name).<br>
-                                <code>MoveAbsJ [[0,0,30,0,0]];</code>
+                                <code>MoveAbsJ [[0,0,30,0,0,0]];</code>
                             </td>
                         </tr>
                         <tr>
                             <td><strong>MoveJOffs</strong></td>
                             <td>
                                 Joint move using offsets added to the current joint angles.<br>
-                                <code>MoveJOffs [[dJ1,dJ2,dJ3,dJ4,dJ5]];</code><br>
-                                Example: <code>MoveJOffs [[0,-5,-10,0,0]];</code> → subtract 5° from J2 and 10° from J3.
+                                <code>MoveJOffs [[dJ1,dJ2,dJ3,dJ4,dJ5,dJ6]];</code><br>
+                                Example: <code>MoveJOffs [[0,-5,-10,0,0,0]];</code> → subtract 5° from J2 and 10° from J3.
                             </td>
                         </tr>
                         <tr>
@@ -534,7 +536,7 @@
                 
                 <div class="visualization-status">
                     <div>Status: <span id="visualizationStatus">Ready</span></div>
-                    <div>End Effector Position: <span id="endEffectorPos">-</span></div>
+                    <div>End Effector Position (tool tip): <span id="endEffectorPos">-</span></div>
                     <div>Mode: <span id="visualizationMode">Real Robot</span></div>
                 </div>
             </div>
@@ -767,8 +769,9 @@
                 <h3>Connection Settings</h3>
                 <div class="settings-grid">
                     <div class="setting-item">
-                        <label>Number of Joints:</label>
-                        <input type="number" id="numJoints" value="5" min="1" max="6" onchange="generateSimulatedAngleControls()">
+                        <label>Number of Joints (servos):</label>
+                        <input type="number" id="numJoints" value="6" min="1" max="6" onchange="updateJointUI()">
+                        <p class="info-text">Coordinate 7 is the fixed tool mounting point from the URDF (no servo angle).</p>
                     </div>
                     <div class="setting-item">
                         <label>Update Interval (ms):</label>
@@ -795,7 +798,7 @@
                     <!-- Joint configurations will be displayed here -->
                     <p class="info-text">
                         Click "Load from Robot" to read joint configurations from PIC controllers, 
-                        or "Load Demo Configuration" to load a typical 4-joint robot arm setup for testing.
+                        or "Load Demo Configuration" to load the 6-joint arm URDF (with tool mount) for testing.
                     </p>
                 </div>
             </div>
@@ -899,6 +902,50 @@
                     </div>
                     <div style="margin-top: 6px;">
                         <span id="localPiUpdateStatus" class="status-text"></span>
+                    </div>
+                </div>
+
+                <div style="margin-top: 15px; border-top: 1px solid #ddd; padding-top: 10px;">
+                    <h4>Ethernet Settings (Local Pi)</h4>
+                    <p class="info-text">
+                        Configure Ethernet using NetworkManager on this Raspberry Pi.
+                        Choose DHCP or Static IP and click Apply.
+                    </p>
+                    <div class="settings-grid">
+                        <div class="setting-item">
+                            <label>Mode:</label>
+                            <select id="localPiEthernetMode" onchange="toggleLocalPiEthernetModeFields()">
+                                <option value="dhcp">DHCP (Automatic)</option>
+                                <option value="static">Static IP</option>
+                            </select>
+                        </div>
+                        <div class="setting-item">
+                            <label>Connection:</label>
+                            <div><span id="localPiEthernetConnection">-</span></div>
+                        </div>
+                        <div class="setting-item">
+                            <label>IP Address:</label>
+                            <input type="text" id="localPiEthernetIp" placeholder="192.168.1.50">
+                        </div>
+                        <div class="setting-item">
+                            <label>Subnet Mask:</label>
+                            <input type="text" id="localPiEthernetMask" placeholder="255.255.255.0">
+                        </div>
+                        <div class="setting-item">
+                            <label>Gateway:</label>
+                            <input type="text" id="localPiEthernetGateway" placeholder="192.168.1.1">
+                        </div>
+                        <div class="setting-item">
+                            <label>DNS:</label>
+                            <input type="text" id="localPiEthernetDns" placeholder="1.1.1.1,8.8.8.8">
+                        </div>
+                    </div>
+                    <div style="margin-top: 10px;">
+                        <button class="btn btn-secondary" onclick="refreshLocalPiEthernetSettings()">Refresh Ethernet Settings</button>
+                        <button class="btn btn-primary" onclick="applyLocalPiEthernetSettings()">Apply Ethernet Settings</button>
+                    </div>
+                    <div style="margin-top: 6px;">
+                        <span id="localPiEthernetStatus" class="status-text"></span>
                     </div>
                 </div>
             </div>

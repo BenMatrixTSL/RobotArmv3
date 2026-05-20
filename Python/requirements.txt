@@ -1,0 +1,2 @@
+# WebSocket client for talking to raspberry-pi-control-st3215 (port 8080)
+websocket-client>=1.6.0

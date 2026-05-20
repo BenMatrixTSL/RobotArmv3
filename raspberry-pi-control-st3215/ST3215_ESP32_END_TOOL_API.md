@@ -82,26 +82,21 @@ Addresses below are local to the ESP32 node implementation.
 
 | Address | Name | Size | R/W | Description |
 |---|---|---:|---|---|
-| `0x10` | `PWM1_DUTY` | 1 | R/W | PWM1 duty `0..255` |
-| `0x11` | `PWM2_DUTY` | 1 | R/W | PWM2 duty `0..255` |
-| `0x12` | `PWM_CONTROL` | 1 | R/W | Output enable and mode bits |
-| `0x13` | `PWM_FREQ_DIV` | 1 | R/W | Optional coarse frequency selector |
-| `0x14` | `PWM1_CURRENT_RAW_L` | 2 | R | Current sensor 1 raw ADC (or scaled) |
-| `0x16` | `PWM2_CURRENT_RAW_L` | 2 | R | Current sensor 2 raw ADC (or scaled) |
-| `0x18` | `PWM1_CURRENT_LIMIT_L` | 2 | R/W | Overcurrent limit channel 1 |
-| `0x1A` | `PWM2_CURRENT_LIMIT_L` | 2 | R/W | Overcurrent limit channel 2 |
+| `5` | `PWM1_DUTY` | 1 | R/W | PWM1 duty `0..255` |
+| `6` | `PWM2_DUTY` | 1 | R/W | PWM2 duty `0..255` |
+| `7` | `PWM_CONTROL` | 1 | R/W | Output enable and mode bits |
+| `11` | `PWM1_CURRENT_MA_L` | 2 | R | PWM1 current in mA (little-endian) |
+| `13` | `PWM2_CURRENT_MA_L` | 2 | R | PWM2 current in mA (little-endian) |
+| `15` | `SERVO_CURRENT_MA_L` | 2 | R | Servo shunt current in mA (little-endian) |
 
 ## 3.3 ADC inputs
 
 | Address | Name | Size | R/W | Description |
 |---|---|---:|---|---|
-| `0x20` | `ADC1_RAW_L` | 2 | R | ADC1 raw reading |
-| `0x22` | `ADC2_RAW_L` | 2 | R | ADC2 raw reading |
-| `0x24` | `ADC1_MV_L` | 2 | R | ADC1 voltage in mV |
-| `0x26` | `ADC2_MV_L` | 2 | R | ADC2 voltage in mV |
-| `0x28` | `ADC1_RESISTANCE_L` | 2 | R | ADC1 computed resistance (optional) |
-| `0x2A` | `ADC2_RESISTANCE_L` | 2 | R | ADC2 computed resistance (optional) |
-| `0x2C` | `ADC_CONFIG` | 1 | R/W | Input mode/averaging/range bits |
+| `17` | `ADC0_RAW_L` | 2 | R | ADC0 raw reading |
+| `19` | `ADC1_RAW_L` | 2 | R | ADC1 raw reading |
+| `21` | `ADC0_MV_L` | 2 | R | ADC0 voltage in mV |
+| `23` | `ADC1_MV_L` | 2 | R | ADC1 voltage in mV |
 
 ## 3.4 Hobby servo output
 
@@ -319,12 +314,10 @@ Response:
 ```json
 {
   "type": "toolAdc",
-  "adc1Raw": 2345,
-  "adc2Raw": 1988,
-  "adc1mV": 1890,
-  "adc2mV": 1602,
-  "adc1Resistance": 4700,
-  "adc2Resistance": 10000
+  "adc0Raw": 2345,
+  "adc1Raw": 1988,
+  "adc0mV": 1890,
+  "adc1mV": 1602
 }
 ```
 
@@ -359,7 +352,8 @@ Response:
   "lastErrorCode": 0,
   "uptimeSec": 1234,
   "pwm1Current": 120,
-  "pwm2Current": 95
+  "pwm2Current": 95,
+  "servoCurrent": 42
 }
 ```
 

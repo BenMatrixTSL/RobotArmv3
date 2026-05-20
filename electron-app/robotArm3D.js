@@ -18,13 +18,15 @@ class RobotArm3D {
         this.cameraTarget = new THREE.Vector3(0, 0, 0);
         this.robotArm = null;
         this.urdfRobot = null;       // Robot loaded via URDFLoader
-        this.urdfJointNames = [      // Mapping from joint index to URDF joint name
+        this.urdfJointNames = [      // Mapping from joint index to URDF joint name (6 DOF)
             'joint1_base_yaw',
             'joint2_shoulder_pitch',
             'joint3_elbow_pitch',
             'joint4_wrist_roll',
-            'joint5_wrist_pitch'
+            'joint5_wrist_pitch',
+            'joint6_wrist_roll_2'
         ];
+        this.toolMountGroup = null;  // Overlay: flange mount + tool tip (coordinate 7)
         this.jointAngles = [];
         this.targetAngles = []; // Target angles for animation
         this.currentAnimatedAngles = []; // Current animated angles (for smooth transitions)
@@ -135,18 +137,22 @@ class RobotArm3D {
         this.workspaceGroup.visible = true;
         this.scene.add(this.workspaceGroup);
 
+        // Tool mount + tool tip markers (coordinate 7 from URDF fixed joint)
+        this.toolMountGroup = new THREE.Group();
+        this.scene.add(this.toolMountGroup);
+
         // Add simple orbit controls (mouse drag to rotate)
         this.setupControls();
 
         // Create robot arm
         this.createRobotArm();
 
-        // If URDFLoader is available, load the demo URDF robot for accurate kinematics
+        // If URDFLoader is available, load the URDF robot for accurate kinematics
         if (typeof URDFLoader !== 'undefined') {
             try {
                 const loader = new URDFLoader();
-                // Load the demo URDF that lives alongside index.html
-                loader.load('demo-kinematics.urdf', (robot) => {
+                // Load the URDF that lives alongside index.html
+                loader.load('kinematics.urdf', (robot) => {
                     console.log('URDF robot loaded for 3D visualization');
                     this.urdfRobot = robot;
                     // Add robot to the scene
@@ -324,6 +330,110 @@ class RobotArm3D {
     }
 
     /**
+     * Converts a URDF-frame position (millimetres) to Three.js scene coordinates.
+     * @param {{ x: number, y: number, z: number }} posMm
+     * @returns {THREE.Vector3}
+     */
+    urdfMmToThreePos(posMm) {
+        return new THREE.Vector3(-posMm.y, posMm.z, posMm.x);
+    }
+
+    /**
+     * Draws coordinate 7: tool mounting flange (orange) and tool tip (red), with a stub link between.
+     * Uses forward kinematics so it works for both URDF-loader and custom-mesh paths.
+     */
+    updateToolMountVisual() {
+        if (!this.toolMountGroup) {
+            return;
+        }
+
+        while (this.toolMountGroup.children.length > 0) {
+            const child = this.toolMountGroup.children[0];
+            this.toolMountGroup.remove(child);
+        }
+
+        if (typeof robotKinematics === 'undefined' ||
+            !robotKinematics ||
+            typeof robotKinematics.isConfigured !== 'function' ||
+            !robotKinematics.isConfigured()) {
+            return;
+        }
+
+        if (!robotKinematics.fixedToolJoints || robotKinematics.fixedToolJoints.length === 0) {
+            return;
+        }
+
+        const revCount = robotKinematics.getJointCount();
+        const angles = [];
+        for (let i = 0; i < revCount; i++) {
+            angles.push(this.jointAngles[i] || 0);
+        }
+
+        let flangePosMm = null;
+        let toolTipPosMm = null;
+
+        try {
+            const fkSteps = robotKinematics.getForwardKinematicsSteps(angles);
+            if (fkSteps.steps && fkSteps.steps.length >= revCount) {
+                const flangeStep = fkSteps.steps[revCount - 1];
+                if (flangeStep && flangeStep.transform && typeof positionFromMatrix === 'function') {
+                    const pMeters = positionFromMatrix(flangeStep.transform);
+                    flangePosMm = {
+                        x: pMeters.x * 1000,
+                        y: pMeters.y * 1000,
+                        z: pMeters.z * 1000
+                    };
+                }
+            }
+            const fk = robotKinematics.forwardKinematics(angles);
+            toolTipPosMm = fk.position;
+        } catch (error) {
+            console.warn('updateToolMountVisual: could not compute tool pose', error);
+            return;
+        }
+
+        if (!flangePosMm || !toolTipPosMm) {
+            return;
+        }
+
+        const flangeThree = this.urdfMmToThreePos(flangePosMm);
+        const tipThree = this.urdfMmToThreePos(toolTipPosMm);
+
+        // Mounting flange (coordinate 7) — where the tool attaches to link 6
+        const mountGeometry = new THREE.SphereGeometry(11, 16, 16);
+        const mountMaterial = new THREE.MeshStandardMaterial({ color: 0xff8800 });
+        const mountMesh = new THREE.Mesh(mountGeometry, mountMaterial);
+        mountMesh.position.copy(flangeThree);
+        this.toolMountGroup.add(mountMesh);
+
+        // Small axes at the mount frame
+        const mountAxes = new THREE.AxesHelper(28);
+        mountAxes.position.copy(flangeThree);
+        this.toolMountGroup.add(mountAxes);
+
+        // Stub from flange to tool tip (fixed tool offset from URDF)
+        const stubDirection = new THREE.Vector3().subVectors(tipThree, flangeThree);
+        const stubLength = stubDirection.length();
+        if (stubLength > 0.5) {
+            const stubGeometry = new THREE.CylinderGeometry(5, 5, stubLength, 10);
+            const stubMaterial = new THREE.MeshStandardMaterial({ color: 0xffaa44 });
+            const stubMesh = new THREE.Mesh(stubGeometry, stubMaterial);
+            stubMesh.position.copy(flangeThree).add(stubDirection.clone().multiplyScalar(0.5));
+            const up = new THREE.Vector3(0, 1, 0);
+            const dir = stubDirection.clone().normalize();
+            stubMesh.quaternion.setFromUnitVectors(up, dir);
+            this.toolMountGroup.add(stubMesh);
+        }
+
+        // Tool tip (end of tool mount offset)
+        const tipGeometry = new THREE.SphereGeometry(7, 14, 14);
+        const tipMaterial = new THREE.MeshStandardMaterial({ color: 0xe74c3c });
+        const tipMesh = new THREE.Mesh(tipGeometry, tipMaterial);
+        tipMesh.position.copy(tipThree);
+        this.toolMountGroup.add(tipMesh);
+    }
+
+    /**
      * Updates the robot arm visualization based on URDF joint configurations and angles
      * @param {Array} jointConfigs - Array of URDF joint configurations
      * @param {Array} jointAngles - Array of current joint angles in degrees (only for revolute joints)
@@ -343,15 +453,20 @@ class RobotArm3D {
         if (this.urdfRobot && this.urdfRobot.setJointValue) {
             const kinematicsJointsForUrdf = (typeof robotKinematics !== 'undefined' && robotKinematics.isConfigured())
                 ? robotKinematics.getJointConfigs() : null;
-            for (let i = 0; i < this.urdfJointNames.length; i++) {
+
+            if (kinematicsJointsForUrdf && kinematicsJointsForUrdf.length > 0) {
+                this.urdfJointNames = kinematicsJointsForUrdf.map(function (joint) {
+                    return joint.name;
+                });
+            }
+
+            const jointCount = Math.min(this.urdfJointNames.length, this.jointAngles.length);
+            for (let i = 0; i < jointCount; i++) {
                 const jointName = this.urdfJointNames[i];
                 let angleDeg = this.jointAngles[i] || 0;
                 const kinJoint = kinematicsJointsForUrdf && kinematicsJointsForUrdf[i];
                 const offset = (kinJoint && typeof kinJoint.zeroOffsetDegrees === 'number') ? kinJoint.zeroOffsetDegrees : 0;
                 angleDeg = angleDeg + offset;
-                if (offset !== 0) {
-                    console.log('[3D view URDF]', jointName, ': UI angle =', this.jointAngles[i], ', offset =', offset, ', effective =', angleDeg);
-                }
                 const angleRad = (angleDeg * Math.PI) / 180;
                 try {
                     this.urdfRobot.setJointValue(jointName, angleRad);
@@ -359,7 +474,8 @@ class RobotArm3D {
                     // If a joint name is missing, just skip it
                 }
             }
-            // No custom arm geometry needed when URDF robot is present
+
+            this.updateToolMountVisual();
             return;
         }
 
@@ -377,6 +493,7 @@ class RobotArm3D {
         
         this.jointConfigs = jointConfigs;
         this.updateArmGeometry();
+        this.updateToolMountVisual();
     }
 
     /**
@@ -653,8 +770,13 @@ class RobotArm3D {
             this.robotArm.add(link);
         }
 
-        // Create end effector
-        if (positions.length > 1) {
+        // End effector at tool tip is drawn in updateToolMountVisual() when URDF has a tool mount.
+        const hasToolMount = typeof robotKinematics !== 'undefined' &&
+            robotKinematics &&
+            robotKinematics.fixedToolJoints &&
+            robotKinematics.fixedToolJoints.length > 0;
+
+        if (positions.length > 1 && !hasToolMount) {
             const endEffectorPos = positions[positions.length - 1];
             const endEffectorGeometry = new THREE.ConeGeometry(10, 20, 16);
             const endEffectorMaterial = new THREE.MeshStandardMaterial({ color: 0xe74c3c });
@@ -662,14 +784,6 @@ class RobotArm3D {
             endEffector.position.copy(endEffectorPos);
             endEffector.rotateX(Math.PI);
             this.robotArm.add(endEffector);
-
-            // Add a small sphere at end effector tip
-            const tipGeometry = new THREE.SphereGeometry(5, 16, 16);
-            const tipMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000 });
-            const tip = new THREE.Mesh(tipGeometry, tipMaterial);
-            tip.position.copy(endEffectorPos);
-            tip.position.y += 10;
-            this.robotArm.add(tip);
         }
 
         console.log(`3D visualization updated with ${this.jointConfigs.length} joints`);

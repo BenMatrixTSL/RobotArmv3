@@ -81,20 +81,19 @@ const TOOL_STATUS_FLAGS = 0x04;
 const TOOL_CONFIG_FLAGS = 0x05;
 const WATCHDOG_TIMEOUT_L = 0x06;
 
-// PWM and current registers
-const PWM1_DUTY = 0x10;
-const PWM2_DUTY = 0x11;
-const PWM_CONTROL = 0x12;
-const PWM1_CURRENT_RAW_L = 0x14;
-const PWM2_CURRENT_RAW_L = 0x16;
+// PWM and current registers (byte addresses — see End Tool API ESP32/REGISTER_MAP.md)
+const PWM1_DUTY = 5;
+const PWM2_DUTY = 6;
+const PWM_CONTROL = 7;
+const PWM1_CURRENT_MA_L = 11;
+const PWM2_CURRENT_MA_L = 13;
+const SERVO_CURRENT_MA_L = 15;
 
-// ADC registers
-const ADC1_RAW_L = 0x20;
-const ADC2_RAW_L = 0x22;
-const ADC1_MV_L = 0x24;
-const ADC2_MV_L = 0x26;
-const ADC1_RESISTANCE_L = 0x28;
-const ADC2_RESISTANCE_L = 0x2A;
+// ADC telemetry registers
+const ADC0_RAW_L = 17;
+const ADC1_RAW_L = 19;
+const ADC0_MV_L = 21;
+const ADC1_MV_L = 23;
 
 // Hobby servo registers
 const SERVO_ENABLE = 0x30;
@@ -1218,50 +1217,37 @@ class EndToolController extends ServoController {
     }
 
     /**
-     * Read current sense channels (16-bit little-endian each)
-     * @returns {Object} { pwm1CurrentRaw, pwm2CurrentRaw }
+     * Read all current-sense channels (16-bit little-endian mA each)
+     * @returns {Object} { pwm1CurrentRaw, pwm2CurrentRaw, servoCurrentRaw }
      */
     async readPwmCurrents() {
-        const ch1 = await this.readData(PWM1_CURRENT_RAW_L, 2);
-        const ch2 = await this.readData(PWM2_CURRENT_RAW_L, 2);
-        if (!ch1 || ch1.length < 2 || !ch2 || ch2.length < 2) {
-            throw new Error('Invalid PWM current data');
+        const data = await this.readData(PWM1_CURRENT_MA_L, 6);
+        if (!data || data.length < 6) {
+            throw new Error('Invalid current measurement data');
         }
 
         return {
-            pwm1CurrentRaw: this.makeWord(ch1[0], ch1[1]),
-            pwm2CurrentRaw: this.makeWord(ch2[0], ch2[1])
+            pwm1CurrentRaw: this.makeWord(data[0], data[1]),
+            pwm2CurrentRaw: this.makeWord(data[2], data[3]),
+            servoCurrentRaw: this.makeWord(data[4], data[5])
         };
     }
 
     /**
-     * Read both ADC raw values, millivolts, and resistance values
-     * @returns {Object}
+     * Read ADC0 and ADC1 raw values and millivolts (16-bit little-endian each)
+     * @returns {Object} { adc0Raw, adc1Raw, adc0mV, adc1mV }
      */
     async readAdcData() {
-        const adc1RawData = await this.readData(ADC1_RAW_L, 2);
-        const adc2RawData = await this.readData(ADC2_RAW_L, 2);
-        const adc1mVData = await this.readData(ADC1_MV_L, 2);
-        const adc2mVData = await this.readData(ADC2_MV_L, 2);
-        const adc1ResData = await this.readData(ADC1_RESISTANCE_L, 2);
-        const adc2ResData = await this.readData(ADC2_RESISTANCE_L, 2);
-
-        if (!adc1RawData || adc1RawData.length < 2 ||
-            !adc2RawData || adc2RawData.length < 2 ||
-            !adc1mVData || adc1mVData.length < 2 ||
-            !adc2mVData || adc2mVData.length < 2 ||
-            !adc1ResData || adc1ResData.length < 2 ||
-            !adc2ResData || adc2ResData.length < 2) {
+        const data = await this.readData(ADC0_RAW_L, 8);
+        if (!data || data.length < 8) {
             throw new Error('Invalid ADC data');
         }
 
         return {
-            adc1Raw: this.makeWord(adc1RawData[0], adc1RawData[1]),
-            adc2Raw: this.makeWord(adc2RawData[0], adc2RawData[1]),
-            adc1mV: this.makeWord(adc1mVData[0], adc1mVData[1]),
-            adc2mV: this.makeWord(adc2mVData[0], adc2mVData[1]),
-            adc1Resistance: this.makeWord(adc1ResData[0], adc1ResData[1]),
-            adc2Resistance: this.makeWord(adc2ResData[0], adc2ResData[1])
+            adc0Raw: this.makeWord(data[0], data[1]),
+            adc1Raw: this.makeWord(data[2], data[3]),
+            adc0mV: this.makeWord(data[4], data[5]),
+            adc1mV: this.makeWord(data[6], data[7])
         };
     }
 

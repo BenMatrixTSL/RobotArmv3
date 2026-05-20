@@ -19,6 +19,8 @@ class RobotArmClient {
         this.jointConfigs = []; // Store joint configurations
         this.isConnecting = false; // Flag to prevent multiple simultaneous connection attempts
         this.hasEverConnected = false; // Track if we've ever successfully connected
+        this.pendingRequests = new Map(); // requestId -> {resolve, reject, timeout}
+        this.nextRequestId = 1;
     }
 
     /**
@@ -84,6 +86,7 @@ class RobotArmClient {
                 // Handle connection close
                 this.ws.onclose = () => {
                     console.log('Disconnected from Raspberry Pi');
+                    this.clearPendingRequests('Connection closed');
                     this.isConnected = false;
                     this.isConnecting = false;
                     this.updateConnectionStatus(false);
@@ -106,6 +109,7 @@ class RobotArmClient {
      */
     disconnect() {
         this.stopReconnect();
+        this.clearPendingRequests('Disconnected from Raspberry Pi');
         if (this.ws) {
             this.ws.close();
             this.ws = null;
@@ -139,10 +143,56 @@ class RobotArmClient {
     }
 
     /**
+     * Sends a command and waits for one response that has the same requestId.
+     * @param {string} command - Command name
+     * @param {Object} data - Command payload
+     * @param {number} timeoutMs - Timeout in milliseconds
+     * @returns {Promise<Object>} Response payload
+     */
+    sendRequest(command, data = {}, timeoutMs = 5000) {
+        return new Promise((resolve, reject) => {
+            if (!this.isConnected || !this.ws) {
+                reject(new Error('Not connected to Raspberry Pi'));
+                return;
+            }
+
+            const requestId = this.nextRequestId++;
+            const timeout = setTimeout(() => {
+                this.pendingRequests.delete(requestId);
+                reject(new Error(`Request timeout: ${command}`));
+            }, timeoutMs);
+
+            this.pendingRequests.set(requestId, { resolve, reject, timeout });
+
+            const sent = this.sendCommand(command, {
+                requestId: requestId,
+                ...data
+            });
+
+            if (!sent) {
+                clearTimeout(timeout);
+                this.pendingRequests.delete(requestId);
+                reject(new Error(`Failed to send command: ${command}`));
+            }
+        });
+    }
+
+    /**
      * Handles incoming messages from the Raspberry Pi
      * @param {Object} data - Parsed message data
      */
     handleMessage(data) {
+        // Handle request/response messages first (for async request calls)
+        if (data && data.requestId !== undefined) {
+            const pending = this.pendingRequests.get(data.requestId);
+            if (pending) {
+                clearTimeout(pending.timeout);
+                this.pendingRequests.delete(data.requestId);
+                pending.resolve(data);
+                return;
+            }
+        }
+
         // Handle status updates
         if (data.type === 'status') {
             if (this.onStatusUpdate) {
@@ -247,6 +297,19 @@ class RobotArmClient {
             clearInterval(this.reconnectInterval);
             this.reconnectInterval = null;
         }
+    }
+
+    /**
+     * Rejects all pending request promises.
+     * @param {string} reason - Reason text
+     */
+    clearPendingRequests(reason) {
+        const error = new Error(reason || 'Request cancelled');
+        this.pendingRequests.forEach((pending) => {
+            clearTimeout(pending.timeout);
+            pending.reject(error);
+        });
+        this.pendingRequests.clear();
     }
 
     // ===== Robot Arm Command Functions =====
@@ -401,6 +464,133 @@ class RobotArmClient {
      */
     requestJointConfigs() {
         return this.sendCommand('getJointConfigs');
+    }
+
+    /**
+     * Loads URDF on the server-side kinematics service.
+     * @param {string} urdfXml - Full URDF XML text
+     * @returns {Promise<Object>}
+     */
+    async loadKinematicsURDF(urdfXml) {
+        const response = await this.sendRequest('kinematicsLoadURDF', { urdfXml: urdfXml }, 8000);
+        if (response.type === 'error') {
+            throw new Error(response.message || 'Failed to load URDF on server');
+        }
+        return response;
+    }
+
+    /**
+     * Gets kinematics info from the server.
+     * @returns {Promise<Object>}
+     */
+    async getKinematicsInfo() {
+        const response = await this.sendRequest('kinematicsGetInfo', {}, 5000);
+        if (response.type === 'error') {
+            throw new Error(response.message || 'Failed to get kinematics info');
+        }
+        return response;
+    }
+
+    /**
+     * Runs forward kinematics on the server.
+     * @param {Array<number>} jointAngles
+     * @returns {Promise<Object>} FK result
+     */
+    async forwardKinematics(jointAngles) {
+        const response = await this.sendRequest('kinematicsForwardKinematics', { jointAngles: jointAngles }, 5000);
+        if (response.type === 'error') {
+            throw new Error(response.message || 'Forward kinematics failed');
+        }
+        return response.result;
+    }
+
+    /**
+     * Runs step-by-step forward kinematics on the server.
+     * @param {Array<number>} jointAngles
+     * @returns {Promise<Object>} FK steps result
+     */
+    async forwardKinematicsSteps(jointAngles) {
+        const response = await this.sendRequest('kinematicsForwardKinematicsSteps', { jointAngles: jointAngles }, 5000);
+        if (response.type === 'error') {
+            throw new Error(response.message || 'Forward kinematics steps failed');
+        }
+        return response.result;
+    }
+
+    /**
+     * Runs forward kinematics for many joint-angle sets (batch).
+     * @param {Array<Array<number>>} jointAnglesList
+     * @returns {Promise<Array<{x:number,y:number,z:number}>>} List of positions (mm)
+     */
+    async forwardKinematicsBatch(jointAnglesList) {
+        const response = await this.sendRequest('kinematicsForwardKinematicsBatch', {
+            jointAnglesList: jointAnglesList
+        }, 10000);
+        if (response.type === 'error') {
+            throw new Error(response.message || 'Forward kinematics batch failed');
+        }
+        return response.positions;
+    }
+
+    /**
+     * Runs inverse kinematics on the server.
+     * @param {Object} targetPose
+     * @param {Array<number>|null} initialAngles
+     * @returns {Promise<Array<number>|null>}
+     */
+    async inverseKinematics(targetPose, initialAngles = null) {
+        const response = await this.sendRequest('kinematicsInverseKinematics', {
+            targetPose: targetPose,
+            initialAngles: initialAngles
+        }, 12000);
+        if (response.type === 'error') {
+            throw new Error(response.message || 'Inverse kinematics failed');
+        }
+        return response.result;
+    }
+
+    /**
+     * Refines IK solution using both position and tool orientation.
+     * @param {{ x:number, y:number, z:number }} targetPose
+     * @param {Array<number>} baseAngles
+     * @param {{ x:number, y:number, z:number }} desiredOrientation
+     * @returns {Promise<{angles:Array<number>, positionErrorMm:number, orientationErrorDeg:number, achievedPosition:Object|null}>}
+     */
+    async refineOrientationWithAccuracy(targetPose, baseAngles, desiredOrientation) {
+        const response = await this.sendRequest('kinematicsRefineOrientationWithAccuracy', {
+            targetPose: targetPose,
+            baseAngles: baseAngles,
+            desiredOrientation: desiredOrientation
+        }, 20000);
+        if (response.type === 'error') {
+            throw new Error(response.message || 'Refine orientation failed');
+        }
+        return response.result;
+    }
+
+    /**
+     * Gets ethernet settings from the Pi server.
+     * @returns {Promise<Object>} Ethernet settings
+     */
+    async getPiEthernetSettings() {
+        const response = await this.sendRequest('getPiEthernetSettings', {}, 6000);
+        if (response.type === 'error') {
+            throw new Error(response.message || 'Failed to get ethernet settings');
+        }
+        return response.ethernet;
+    }
+
+    /**
+     * Sets ethernet settings on the Pi server.
+     * @param {{mode:string, ipAddress?:string, subnetMask?:string, gateway?:string, dns?:string}} settings
+     * @returns {Promise<Object>} Updated ethernet settings
+     */
+    async setPiEthernetSettings(settings) {
+        const response = await this.sendRequest('setPiEthernetSettings', settings || {}, 12000);
+        if (response.type === 'error') {
+            throw new Error(response.message || 'Failed to set ethernet settings');
+        }
+        return response.ethernet;
     }
 
     /**

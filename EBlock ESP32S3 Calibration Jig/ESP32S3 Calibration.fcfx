@@ -17,8 +17,8 @@ Connected boards:
 	Internal:	UART
 	Internal:	Bluetooth
 	Internal:	Wifi
-' fcversion='720896' target='ESP.ESP32.E-Blocks3 ESP32S3 Programmer' >
-	<config data='' clkspd='240000000' simspd='0' usewdt='0' constif='0' commport='27' SSH_IP='DD6171BB7AD97877' SSH_User='DD6171BB7AD97877' SSH_Pass='DD6171BB7AD97877' Use3V3='0' />
+' fcversion='720897' target='ESP.ESP32.E-Blocks3 ESP32S3 Programmer' >
+	<config data='' clkspd='240000000' simspd='0' usewdt='0' constif='0' SSH_IP='DD6171BB7AD97877' SSH_User='DD6171BB7AD97877' SSH_Pass='DD6171BB7AD97877' Use3V3='0' />
 	<plugins >
 		<dll_models enabled='1' />
 	</plugins>
@@ -100,6 +100,9 @@ Connected boards:
 					<def class_type='variable' name='false' type='b1' description='' isconst='1' isHidden='0' isinit='1' usrinit='0' setinit='0' />
 				</variable>
 				<variable public='0' >
+					<def class_type='variable' name='SelectedIdx' type='u8' description='' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
+				</variable>
+				<variable public='0' >
 					<def class_type='variable' name='IsMoving' type='b1' description='' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
 				</variable>
 				<variable public='0' >
@@ -131,28 +134,24 @@ Connected boards:
 							<array size='20' />
 						</local>
 						<local name='idx' type='u8' description='' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
-						<command class_type='loop' title='Loop' type='2' forvar='.idx' exp='ServoCount' >
-							<flowline >
-								<command class_type='call' title='Component Macro' component='ST3215' macro='ReadPosition' >
-									<return exp='.Position' />
-									<argument exp='IDs[.idx]' />
-								</command>
-								<command class_type='calculation' title='Calculation' >
-									<exp exp='.Str = &quot;Position: &quot; + ToString$(.Position)' />
-								</command>
-								<command class_type='call' title='Component Macro' component='InfoText' macro='SetTextLabel' >
-									<argument exp='.Str' />
-								</command>
-								<command class_type='delay' title='Delay' exp='2' type='2' />
-								<command class_type='call' title='Component Macro' component='ST3215' macro='DefineMiddle' >
-									<argument exp='IDs[.idx]' />
-								</command>
-								<command class_type='call' title='Component Macro' component='InfoText' macro='SetTextLabel' >
-									<argument exp='&quot;Center Point Set&quot;' />
-								</command>
-								<command class_type='delay' title='Delay' exp='2' type='2' />
-							</flowline>
+						<command class_type='call' title='Component Macro' component='ST3215' macro='ReadPosition' >
+							<return exp='.Position' />
+							<argument exp='IDs[SelectedIdx]' />
 						</command>
+						<command class_type='calculation' title='Calculation' >
+							<exp exp='.Str = &quot;Position: &quot; + ToString$(.Position)' />
+						</command>
+						<command class_type='call' title='Component Macro' component='InfoText' macro='SetTextLabel' >
+							<argument exp='.Str' />
+						</command>
+						<command class_type='delay' title='Delay' exp='2' type='2' />
+						<command class_type='call' title='Component Macro' component='ST3215' macro='DefineMiddle' >
+							<argument exp='IDs[SelectedIdx]' />
+						</command>
+						<command class_type='call' title='Component Macro' component='InfoText' macro='SetTextLabel' >
+							<argument exp='&quot;Center Point Set&quot;' />
+						</command>
+						<command class_type='delay' title='Delay' exp='2' type='2' />
 					</flowline>
 				</macro>
 				<macro >
@@ -163,14 +162,14 @@ Connected boards:
 							<array size='20' />
 						</local>
 						<local name='idx' type='u8' description='' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
-						<command class_type='decision' title='Decision' exp='.Index &gt; 6' swap='0' >
+						<command class_type='decision' title='Valid range 1-6' exp='.Index &gt; 6' swap='0' >
 							<flowline >
 								<command class_type='calculation' title='Calculation' >
 									<exp exp='.Index = 1' />
 								</command>
 							</flowline>
 							<flowline >
-								<command class_type='decision' title='Decision' exp='.Index = 0' swap='0' >
+								<command class_type='decision' title='Valid range 0-5' exp='.Index = 0' swap='0' >
 									<flowline >
 										<command class_type='calculation' title='Calculation' >
 											<exp exp='.Index = 1' />
@@ -181,24 +180,25 @@ Connected boards:
 							</flowline>
 						</command>
 						<command class_type='calculation' title='Calculation' >
-							<exp exp='IDs[0] = .Index' />
-						</command>
-						<command class_type='calculation' title='Calculation' >
 							<exp exp='.Str = &quot;Servo Selected: &quot; + ToString$(.Index)' />
 						</command>
 						<command class_type='call' title='Component Macro' component='InfoText' macro='SetTextLabel' >
 							<argument exp='.Str' />
+						</command>
+						<command class_type='calculation' title='Calculation' >
+							<exp exp='.Index = .Index - 1' />
+							<exp exp='SelectedIdx = .Index' />
 						</command>
 						<command class_type='loop' title='Loop' type='2' forvar='.idx' exp='6' >
 							<flowline >
 								<command class_type='switch' title='Switch' textarea='36,25,36,25' exp='.idx' >
 									<case >
 										<flowline >
-											<command class_type='decision' title='Decision' exp='.idx = (.Index - 1)' swap='0' >
+											<command class_type='decision' title='Decision' exp='.idx = .Index' swap='0' >
 												<flowline >
 													<command class_type='call' title='Component Macro' component='ButtonID1' macro='ModifyColour' >
 														<argument exp='3' />
-														<argument exp='0xC0' />
+														<argument exp='0xFF' />
 														<argument exp='0' />
 														<argument exp='0' />
 														<argument exp='1' />
@@ -221,11 +221,11 @@ Connected boards:
 									</case>
 									<case exp='1' >
 										<flowline >
-											<command class_type='decision' title='Decision' exp='.idx = (.Index - 1)' swap='0' >
+											<command class_type='decision' title='Decision' exp='.idx = .Index' swap='0' >
 												<flowline >
 													<command class_type='call' title='Component Macro' component='ButtonID2' macro='ModifyColour' >
 														<argument exp='3' />
-														<argument exp='0xC0' />
+														<argument exp='0xFF' />
 														<argument exp='0' />
 														<argument exp='0' />
 														<argument exp='1' />
@@ -248,11 +248,11 @@ Connected boards:
 									</case>
 									<case exp='2' >
 										<flowline >
-											<command class_type='decision' title='Decision' exp='.idx = (.Index - 1)' swap='0' >
+											<command class_type='decision' title='Decision' exp='.idx = .Index' swap='0' >
 												<flowline >
 													<command class_type='call' title='Component Macro' component='ButtonID3' macro='ModifyColour' >
 														<argument exp='3' />
-														<argument exp='0xC0' />
+														<argument exp='0xFF' />
 														<argument exp='0' />
 														<argument exp='0' />
 														<argument exp='1' />
@@ -275,11 +275,11 @@ Connected boards:
 									</case>
 									<case exp='3' >
 										<flowline >
-											<command class_type='decision' title='Decision' exp='.idx = (.Index - 1)' swap='0' >
+											<command class_type='decision' title='Decision' exp='.idx = .Index' swap='0' >
 												<flowline >
 													<command class_type='call' title='Component Macro' component='ButtonID4' macro='ModifyColour' >
 														<argument exp='3' />
-														<argument exp='0xC0' />
+														<argument exp='0xFF' />
 														<argument exp='0' />
 														<argument exp='0' />
 														<argument exp='1' />
@@ -302,11 +302,11 @@ Connected boards:
 									</case>
 									<case exp='4' >
 										<flowline >
-											<command class_type='decision' title='Decision' exp='.idx = (.Index - 1)' swap='0' >
+											<command class_type='decision' title='Decision' exp='.idx = .Index' swap='0' >
 												<flowline >
 													<command class_type='call' title='Component Macro' component='ButtonID5' macro='ModifyColour' >
 														<argument exp='3' />
-														<argument exp='0xC0' />
+														<argument exp='0xFF' />
 														<argument exp='0' />
 														<argument exp='0' />
 														<argument exp='1' />
@@ -329,11 +329,11 @@ Connected boards:
 									</case>
 									<case exp='5' >
 										<flowline >
-											<command class_type='decision' title='Decision' exp='.idx = (.Index - 1)' swap='0' >
+											<command class_type='decision' title='Decision' exp='.idx = .Index' swap='0' >
 												<flowline >
 													<command class_type='call' title='Component Macro' component='ButtonID6' macro='ModifyColour' >
 														<argument exp='3' />
-														<argument exp='0xC0' />
+														<argument exp='0xFF' />
 														<argument exp='0' />
 														<argument exp='0' />
 														<argument exp='1' />
@@ -385,15 +385,19 @@ Connected boards:
 						<command class_type='call' title='Component Macro' component='InfoText' macro='SetTextLabel' >
 							<argument exp='Str' />
 						</command>
+						<command class_type='delay' title='Delay' exp='2' type='2' />
 						<command class_type='decision' title='Decision' exp='ServoCount &gt; 0' swap='0' >
 							<flowline >
+								<command class_type='calculation' title='Calculation' >
+									<exp exp='SelectedIdx = 0' />
+								</command>
 								<command class_type='call' title='Component Macro' component='ST3215' macro='SetMode' >
 									<return exp='RetVal' />
-									<argument exp='IDs[0]' />
+									<argument exp='IDs[SelectedIdx]' />
 									<argument exp='0' />
 								</command>
 								<command class_type='call' title='User Macro' macro='AssignActiveServo' >
-									<argument exp='IDs[0]' />
+									<argument exp='IDs[SelectedIdx]' />
 								</command>
 							</flowline>
 							<flowline />
@@ -413,7 +417,7 @@ Connected boards:
 						</command>
 						<command class_type='call' title='Component Macro' component='ST3215' macro='UnlockEEPROM' >
 							<return exp='.Retval' />
-							<argument exp='IDs[0]' />
+							<argument exp='IDs[SelectedIdx]' />
 						</command>
 						<command class_type='calculation' title='Calculation' >
 							<exp exp='.Str = &quot;Unlock EE : &quot; + ToString$(.Retval)' />
@@ -424,7 +428,7 @@ Connected boards:
 						<command class_type='delay' title='Delay' exp='2' type='2' />
 						<command class_type='call' title='Component Macro' component='ST3215' macro='ChangeID' >
 							<return exp='.Retval' />
-							<argument exp='IDs[0]' />
+							<argument exp='IDs[SelectedIdx]' />
 							<argument exp='.NewID' />
 						</command>
 						<command class_type='calculation' title='Calculation' >
@@ -434,13 +438,9 @@ Connected boards:
 							<argument exp='.Str' />
 						</command>
 						<command class_type='delay' title='Delay' exp='2' type='2' />
-						<command class_type='call' title='User Macro' macro='AssignActiveServo' >
-							<argument exp='.NewID' />
-						</command>
-						<command class_type='delay' title='Delay' exp='2' type='2' />
 						<command class_type='call' title='Component Macro' component='ST3215' macro='LockEEPROM' >
 							<return exp='.Retval' />
-							<argument exp='IDs[0]' />
+							<argument exp='.NewID' />
 						</command>
 						<command class_type='calculation' title='Calculation' >
 							<exp exp='.Str = &quot;Lock EE : &quot; + ToString$(.Retval)' />
@@ -452,6 +452,8 @@ Connected boards:
 						<command class_type='call' title='Component Macro' component='InfoText' macro='SetTextLabel' >
 							<argument exp='&quot;ID Change Complete&quot;' />
 						</command>
+						<command class_type='delay' title='Delay' exp='2' type='2' />
+						<command class_type='call' title='User Macro' macro='DetectServos' />
 					</flowline>
 				</macro>
 				<macro >
@@ -459,6 +461,44 @@ Connected boards:
 						<return name='Return' type='v0' description='' isconst='0' isHidden='0' isinit='0' usrinit='' setinit='' />
 						<command class_type='calculation' title='Calculation' >
 							<exp exp='Flag = 1' />
+						</command>
+					</flowline>
+				</macro>
+				<macro >
+					<flowline name='ZeroAllServos' description='' statediag='0' >
+						<return name='Return' type='v0' description='' isconst='0' isHidden='0' isinit='0' usrinit='' setinit='' />
+						<local name='Position' type='u16' description='' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
+						<local name='Str' type='T8' description='' isconst='0' isHidden='0' isinit='1' usrinit='&quot;&quot;' setinit='&quot;&quot;' >
+							<array size='20' />
+						</local>
+						<local name='idx' type='u8' description='' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
+						<command class_type='call' title='Component Macro' component='InfoText' macro='SetTextLabel' >
+							<argument exp='&quot;Moving to mid&quot;' />
+						</command>
+						<command class_type='loop' title='Loop' type='2' forvar='.idx' exp='ServoCount' >
+							<flowline >
+								<command class_type='call' title='Component Macro' component='ST3215' macro='SetSpeed' >
+									<return exp='RetVal' />
+									<argument exp='IDs[SelectedIdx]' />
+									<argument exp='100' />
+								</command>
+								<command class_type='delay' title='Delay' exp='10' type='1' />
+								<command class_type='call' title='Component Macro' component='ST3215' macro='SetPosition' >
+									<return exp='.Position' />
+									<argument exp='IDs[.idx]' />
+									<argument exp='2048' />
+								</command>
+								<command class_type='delay' title='Delay' exp='10' type='1' />
+								<command class_type='loop' title='Loop' type='0' exp='ST3215::IsMoving(IDs[.Idx])' >
+									<flowline >
+										<command class_type='delay' title='Delay' exp='10' type='1' />
+									</flowline>
+								</command>
+								<command class_type='delay' title='Delay' exp='10' type='1' />
+							</flowline>
+						</command>
+						<command class_type='call' title='Component Macro' component='InfoText' macro='SetTextLabel' >
+							<argument exp='&quot;Complete&quot;' />
 						</command>
 					</flowline>
 				</macro>
@@ -475,18 +515,18 @@ Connected boards:
 						</command>
 						<command class_type='call' title='Component Macro' component='ST3215' macro='StartServo' >
 							<return exp='RetVal' />
-							<argument exp='IDs[0]' />
+							<argument exp='IDs[SelectedIdx]' />
 						</command>
 						<command class_type='delay' title='Delay' exp='10' type='1' />
 						<command class_type='call' title='Component Macro' component='ST3215' macro='SetSpeed' >
 							<return exp='RetVal' />
-							<argument exp='IDs[0]' />
+							<argument exp='IDs[SelectedIdx]' />
 							<argument exp='10' />
 						</command>
 						<command class_type='delay' title='Delay' exp='10' type='1' />
 						<command class_type='call' title='Component Macro' component='ST3215' macro='ReadPosition' >
 							<return exp='.Position' />
-							<argument exp='IDs[0]' />
+							<argument exp='IDs[SelectedIdx]' />
 						</command>
 						<command class_type='calculation' title='Calculation' >
 							<exp exp='.Str = &quot;Current Pos: &quot; + ToString$(.Position) + &quot; + &quot; + ToString$(.Movement)' />
@@ -499,12 +539,14 @@ Connected boards:
 						</command>
 						<command class_type='delay' title='Delay' exp='10' type='1' />
 						<command class_type='call' title='Component Macro' component='ST3215' macro='SetPosition' >
-							<argument exp='IDs[0]' />
+							<argument exp='IDs[SelectedIdx]' />
 							<argument exp='.Position' />
 						</command>
 						<command class_type='delay' title='Delay' exp='10' type='1' />
-						<command class_type='loop' title='Loop' type='0' exp='ST3215::IsMoving(IDs[0])' >
-							<flowline />
+						<command class_type='loop' title='Loop' type='0' exp='ST3215::IsMoving(IDs[SelectedIdx])' >
+							<flowline >
+								<command class_type='delay' title='Delay' exp='10' type='1' />
+							</flowline>
 						</command>
 					</flowline>
 				</macro>
@@ -617,6 +659,12 @@ Connected boards:
 						<command class_type='decision' title='Decision' exp='.Handle = ButtonSetCenter' swap='0' >
 							<flowline >
 								<command class_type='call' title='User Macro' macro='SetCenterPoint' />
+							</flowline>
+							<flowline />
+						</command>
+						<command class_type='decision' title='Decision' exp='.Handle = ButtonZeroAll' swap='0' >
+							<flowline >
+								<command class_type='call' title='User Macro' macro='ZeroAllServos' />
 							</flowline>
 							<flowline />
 						</command>
@@ -817,7 +865,7 @@ Connected boards:
 					<value target='GLCDComponent' data='13' />
 					<value target='LibraryComponent1::OutputIcon::LinkTo' data='1' />
 					<value target='LibraryComponent1::InputIcon::LinkTo' data='000' />
-					<value target='RamUsage' data='560' />
+					<value target='RamUsage' data='700' />
 					<value target='TextAlignOffset' data='4' />
 					<value target='BackgroundColour' data='8388626' />
 					<value target='DisplayType' data='0' />
@@ -826,7 +874,7 @@ Connected boards:
 					<value target='PostInit' data='1' />
 					<value target='EB3_Display' data='1' />
 					<value target='EB3_WebMirror' data='0' />
-					<value target='MaxObjects' data='20' />
+					<value target='MaxObjects' data='25' />
 					<value target='ObjThemeCount' data='0' />
 					<value target='Obj_Fg_0' data='0' />
 					<value target='Obj_Bg_0' data='16777215' />
@@ -844,7 +892,7 @@ Connected boards:
 					<value target='Obj_Bg_6' data='' />
 					<value target='Obj_Fg_7' data='' />
 					<value target='Obj_Bg_7' data='' />
-					<value target='MaxWidgets' data='20' />
+					<value target='MaxWidgets' data='25' />
 					<value target='TouchRepeatRate' data='10' />
 					<value target='WidgetThemeCount' data='0' />
 					<value target='Btn_Fg_0' data='' />
@@ -884,10 +932,10 @@ Connected boards:
 					<value target='Orientation' data='001' />
 					<value target='SceneCount' data='1' />
 					<value target='Scene0' data='1' />
-					<value target='Layout0' data='67,210,210,210,79,1,10,0,4,0,204,1,35,0,0,0,0,0,255,87,87,0,0,0,83,1,1,1,83,84,51,50,49,53,32,83,101,114,118,111,32,67,97,108,105,98,114,97,116,105,111,110,0,87,1,10,0,50,0,133,0,48,0,0,0,0,0,160,255,255,0,0,0,90,90,90,1,171,13,83,0,1,1,68,101,116,101,99,116,32,83,101,114,118,111,0,79,1,10,0,29,1,204,1,30,0,0,0,0,0,210,210,210,0,0,0,87,1,90,0,170,0,58,0,48,0,0,0,0,0,160,160,255,0,0,0,90,90,90,1,199,13,83,0,1,1,43,49,48,0,87,1,10,0,230,0,58,0,48,0,0,0,0,0,255,255,160,0,0,0,90,90,90,1,213,13,83,0,1,1,73,68,32,49,0,87,1,90,0,230,0,58,0,48,0,0,0,0,0,255,255,160,0,0,0,90,90,90,1,227,13,83,0,1,1,73,68,32,50,0,87,1,170,0,230,0,58,0,48,0,0,0,0,0,255,255,160,0,0,0,90,90,90,1,241,13,83,0,1,1,73,68,32,51,0,87,1,250,0,230,0,58,0,48,0,0,0,0,0,255,255,160,0,0,0,90,90,90,1,255,13,83,0,1,1,73,68,32,52,0,87,1,74,1,230,0,58,0,48,0,0,0,0,0,255,255,160,0,0,0,90,90,90,1,13,14,83,0,1,1,73,68,32,53,0,87,1,154,1,230,0,58,0,48,0,0,0,0,0,255,255,160,0,0,0,90,90,90,1,27,14,83,0,1,1,73,68,32,54,0,87,1,74,1,170,0,58,0,48,0,0,0,0,0,160,160,255,0,0,0,90,90,90,1,117,16,83,0,1,1,45,49,48,0,87,1,165,0,50,0,47,1,48,0,0,0,0,0,192,255,160,0,0,0,90,90,90,1,131,16,83,0,1,1,65,115,115,105,103,110,32,67,101,110,116,101,114,32,80,111,115,105,116,105,111,110,0,87,1,170,0,170,0,58,0,48,0,0,0,0,0,160,160,255,0,0,0,90,90,90,1,145,16,83,0,1,1,43,49,0,87,1,250,0,170,0,59,0,48,0,0,0,0,0,160,160,255,0,0,0,90,90,90,1,159,16,83,0,1,1,45,49,0,87,1,10,0,170,0,58,0,48,0,0,0,0,0,160,160,255,0,0,0,90,90,90,1,173,16,83,0,1,1,43,53,48,0,87,1,154,1,170,0,58,0,48,0,0,0,0,0,160,160,255,0,0,0,90,90,90,1,187,16,83,0,1,1,45,53,48,0,87,1,10,0,110,0,58,0,48,0,0,255,0,0,255,192,87,0,0,0,192,0,0,1,201,16,83,0,1,1,83,49,0,87,1,90,0,110,0,58,0,48,0,0,0,0,0,255,192,87,0,0,0,90,90,90,1,215,16,83,0,1,1,83,50,0,87,1,170,0,110,0,58,0,48,0,0,0,0,0,255,192,87,0,0,0,90,90,90,1,229,16,83,0,1,1,83,51,0,87,1,250,0,110,0,58,0,48,0,0,0,0,0,255,192,87,0,0,0,90,90,90,1,243,16,83,0,1,1,83,52,0,87,1,74,1,110,0,58,0,48,0,0,0,0,0,255,192,87,0,0,0,90,90,90,1,1,17,83,0,1,1,83,53,0,87,1,154,1,110,0,58,0,48,0,0,0,0,0,255,192,87,0,0,0,90,90,90,1,15,17,83,0,1,1,83,54,0,' />
-					<value target='Count0' data='779' />
-					<value target='Callback0' data='&amp;FCM_DC_Touched,&amp;FCM_DC_Touched,&amp;FCM_DC_Touched,&amp;FCM_DC_Touched,&amp;FCM_DC_Touched,&amp;FCM_DC_Touched,&amp;FCM_DC_Touched,&amp;FCM_DC_Touched,&amp;FCM_DC_Touched,&amp;FCM_DC_Touched,&amp;FCM_DC_Touched,&amp;FCM_DC_Touched,&amp;FCM_DC_Touched,&amp;FCM_DC_Touched,&amp;FCM_DC_Touched,&amp;FCM_DC_Touched,&amp;FCM_DC_Touched,&amp;FCM_DC_Touched,&amp;FCM_DC_Touched,&amp;FCM_DC_Touched' />
-					<value target='CBCount0' data='20' />
+					<value target='Layout0' data='67,210,210,210,79,1,10,0,4,0,204,1,35,0,0,0,0,0,255,87,87,0,0,0,83,1,1,1,83,84,51,50,49,53,32,83,101,114,118,111,32,67,97,108,105,98,114,97,116,105,111,110,0,87,1,10,0,50,0,138,0,48,0,0,0,0,0,160,255,255,0,0,0,90,90,90,1,171,13,83,0,1,1,68,101,116,101,99,116,32,83,101,114,118,111,0,79,1,10,0,29,1,204,1,30,0,0,0,0,0,210,210,210,0,0,0,87,1,90,0,170,0,58,0,48,0,0,0,0,0,160,160,255,0,0,0,90,90,90,1,199,13,83,0,1,1,43,49,48,0,87,1,10,0,230,0,58,0,48,0,0,0,0,0,255,255,160,0,0,0,90,90,90,1,213,13,83,0,1,1,73,68,32,49,0,87,1,90,0,230,0,58,0,48,0,0,0,0,0,255,255,160,0,0,0,90,90,90,1,227,13,83,0,1,1,73,68,32,50,0,87,1,170,0,230,0,58,0,48,0,0,0,0,0,255,255,160,0,0,0,90,90,90,1,241,13,83,0,1,1,73,68,32,51,0,87,1,250,0,230,0,58,0,48,0,0,0,0,0,255,255,160,0,0,0,90,90,90,1,255,13,83,0,1,1,73,68,32,52,0,87,1,74,1,230,0,58,0,48,0,0,0,0,0,255,255,160,0,0,0,90,90,90,1,13,14,83,0,1,1,73,68,32,53,0,87,1,154,1,230,0,58,0,48,0,0,0,0,0,255,255,160,0,0,0,90,90,90,1,27,14,83,0,1,1,73,68,32,54,0,87,1,74,1,170,0,58,0,48,0,0,0,0,0,160,160,255,0,0,0,90,90,90,1,117,16,83,0,1,1,45,49,48,0,87,1,170,0,50,0,138,0,48,0,0,0,0,0,192,255,160,0,0,0,90,90,90,1,131,16,83,0,1,1,65,115,115,105,103,110,32,67,101,110,116,101,114,0,87,1,170,0,170,0,58,0,48,0,0,0,0,0,160,160,255,0,0,0,90,90,90,1,145,16,83,0,1,1,43,49,0,87,1,250,0,170,0,59,0,48,0,0,0,0,0,160,160,255,0,0,0,90,90,90,1,159,16,83,0,1,1,45,49,0,87,1,10,0,170,0,58,0,48,0,0,0,0,0,160,160,255,0,0,0,90,90,90,1,173,16,83,0,1,1,43,53,48,0,87,1,154,1,170,0,58,0,48,0,0,0,0,0,160,160,255,0,0,0,90,90,90,1,187,16,83,0,1,1,45,53,48,0,87,1,10,0,110,0,58,0,48,0,0,255,0,0,255,192,87,0,0,0,192,0,0,1,201,16,83,0,1,1,83,49,0,87,1,90,0,110,0,58,0,48,0,0,0,0,0,255,192,87,0,0,0,90,90,90,1,215,16,83,0,1,1,83,50,0,87,1,170,0,110,0,58,0,48,0,0,0,0,0,255,192,87,0,0,0,90,90,90,1,229,16,83,0,1,1,83,51,0,87,1,250,0,110,0,58,0,48,0,0,0,0,0,255,192,87,0,0,0,90,90,90,1,243,16,83,0,1,1,83,52,0,87,1,74,1,110,0,58,0,48,0,0,0,0,0,255,192,87,0,0,0,90,90,90,1,1,17,83,0,1,1,83,53,0,87,1,154,1,110,0,58,0,48,0,0,0,0,0,255,192,87,0,0,0,90,90,90,1,15,17,83,0,1,1,83,54,0,87,1,74,1,49,0,138,0,48,0,0,0,0,0,87,128,255,0,0,0,90,90,90,1,235,17,83,0,1,1,90,101,114,111,32,65,108,108,0,' />
+					<value target='Count0' data='809' />
+					<value target='Callback0' data='&amp;FCM_DC_Touched,&amp;FCM_DC_Touched,&amp;FCM_DC_Touched,&amp;FCM_DC_Touched,&amp;FCM_DC_Touched,&amp;FCM_DC_Touched,&amp;FCM_DC_Touched,&amp;FCM_DC_Touched,&amp;FCM_DC_Touched,&amp;FCM_DC_Touched,&amp;FCM_DC_Touched,&amp;FCM_DC_Touched,&amp;FCM_DC_Touched,&amp;FCM_DC_Touched,&amp;FCM_DC_Touched,&amp;FCM_DC_Touched,&amp;FCM_DC_Touched,&amp;FCM_DC_Touched,&amp;FCM_DC_Touched,&amp;FCM_DC_Touched,&amp;FCM_DC_Touched' />
+					<value target='CBCount0' data='21' />
 					<value target='Scene1' data='2' />
 					<value target='Layout1' data='' />
 					<value target='Count1' data='0' />
@@ -1072,11 +1120,11 @@ Connected boards:
 				<variables />
 				<macros />
 			</component>
-			<component class_type='ref' guid='81f24c15-ab7c-49ba-b55f-62d3cbfee92a' vmin='0' vmaj='1' codename='ButtonDetect' panelId='1' x='97.5' y='-115' z='1' xsz='84.375' ysz='31.25' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
+			<component class_type='ref' guid='81f24c15-ab7c-49ba-b55f-62d3cbfee92a' vmin='0' vmaj='1' codename='ButtonDetect' panelId='1' x='100.172' y='-115' z='1' xsz='87.7155' ysz='31.25' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
 				<resources />
 				<properties />
 				<values >
-					<value target='ID' data='21' />
+					<value target='ID' data='26' />
 					<value target='DisplayManager' data='2083' />
 					<value target='ShapeType' data='1' />
 					<value target='Type' data='87' />
@@ -1138,7 +1186,7 @@ Connected boards:
 				<resources />
 				<properties />
 				<values >
-					<value target='ID' data='22' />
+					<value target='ID' data='27' />
 					<value target='DisplayManager' data='2083' />
 					<value target='ShapeType' data='1' />
 					<value target='Type' data='87' />
@@ -1169,7 +1217,7 @@ Connected boards:
 				<resources />
 				<properties />
 				<values >
-					<value target='ID' data='23' />
+					<value target='ID' data='28' />
 					<value target='DisplayManager' data='2083' />
 					<value target='ShapeType' data='1' />
 					<value target='Type' data='87' />
@@ -1200,7 +1248,7 @@ Connected boards:
 				<resources />
 				<properties />
 				<values >
-					<value target='ID' data='24' />
+					<value target='ID' data='29' />
 					<value target='DisplayManager' data='2083' />
 					<value target='ShapeType' data='1' />
 					<value target='Type' data='87' />
@@ -1231,7 +1279,7 @@ Connected boards:
 				<resources />
 				<properties />
 				<values >
-					<value target='ID' data='25' />
+					<value target='ID' data='30' />
 					<value target='DisplayManager' data='2083' />
 					<value target='ShapeType' data='1' />
 					<value target='Type' data='87' />
@@ -1262,7 +1310,7 @@ Connected boards:
 				<resources />
 				<properties />
 				<values >
-					<value target='ID' data='26' />
+					<value target='ID' data='31' />
 					<value target='DisplayManager' data='2083' />
 					<value target='ShapeType' data='1' />
 					<value target='Type' data='87' />
@@ -1293,7 +1341,7 @@ Connected boards:
 				<resources />
 				<properties />
 				<values >
-					<value target='ID' data='27' />
+					<value target='ID' data='32' />
 					<value target='DisplayManager' data='2083' />
 					<value target='ShapeType' data='1' />
 					<value target='Type' data='87' />
@@ -1324,7 +1372,7 @@ Connected boards:
 				<resources />
 				<properties />
 				<values >
-					<value target='ID' data='28' />
+					<value target='ID' data='33' />
 					<value target='DisplayManager' data='2083' />
 					<value target='ShapeType' data='1' />
 					<value target='Type' data='87' />
@@ -1385,7 +1433,7 @@ Connected boards:
 				<resources />
 				<properties />
 				<values >
-					<value target='ID' data='29' />
+					<value target='ID' data='34' />
 					<value target='DisplayManager' data='2083' />
 					<value target='ShapeType' data='1' />
 					<value target='Type' data='87' />
@@ -1412,11 +1460,11 @@ Connected boards:
 				<variables />
 				<macros />
 			</component>
-			<component class_type='ref' guid='81f24c15-ab7c-49ba-b55f-62d3cbfee92a' vmin='0' vmaj='1' codename='ButtonSetCenter' panelId='1' x='337.5' y='-115' z='11' xsz='190.625' ysz='31.25' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
+			<component class_type='ref' guid='81f24c15-ab7c-49ba-b55f-62d3cbfee92a' vmin='0' vmaj='1' codename='ButtonSetCenter' panelId='1' x='260.172' y='-114.828' z='11' xsz='87.2845' ysz='31.4655' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
 				<resources />
 				<properties />
 				<values >
-					<value target='ID' data='30' />
+					<value target='ID' data='35' />
 					<value target='DisplayManager' data='2083' />
 					<value target='ShapeType' data='1' />
 					<value target='Type' data='87' />
@@ -1431,7 +1479,7 @@ Connected boards:
 					<value target='DrawHighlight' data='1' />
 					<value target='UseCallback' data='1' />
 					<value target='TouchCallback' data='DC_Touched' />
-					<value target='Text' data='Assign Center Position' />
+					<value target='Text' data='Assign Center' />
 					<value target='Font' data='000' />
 					<value target='HAlignment' data='001' />
 					<value target='VAlignment' data='001' />
@@ -1447,7 +1495,7 @@ Connected boards:
 				<resources />
 				<properties />
 				<values >
-					<value target='ID' data='31' />
+					<value target='ID' data='36' />
 					<value target='DisplayManager' data='2083' />
 					<value target='ShapeType' data='1' />
 					<value target='Type' data='87' />
@@ -1478,7 +1526,7 @@ Connected boards:
 				<resources />
 				<properties />
 				<values >
-					<value target='ID' data='32' />
+					<value target='ID' data='37' />
 					<value target='DisplayManager' data='2083' />
 					<value target='ShapeType' data='1' />
 					<value target='Type' data='87' />
@@ -1509,7 +1557,7 @@ Connected boards:
 				<resources />
 				<properties />
 				<values >
-					<value target='ID' data='33' />
+					<value target='ID' data='38' />
 					<value target='DisplayManager' data='2083' />
 					<value target='ShapeType' data='1' />
 					<value target='Type' data='87' />
@@ -1540,7 +1588,7 @@ Connected boards:
 				<resources />
 				<properties />
 				<values >
-					<value target='ID' data='34' />
+					<value target='ID' data='39' />
 					<value target='DisplayManager' data='2083' />
 					<value target='ShapeType' data='1' />
 					<value target='Type' data='87' />
@@ -1571,7 +1619,7 @@ Connected boards:
 				<resources />
 				<properties />
 				<values >
-					<value target='ID' data='35' />
+					<value target='ID' data='40' />
 					<value target='DisplayManager' data='2083' />
 					<value target='ShapeType' data='1' />
 					<value target='Type' data='87' />
@@ -1602,7 +1650,7 @@ Connected boards:
 				<resources />
 				<properties />
 				<values >
-					<value target='ID' data='36' />
+					<value target='ID' data='41' />
 					<value target='DisplayManager' data='2083' />
 					<value target='ShapeType' data='1' />
 					<value target='Type' data='87' />
@@ -1633,7 +1681,7 @@ Connected boards:
 				<resources />
 				<properties />
 				<values >
-					<value target='ID' data='37' />
+					<value target='ID' data='42' />
 					<value target='DisplayManager' data='2083' />
 					<value target='ShapeType' data='1' />
 					<value target='Type' data='87' />
@@ -1664,7 +1712,7 @@ Connected boards:
 				<resources />
 				<properties />
 				<values >
-					<value target='ID' data='38' />
+					<value target='ID' data='43' />
 					<value target='DisplayManager' data='2083' />
 					<value target='ShapeType' data='1' />
 					<value target='Type' data='87' />
@@ -1695,7 +1743,7 @@ Connected boards:
 				<resources />
 				<properties />
 				<values >
-					<value target='ID' data='39' />
+					<value target='ID' data='44' />
 					<value target='DisplayManager' data='2083' />
 					<value target='ShapeType' data='1' />
 					<value target='Type' data='87' />
@@ -1726,7 +1774,7 @@ Connected boards:
 				<resources />
 				<properties />
 				<values >
-					<value target='ID' data='40' />
+					<value target='ID' data='45' />
 					<value target='DisplayManager' data='2083' />
 					<value target='ShapeType' data='1' />
 					<value target='Type' data='87' />
@@ -1753,16 +1801,47 @@ Connected boards:
 				<variables />
 				<macros />
 			</component>
+			<component class_type='ref' guid='81f24c15-ab7c-49ba-b55f-62d3cbfee92a' vmin='0' vmaj='1' codename='ButtonZeroAll' panelId='1' x='419.552' y='-114.597' z='22' xsz='87.2845' ysz='31.4655' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
+				<resources />
+				<properties />
+				<values >
+					<value target='ID' data='46' />
+					<value target='DisplayManager' data='2083' />
+					<value target='ShapeType' data='1' />
+					<value target='Type' data='87' />
+					<value target='UseThemes' data='0' />
+					<value target='ObjectTheme' data='000' />
+					<value target='WidgetTheme' data='000' />
+					<value target='LineWidth' data='0' />
+					<value target='FgColour' data='0' />
+					<value target='BgColour' data='16744535' />
+					<value target='HlColour' data='5921370' />
+					<value target='Touchable' data='1' />
+					<value target='DrawHighlight' data='1' />
+					<value target='UseCallback' data='1' />
+					<value target='TouchCallback' data='DC_Touched' />
+					<value target='Text' data='Zero All' />
+					<value target='Font' data='000' />
+					<value target='HAlignment' data='001' />
+					<value target='VAlignment' data='001' />
+					<value target='TextTheme' data='000' />
+					<value target='TextColour' data='0' />
+				</values>
+				<events />
+				<apis />
+				<variables />
+				<macros />
+			</component>
 		</component>
 	</components>
 	<scadaresourcelookup />
 	<keymap />
 	<panel2d shadows='0' lighting='2' brightness='0' >
 		<background rgb='7292207' img='' style='0' />
-		<camera xe='0' ye='0' ze='1668.72' xt='0' yt='0' zt='0' xquat='0' yquat='0' zquat='0' wquat='1' />
-		<viewport dx='388' dy='820' zoom='28.1341' fix_topleft='0' />
+		<camera xe='0' ye='0' ze='2111.71' xt='0' yt='0' zt='0' xquat='0' yquat='0' zquat='0' wquat='1' />
+		<viewport dx='491' dy='897' zoom='28.1341' fix_topleft='0' />
 		<page x='1000' y='1000' show='0' rgb='7360576' />
-		<winpos ID='7005' RectRecentFloat='0,458,644,873' RectRecentDocked='0,0,388,843' RecentFrameAlignment='16384' RecentRowIndex='0' IsFloating='0' MRUWidth='32767' PinState='0' IsMaximized='0' IsVisible='0' />
+		<winpos ID='7005' RectRecentFloat='0,458,644,873' RectRecentDocked='0,0,491,920' RecentFrameAlignment='16384' RecentRowIndex='0' IsFloating='0' MRUWidth='32767' PinState='0' IsMaximized='0' IsVisible='0' />
 	</panel2d>
 	<panel3d shadows='0' lighting='2' brightness='0' perspective='1' >
 		<background rgb='8409120' img='' style='0' />
@@ -1775,27 +1854,28 @@ Connected boards:
 		<camerakey4 xe='-300' ye='-6.66134e-14' ze='6.66134e-14' xt='0' yt='0' zt='0' xquat='-0.5' yquat='0.5' zquat='0.5' wquat='0.5' />
 		<camerakey5 xe='300' ye='-6.66134e-14' ze='6.66134e-14' xt='0' yt='0' zt='0' xquat='-0.5' yquat='-0.5' zquat='-0.5' wquat='0.5' />
 		<camerakey6 xe='-173.205' ye='-173.205' ze='173.205' xt='0' yt='0' zt='0' xquat='-0.424708' yquat='0.17592' zquat='0.339851' wquat='0.820473' />
-		<winpos ID='7004' RectRecentFloat='764,124,1087,942' RectRecentDocked='0,0,261,872' RecentFrameAlignment='16384' RecentRowIndex='0' IsFloating='0' MRUWidth='32767' PinState='0' IsMaximized='0' IsVisible='0' />
+		<winpos ID='7004' RectRecentFloat='764,124,1087,942' RectRecentDocked='0,0,246,866' RecentFrameAlignment='16384' RecentRowIndex='0' IsFloating='0' MRUWidth='32767' PinState='0' IsMaximized='0' IsVisible='0' />
 	</panel3d>
 	<panels2d count='2' >
 		<panel2d_0 id='0' name='2D Panel' type='0' >
-			<winpos ID='1171' RectRecentFloat='-721,89,-71,539' RectRecentDocked='764,141,1152,1005' RecentFrameAlignment='16384' RecentRowIndex='0' IsFloating='1' MRUWidth='32767' PinState='0' IsMaximized='0' IsVisible='0' />
+			<winpos ID='1171' RectRecentFloat='-721,89,-71,539' RectRecentDocked='994,141,1489,1013' RecentFrameAlignment='16384' RecentRowIndex='0' IsFloating='1' MRUWidth='32767' PinState='0' IsMaximized='0' IsVisible='0' />
 			<background fill='288230376151053813' showgrid='1' gridstyle='0' gridsize='5' gridbrush='71776119075691740' snaptogrid='1' fitcomp='0' disp_x='300' disp_y='400' scale='100' disp_col='16777215' />
 		</panel2d_0>
 		<panel2d_1 id='1' name='Scene0' type='1' >
-			<winpos ID='1172' RectRecentFloat='317,-612,858,-161' RectRecentDocked='764,141,1152,1005' RecentFrameAlignment='16384' RecentRowIndex='0' IsFloating='1' MRUWidth='32767' PinState='0' IsMaximized='0' IsVisible='1' />
-			<background fill='288230376151053813' showgrid='1' gridstyle='0' gridsize='5' gridbrush='71776119075691740' snaptogrid='1' fitcomp='0' disp_x='480' disp_y='320' scale='290' disp_col='13816530' />
+			<winpos ID='1172' RectRecentFloat='958,-607,1560,-108' RectRecentDocked='994,141,1489,1013' RecentFrameAlignment='16384' RecentRowIndex='0' IsFloating='1' MRUWidth='32767' PinState='0' IsMaximized='0' IsVisible='0' />
+			<background fill='288230376151053813' showgrid='1' gridstyle='0' gridsize='5' gridbrush='71776119075691740' snaptogrid='0' fitcomp='0' disp_x='480' disp_y='320' scale='110' disp_col='13816530' />
 		</panel2d_1>
 	</panels2d>
 	<layout >
-		<view type='0' name='Main' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAAAwMAAFsDAAA' zoom='100' scrollx='0' scrolly='183' flags='0' />
-		<view type='0' name='DC_Touched' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAAAwMAAFsDAAA' zoom='85' scrollx='0' scrolly='2868' flags='0' />
-		<view type='0' name='SwitchInterrupt' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAAAwMAAFsDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
-		<view type='0' name='DetectServos' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAAAwMAAFsDAAA' zoom='100' scrollx='0' scrolly='48' flags='0' />
-		<view type='0' name='MoveServoBy' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAAAwMAAFsDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
-		<view type='0' name='AssignID' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAAAwMAAFsDAAA' zoom='100' scrollx='0' scrolly='325' flags='0' />
-		<view type='0' name='SetCenterPoint' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAAAwMAAFsDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
-		<view type='0' name='AssignActiveServo' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAAAwMAAFsDAAA' zoom='100' scrollx='0' scrolly='438' flags='0' />
+		<view type='0' name='Main' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA2QMAAGMDAAA' zoom='100' scrollx='0' scrolly='158' flags='0' />
+		<view type='0' name='DC_Touched' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA2QMAAGMDAAA' zoom='85' scrollx='0' scrolly='2052' flags='0' />
+		<view type='0' name='SwitchInterrupt' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA2QMAAGMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
+		<view type='0' name='DetectServos' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA2QMAAGMDAAA' zoom='100' scrollx='0' scrolly='77' flags='0' />
+		<view type='0' name='MoveServoBy' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA2QMAAGMDAAA' zoom='100' scrollx='0' scrolly='191' flags='0' />
+		<view type='0' name='AssignID' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA2QMAAGMDAAA' zoom='100' scrollx='0' scrolly='198' flags='0' />
+		<view type='0' name='SetCenterPoint' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA2QMAAGMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
+		<view type='0' name='AssignActiveServo' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA2QMAAGMDAAA' zoom='100' scrollx='23' scrolly='379' flags='0' />
+		<view type='0' name='ZeroAllServos' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA2QMAAGMDAAA' zoom='100' scrollx='0' scrolly='25' flags='0' />
 	</layout>
 </document>
 </root>
