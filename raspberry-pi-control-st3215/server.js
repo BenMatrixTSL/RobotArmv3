@@ -78,6 +78,22 @@ function refreshDataRoutingControllers() {
     }
 }
 
+/**
+ * Send incoming serial bytes to every active controller.
+ * Uses the servos[] array (not only allServoControllers) so startup pings work.
+ */
+function routeIncomingSerialData(data) {
+    for (let i = 0; i < servos.length; i++) {
+        const servo = servos[i];
+        if (servo && typeof servo.handleIncomingData === 'function') {
+            servo.handleIncomingData(data);
+        }
+    }
+    if (endTool && typeof endTool.handleIncomingData === 'function') {
+        endTool.handleIncomingData(data);
+    }
+}
+
 function subnetMaskToPrefix(mask) {
     if (typeof mask !== 'string') return null;
     const parts = mask.trim().split('.');
@@ -318,6 +334,7 @@ async function initializeServos() {
     const { SerialPort } = require('serialport');
     
     try {
+        console.log(`Using serial port: ${SERIAL_PORT} @ ${SERIAL_BAUDRATE} baud`);
         console.log('Opening shared serial port...');
         sharedSerialPort = new SerialPort({
             path: SERIAL_PORT,
@@ -341,16 +358,8 @@ async function initializeServos() {
             });
         });
         
-        // Handle incoming data from all servos
-        // We'll set up a single data handler that routes to all servo controllers
-        sharedSerialPort.on('data', (data) => {
-            // Route data to all servo controllers - they'll filter by ID
-            allServoControllers.forEach(servo => {
-                if (servo && servo.handleIncomingData) {
-                    servo.handleIncomingData(data);
-                }
-            });
-        });
+        // One handler for the shared bus; each controller filters by servo ID
+        sharedSerialPort.on('data', routeIncomingSerialData);
         
         sharedSerialPort.on('error', (error) => {
             console.error('Shared serial port error:', error.message);
@@ -373,6 +382,9 @@ async function initializeServos() {
             // This will set up the data handler but won't try to open the port
             await servo.open();
             
+            // Register before ping so serial replies are routed to this controller
+            servos.push(servo);
+
             // Add a delay between servo initializations to avoid simultaneous writes
             if (i > 0) {
                 await new Promise(resolve => setTimeout(resolve, 150));
@@ -383,7 +395,7 @@ async function initializeServos() {
             const pingResult = await servo.ping();
             if (!pingResult) {
                 console.log(`⚠️  Servo ${i + 1} (ID: ${SERVO_IDS[i]}) did not respond to ping - skipping`);
-                servos.push(null);
+                servos[i] = null;
                 continue;
             }
             console.log(`✓ Servo ${i + 1} (ID: ${SERVO_IDS[i]}) responded to ping`);
@@ -394,7 +406,6 @@ async function initializeServos() {
             // Enable torque (start servo)
             await servo.startServo();
             
-            servos.push(servo);
             console.log(`Servo ${i + 1} initialized (ST3215 ID: ${SERVO_IDS[i]})`);
         } catch (error) {
             console.error(`Failed to initialize servo ${i + 1} (ST3215 ID: ${SERVO_IDS[i]}):`, error.message);
@@ -429,8 +440,10 @@ async function createAndInitializeServo(jointIndex) {
     const servoId = SERVO_IDS[jointIndex];
     const servo = new RobotArm.ServoController(jointIndex + 1, sharedSerialPort, servoId, SERIAL_BAUDRATE);
     await servo.open();
+    servos[jointIndex] = servo;
     const alive = await servo.ping();
     if (!alive) {
+        servos[jointIndex] = null;
         throw new Error(`Servo ${jointIndex + 1} (ID: ${servoId}) did not respond to ping`);
     }
     await servo.startServo();
