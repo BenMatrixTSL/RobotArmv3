@@ -11,7 +11,7 @@ Before running:
 from robot_arm import RobotArmClient, RobotArmError
 
 # Change this to your Raspberry Pi address
-PI_HOST = "192.168.0.123"
+PI_HOST = "192.168.1.97"
 PI_PORT = 8080
 
 

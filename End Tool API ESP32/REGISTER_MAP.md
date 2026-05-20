@@ -52,3 +52,34 @@ Reconstruct:
 - `adc1Raw = (reg20 << 8) | reg19`
 - `adc0mV = (reg22 << 8) | reg21`
 - `adc1mV = (reg24 << 8) | reg23`
+
+## Hobby Servo Output (Servo_Controller1, channel 0)
+
+Addresses match `ST3215_ESP32_END_TOOL_API.md` (hex) and the Pi server (`robotArmST3215.js`).
+
+| Address | Name | R/W | Description |
+|--------:|------|-----|-------------|
+| 48 (`0x30`) | `SERVO_ENABLE` | RW | `0` = disabled, `1` = enabled |
+| 49 (`0x31`) | `SERVO_POSITION_8BIT` | RW | Position `0`–`255` |
+| 50 (`0x32`) | `SERVO_ANGLE_DEG` | RW | Angle `0`–`180` degrees |
+| 51 (`0x33`) | `SERVO_PULSE_MIN_L` | RW | Min pulse width low byte (default 1000 µs) |
+| 52 | `SERVO_PULSE_MIN_H` | RW | Min pulse width high byte |
+| 53 (`0x35`) | `SERVO_PULSE_MAX_L` | RW | Max pulse width low byte (default 2000 µs) |
+| 54 | `SERVO_PULSE_MAX_H` | RW | Max pulse width high byte |
+| 55 (`0x37`) | `SERVO_CURRENT_POSITION_8BIT` | R | Last applied 8-bit position |
+| 56 (`0x38`) | `SERVO_CURRENT_ANGLE` | R | Last applied angle (degrees) |
+
+### Behaviour
+
+- **READ** supports 1–8 bytes in one command (for example read 3 bytes from address 48).
+- **WRITE** copies every data byte into consecutive registers (for example enable + angle in one packet).
+- If the last write touched register **50**, `MoveToAngle` runs; if **49**, `SetPosition` runs; otherwise the current angle is applied.
+- Servo is **disabled** at boot until `SERVO_ENABLE = 1`.
+- Firmware minor version is **2** when hobby servo support is present.
+
+### WebSocket commands (Pi server)
+
+- `toolSetServoEnabled` → register 48
+- `toolSetServoPosition` → register 49
+- `toolSetServoAngle` → register 50
+- `toolGetServoState` → read registers 48–50 (enable, position, angle)

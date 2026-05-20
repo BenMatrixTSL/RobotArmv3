@@ -279,40 +279,42 @@ class ServoController {
             this.pendingResponse = data;
         }
         
-        // Try to parse the complete packet
-        const result = this.parseResponsePacket(this.pendingResponse);
-        
-        if (result.complete) {
-            // Check if this packet is for our servo ID
+        // Parse one or more complete packets (shared bus may deliver other IDs first)
+        while (this.pendingResponse && this.pendingResponse.length >= 6) {
+            const result = this.parseResponsePacket(this.pendingResponse);
+
+            if (!result.complete) {
+                if (result.error && result.error !== 'Invalid header' && result.error !== 'Header at wrong position') {
+                    if (DEBUG) console.log(`[DEBUG Servo ${this.servoId}] Packet parse error: ${result.error}`);
+                }
+                break;
+            }
+
+            const packetLen = result.packetByteLength || (result.responseLength + 4);
+            if (this.pendingResponse.length < packetLen) {
+                break;
+            }
+
             if (result.id === this.servoIdNumber) {
-                // This packet is for us - resolve the promise
                 if (this.responseResolve) {
-                    // Clear timeout
                     if (this.responseTimeout) {
                         clearTimeout(this.responseTimeout);
                         this.responseTimeout = null;
                     }
-                    
-                    // Resolve the promise
+
                     const resolve = this.responseResolve;
                     this.responseResolve = null;
                     this.responseReject = null;
                     this.pendingResponse = null;
-                    
+
                     resolve(result);
                 }
-            } else {
-                // This packet is for a different servo - clear our pending response
-                // and let other servos handle it
-                this.pendingResponse = null;
+                return;
             }
-        } else if (result.error) {
-            // Only log actual errors, not incomplete packets
-            if (result.error !== 'Invalid header' && result.error !== 'Header at wrong position') {
-                if (DEBUG) console.log(`[DEBUG Servo ${this.servoId}] Packet parse error: ${result.error}`);
-            }
+
+            // Another device on the bus — remove its packet and keep waiting for ours
+            this.pendingResponse = this.pendingResponse.slice(packetLen);
         }
-        // If not complete, keep accumulating data in pendingResponse
     }
 
     /**
@@ -406,7 +408,8 @@ class ServoController {
             error: error,
             parameters: parameters,
             commResult: error === 0 ? COMM_SUCCESS : COMM_RX_CORRUPT,
-            responseLength: length  // Store the response packet length to distinguish write vs read responses
+            responseLength: length,  // Length field from packet (distinguishes write vs read)
+            packetByteLength: expectedLength  // Total bytes consumed from the RX buffer
         };
     }
 
@@ -554,12 +557,13 @@ class ServoController {
                 }
             };
             
-            // Set timeout (10ms) - increased for shared port scenarios
+            // ESP32 end tool on a shared bus needs more time than 10 ms
+            const readTimeoutMs = this.servoIdNumber === END_TOOL_ID ? 200 : 10;
             this.responseTimeout = setTimeout(() => {
                 this.responseResolve = null;
                 this.pendingResponse = null;
                 reject(new Error('Read timeout'));
-            }, 10);
+            }, readTimeoutMs);
         });
 
         // Now send read instruction
@@ -619,14 +623,15 @@ class ServoController {
                 }
             };
             
-            // Set timeout (200ms) - increased for shared port scenarios
+            // ESP32 end tool may apply PWM/servo before replying; allow extra time on shared bus
+            const writeTimeoutMs = this.servoIdNumber === END_TOOL_ID ? 1000 : 200;
             this.responseTimeout = setTimeout(() => {
                 if (DEBUG) console.log(`[DEBUG Servo ${this.servoId}] Write timeout - no response received`);
                 this.responseResolve = null;
                 this.responseReject = null;
                 this.pendingResponse = null;
                 reject(new Error('Write timeout'));
-            }, 200);
+            }, writeTimeoutMs);
         });
 
         // Now send write instruction
@@ -1282,17 +1287,20 @@ class EndToolController extends ServoController {
     }
 
     /**
-     * Read last applied hobby servo position and angle
-     * @returns {Object} { currentPosition8bit, currentAngle }
+     * Read hobby servo enable flag, commanded position, and angle.
+     * Uses registers 0x30-0x32 (R/W). Older docs used 0x37-0x38 which many
+     * firmware builds do not implement yet.
+     * @returns {Object} { enabled, currentPosition8bit, currentAngle }
      */
     async getHobbyServoState() {
-        const data = await this.readData(SERVO_CURRENT_POSITION_8BIT, 2);
-        if (!data || data.length < 2) {
+        const data = await this.readData(SERVO_ENABLE, 3);
+        if (!data || data.length < 3) {
             throw new Error('Invalid hobby servo state data');
         }
         return {
-            currentPosition8bit: data[0],
-            currentAngle: data[1]
+            enabled: data[0] === 1,
+            currentPosition8bit: data[1],
+            currentAngle: data[2]
         };
     }
 

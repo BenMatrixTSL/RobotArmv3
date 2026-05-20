@@ -15,13 +15,19 @@ cd Firmware/Python
 pip install -r requirements.txt
 ```
 
-## Quick example
+## Quick examples
 
-Edit `PI_HOST` in `example_basic.py`, then run:
+Edit `PI_HOST` in each script, then run:
 
 ```bash
 python example_basic.py
+python example_end_tool_servo.py
 ```
+
+| Script | What it does |
+|--------|----------------|
+| `example_basic.py` | Read joint status and end-tool sensors |
+| `example_end_tool_servo.py` | Move the hobby servo on the end effector (angles 0° → 90° → 180°) |
 
 ## Use in your own script
 
@@ -55,6 +61,10 @@ arm.disconnect()
 | `tool_read_currents()` | `toolReadCurrents` | PWM + servo current (mA) |
 | `tool_read_adc()` | `toolReadAdc` | ADC0 / ADC1 raw and mV |
 | `tool_set_pwm(...)` | `toolSetPwm` | Set end-tool PWM outputs |
+| `tool_set_servo_enabled(enabled)` | `toolSetServoEnabled` | Enable hobby servo on end effector |
+| `tool_set_servo_angle(angle)` | `toolSetServoAngle` | Set hobby servo angle (0–180°) |
+| `tool_set_servo_position(position)` | `toolSetServoPosition` | Set hobby servo 8-bit position (0–255) |
+| `tool_get_servo_state()` | `toolGetServoState` | Read hobby servo angle and position |
 | `kinematics_load_urdf(xml)` | `kinematicsLoadURDF` | Load URDF on server |
 | `kinematics_forward(angles)` | `kinematicsForwardKinematics` | Forward kinematics |
 | `kinematics_inverse(x, y, z)` | `kinematicsInverseKinematics` | Inverse kinematics |

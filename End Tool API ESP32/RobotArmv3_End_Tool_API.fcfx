@@ -1,6 +1,6 @@
 <root>
-<document scada='0' projtype='1' schema='103' license='1,82702381,95CJQR' title='New Embedded Project' description='' fcversion='720897' target='ESP.ESP32.ESP32_WROOM_32' >
-	<config data='' clkspd='240000000' simspd='0' usewdt='0' constif='0' commport='29' Use3V3='0' />
+<document scada='0' projtype='1' schema='103' license='1,82702381,95CJQR' title='New Embedded Project' description='' fcversion='720898' target='ESP.ESP32.ESP32_WROOM_32' >
+	<config data='' clkspd='240000000' simspd='0' usewdt='0' constif='0' commport='26' Use3V3='0' />
 	<plugins >
 		<dll_models enabled='1' />
 	</plugins>
@@ -98,7 +98,7 @@
 					<def class_type='variable' name='PacketErrorCount' type='u32' description='Count of parse/checksum errors' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
 				</variable>
 				<variable public='0' >
-					<def class_type='variable' name='RegFirmwareMinor' type='u8' description='Register 2: firmware minor version' isconst='1' isHidden='0' isinit='1' usrinit='1' setinit='1' />
+					<def class_type='variable' name='RegFirmwareMinor' type='u8' description='Register 2: firmware minor version' isconst='1' isHidden='0' isinit='1' usrinit='2' setinit='2' />
 				</variable>
 				<variable public='0' >
 					<def class_type='variable' name='Current1mA' type='u16' description='Latest current for PWM1 in milliamps (0-2000)' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
@@ -114,6 +114,9 @@
 				</variable>
 				<variable public='0' >
 					<def class_type='variable' name='Adc1Raw' type='u16' description='Latest ADC1 raw reading' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='RegServoPosition8bit' type='u8' description='Register 49 (0x31): hobby servo position 0-255' isconst='0' isHidden='0' isinit='1' usrinit='128' setinit='128' />
 				</variable>
 				<variable public='0' >
 					<def class_type='variable' name='false' type='b1' description='' isconst='1' isHidden='0' isinit='1' usrinit='0' setinit='0' />
@@ -199,10 +202,22 @@
 					<def class_type='variable' name='LoopCounter' type='u8' description='' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
 				</variable>
 				<variable public='0' >
+					<def class_type='variable' name='RegServoPulseMin_L' type='u8' description='Register 51 (0x33): min pulse width low byte (1000 us)' isconst='0' isHidden='0' isinit='1' usrinit='232' setinit='232' />
+				</variable>
+				<variable public='0' >
 					<def class_type='variable' name='RegStatusFlags' type='u8' description='Register 4: status flag bits' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
 				</variable>
 				<variable public='0' >
 					<def class_type='variable' name='RegToolTypeId' type='u8' description='Register 3: writable tool type ID' isconst='0' isHidden='0' isinit='1' usrinit='1' setinit='1' />
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='RegServoEnable' type='u8' description='Register 48 (0x30): hobby servo output enable' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='RegServoAngleDeg' type='u8' description='Register 50 (0x32): hobby servo angle 0-180 degrees' isconst='0' isHidden='0' isinit='1' usrinit='90' setinit='90' />
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='HobbyServoChannel' type='u8' description='Servo_Controller1 channel index (0)' isconst='1' isHidden='0' isinit='1' usrinit='0' setinit='0' />
 				</variable>
 				<variable public='0' >
 					<def class_type='variable' name='RegCurrent1mA_L' type='u8' description='Register 11: PWM1 current low byte (mA)' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
@@ -211,12 +226,15 @@
 					<def class_type='variable' name='AdcGainSetting' type='u8' description='ADS1220 PGA gain: 6 = 64x for low shunt voltage' isconst='1' isHidden='0' isinit='1' usrinit='6' setinit='6' />
 				</variable>
 				<variable public='0' >
-					<def class_type='variable' name='CurrentChannel' type='b1' description='' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
+					<def class_type='variable' name='CurrentChannel' type='u8' description='' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
 				</variable>
 				<variable public='0' >
-					<def class_type='variable' name='Registers' type='u8' description='' isconst='0' isHidden='0' isinit='1' usrinit='&quot; 0 &quot;' setinit='{0}' >
-						<array size='32' />
+					<def class_type='variable' name='Registers' type='u8' description='Byte register map (addresses 0-63, hobby servo at 48+)' isconst='0' isHidden='0' isinit='1' usrinit='&quot; 0 &quot;' setinit='{0}' >
+						<array size='64' />
 					</def>
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='RegServoPulseMin_H' type='u8' description='Register 52: min pulse width high byte' isconst='0' isHidden='0' isinit='1' usrinit='3' setinit='3' />
 				</variable>
 				<variable public='0' >
 					<def class_type='variable' name='ShuntResistanceOhms' type='f32' description='Shunt resistor value in ohms' isconst='1' isHidden='0' isinit='1' usrinit='0.004999999888241291046142578125' setinit='0.005' />
@@ -226,6 +244,9 @@
 				</variable>
 				<variable public='0' >
 					<def class_type='variable' name='PacketID' type='u8' description='Current packet ID' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='RegServoPulseMax_L' type='u8' description='Register 53 (0x35): max pulse width low byte (2000 us)' isconst='0' isHidden='0' isinit='1' usrinit='208' setinit='208' />
 				</variable>
 				<variable public='0' >
 					<def class_type='variable' name='LastDataLength' type='u8' description='Requested/read data length from last valid command' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
@@ -249,6 +270,9 @@
 					<def class_type='variable' name='Adc0Raw' type='u16' description='Latest ADC0 raw reading' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
 				</variable>
 				<variable public='0' >
+					<def class_type='variable' name='ResponseSent' type='b1' description='Set when a status reply was already transmitted for this packet' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
+				</variable>
+				<variable public='0' >
 					<def class_type='variable' name='LastInstruction' type='u8' description='Most recent valid instruction for this node' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
 				</variable>
 				<variable public='0' >
@@ -256,6 +280,12 @@
 				</variable>
 				<variable public='0' >
 					<def class_type='variable' name='ReadValue' type='u8' description='Single-byte value returned by basic READ' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='CommsByteIndex' type='u8' description='Loop index for multi-byte read/write on the register bus' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='RegServoPulseMax_H' type='u8' description='Register 54: max pulse width high byte' isconst='0' isHidden='0' isinit='1' usrinit='7' setinit='7' />
 				</variable>
 				<variable public='0' >
 					<def class_type='variable' name='RegCurrent2mA_H' type='u8' description='Register 14: PWM2 current high byte (mA)' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
@@ -310,6 +340,77 @@
 							<exp exp='Registers[22] = RegAdc0mV_H' />
 							<exp exp='Registers[23] = RegAdc1mV_L' />
 							<exp exp='Registers[24] = RegAdc1mV_H' />
+						</command>
+						<command class_type='calculation' title='Copy hobby servo registers (addresses 48-56)' >
+							<exp exp='Registers[48] = RegServoEnable' />
+							<exp exp='Registers[49] = RegServoPosition8bit' />
+							<exp exp='Registers[50] = RegServoAngleDeg' />
+							<exp exp='Registers[51] = RegServoPulseMin_L' />
+							<exp exp='Registers[52] = RegServoPulseMin_H' />
+							<exp exp='Registers[53] = RegServoPulseMax_L' />
+							<exp exp='Registers[54] = RegServoPulseMax_H' />
+							<exp exp='Registers[55] = RegServoPosition8bit' />
+							<exp exp='Registers[56] = RegServoAngleDeg' />
+						</command>
+					</flowline>
+				</macro>
+				<macro >
+					<flowline name='SendStatusPacketWithMultiReadData' description='' statediag='0' >
+						<return name='Return' type='v0' description='' isconst='0' isHidden='0' isinit='0' usrinit='' setinit='' />
+						<command class_type='calculation' title='Prepare multi-byte READ response header' >
+							<exp exp='TxLength = LastDataLength + 2' />
+							<exp exp='TxError = 0' />
+							<exp exp='TxChecksumSum = BusDeviceID + TxLength + TxError' />
+						</command>
+						<command class_type='call' title='TX Header 1' component='UART_ServoBus' macro='SendChar' >
+							<argument exp='255' />
+						</command>
+						<command class_type='call' title='TX Header 2' component='UART_ServoBus' macro='SendChar' >
+							<argument exp='255' />
+						</command>
+						<command class_type='call' title='TX ID' component='UART_ServoBus' macro='SendChar' >
+							<argument exp='BusDeviceID' />
+						</command>
+						<command class_type='call' title='TX LENGTH' component='UART_ServoBus' macro='SendChar' >
+							<argument exp='TxLength' />
+						</command>
+						<command class_type='call' title='TX ERROR' component='UART_ServoBus' macro='SendChar' >
+							<argument exp='TxError' />
+						</command>
+						<command class_type='calculation' title='Start at first register byte' >
+							<exp exp='CommsByteIndex = 0' />
+						</command>
+						<command class_type='loop' title='Send each requested register byte' type='0' exp='CommsByteIndex &lt; LastDataLength' for1='' for2='' for3='' >
+							<flowline >
+								<command class_type='decision' title='Source address is inside register map' exp='(LastAddress + CommsByteIndex) &lt; 64' swap='0' >
+									<flowline >
+										<command class_type='calculation' title='Read register byte for TX' >
+											<exp exp='TxDataByte = Registers[LastAddress + CommsByteIndex]' />
+										</command>
+									</flowline>
+									<flowline >
+										<command class_type='calculation' title='Out of range returns zero' >
+											<exp exp='TxDataByte = 0' />
+										</command>
+									</flowline>
+								</command>
+								<command class_type='calculation' title='Add data byte to checksum' >
+									<exp exp='TxChecksumSum = TxChecksumSum + TxDataByte' />
+								</command>
+								<command class_type='call' title='TX DATA BYTE' component='UART_ServoBus' macro='SendChar' >
+									<argument exp='TxDataByte' />
+								</command>
+								<command class_type='calculation' title='Next byte' >
+									<exp exp='CommsByteIndex = CommsByteIndex + 1' />
+								</command>
+							</flowline>
+						</command>
+						<command class_type='calculation' title='Finalize checksum' >
+							<exp exp='TxChecksumSum = ~TxChecksumSum' />
+							<exp exp='TxChecksumSum = TxChecksumSum &amp; 255' />
+						</command>
+						<command class_type='call' title='TX CHECKSUM' component='UART_ServoBus' macro='SendChar' >
+							<argument exp='TxChecksumSum' />
 						</command>
 					</flowline>
 				</macro>
@@ -489,6 +590,7 @@
 																						<command class_type='calculation' title='Track valid packet and basic decoded fields' >
 																							<exp exp='PacketValidCount = PacketValidCount + 1' />
 																							<exp exp='LastInstruction = PacketInstruction' />
+																							<exp exp='ResponseSent = 0' />
 																						</command>
 																						<command class_type='decision' title='Handle READ instruction (2)' exp='(PacketInstruction = 2) &amp;&amp; (PacketParamCount &gt;= 2)' swap='0' >
 																							<flowline >
@@ -516,7 +618,7 @@
 																									</flowline>
 																									<flowline />
 																								</command>
-																								<command class_type='decision' title='Only basic 1-byte READ is supported in first version' exp='LastDataLength = 1' swap='0' >
+																								<command class_type='decision' title='Single-byte READ' exp='LastDataLength = 1' swap='0' >
 																									<flowline >
 																										<command class_type='call' title='Map address to a register byte' macro='ReadRegisterIntoReadValue' />
 																										<command class_type='calculation' title='Send READ status packet with one data byte' >
@@ -532,14 +634,21 @@
 																										<command class_type='call' title='Send status packet with one data byte' macro='SendStatusPacketWithData' />
 																									</flowline>
 																									<flowline >
-																										<command class_type='calculation' title='Unsupported READ length: send error status packet' >
-																											<exp exp='TxLength = 2' />
-																											<exp exp='TxError = 2' />
-																											<exp exp='TxChecksumSum = BusDeviceID + TxLength + TxError' />
-																											<exp exp='TxChecksumSum = ~TxChecksumSum' />
-																											<exp exp='TxChecksumSum = TxChecksumSum &amp; 255' />
+																										<command class_type='decision' title='Multi-byte READ (2 to 8 bytes)' exp='(LastDataLength &gt;= 2) &amp;&amp; (LastDataLength &lt;= 8)' swap='0' >
+																											<flowline >
+																												<command class_type='call' title='Send READ response with multiple register bytes' macro='SendStatusPacketWithMultiReadData' />
+																											</flowline>
+																											<flowline >
+																												<command class_type='calculation' title='Unsupported READ length: send error status packet' >
+																													<exp exp='TxLength = 2' />
+																													<exp exp='TxError = 2' />
+																													<exp exp='TxChecksumSum = BusDeviceID + TxLength + TxError' />
+																													<exp exp='TxChecksumSum = ~TxChecksumSum' />
+																													<exp exp='TxChecksumSum = TxChecksumSum &amp; 255' />
+																												</command>
+																												<command class_type='call' title='Send status packet without data byte' macro='SendStatusPacketNoData' />
+																											</flowline>
 																										</command>
-																										<command class_type='call' title='Send status packet without data byte' macro='SendStatusPacketNoData' />
 																									</flowline>
 																								</command>
 																							</flowline>
@@ -572,10 +681,19 @@
 																										</command>
 																										<command class_type='decision' title='WRITE needs at least one data byte in this basic version' exp='PacketParamCount &gt;= 2' swap='0' >
 																											<flowline >
-																												<command class_type='decision' title='Only registers 3 to 7 are writable' exp='(LastAddress &gt;= 3) &amp;&amp; (LastAddress &lt;= 7)' swap='0' >
+																												<command class_type='decision' title='Writable register address (PWM 3-7 or hobby servo 48-54)' exp='((LastAddress &gt;= 3) &amp;&amp; (LastAddress &lt;= 7)) || ((LastAddress &gt;= 48) &amp;&amp; (LastAddress &lt;= 54))' swap='0' >
 																													<flowline >
-																														<command class_type='calculation' title='Write byte into register array' >
-																															<exp exp='Registers[LastAddress] = PacketBuffer[1]' />
+																														<command class_type='call' title='Copy all WRITE data bytes into register array' macro='WritePacketBytesToRegisters' />
+																														<command class_type='calculation' title='Prepare WRITE acknowledge (send before slow hardware apply)' >
+																															<exp exp='TxLength = 2' />
+																															<exp exp='TxError = 0' />
+																															<exp exp='TxChecksumSum = BusDeviceID + TxLength + TxError' />
+																															<exp exp='TxChecksumSum = ~TxChecksumSum' />
+																															<exp exp='TxChecksumSum = TxChecksumSum &amp; 255' />
+																														</command>
+																														<command class_type='call' title='Send WRITE acknowledge immediately' macro='SendStatusPacketNoData' />
+																														<command class_type='calculation' title='Mark reply sent so end handler does not send twice' >
+																															<exp exp='ResponseSent = 1' />
 																														</command>
 																														<command class_type='call' title='Apply writable register values to variables and hardware' macro='ApplyWritableRegistersToVariablesAndHardware' />
 																														<command class_type='decision' title='Verbose debug WRITE applied values' exp='(DebugEnabled = 1) &amp;&amp; (DebugLevel &gt;= 2)' swap='0' >
@@ -605,14 +723,15 @@
 																															<flowline />
 																														</command>
 																													</flowline>
-																													<flowline />
-																												</command>
-																												<command class_type='calculation' title='Send WRITE acknowledge status packet' >
-																													<exp exp='TxLength = 2' />
-																													<exp exp='TxError = 0' />
-																													<exp exp='TxChecksumSum = BusDeviceID + TxLength + TxError' />
-																													<exp exp='TxChecksumSum = ~TxChecksumSum' />
-																													<exp exp='TxChecksumSum = TxChecksumSum &amp; 255' />
+																													<flowline >
+																														<command class_type='calculation' title='WRITE to read-only or invalid address: error status' >
+																															<exp exp='TxLength = 2' />
+																															<exp exp='TxError = 2' />
+																															<exp exp='TxChecksumSum = BusDeviceID + TxLength + TxError' />
+																															<exp exp='TxChecksumSum = ~TxChecksumSum' />
+																															<exp exp='TxChecksumSum = TxChecksumSum &amp; 255' />
+																														</command>
+																													</flowline>
 																												</command>
 																											</flowline>
 																											<flowline >
@@ -673,7 +792,12 @@
 																										</command>
 																									</flowline>
 																								</command>
-																								<command class_type='call' title='Send status packet without data byte' macro='SendStatusPacketNoData' />
+																								<command class_type='decision' title='Send status reply if not already sent (WRITE sends early)' exp='ResponseSent = 0' swap='0' >
+																									<flowline >
+																										<command class_type='call' title='Send status packet without data byte' macro='SendStatusPacketNoData' />
+																									</flowline>
+																									<flowline />
+																								</command>
 																							</flowline>
 																						</command>
 																					</flowline>
@@ -901,6 +1025,29 @@
 					</flowline>
 				</macro>
 				<macro >
+					<flowline name='WritePacketBytesToRegisters' description='' statediag='0' >
+						<return name='Return' type='v0' description='' isconst='0' isHidden='0' isinit='0' usrinit='' setinit='' />
+						<command class_type='calculation' title='Start at first data byte in packet buffer' >
+							<exp exp='CommsByteIndex = 0' />
+						</command>
+						<command class_type='loop' title='Copy each WRITE data byte into Registers[]' type='0' exp='CommsByteIndex &lt; LastDataLength' for1='' for2='' for3='' >
+							<flowline >
+								<command class_type='decision' title='Destination address is inside register map' exp='(LastAddress + CommsByteIndex) &lt; 64' swap='0' >
+									<flowline >
+										<command class_type='calculation' title='Write one byte from packet to register array' >
+											<exp exp='Registers[LastAddress + CommsByteIndex] = PacketBuffer[1 + CommsByteIndex]' />
+										</command>
+									</flowline>
+									<flowline />
+								</command>
+								<command class_type='calculation' title='Next byte' >
+									<exp exp='CommsByteIndex = CommsByteIndex + 1' />
+								</command>
+							</flowline>
+						</command>
+					</flowline>
+				</macro>
+				<macro >
 					<flowline name='ApplyWritableRegistersToVariablesAndHardware' description='' statediag='0' >
 						<return name='Return' type='v0' description='' isconst='0' isHidden='0' isinit='0' usrinit='' setinit='' />
 						<command class_type='calculation' title='Apply writable register bytes to named variables' >
@@ -934,6 +1081,52 @@
 								<command class_type='call' title='Disable PWM2 output' component='PWM2' macro='Disable' />
 							</flowline>
 						</command>
+						<command class_type='comment' title='' comment='Apply hobby servo registers (48+) to Servo_Controller1' textarea='12,0,12,0' />
+						<command class_type='calculation' title='Load hobby servo variables from register array' >
+							<exp exp='RegServoEnable = Registers[48]' />
+							<exp exp='RegServoPosition8bit = Registers[49]' />
+							<exp exp='RegServoAngleDeg = Registers[50]' />
+							<exp exp='RegServoPulseMin_L = Registers[51]' />
+							<exp exp='RegServoPulseMin_H = Registers[52]' />
+							<exp exp='RegServoPulseMax_L = Registers[53]' />
+							<exp exp='RegServoPulseMax_H = Registers[54]' />
+						</command>
+						<command class_type='decision' title='Hobby servo output enabled' exp='RegServoEnable &gt; 0' swap='0' >
+							<flowline >
+								<command class_type='call' title='Enable hobby servo channel' component='Servo_Controller1' macro='EnableServo' >
+									<argument exp='HobbyServoChannel' />
+								</command>
+								<command class_type='decision' title='Last write was angle register (50)' exp='LastAddress = 50' swap='0' >
+									<flowline >
+										<command class_type='call' title='Move hobby servo to angle in degrees' component='Servo_Controller1' macro='MoveToAngle' >
+											<argument exp='HobbyServoChannel' />
+											<argument exp='RegServoAngleDeg' />
+										</command>
+									</flowline>
+									<flowline >
+										<command class_type='decision' title='Last write was position register (49)' exp='LastAddress = 49' swap='0' >
+											<flowline >
+												<command class_type='call' title='Move hobby servo to 8-bit position' component='Servo_Controller1' macro='SetPosition' >
+													<argument exp='HobbyServoChannel' />
+													<argument exp='RegServoPosition8bit' />
+												</command>
+											</flowline>
+											<flowline >
+												<command class_type='call' title='Default: apply current angle when enable-only write' component='Servo_Controller1' macro='MoveToAngle' >
+													<argument exp='HobbyServoChannel' />
+													<argument exp='RegServoAngleDeg' />
+												</command>
+											</flowline>
+										</command>
+									</flowline>
+								</command>
+							</flowline>
+							<flowline >
+								<command class_type='call' title='Disable hobby servo channel' component='Servo_Controller1' macro='DisableServo' >
+									<argument exp='HobbyServoChannel' />
+								</command>
+							</flowline>
+						</command>
 					</flowline>
 				</macro>
 				<macro >
@@ -960,6 +1153,9 @@
 						</command>
 						<command class_type='call' title='Disable PWM1 at startup' component='PWM1' macro='Disable' />
 						<command class_type='call' title='Disable PWM2 at startup' component='PWM2' macro='Disable' />
+						<command class_type='call' title='Disable hobby servo output at startup' component='Servo_Controller1' macro='DisableServo' >
+							<argument exp='HobbyServoChannel' />
+						</command>
 						<command class_type='interrupt' title='Interrupt on Servo Bus Enable' enable='1' name='RXINT1' call='ServoBus_RX' >
 							<settings timer='0' prescale='-1' postscale='-1' rollover='-1' bitcount='-1' trigger='3' ppsport='-1' ppspin='-1' maskhi='--------------------------------------------------------------------------------------------------------------------------------------------------------------------------8' masklo='--------------------------------------------------------------------------------------------------------------------------------------------------------------------------8' >
 								<option value='0' />
@@ -973,7 +1169,7 @@
 							</settings>
 						</command>
 						<command class_type='comment' title='' comment='Main program loop' textarea='12,0,12,0' />
-						<command class_type='loop' title='Loop' type='3' exp='1' >
+						<command class_type='loop' title='Loop' type='3' exp='1' for1='' for2='' for3='' >
 							<flowline >
 								<command class_type='decision' title='Decision' exp='LoopCounter = 5' swap='0' >
 									<flowline >
@@ -1026,7 +1222,7 @@
 									</flowline>
 									<flowline />
 								</command>
-								<command class_type='loop' title='Process all bytes currently waiting in circular buffer' type='0' exp='CircularBuffer1::GetNumberBytes() &gt; 0' >
+								<command class_type='loop' title='Process all bytes currently waiting in circular buffer' type='0' exp='CircularBuffer1::GetNumberBytes() &gt; 0' for1='' for2='' for3='' >
 									<flowline >
 										<command class_type='call' title='User Macro' macro='ProcessCommsByte' />
 									</flowline>
@@ -1039,7 +1235,7 @@
 				<macro >
 					<flowline name='ReadRegisterIntoReadValue' description='' statediag='0' >
 						<return name='Return' type='v0' description='' isconst='0' isHidden='0' isinit='0' usrinit='' setinit='' />
-						<command class_type='decision' title='Read address is inside register array range' exp='LastAddress &lt; 32' swap='0' >
+						<command class_type='decision' title='Read address is inside register array range' exp='LastAddress &lt; 64' swap='0' >
 							<flowline >
 								<command class_type='calculation' title='Read byte directly from register array' >
 									<exp exp='ReadValue = Registers[LastAddress]' />
@@ -1282,7 +1478,7 @@
 					<value target='IntRange' data='0 - 29951' />
 					<value target='Divider' data='1' />
 					<value target='RoundUp' data='1' />
-					<value target='IntScaler' data='0.133715' />
+					<value target='IntScaler' data='0.459144' />
 					<value target='MaxPeriod' data='29835' />
 					<value target='sim0' data='' />
 					<value target='sim1' data='' />
@@ -1445,10 +1641,10 @@
 	<keymap />
 	<panel2d shadows='0' lighting='2' brightness='0' >
 		<background rgb='7292207' img='' style='0' />
-		<camera xe='0' ye='0' ze='1796.85' xt='0' yt='0' zt='0' xquat='0' yquat='0' zquat='0' wquat='1' />
-		<viewport dx='384' dy='819' zoom='25.8586' fix_topleft='0' />
+		<camera xe='0' ye='0' ze='2055.11' xt='0' yt='0' zt='0' xquat='0' yquat='0' zquat='0' wquat='1' />
+		<viewport dx='510' dy='849' zoom='30.0276' fix_topleft='0' />
 		<page x='1000' y='1000' show='0' rgb='7360576' />
-		<winpos ID='7005' RectRecentFloat='1134,71,1725,945' RectRecentDocked='0,0,384,842' RecentFrameAlignment='16384' RecentRowIndex='0' IsFloating='0' MRUWidth='32767' PinState='0' IsMaximized='0' IsVisible='0' />
+		<winpos ID='7005' RectRecentFloat='1134,71,1725,945' RectRecentDocked='0,0,510,872' RecentFrameAlignment='16384' RecentRowIndex='0' IsFloating='0' MRUWidth='32767' PinState='0' IsMaximized='0' IsVisible='0' />
 	</panel2d>
 	<panel3d shadows='1' lighting='2' brightness='128' perspective='1' >
 		<background rgb='16777120' img='' style='0' />
@@ -1461,25 +1657,25 @@
 		<camerakey4 xe='-300' ye='-6.66134e-14' ze='6.66134e-14' xt='0' yt='0' zt='0' xquat='-0.5' yquat='0.5' zquat='0.5' wquat='0.5' />
 		<camerakey5 xe='300' ye='-6.66134e-14' ze='6.66134e-14' xt='0' yt='0' zt='0' xquat='-0.5' yquat='-0.5' zquat='-0.5' wquat='0.5' />
 		<camerakey6 xe='-173.205' ye='-173.205' ze='173.205' xt='0' yt='0' zt='0' xquat='-0.424708' yquat='0.17592' zquat='0.339851' wquat='0.820473' />
-		<winpos ID='7004' RectRecentFloat='575,270,1225,720' RectRecentDocked='0,0,246,872' RecentFrameAlignment='16384' RecentRowIndex='0' IsFloating='0' MRUWidth='32767' PinState='0' IsMaximized='0' IsVisible='0' />
+		<winpos ID='7004' RectRecentFloat='575,270,1225,720' RectRecentDocked='0,0,484,450' RecentFrameAlignment='16384' RecentRowIndex='0' IsFloating='0' MRUWidth='32767' PinState='0' IsMaximized='0' IsVisible='0' />
 	</panel3d>
 	<panels2d count='1' >
 		<panel2d_0 id='0' name='2D Panel' type='0' >
-			<winpos ID='1171' RectRecentFloat='334,-697,1462,-64' RectRecentDocked='966,141,1470,1013' RecentFrameAlignment='16384' RecentRowIndex='0' IsFloating='1' MRUWidth='32767' PinState='0' IsMaximized='0' IsVisible='1' />
+			<winpos ID='1171' RectRecentFloat='334,-697,1462,-64' RectRecentDocked='924,141,1434,707' RecentFrameAlignment='16384' RecentRowIndex='0' IsFloating='1' MRUWidth='32767' PinState='0' IsMaximized='0' IsVisible='1' />
 			<background fill='288230376151053813' showgrid='1' gridstyle='0' gridsize='5' gridbrush='71776119075691740' snaptogrid='1' fitcomp='0' disp_x='300' disp_y='400' scale='100' disp_col='16777215' />
 		</panel2d_0>
 	</panels2d>
 	<layout >
-		<view type='0' name='Main' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA7AMAAGMDAAA' zoom='100' scrollx='0' scrolly='783' flags='0' />
-		<view type='0' name='ServoBus_RX' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA7AMAAGMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
-		<view type='0' name='UpdateCurrentMeasurements' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA7AMAAGMDAAA' zoom='100' scrollx='0' scrolly='117' flags='0' />
-		<view type='0' name='ReadRegisterIntoReadValue' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA7AMAAGMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
-		<view type='0' name='SendStatusPacketNoData' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA7AMAAGMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
-		<view type='0' name='SendStatusPacketWithData' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA7AMAAGMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
-		<view type='0' name='UpdateAdcTelemetry' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA7AMAAGMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
-		<view type='0' name='RefreshRegisterArrayFromVariables' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA7AMAAGMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
-		<view type='0' name='ProcessCommsByte' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA7AMAAGMDAAA' zoom='100' scrollx='2479' scrolly='1973' flags='0' />
-		<view type='0' name='ApplyWritableRegistersToVariablesAndHardware' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA7AMAAGMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
+		<view type='0' name='Main' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA9wMAADECAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
+		<view type='0' name='ServoBus_RX' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA9wMAADECAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
+		<view type='0' name='UpdateCurrentMeasurements' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA9wMAADECAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
+		<view type='0' name='ReadRegisterIntoReadValue' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA9wMAADECAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
+		<view type='0' name='SendStatusPacketNoData' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA9wMAADECAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
+		<view type='0' name='SendStatusPacketWithData' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA9wMAADECAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
+		<view type='0' name='UpdateAdcTelemetry' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA9wMAADECAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
+		<view type='0' name='RefreshRegisterArrayFromVariables' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA9wMAADECAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
+		<view type='0' name='ProcessCommsByte' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA9wMAADECAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
+		<view type='0' name='ApplyWritableRegistersToVariablesAndHardware' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA9wMAADECAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
 	</layout>
 </document>
 </root>

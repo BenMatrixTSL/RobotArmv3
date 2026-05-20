@@ -268,6 +268,58 @@ class RobotArmClient:
             enable2=enable2,
         )
 
+    def tool_set_servo_enabled(
+        self,
+        enabled: bool,
+        timeout: float = 5.0,
+    ) -> Dict[str, Any]:
+        """Enable or disable the hobby servo on the end effector (ESP32 tool node)."""
+        return self.request(
+            "toolSetServoEnabled",
+            timeout=timeout,
+            enabled=enabled,
+        )
+
+    def tool_set_servo_angle(
+        self,
+        angle: float,
+        timeout: float = 5.0,
+    ) -> Dict[str, Any]:
+        """
+        Set end-effector hobby servo angle in degrees (0 to 180).
+
+        The ESP32 end tool drives a standard hobby servo output.
+        """
+        return self.request(
+            "toolSetServoAngle",
+            timeout=timeout,
+            angle=angle,
+        )
+
+    def tool_set_servo_position(
+        self,
+        position: int,
+        timeout: float = 5.0,
+    ) -> Dict[str, Any]:
+        """
+        Set end-effector hobby servo position as 8-bit value (0 to 255).
+
+        0 is one end of travel, 255 is the other (pulse width mapped by firmware).
+        """
+        return self.request(
+            "toolSetServoPosition",
+            timeout=timeout,
+            position=position,
+        )
+
+    def tool_get_servo_state(self, timeout: float = 5.0) -> Dict[str, Any]:
+        """
+        Read current hobby servo state from the end tool.
+
+        Response fields: currentPosition8bit, currentAngle
+        """
+        return self.request("toolGetServoState", timeout=timeout)
+
     # ----- Kinematics (optional, if URDF loaded on server) -----
 
     def kinematics_load_urdf(self, urdf_xml: str, timeout: float = 8.0) -> Dict[str, Any]:
