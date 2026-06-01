@@ -41,6 +41,12 @@ const DEBUG = false;
 // Simple performance logging flag (set to true to see timing info)
 const PERF_DEBUG = false;
 
+// Prevent occasional bus timeouts from terminating the whole Node process
+process.on('unhandledRejection', (reason) => {
+    const message = reason && reason.stack ? reason.stack : String(reason);
+    console.error('Unhandled promise rejection (bus I/O):', message);
+});
+
 // Array to store servo controllers
 const servos = [];
 let endTool = null;
@@ -541,6 +547,8 @@ async function getAllServoStatus() {
                 ...status,
                 stepPosition: status.position
             });
+            // Brief gap so the next servo reply is not mixed with trailing bus bytes
+            await new Promise(resolve => setTimeout(resolve, 5));
         } catch (error) {
             console.error(`Error reading status from servo ${i + 1}:`, error.message);
             statuses.push({
@@ -946,14 +954,21 @@ async function handleCommand(ws, data) {
             break;
         }
             
-        case 'getStatus':
-            // Send status of all servos
-            const statuses = await getAllServoStatus();
-            sendResponse({
-                type: 'status',
-                joints: statuses
-            });
+        case 'getStatus': {
+            try {
+                const statuses = await getAllServoStatus();
+                sendResponse({
+                    type: 'status',
+                    joints: statuses
+                });
+            } catch (error) {
+                sendResponse({
+                    type: 'error',
+                    message: `Failed to read servo status: ${error.message}`
+                });
+            }
             break;
+        }
 
         case 'rescanServos': {
             try {

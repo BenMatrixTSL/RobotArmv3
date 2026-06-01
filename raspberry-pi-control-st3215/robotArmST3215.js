@@ -72,6 +72,10 @@ const MAX_ANGLE = 180;   // Maximum angle in degrees
 // ESP32 end-tool constants (ST3215-compatible node on same bus)
 const END_TOOL_ID = 64;
 
+// Shared half-duplex bus: ST3215 reads need more than a few ms under load
+const BUS_READ_TIMEOUT_MS = 100;
+const BUS_READ_TIMEOUT_END_TOOL_MS = 250;
+
 // Identity and status registers
 const TOOL_PROTOCOL_VERSION = 0x00;
 const TOOL_FIRMWARE_MAJOR = 0x01;
@@ -152,6 +156,20 @@ class ServoController {
         this.responseReject = null;
         this.responseTimeout = null;
         this.currentSpeed = 1500; // Default speed, will be updated when setSpeed is called
+    }
+
+    /**
+     * Cancel any in-flight read/write wait (timeouts, buffers, callbacks).
+     * @private
+     */
+    clearPendingBusTransaction() {
+        if (this.responseTimeout) {
+            clearTimeout(this.responseTimeout);
+            this.responseTimeout = null;
+        }
+        this.responseResolve = null;
+        this.responseReject = null;
+        this.pendingResponse = null;
     }
 
     /**
@@ -255,22 +273,10 @@ class ServoController {
                 // Buffer too large - likely corrupted or wrong packet, clear it
                 console.warn(`Servo ${this.servoId}: Buffer too large (${newSize} bytes), clearing`);
                 this.pendingResponse = null;
-                if (this.responseResolve) {
-                    // Clear timeout
-                    if (this.responseTimeout) {
-                        clearTimeout(this.responseTimeout);
-                        this.responseTimeout = null;
-                    }
-                    // Reject the promise if we have a reject callback
-                    if (this.responseReject) {
-                        const reject = this.responseReject;
-                        this.responseResolve = null;
-                        this.responseReject = null;
-                        reject(new Error('Response buffer overflow'));
-                    } else {
-                        // Just clear if no reject callback (shouldn't happen, but be safe)
-                        this.responseResolve = null;
-                    }
+                if (this.responseReject) {
+                    this.responseReject(new Error('Response buffer overflow'));
+                } else {
+                    this.clearPendingBusTransaction();
                 }
                 return;
             }
@@ -496,81 +502,73 @@ class ServoController {
             length & 0xFF            // Number of bytes to read
         ];
 
-        // Clear any pending response
-        this.pendingResponse = null;
-        if (this.responseTimeout) {
-            clearTimeout(this.responseTimeout);
-            this.responseTimeout = null;
-        }
-        this.responseResolve = null;
+        this.clearPendingBusTransaction();
 
-        // Set up response handler BEFORE sending packet to avoid race condition
+        let settled = false;
+
         const readPromise = new Promise((resolve, reject) => {
-            // Store reject callback for timeout/error handling
-            this.responseReject = reject;
-            this.responseResolve = (result) => {
-                if (this.responseTimeout) {
-                    clearTimeout(this.responseTimeout);
-                    this.responseTimeout = null;
+            const finishReject = (error) => {
+                if (settled) {
+                    return;
                 }
-                
-                // Check communication result and error
+                settled = true;
+                this.clearPendingBusTransaction();
+                reject(error);
+            };
+
+            const finishResolve = (data) => {
+                if (settled) {
+                    return;
+                }
+                settled = true;
+                this.clearPendingBusTransaction();
+                resolve(data);
+            };
+
+            this.responseReject = finishReject;
+            this.responseResolve = (result) => {
+                if (settled) {
+                    return;
+                }
+
                 if (result.commResult !== COMM_SUCCESS) {
-                    this.responseResolve = null;
-                    this.pendingResponse = null;
-                    reject(new Error(`Communication error: ${result.commResult}`));
+                    finishReject(new Error(`Communication error: ${result.commResult}`));
                 } else if (result.error !== 0) {
-                    this.responseResolve = null;
-                    this.pendingResponse = null;
-                    reject(new Error(`Servo error: ${result.error}`));
+                    finishReject(new Error(`Servo error: ${result.error}`));
+                } else if (!result.parameters) {
+                    if (DEBUG) console.error(`[DEBUG Servo ${this.servoId}] No parameters in read response, result:`, result);
+                    finishReject(new Error('No data in read response'));
                 } else {
-                    // Return the parameter data (which contains the register values)
-                    // For read commands, parameters should be a Buffer with the register data
-                    if (!result.parameters) {
-                        if (DEBUG) console.error(`[DEBUG Servo ${this.servoId}] No parameters in read response, result:`, result);
-                        this.responseResolve = null;
-                        this.pendingResponse = null;
-                        reject(new Error('No data in read response'));
-                        return;
-                    }
-                    // Convert to Buffer if it's not already (it should be a Buffer slice)
                     const data = Buffer.isBuffer(result.parameters) ? result.parameters : Buffer.from(result.parameters);
                     if (data.length === 0) {
-                        // Empty parameters - check if this is a write response (length=2) being matched to read
                         if (result.responseLength === 2) {
-                            // This is a write response (Error + Checksum only), not a read response
-                            // Ignore it and wait for the actual read response
-                            // Keep quiet to avoid spamming logs during normal operation.
-                            return; // Don't resolve or reject, wait for actual read response
-                        } else {
-                            // This is a read response but with no data - error
-                            if (DEBUG) console.error(`[DEBUG Servo ${this.servoId}] Read response has no data, responseLength=${result.responseLength}`);
-                            this.responseResolve = null;
-                            this.pendingResponse = null;
-                            reject(new Error('Empty read response data'));
+                            // Write ack for another transaction — keep waiting for the read reply
                             return;
                         }
+                        if (DEBUG) console.error(`[DEBUG Servo ${this.servoId}] Read response has no data, responseLength=${result.responseLength}`);
+                        finishReject(new Error('Empty read response data'));
+                        return;
                     }
-                    this.responseResolve = null;
-                    this.pendingResponse = null;
-                    resolve(data);
+                    finishResolve(data);
                 }
             };
-            
-            // ESP32 end tool on a shared bus needs more time than 10 ms
-            const readTimeoutMs = this.servoIdNumber === END_TOOL_ID ? 200 : 10;
+
+            const readTimeoutMs = this.servoIdNumber === END_TOOL_ID
+                ? BUS_READ_TIMEOUT_END_TOOL_MS
+                : BUS_READ_TIMEOUT_MS;
+
             this.responseTimeout = setTimeout(() => {
-                this.responseResolve = null;
-                this.pendingResponse = null;
-                reject(new Error('Read timeout'));
+                finishReject(new Error('Read timeout'));
             }, readTimeoutMs);
         });
 
-        // Now send read instruction
-        await this.sendPacket(INST_READ, parameters);
-
-        // Wait for response
-        return await readPromise;
+        try {
+            await this.sendPacket(INST_READ, parameters);
+            return await readPromise;
+        } catch (error) {
+            this.clearPendingBusTransaction();
+            throw error;
+        }
     }
 
     /**
@@ -589,78 +587,68 @@ class ServoController {
         // Debug: log the full packet structure
         if (DEBUG) console.log(`[DEBUG Servo ${this.servoId}] writeData: address=0x${(address & 0xFF).toString(16).padStart(2,'0')}, data=[${data.map(b => '0x' + b.toString(16).padStart(2,'0')).join(', ')}], parameters=[${parameters.map(b => '0x' + b.toString(16).padStart(2,'0')).join(', ')}]`);
 
-        // Clear any pending response
-        this.pendingResponse = null;
-        if (this.responseTimeout) {
-            clearTimeout(this.responseTimeout);
-            this.responseTimeout = null;
-        }
-        this.responseResolve = null;
+        this.clearPendingBusTransaction();
 
-        // Set up response handler BEFORE sending packet to avoid race condition
+        let settled = false;
+
         const writePromise = new Promise((resolve, reject) => {
-            // Store reject callback for timeout/error handling
-            this.responseReject = reject;
-            this.responseResolve = (result) => {
-                if (this.responseTimeout) {
-                    clearTimeout(this.responseTimeout);
-                    this.responseTimeout = null;
+            const finishReject = (error) => {
+                if (settled) {
+                    return;
                 }
-                
-                // Check communication result and error
+                settled = true;
+                this.clearPendingBusTransaction();
+                reject(error);
+            };
+
+            const finishResolve = (result) => {
+                if (settled) {
+                    return;
+                }
+                settled = true;
+                this.clearPendingBusTransaction();
+                resolve(result);
+            };
+
+            this.responseReject = finishReject;
+            this.responseResolve = (result) => {
+                if (settled) {
+                    return;
+                }
+
                 if (result.commResult !== COMM_SUCCESS) {
-                    this.responseResolve = null;
-                    this.pendingResponse = null;
-                    reject(new Error(`Communication error: ${result.commResult}`));
+                    finishReject(new Error(`Communication error: ${result.commResult}`));
                 } else if (result.error !== 0) {
-                    this.responseResolve = null;
-                    this.pendingResponse = null;
-                    reject(new Error(`Servo error: ${result.error}`));
+                    finishReject(new Error(`Servo error: ${result.error}`));
                 } else {
-                    this.responseResolve = null;
-                    this.pendingResponse = null;
-                    resolve(result);
+                    finishResolve(result);
                 }
             };
-            
-            // ESP32 end tool may apply PWM/servo before replying; allow extra time on shared bus
+
             const writeTimeoutMs = this.servoIdNumber === END_TOOL_ID ? 1000 : 200;
             this.responseTimeout = setTimeout(() => {
                 if (DEBUG) console.log(`[DEBUG Servo ${this.servoId}] Write timeout - no response received`);
-                this.responseResolve = null;
-                this.responseReject = null;
-                this.pendingResponse = null;
-                reject(new Error('Write timeout'));
+                finishReject(new Error('Write timeout'));
             }, writeTimeoutMs);
         });
 
-        // Now send write instruction
-        await this.sendPacket(INST_WRITE, parameters);
-
-        // Brief pause so the ESP32 can reply before we wait (shared half-duplex bus)
-        if (this.servoIdNumber === END_TOOL_ID) {
-            await new Promise(resolve => setTimeout(resolve, 20));
-        }
-
-        // Wait for response and return true on success
-        let result;
         try {
-            result = await writePromise;
+            await this.sendPacket(INST_WRITE, parameters);
+
+            // Brief pause so the ESP32 can reply before we wait (shared half-duplex bus)
+            if (this.servoIdNumber === END_TOOL_ID) {
+                await new Promise(resolve => setTimeout(resolve, 20));
+            }
+
+            await writePromise;
+            return true;
         } catch (firstError) {
+            this.clearPendingBusTransaction();
             if (allowRetry && this.servoIdNumber === END_TOOL_ID && firstError.message === 'Write timeout') {
-                // One retry for end tool (servo apply may have delayed the first reply)
-                this.pendingResponse = null;
-                this.responseResolve = null;
-                this.responseReject = null;
-                if (this.responseTimeout) {
-                    clearTimeout(this.responseTimeout);
-                    this.responseTimeout = null;
-                }
                 return await this.writeData(address, data, false);
             }
             throw firstError;
         }
-        return true;
     }
 
     /**

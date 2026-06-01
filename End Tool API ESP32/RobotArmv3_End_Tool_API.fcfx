@@ -110,6 +110,9 @@
 					<def class_type='variable' name='RegAdc1mV_L' type='u8' description='Register 21: ADC1 millivolts low byte' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
 				</variable>
 				<variable public='0' >
+					<def class_type='variable' name='ServoApplyPending' type='b1' description='Apply hobby servo hardware in main loop (not during packet handler)' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
+				</variable>
+				<variable public='0' >
 					<def class_type='variable' name='RegPwm2Duty' type='u8' description='Register 6: PWM2 duty cycle 0-255' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
 				</variable>
 				<variable public='0' >
@@ -273,9 +276,6 @@
 					<def class_type='variable' name='ResponseSent' type='b1' description='Set when a status reply was already transmitted for this packet' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
 				</variable>
 				<variable public='0' >
-					<def class_type='variable' name='ServoApplyPending' type='b1' description='Apply hobby servo hardware in main loop (not during packet handler)' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
-				</variable>
-				<variable public='0' >
 					<def class_type='variable' name='LastInstruction' type='u8' description='Most recent valid instruction for this node' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
 				</variable>
 				<variable public='0' >
@@ -354,6 +354,58 @@
 							<exp exp='Registers[54] = RegServoPulseMax_H' />
 							<exp exp='Registers[55] = RegServoPosition8bit' />
 							<exp exp='Registers[56] = RegServoAngleDeg' />
+						</command>
+					</flowline>
+				</macro>
+				<macro >
+					<flowline name='ApplyPendingHobbyServo' description='' statediag='0' >
+						<return name='Return' type='v0' description='' isconst='0' isHidden='0' isinit='0' usrinit='' setinit='' />
+						<command class_type='comment' title='' comment='HobbyServoPwm owns CAL PWM ref 1 on A18 (50 Hz). Servo_Controller calls use ref 1. PWM1/PWM2 use refs 2/3.' textarea='12,0,12,0' />
+						<command class_type='decision' title='Hobby servo output enabled' exp='RegServoEnable &gt; 0' swap='0' >
+							<flowline >
+								<command class_type='call' title='Set hobby servo PWM frequency to 50 Hz' component='HobbyServoPwm' macro='SetFrequency' >
+									<argument exp='50' />
+								</command>
+								<command class_type='call' title='Enable hobby servo channel' component='Servo_Controller1' macro='EnableServo' >
+									<argument exp='HobbyServoChannel' />
+								</command>
+								<command class_type='decision' title='Last write was angle register (50)' exp='LastAddress = 50' swap='0' >
+									<flowline >
+										<command class_type='calculation' title='Map angle 0-180 to position 0-255' >
+											<exp exp='RegServoPosition8bit = RegServoAngleDeg * 255 / 180' />
+										</command>
+										<command class_type='call' title='Jump servo directly to position (fast)' component='Servo_Controller1' macro='SetPosition' >
+											<argument exp='HobbyServoChannel' />
+											<argument exp='RegServoPosition8bit' />
+										</command>
+									</flowline>
+									<flowline >
+										<command class_type='decision' title='Last write was position register (49)' exp='LastAddress = 49' swap='0' >
+											<flowline >
+												<command class_type='call' title='Set hobby servo 8-bit position' component='Servo_Controller1' macro='SetPosition' >
+													<argument exp='HobbyServoChannel' />
+													<argument exp='RegServoPosition8bit' />
+												</command>
+											</flowline>
+											<flowline >
+												<command class_type='calculation' title='Map stored angle to position for enable-only write' >
+													<exp exp='RegServoPosition8bit = RegServoAngleDeg * 255 / 180' />
+												</command>
+												<command class_type='call' title='Enable write: apply current angle as position' component='Servo_Controller1' macro='SetPosition' >
+													<argument exp='HobbyServoChannel' />
+													<argument exp='RegServoPosition8bit' />
+												</command>
+											</flowline>
+										</command>
+									</flowline>
+								</command>
+							</flowline>
+							<flowline >
+								<command class_type='call' title='Disable hobby servo channel' component='Servo_Controller1' macro='DisableServo' >
+									<argument exp='HobbyServoChannel' />
+								</command>
+								<command class_type='call' title='Disable hobby servo PWM output' component='HobbyServoPwm' macro='Disable' />
+							</flowline>
 						</command>
 					</flowline>
 				</macro>
@@ -1104,53 +1156,6 @@
 					</flowline>
 				</macro>
 				<macro >
-					<flowline name='ApplyPendingHobbyServo' description='' statediag='0' >
-						<return name='Return' type='v0' description='' isconst='0' isHidden='0' isinit='0' usrinit='' setinit='' />
-						<command class_type='decision' title='Hobby servo output enabled' exp='RegServoEnable &gt; 0' swap='0' >
-							<flowline >
-								<command class_type='call' title='Enable hobby servo channel' component='Servo_Controller1' macro='EnableServo' >
-									<argument exp='HobbyServoChannel' />
-								</command>
-								<command class_type='decision' title='Last write was angle register (50)' exp='LastAddress = 50' swap='0' >
-									<flowline >
-										<command class_type='calculation' title='Map angle 0-180 to position 0-255' >
-											<exp exp='RegServoPosition8bit = RegServoAngleDeg * 255 / 180' />
-										</command>
-										<command class_type='call' title='Jump servo directly to position (fast)' component='Servo_Controller1' macro='SetPosition' >
-											<argument exp='HobbyServoChannel' />
-											<argument exp='RegServoPosition8bit' />
-										</command>
-									</flowline>
-									<flowline >
-										<command class_type='decision' title='Last write was position register (49)' exp='LastAddress = 49' swap='0' >
-											<flowline >
-												<command class_type='call' title='Set hobby servo 8-bit position' component='Servo_Controller1' macro='SetPosition' >
-													<argument exp='HobbyServoChannel' />
-													<argument exp='RegServoPosition8bit' />
-												</command>
-											</flowline>
-											<flowline >
-												<command class_type='calculation' title='Map stored angle to position for enable-only write' >
-													<exp exp='RegServoPosition8bit = RegServoAngleDeg * 255 / 180' />
-												</command>
-												<command class_type='call' title='Enable write: apply current angle as position' component='Servo_Controller1' macro='SetPosition' >
-													<argument exp='HobbyServoChannel' />
-													<argument exp='RegServoPosition8bit' />
-												</command>
-											</flowline>
-										</command>
-									</flowline>
-								</command>
-							</flowline>
-							<flowline >
-								<command class_type='call' title='Disable hobby servo channel' component='Servo_Controller1' macro='DisableServo' >
-									<argument exp='HobbyServoChannel' />
-								</command>
-							</flowline>
-						</command>
-					</flowline>
-				</macro>
-				<macro >
 					<flowline name='Main' description='' statediag='0' >
 						<return name='Return' type='v0' description='' isconst='0' isHidden='0' isinit='0' usrinit='' setinit='' />
 						<command class_type='call' title='Component Macro' component='UART_ServoBus' macro='Initialise' />
@@ -1174,6 +1179,7 @@
 						</command>
 						<command class_type='call' title='Disable PWM1 at startup' component='PWM1' macro='Disable' />
 						<command class_type='call' title='Disable PWM2 at startup' component='PWM2' macro='Disable' />
+						<command class_type='call' title='Disable hobby servo PWM at startup' component='HobbyServoPwm' macro='Disable' />
 						<command class_type='call' title='Disable hobby servo output at startup' component='Servo_Controller1' macro='DisableServo' >
 							<argument exp='HobbyServoChannel' />
 						</command>
@@ -1280,7 +1286,89 @@
 					</flowline>
 				</macro>
 			</macros>
-			<component class_type='ref' guid='444fb704-814c-4707-a15c-759ba088505c' vmin='0' vmaj='12' codename='PWM1' panelId='0' x='66.5' y='-147' z='0' xsz='25.18' ysz='25.2432' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='1' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
+			<component class_type='ref' guid='444fb704-814c-4707-a15c-759ba088505c' vmin='0' vmaj='12' codename='HobbyServoPwm' panelId='0' x='426.5' y='-147' z='0' xsz='25.18' ysz='25.2432' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='1' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
+				<resources />
+				<properties />
+				<values >
+					<value target='channel' data='001' />
+					<value target='altpin' data='0' />
+					<value target='pwm_pin' data='$PORTA.3' />
+					<value target='RemapPin' data='018' />
+					<value target='timer' data='000' />
+					<value target='period' data='65535' />
+					<value target='prescale' data='0' />
+					<value target='period_calc' data='20000.000000' />
+					<value target='frequency_calc2' data='50.000000' />
+					<value target='frequency_calc' data='0.050000' />
+					<value target='pwm_prescale' data='1' />
+					<value target='ReqFreq' data='50.000000' />
+					<value target='OldReqFreq' data='50.000000' />
+					<value target='CalcFreq' data='50.000000' />
+					<value target='CalcPeriod' data='20000' />
+					<value target='CalcScaler' data='64' />
+					<value target='Apply' data='0' />
+					<value target='ClockSpeed' data='240000000' />
+					<value target='SimRep' data='000' />
+					<value target='Family' data='ESP' />
+					<value target='ModifiedConnection' data='A.3' />
+					<value target='IsESP' data='1' />
+				</values>
+				<events />
+				<apis />
+				<variables />
+				<macros />
+			</component>
+			<component class_type='ref' guid='9202a62e-0a42-4780-adce-16b701e5ec53' vmin='8' vmaj='8' codename='Servo_Controller1' panelId='0' x='992.322' y='-146' z='1' xsz='25.18' ysz='25.059' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
+				<resources />
+				<properties />
+				<values >
+					<value target='Channel_Count' data='001' />
+					<value target='pin0' data='$PORTA.18' />
+					<value target='pin1' data='$PORTA.18' />
+					<value target='pin2' data='$PORTA.18' />
+					<value target='pin3' data='$PORTA.18' />
+					<value target='pin4' data='$PORTA.18' />
+					<value target='pin5' data='$PORTA.18' />
+					<value target='pin6' data='$PORTA.18' />
+					<value target='pin7' data='$PORTA.18' />
+					<value target='Peripherals' data='PWM1 - PWMn' />
+					<value target='TrimMode' data='001' />
+					<value target='trim0' data='000' />
+					<value target='trim1' data='0' />
+					<value target='trim2' data='0' />
+					<value target='trim3' data='0' />
+					<value target='trim4' data='0' />
+					<value target='trim5' data='0' />
+					<value target='trim6' data='000' />
+					<value target='trim7' data='0' />
+					<value target='min_pulse_width' data='1000' />
+					<value target='max_pulse_width' data='2000' />
+					<value target='CCPLo' data='216' />
+					<value target='CCPHi' data='234' />
+					<value target='Servo_Clock_Count_25' data='6000' />
+					<value target='Servo_Clock_Count_1280' data='30030' />
+					<value target='Servo_Clock_Count_2500' data='60120' />
+					<value target='Servo_Period_Multiplier' data='117' />
+					<value target='IntRange' data='0 - 29951' />
+					<value target='Divider' data='1' />
+					<value target='RoundUp' data='1' />
+					<value target='IntScaler' data='0.459144' />
+					<value target='MaxPeriod' data='29835' />
+					<value target='sim0' data='' />
+					<value target='sim1' data='' />
+					<value target='sim2' data='' />
+					<value target='sim3' data='' />
+					<value target='sim4' data='' />
+					<value target='sim5' data='' />
+					<value target='sim6' data='' />
+					<value target='sim7' data='' />
+				</values>
+				<events />
+				<apis />
+				<variables />
+				<macros />
+			</component>
+			<component class_type='ref' guid='444fb704-814c-4707-a15c-759ba088505c' vmin='0' vmaj='12' codename='PWM1' panelId='0' x='66.5' y='-147' z='2' xsz='25.18' ysz='25.2432' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='1' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
 				<resources />
 				<properties />
 				<values >
@@ -1312,7 +1400,7 @@
 				<variables />
 				<macros />
 			</component>
-			<component class_type='ref' guid='444fb704-814c-4707-a15c-759ba088505c' vmin='0' vmaj='12' codename='PWM2' panelId='0' x='186.5' y='-147' z='1' xsz='25.18' ysz='25.2432' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='1' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
+			<component class_type='ref' guid='444fb704-814c-4707-a15c-759ba088505c' vmin='0' vmaj='12' codename='PWM2' panelId='0' x='186.5' y='-147' z='3' xsz='25.18' ysz='25.2432' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='1' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
 				<resources />
 				<properties />
 				<values >
@@ -1344,7 +1432,7 @@
 				<variables />
 				<macros />
 			</component>
-			<component class_type='ref' guid='ee11c499-8a22-4987-ba57-c7d5d2224a39' vmin='0' vmaj='1' codename='ADS1220' panelId='0' x='306.246' y='-145.5' z='2' xsz='25.0671' ysz='24.9668' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
+			<component class_type='ref' guid='ee11c499-8a22-4987-ba57-c7d5d2224a39' vmin='0' vmaj='1' codename='ADS1220' panelId='0' x='306.246' y='-145.5' z='4' xsz='25.0671' ysz='24.9668' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
 				<resources />
 				<properties />
 				<values >
@@ -1384,7 +1472,7 @@
 				<variables />
 				<macros />
 			</component>
-			<component class_type='ref' guid='3d8f329f-3bf9-4c90-8797-05100f6419f8' vmin='0' vmaj='1' codename='ADC0' panelId='0' x='595.5' y='-180.5' z='3' xsz='25.2309' ysz='25.0183' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
+			<component class_type='ref' guid='3d8f329f-3bf9-4c90-8797-05100f6419f8' vmin='0' vmaj='1' codename='ADC0' panelId='0' x='595.5' y='-180.5' z='5' xsz='25.2309' ysz='25.0183' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
 				<resources />
 				<properties />
 				<values >
@@ -1429,7 +1517,7 @@
 				<variables />
 				<macros />
 			</component>
-			<component class_type='ref' guid='3d8f329f-3bf9-4c90-8797-05100f6419f8' vmin='0' vmaj='1' codename='ADC1' panelId='0' x='666' y='-181' z='4' xsz='25.5863' ysz='25.0917' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
+			<component class_type='ref' guid='3d8f329f-3bf9-4c90-8797-05100f6419f8' vmin='0' vmaj='1' codename='ADC1' panelId='0' x='666' y='-181' z='6' xsz='25.5863' ysz='25.0917' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
 				<resources />
 				<properties />
 				<values >
@@ -1474,57 +1562,7 @@
 				<variables />
 				<macros />
 			</component>
-			<component class_type='ref' guid='9202a62e-0a42-4780-adce-16b701e5ec53' vmin='8' vmaj='8' codename='Servo_Controller1' panelId='0' x='992.322' y='-146' z='5' xsz='25.18' ysz='25.059' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
-				<resources />
-				<properties />
-				<values >
-					<value target='Channel_Count' data='001' />
-					<value target='pin0' data='$PORTB.0' />
-					<value target='pin1' data='$PORTB.0' />
-					<value target='pin2' data='$PORTB.0' />
-					<value target='pin3' data='$PORTB.0' />
-					<value target='pin4' data='$PORTB.0' />
-					<value target='pin5' data='$PORTB.0' />
-					<value target='pin6' data='$PORTB.0' />
-					<value target='pin7' data='$PORTB.0' />
-					<value target='Peripherals' data='PWM1 - PWMn' />
-					<value target='TrimMode' data='001' />
-					<value target='trim0' data='000' />
-					<value target='trim1' data='0' />
-					<value target='trim2' data='0' />
-					<value target='trim3' data='0' />
-					<value target='trim4' data='0' />
-					<value target='trim5' data='0' />
-					<value target='trim6' data='000' />
-					<value target='trim7' data='0' />
-					<value target='min_pulse_width' data='1000' />
-					<value target='max_pulse_width' data='2000' />
-					<value target='CCPLo' data='216' />
-					<value target='CCPHi' data='234' />
-					<value target='Servo_Clock_Count_25' data='6000' />
-					<value target='Servo_Clock_Count_1280' data='30030' />
-					<value target='Servo_Clock_Count_2500' data='60120' />
-					<value target='Servo_Period_Multiplier' data='117' />
-					<value target='IntRange' data='0 - 29951' />
-					<value target='Divider' data='1' />
-					<value target='RoundUp' data='1' />
-					<value target='IntScaler' data='0.459144' />
-					<value target='MaxPeriod' data='29835' />
-					<value target='sim0' data='' />
-					<value target='sim1' data='' />
-					<value target='sim2' data='' />
-					<value target='sim3' data='' />
-					<value target='sim4' data='' />
-					<value target='sim5' data='' />
-					<value target='sim6' data='' />
-					<value target='sim7' data='' />
-				</values>
-				<events />
-				<apis />
-				<variables />
-				<macros />
-			</component>
-			<component class_type='ref' guid='c73616d1-7ad0-45d9-aada-69ccfa4c5efc' vmin='0' vmaj='3' codename='UART_ServoBus' panelId='0' x='904' y='-75' z='6' xsz='25.1778' ysz='25.1392' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='1' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
+			<component class_type='ref' guid='c73616d1-7ad0-45d9-aada-69ccfa4c5efc' vmin='0' vmaj='3' codename='UART_ServoBus' panelId='0' x='904' y='-75' z='7' xsz='25.1778' ysz='25.1392' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='1' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
 				<resources />
 				<properties />
 				<values >
@@ -1565,7 +1603,7 @@
 				<variables />
 				<macros />
 			</component>
-			<component class_type='ref' guid='c73616d1-7ad0-45d9-aada-69ccfa4c5efc' vmin='0' vmaj='3' codename='UART_ProgDebug' panelId='0' x='904' y='-215' z='7' xsz='25.1778' ysz='25.1392' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='1' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
+			<component class_type='ref' guid='c73616d1-7ad0-45d9-aada-69ccfa4c5efc' vmin='0' vmaj='3' codename='UART_ProgDebug' panelId='0' x='904' y='-215' z='8' xsz='25.1778' ysz='25.1392' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='1' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
 				<resources />
 				<properties />
 				<values >
@@ -1606,7 +1644,7 @@
 				<variables />
 				<macros />
 			</component>
-			<component class_type='ref' guid='975b2770-cfa8-4c76-b8ca-c008735e366d' vmin='0' vmaj='14' codename='DeviceID' panelId='0' x='183.887' y='-319.047' z='8' xsz='25.064' ysz='25.0216' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
+			<component class_type='ref' guid='975b2770-cfa8-4c76-b8ca-c008735e366d' vmin='0' vmaj='14' codename='DeviceID' panelId='0' x='183.887' y='-319.047' z='9' xsz='25.064' ysz='25.0216' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
 				<resources />
 				<properties />
 				<values >
@@ -1650,7 +1688,7 @@
 				<variables />
 				<macros />
 			</component>
-			<component class_type='ref' guid='c34f9b8a-a915-4f75-ad0c-87f2ad670a8a' vmin='6' vmaj='1' codename='CircularBuffer1' panelId='0' x='1036' y='-76' z='9' xsz='1' ysz='1' zsz='1' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
+			<component class_type='ref' guid='c34f9b8a-a915-4f75-ad0c-87f2ad670a8a' vmin='6' vmaj='1' codename='CircularBuffer1' panelId='0' x='1036' y='-76' z='10' xsz='1' ysz='1' zsz='1' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
 				<resources />
 				<properties />
 				<values >
@@ -1671,10 +1709,10 @@
 	<keymap />
 	<panel2d shadows='0' lighting='2' brightness='0' >
 		<background rgb='7292207' img='' style='0' />
-		<camera xe='0' ye='0' ze='2055.11' xt='0' yt='0' zt='0' xquat='0' yquat='0' zquat='0' wquat='1' />
-		<viewport dx='510' dy='849' zoom='30.0276' fix_topleft='0' />
+		<camera xe='0' ye='0' ze='1978.55' xt='0' yt='0' zt='0' xquat='0' yquat='0' zquat='0' wquat='1' />
+		<viewport dx='491' dy='897' zoom='30.0276' fix_topleft='0' />
 		<page x='1000' y='1000' show='0' rgb='7360576' />
-		<winpos ID='7005' RectRecentFloat='1134,71,1725,945' RectRecentDocked='0,0,510,872' RecentFrameAlignment='16384' RecentRowIndex='0' IsFloating='0' MRUWidth='32767' PinState='0' IsMaximized='0' IsVisible='0' />
+		<winpos ID='7005' RectRecentFloat='1134,71,1725,945' RectRecentDocked='0,0,491,920' RecentFrameAlignment='16384' RecentRowIndex='0' IsFloating='0' MRUWidth='32767' PinState='0' IsMaximized='0' IsVisible='0' />
 	</panel2d>
 	<panel3d shadows='1' lighting='2' brightness='128' perspective='1' >
 		<background rgb='16777120' img='' style='0' />
@@ -1687,25 +1725,25 @@
 		<camerakey4 xe='-300' ye='-6.66134e-14' ze='6.66134e-14' xt='0' yt='0' zt='0' xquat='-0.5' yquat='0.5' zquat='0.5' wquat='0.5' />
 		<camerakey5 xe='300' ye='-6.66134e-14' ze='6.66134e-14' xt='0' yt='0' zt='0' xquat='-0.5' yquat='-0.5' zquat='-0.5' wquat='0.5' />
 		<camerakey6 xe='-173.205' ye='-173.205' ze='173.205' xt='0' yt='0' zt='0' xquat='-0.424708' yquat='0.17592' zquat='0.339851' wquat='0.820473' />
-		<winpos ID='7004' RectRecentFloat='575,270,1225,720' RectRecentDocked='0,0,484,450' RecentFrameAlignment='16384' RecentRowIndex='0' IsFloating='0' MRUWidth='32767' PinState='0' IsMaximized='0' IsVisible='0' />
+		<winpos ID='7004' RectRecentFloat='575,270,1225,720' RectRecentDocked='0,0,246,866' RecentFrameAlignment='16384' RecentRowIndex='0' IsFloating='0' MRUWidth='32767' PinState='0' IsMaximized='0' IsVisible='0' />
 	</panel3d>
 	<panels2d count='1' >
 		<panel2d_0 id='0' name='2D Panel' type='0' >
-			<winpos ID='1171' RectRecentFloat='334,-697,1462,-64' RectRecentDocked='924,141,1434,707' RecentFrameAlignment='16384' RecentRowIndex='0' IsFloating='1' MRUWidth='32767' PinState='0' IsMaximized='0' IsVisible='1' />
+			<winpos ID='1171' RectRecentFloat='334,-697,1462,-64' RectRecentDocked='994,141,1489,1013' RecentFrameAlignment='16384' RecentRowIndex='0' IsFloating='1' MRUWidth='32767' PinState='0' IsMaximized='0' IsVisible='1' />
 			<background fill='288230376151053813' showgrid='1' gridstyle='0' gridsize='5' gridbrush='71776119075691740' snaptogrid='1' fitcomp='0' disp_x='300' disp_y='400' scale='100' disp_col='16777215' />
 		</panel2d_0>
 	</panels2d>
 	<layout >
-		<view type='0' name='Main' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA9wMAADECAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
-		<view type='0' name='ServoBus_RX' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA9wMAADECAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
-		<view type='0' name='UpdateCurrentMeasurements' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA9wMAADECAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
-		<view type='0' name='ReadRegisterIntoReadValue' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA9wMAADECAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
-		<view type='0' name='SendStatusPacketNoData' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA9wMAADECAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
-		<view type='0' name='SendStatusPacketWithData' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA9wMAADECAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
-		<view type='0' name='UpdateAdcTelemetry' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA9wMAADECAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
-		<view type='0' name='RefreshRegisterArrayFromVariables' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA9wMAADECAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
-		<view type='0' name='ProcessCommsByte' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA9wMAADECAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
-		<view type='0' name='ApplyWritableRegistersToVariablesAndHardware' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA9wMAADECAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
+		<view type='0' name='Main' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA2QMAAGMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
+		<view type='0' name='ServoBus_RX' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA2QMAAGMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
+		<view type='0' name='UpdateCurrentMeasurements' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA2QMAAGMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
+		<view type='0' name='ReadRegisterIntoReadValue' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA2QMAAGMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
+		<view type='0' name='SendStatusPacketNoData' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA2QMAAGMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
+		<view type='0' name='SendStatusPacketWithData' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA2QMAAGMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
+		<view type='0' name='UpdateAdcTelemetry' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA2QMAAGMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
+		<view type='0' name='RefreshRegisterArrayFromVariables' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA2QMAAGMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
+		<view type='0' name='ProcessCommsByte' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA2QMAAGMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
+		<view type='0' name='ApplyWritableRegistersToVariablesAndHardware' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA2QMAAGMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
 	</layout>
 </document>
 </root>
