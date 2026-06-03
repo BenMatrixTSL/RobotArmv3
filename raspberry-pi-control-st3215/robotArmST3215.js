@@ -75,6 +75,148 @@ const END_TOOL_ID = 64;
 // Shared half-duplex bus: ST3215 reads need more than a few ms under load
 const BUS_READ_TIMEOUT_MS = 100;
 const BUS_READ_TIMEOUT_END_TOOL_MS = 250;
+const BUS_WRITE_RETRY_DELAY_MS = 50;
+const BUS_WRITE_MAX_ATTEMPTS = 2;
+
+// ST3215 status bits in the response packet error byte (register 0x41 style flags)
+const SERVO_ERR_VOLTAGE = 1;
+const SERVO_ERR_SENSOR = 2;
+const SERVO_ERR_TEMPERATURE = 4;
+const SERVO_ERR_CURRENT = 8;
+const SERVO_ERR_OVERLOAD = 32;
+
+/**
+ * Bus / servo fault with extra fields for the server and UI.
+ */
+class BusCommunicationError extends Error {
+    constructor(message, details) {
+        super(message);
+        this.name = 'BusCommunicationError';
+        this.commResult = details.commResult !== undefined ? details.commResult : null;
+        this.servoErrorByte = details.servoErrorByte !== undefined ? details.servoErrorByte : null;
+        this.isOverload = !!details.isOverload;
+        this.isRetryable = !!details.isRetryable;
+    }
+}
+
+/**
+ * Describe ST3215 error byte from a response packet.
+ * @param {number} errorByte
+ * @returns {string}
+ */
+function describeServoErrorByte(errorByte) {
+    const parts = [];
+
+    if (errorByte & SERVO_ERR_VOLTAGE) {
+        parts.push('voltage');
+    }
+    if (errorByte & SERVO_ERR_SENSOR) {
+        parts.push('sensor');
+    }
+    if (errorByte & SERVO_ERR_TEMPERATURE) {
+        parts.push('temperature');
+    }
+    if (errorByte & SERVO_ERR_CURRENT) {
+        parts.push('current');
+    }
+    if (errorByte & SERVO_ERR_OVERLOAD) {
+        parts.push('overload');
+    }
+
+    if (parts.length === 0) {
+        return 'servo status 0x' + errorByte.toString(16);
+    }
+
+    return parts.join(', ');
+}
+
+/**
+ * Build a clear Error from a parsed bus response or a plain message.
+ * @param {Object|string} source
+ * @returns {BusCommunicationError|Error}
+ */
+function busErrorFromResponse(source) {
+    if (typeof source === 'string') {
+        return new BusCommunicationError(source, {
+            commResult: null,
+            servoErrorByte: null,
+            isOverload: false,
+            isRetryable: source.indexOf('timeout') >= 0
+        });
+    }
+
+    const commResult = source.commResult;
+    const servoErrorByte = source.error;
+
+    if (commResult === COMM_RX_TIMEOUT) {
+        return new BusCommunicationError('No reply from device (timeout)', {
+            commResult: commResult,
+            servoErrorByte: null,
+            isOverload: false,
+            isRetryable: true
+        });
+    }
+
+    if (servoErrorByte && servoErrorByte !== 0) {
+        const detail = describeServoErrorByte(servoErrorByte);
+        const isOverload = (servoErrorByte & SERVO_ERR_OVERLOAD) !== 0;
+        const isCurrent = (servoErrorByte & SERVO_ERR_CURRENT) !== 0;
+
+        return new BusCommunicationError('Servo fault: ' + detail, {
+            commResult: commResult,
+            servoErrorByte: servoErrorByte,
+            isOverload: isOverload,
+            isRetryable: isOverload || isCurrent
+        });
+    }
+
+    if (commResult === COMM_RX_CORRUPT) {
+        return new BusCommunicationError('Invalid or corrupted reply from device', {
+            commResult: commResult,
+            servoErrorByte: servoErrorByte,
+            isOverload: false,
+            isRetryable: true
+        });
+    }
+
+    return new BusCommunicationError('Communication error: ' + commResult, {
+        commResult: commResult,
+        servoErrorByte: servoErrorByte,
+        isOverload: false,
+        isRetryable: true
+    });
+}
+
+/**
+ * @param {Error} error
+ * @returns {boolean}
+ */
+function isRetryableBusError(error) {
+    if (!error) {
+        return false;
+    }
+
+    if (error.isRetryable) {
+        return true;
+    }
+
+    const message = error.message || '';
+
+    return message.indexOf('timeout') >= 0
+        || message.indexOf('corrupt') >= 0
+        || message.indexOf('Communication error') >= 0;
+}
+
+/**
+ * Reject on the next event-loop turn so await is already waiting (avoids unhandledRejection).
+ * @param {Function} reject
+ * @param {Error} error
+ */
+function deferPromiseReject(reject, error) {
+    queueMicrotask(function () {
+        reject(error);
+    });
+}
 
 // Identity and status registers
 const TOOL_PROTOCOL_VERSION = 0x00;
@@ -308,12 +450,12 @@ class ServoController {
                         this.responseTimeout = null;
                     }
 
-                    const resolve = this.responseResolve;
-                    this.responseResolve = null;
-                    this.responseReject = null;
-                    this.pendingResponse = null;
-
-                    resolve(result);
+                    const deliver = this.responseResolve;
+                    this.pendingResponse = this.pendingResponse.slice(packetLen);
+                    deliver(result);
+                } else if (DEBUG) {
+                    console.log(`[DEBUG Servo ${this.servoId}] Late reply ignored (no pending command)`);
+                    this.pendingResponse = this.pendingResponse.slice(packetLen);
                 }
                 return;
             }
@@ -513,7 +655,7 @@ class ServoController {
                 }
                 settled = true;
                 this.clearPendingBusTransaction();
-                reject(error);
+                deferPromiseReject(reject, error);
             };
 
             const finishResolve = (data) => {
@@ -531,10 +673,8 @@ class ServoController {
                     return;
                 }
 
-                if (result.commResult !== COMM_SUCCESS) {
-                    finishReject(new Error(`Communication error: ${result.commResult}`));
-                } else if (result.error !== 0) {
-                    finishReject(new Error(`Servo error: ${result.error}`));
+                if (result.commResult !== COMM_SUCCESS || result.error !== 0) {
+                    finishReject(busErrorFromResponse(result));
                 } else if (!result.parameters) {
                     if (DEBUG) console.error(`[DEBUG Servo ${this.servoId}] No parameters in read response, result:`, result);
                     finishReject(new Error('No data in read response'));
@@ -587,68 +727,84 @@ class ServoController {
         // Debug: log the full packet structure
         if (DEBUG) console.log(`[DEBUG Servo ${this.servoId}] writeData: address=0x${(address & 0xFF).toString(16).padStart(2,'0')}, data=[${data.map(b => '0x' + b.toString(16).padStart(2,'0')).join(', ')}], parameters=[${parameters.map(b => '0x' + b.toString(16).padStart(2,'0')).join(', ')}]`);
 
-        this.clearPendingBusTransaction();
-
         let settled = false;
+        let attempt = 0;
 
-        const writePromise = new Promise((resolve, reject) => {
-            const finishReject = (error) => {
-                if (settled) {
-                    return;
-                }
-                settled = true;
-                this.clearPendingBusTransaction();
-                reject(error);
-            };
-
-            const finishResolve = (result) => {
-                if (settled) {
-                    return;
-                }
-                settled = true;
-                this.clearPendingBusTransaction();
-                resolve(result);
-            };
-
-            this.responseReject = finishReject;
-            this.responseResolve = (result) => {
-                if (settled) {
-                    return;
-                }
-
-                if (result.commResult !== COMM_SUCCESS) {
-                    finishReject(new Error(`Communication error: ${result.commResult}`));
-                } else if (result.error !== 0) {
-                    finishReject(new Error(`Servo error: ${result.error}`));
-                } else {
-                    finishResolve(result);
-                }
-            };
-
-            const writeTimeoutMs = this.servoIdNumber === END_TOOL_ID ? 1000 : 200;
-            this.responseTimeout = setTimeout(() => {
-                if (DEBUG) console.log(`[DEBUG Servo ${this.servoId}] Write timeout - no response received`);
-                finishReject(new Error('Write timeout'));
-            }, writeTimeoutMs);
-        });
-
-        try {
-            await this.sendPacket(INST_WRITE, parameters);
-
-            // Brief pause so the ESP32 can reply before we wait (shared half-duplex bus)
-            if (this.servoIdNumber === END_TOOL_ID) {
-                await new Promise(resolve => setTimeout(resolve, 20));
-            }
-
-            await writePromise;
-            return true;
-        } catch (firstError) {
+        while (attempt < BUS_WRITE_MAX_ATTEMPTS) {
+            attempt = attempt + 1;
+            settled = false;
             this.clearPendingBusTransaction();
-            if (allowRetry && this.servoIdNumber === END_TOOL_ID && firstError.message === 'Write timeout') {
-                return await this.writeData(address, data, false);
+
+            const writePromise = new Promise((resolve, reject) => {
+                const finishReject = (error) => {
+                    if (settled) {
+                        return;
+                    }
+                    settled = true;
+                    this.clearPendingBusTransaction();
+                    deferPromiseReject(reject, error);
+                };
+
+                const finishResolve = (result) => {
+                    if (settled) {
+                        return;
+                    }
+                    settled = true;
+                    this.clearPendingBusTransaction();
+                    resolve(result);
+                };
+
+                this.responseReject = finishReject;
+                this.responseResolve = (result) => {
+                    if (settled) {
+                        return;
+                    }
+
+                    if (result.commResult !== COMM_SUCCESS || result.error !== 0) {
+                        finishReject(busErrorFromResponse(result));
+                    } else {
+                        finishResolve(result);
+                    }
+                };
+
+                const writeTimeoutMs = this.servoIdNumber === END_TOOL_ID ? 1000 : 300;
+                this.responseTimeout = setTimeout(() => {
+                    if (DEBUG) {
+                        console.log(`[DEBUG Servo ${this.servoId}] Write timeout - no response received`);
+                    }
+                    finishReject(busErrorFromResponse('Write timeout'));
+                }, writeTimeoutMs);
+            });
+
+            try {
+                await this.sendPacket(INST_WRITE, parameters);
+
+                if (this.servoIdNumber === END_TOOL_ID) {
+                    await new Promise(resolve => setTimeout(resolve, 20));
+                }
+
+                await writePromise;
+                return true;
+            } catch (writeError) {
+                this.clearPendingBusTransaction();
+
+                const canRetry = allowRetry
+                    && attempt < BUS_WRITE_MAX_ATTEMPTS
+                    && isRetryableBusError(writeError);
+
+                if (canRetry) {
+                    console.warn(
+                        `Servo ${this.servoId}: Bus write failed (${writeError.message}), retrying...`
+                    );
+                    await new Promise(resolve => setTimeout(resolve, BUS_WRITE_RETRY_DELAY_MS));
+                    continue;
+                }
+
+                throw writeError;
             }
-            throw firstError;
         }
+
+        return false;
     }
 
     /**
@@ -779,7 +935,7 @@ class ServoController {
             if (DEBUG) console.log(`Servo ${this.servoId}: Torque disabled`);
             return true;
         } catch (error) {
-            console.error(`Servo ${this.servoId}: Failed to disable torque:`, error.message);
+            this.logServoCommandError('disable torque', error);
             return false;
         }
     }
@@ -820,9 +976,24 @@ class ServoController {
             this.currentSpeed = speed;
             if (DEBUG) console.log(`Servo ${this.servoId}: Speed set to ${speed} step/s`);
         } catch (error) {
-            console.error(`Servo ${this.servoId}: Failed to set speed:`, error.message);
+            this.logServoCommandError('set speed', error);
             throw error;
         }
+    }
+
+    /**
+     * Log a failed servo command without dumping a full stack trace for expected bus faults.
+     * @param {string} action
+     * @param {Error} error
+     */
+    logServoCommandError(action, error) {
+        let line = `Servo ${this.servoId}: Failed to ${action}: ${error.message}`;
+
+        if (error.isOverload) {
+            line = line + ' (joint may be stalled or over-torqued — reduce load or move away from limit)';
+        }
+
+        console.warn(line);
     }
 
     /**
@@ -911,7 +1082,7 @@ class ServoController {
             await this.writeData(STS_GOAL_POSITION_L, data);
             if (DEBUG) console.log(`Servo ${this.servoId}: Position command sent (bytes: 0x${data[0].toString(16).padStart(2,'0')} 0x${data[1].toString(16).padStart(2,'0')})`);
         } catch (error) {
-            console.error(`Servo ${this.servoId}: Failed to move to angle:`, error.message);
+            this.logServoCommandError('move to angle', error);
             throw error;
         }
     }
@@ -1366,6 +1537,7 @@ class EndToolController extends ServoController {
 module.exports = {
     ServoController: ServoController,
     EndToolController: EndToolController,
+    BusCommunicationError: BusCommunicationError,
     END_TOOL_ID: END_TOOL_ID,
     // Export conversion constants and functions for external use
     CENTER_POSITION: CENTER_POSITION,

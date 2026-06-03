@@ -16,6 +16,7 @@
 const WebSocket = require('ws');
 const os = require('os');
 const fs = require('fs');
+const path = require('path');
 const { exec } = require('child_process');
 const { execFile } = require('child_process');
 const { promisify } = require('util');
@@ -41,10 +42,83 @@ const DEBUG = false;
 // Simple performance logging flag (set to true to see timing info)
 const PERF_DEBUG = false;
 
-// Prevent occasional bus timeouts from terminating the whole Node process
+// Optional file log (set by install-service.sh: ROBOT_ARM_DEBUG_LOG)
+const DEBUG_LOG_FILE = process.env.ROBOT_ARM_DEBUG_LOG || '';
+
+/**
+ * Write a line to the console and optionally to the debug log file.
+ * @param {string} message
+ * @param {boolean} isError - use stderr style prefix
+ */
+function debugLog(message, isError) {
+    const text = String(message);
+    const prefix = isError ? '[ERROR] ' : '';
+    const line = '[' + new Date().toISOString() + '] ' + prefix + text;
+
+    if (isError) {
+        console.error(text);
+    } else {
+        console.log(text);
+    }
+
+    if (!DEBUG_LOG_FILE) {
+        return;
+    }
+
+    try {
+        const logDir = path.dirname(DEBUG_LOG_FILE);
+        if (!fs.existsSync(logDir)) {
+            fs.mkdirSync(logDir, { recursive: true });
+        }
+        fs.appendFileSync(DEBUG_LOG_FILE, line + '\n');
+    } catch (logError) {
+        console.error('Could not write debug log file:', logError.message);
+    }
+}
+
+debugLog('Server process starting (pid ' + process.pid + ')');
+if (DEBUG_LOG_FILE) {
+    debugLog('Debug log file: ' + DEBUG_LOG_FILE);
+}
+
+// Log unexpected promise rejections (bus faults should be caught by command handlers)
 process.on('unhandledRejection', (reason) => {
+    if (reason && reason.name === 'BusCommunicationError') {
+        debugLog('Unhandled bus fault (should be caught by command): ' + reason.message, true);
+        return;
+    }
+
     const message = reason && reason.stack ? reason.stack : String(reason);
-    console.error('Unhandled promise rejection (bus I/O):', message);
+    debugLog('Unhandled promise rejection: ' + message, true);
+});
+
+/**
+ * User-friendly message for WebSocket error responses.
+ * @param {Error} error
+ * @returns {string}
+ */
+function formatCommandError(error) {
+    if (!error) {
+        return 'Unknown error';
+    }
+
+    let message = error.message || String(error);
+
+    if (error.isOverload) {
+        message = message + ' Reduce speed, check for a mechanical limit, or relieve load on the joint.';
+    }
+
+    return message;
+}
+
+process.on('uncaughtException', (error) => {
+    const message = error && error.stack ? error.stack : String(error);
+    debugLog('Uncaught exception: ' + message, true);
+    process.exit(1);
+});
+
+process.on('exit', (code) => {
+    debugLog('Process exit, code=' + code);
 });
 
 // Array to store servo controllers
@@ -591,8 +665,8 @@ function startServer() {
     // Create WebSocket server
     const wss = new WebSocket.Server({ port: PORT });
     
-    console.log(`Server listening on port ${PORT}`);
-    console.log('Waiting for clients to connect...');
+    debugLog('Server listening on port ' + PORT);
+    debugLog('Waiting for clients to connect...');
     
     // Handle new client connections
     wss.on('connection', function connection(ws, req) {
@@ -1266,7 +1340,9 @@ async function handleCommand(ws, data) {
             } catch (error) {
                 sendResponse({
                     type: 'error',
-                    message: `Failed to move servo ${data.joint}: ${error.message}`
+                    message: `Failed to move joint ${data.joint}: ${formatCommandError(error)}`,
+                    servoFault: !!(error && error.isOverload),
+                    joint: data.joint
                 });
             }
             break;
@@ -1293,15 +1369,24 @@ async function handleCommand(ws, data) {
             }
             
             try {
-                await stopServo.stopServo();
-                sendResponse({
-                    type: 'success',
-                    message: `Servo ${data.joint} stopped`
-                });
+                const stopped = await stopServo.stopServo();
+                if (stopped) {
+                    sendResponse({
+                        type: 'success',
+                        message: `Servo ${data.joint} stopped`
+                    });
+                } else {
+                    sendResponse({
+                        type: 'error',
+                        message: `Could not disable torque on joint ${data.joint} (servo may be in fault — check load or power cycle the joint)`,
+                        joint: data.joint
+                    });
+                }
             } catch (error) {
                 sendResponse({
                     type: 'error',
-                    message: `Failed to stop servo ${data.joint}: ${error.message}`
+                    message: `Failed to stop joint ${data.joint}: ${formatCommandError(error)}`,
+                    joint: data.joint
                 });
             }
             break;
@@ -1309,19 +1394,32 @@ async function handleCommand(ws, data) {
         case 'stopAllJoints':
             // Stop all servos
             try {
+                let failedJoints = [];
+
                 for (let i = 0; i < servos.length; i++) {
                     if (servos[i] !== null) {
-                        await servos[i].stopServo();
+                        const stopped = await servos[i].stopServo();
+                        if (!stopped) {
+                            failedJoints.push(i + 1);
+                        }
                     }
                 }
-                sendResponse({
-                    type: 'success',
-                    message: 'All servos stopped'
-                });
+
+                if (failedJoints.length === 0) {
+                    sendResponse({
+                        type: 'success',
+                        message: 'All servos stopped'
+                    });
+                } else {
+                    sendResponse({
+                        type: 'error',
+                        message: 'Could not disable torque on joint(s): ' + failedJoints.join(', ')
+                    });
+                }
             } catch (error) {
                 sendResponse({
                     type: 'error',
-                    message: `Failed to stop all servos: ${error.message}`
+                    message: `Failed to stop all servos: ${formatCommandError(error)}`
                 });
             }
             break;
@@ -1393,7 +1491,9 @@ async function handleCommand(ws, data) {
             } catch (error) {
                 sendResponse({
                     type: 'error',
-                    message: `Failed to set speed: ${error.message}`
+                    message: `Failed to set speed on joint ${data.joint}: ${formatCommandError(error)}`,
+                    servoFault: !!(error && error.isOverload),
+                    joint: data.joint
                 });
             }
             break;
@@ -1493,8 +1593,15 @@ async function handleCommand(ws, data) {
 /**
  * Cleanup function - called on exit
  */
-async function cleanup() {
-    console.log('Shutting down...');
+let shutdownInProgress = false;
+
+async function cleanup(signalName) {
+    if (shutdownInProgress) {
+        return;
+    }
+    shutdownInProgress = true;
+
+    debugLog('Shutting down... (signal: ' + (signalName || 'unknown') + ')');
     
     // Stop all servos
     for (let i = 0; i < servos.length; i++) {
@@ -1525,9 +1632,13 @@ async function cleanup() {
     process.exit(0);
 }
 
-// Handle process termination
-process.on('SIGINT', cleanup);
-process.on('SIGTERM', cleanup);
+// Handle process termination (systemctl stop sends SIGTERM)
+process.on('SIGINT', function () {
+    cleanup('SIGINT');
+});
+process.on('SIGTERM', function () {
+    cleanup('SIGTERM');
+});
 
 // Start the server
 async function main() {
@@ -1538,7 +1649,8 @@ async function main() {
         // Start WebSocket server
         startServer();
     } catch (error) {
-        console.error('Failed to start server:', error);
+        const message = error && error.stack ? error.stack : String(error);
+        debugLog('Failed to start server: ' + message, true);
         process.exit(1);
     }
 }

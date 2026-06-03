@@ -1,0 +1,30 @@
+# Systemd unit for the Robot Arm ST3215 WebSocket server.
+# install-service.sh copies this to /etc/systemd/system/ and fills in paths.
+
+[Unit]
+Description=Robot Arm ST3215 WebSocket Server (port 8080)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=SERVICE_USER
+Group=SERVICE_USER
+WorkingDirectory=INSTALL_DIR
+ExecStart=NODE_PATH server.js
+Environment=ROBOT_ARM_DEBUG_LOG=LOG_DIR/server-debug.log
+Environment=NODE_ENV=production
+# Restart whenever the process stops (crash, exit, or serial error during startup)
+Restart=always
+RestartSec=5
+# If the server crashes 10 times in 5 minutes, stop trying until manual restart
+StartLimitIntervalSec=300
+StartLimitBurst=10
+# Allow access to /dev/serial0 and USB serial adapters
+SupplementaryGroups=dialout
+# Also capture stdout/stderr in a second log file
+StandardOutput=append:LOG_DIR/server.log
+StandardError=append:LOG_DIR/server.log
+
+[Install]
+WantedBy=multi-user.target

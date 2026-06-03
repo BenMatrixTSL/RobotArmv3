@@ -102,20 +102,38 @@ node server.js
 ### Auto-start on boot (systemd)
 
 This project includes:
-- `install-service.sh` - installs dependencies and sets up systemd
-- `st3215-server.service` - service template used by installer
+- `install-service.sh` — installs `npm` dependencies and registers a systemd service
+- `st3215-server.service` — service template (paths filled in by the installer)
+- `uninstall-service.sh` — removes the service
 
-Run:
+**Automatic restart:** The service uses `Restart=always`. If the server crashes or exits on its own, systemd waits 5 seconds and starts it again. A manual `sudo systemctl stop st3215-server` does not auto-restart until you start it again.
+
+**Debug log files** (after install):
+- `/var/log/robot-arm-st3215/server-debug.log` — startup, shutdown, signals, uncaught errors
+- `/var/log/robot-arm-st3215/server.log` — normal console output from the server
+
+Run on the Pi:
 ```bash
 cd raspberry-pi-control-st3215
-chmod +x install-service.sh
+chmod +x install-service.sh uninstall-service.sh
 sudo ./install-service.sh
+```
+
+If your repo lives elsewhere (for example `/opt/RobotArm/raspberry-pi-control-st3215`):
+```bash
+sudo ./install-service.sh /opt/RobotArm/raspberry-pi-control-st3215
 ```
 
 After install:
 ```bash
 sudo systemctl status st3215-server.service
+tail -f /var/log/robot-arm-st3215/server-debug.log
 sudo journalctl -u st3215-server.service -f
+```
+
+Remove the service:
+```bash
+sudo ./uninstall-service.sh
 ```
 
 The server will:

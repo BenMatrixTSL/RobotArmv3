@@ -21,14 +21,14 @@ import time
 from robot_arm import RobotArmClient, RobotArmError
 
 # Change this to your Raspberry Pi address
-PI_HOST = "192.168.1.97"
+PI_HOST = "192.168.1.112"
 PI_PORT = 8080
 
 # Angles to visit, in degrees (0 to 180 for a typical hobby servo)
-DEMO_ANGLES = [0, 90, 180, 90]
+DEMO_ANGLES = [0, 90, 180, 90, 0, 90, 180, 90, 0, 90, 180, 90, 0]
 
 # Seconds to wait after each move so the servo can reach the angle
-WAIT_SECONDS = 1.0
+WAIT_SECONDS = 2.0
 
 
 def main():

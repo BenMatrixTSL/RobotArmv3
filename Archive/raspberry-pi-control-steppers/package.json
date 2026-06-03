@@ -1,0 +1,25 @@
+{
+  "name": "robot-arm-control",
+  "version": "1.0.0",
+  "description": "Raspberry Pi Node.js control system for robot arm with PIC I2C controllers",
+  "main": "robotArmI2C.js",
+  "scripts": {
+    "test": "node test-i2c.js"
+  },
+  "keywords": [
+    "robot",
+    "i2c",
+    "raspberry-pi"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "i2c-bus": "^5.2.3",
+    "ws": "^8.16.0"
+  },
+  "scripts": {
+    "test": "node test-i2c.js",
+    "server": "node server.js"
+  }
+}
+
