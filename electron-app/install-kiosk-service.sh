@@ -1,27 +1,23 @@
 #!/bin/bash
 #
-# Install Chromium kiosk mode for the robot arm UI (starts after desktop login).
-# Serves index.html locally and opens Chromium fullscreen — lighter than Electron.
+# Install Chromium kiosk for the robot arm UI.
+# Uses a USER systemd service (runs after desktop login) — not a system service.
+# System-wide services cannot access the Wayland/X11 session (MIT-MAGIC-COOKIE error).
 #
-# Prerequisites on the Pi:
-#   - Raspberry Pi OS with desktop (not Lite-only)
-#   - Auto-login to desktop recommended (Raspberry Pi Configuration → Desktop)
+# Prerequisites:
+#   - Raspberry Pi OS with desktop + auto-login for your user
 #   - Chromium: sudo apt install -y chromium
-#   - ST3215 server already installed (install-service.sh in raspberry-pi-control-st3215)
+#   - ST3215 server installed (raspberry-pi-control-st3215/install-service.sh)
 #
 # Usage:
-#   cd electron-app
-#   chmod +x install-kiosk-service.sh start-kiosk.sh uninstall-kiosk-service.sh
-#   sudo ./install-kiosk-service.sh
-#
-# Optional path (e.g. /opt/RobotArm/electron-app):
+#   cd /opt/RobotArm/electron-app
+#   chmod +x install-kiosk-service.sh start-kiosk.sh
 #   sudo ./install-kiosk-service.sh /opt/RobotArm/electron-app
 
 set -e
 
 SERVICE_NAME="robot-arm-kiosk.service"
 KIOSK_PORT="3080"
-# 1 = single screen (default) | 2 | all — see KIOSK_SETUP.md
 KIOSK_SCREENS="${ROBOT_ARM_KIOSK_SCREENS:-1}"
 INSTALL_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
@@ -36,17 +32,11 @@ echo ""
 
 if [ "$EUID" -ne 0 ]; then
     echo "Error: run this script with sudo"
-    echo "  sudo ./install-kiosk-service.sh"
     exit 1
 fi
 
-if [ ! -f "$INSTALL_DIR/index.html" ]; then
-    echo "Error: index.html not found in: $INSTALL_DIR"
-    exit 1
-fi
-
-if [ ! -f "$INSTALL_DIR/start-kiosk.sh" ]; then
-    echo "Error: start-kiosk.sh not found in: $INSTALL_DIR"
+if [ ! -f "$INSTALL_DIR/index.html" ] || [ ! -f "$INSTALL_DIR/start-kiosk.sh" ]; then
+    echo "Error: missing files in $INSTALL_DIR"
     exit 1
 fi
 
@@ -62,6 +52,8 @@ if ! id "$SERVICE_USER" &>/dev/null; then
 fi
 
 SERVICE_UID="$(id -u "$SERVICE_USER")"
+SERVICE_HOME="$(eval echo "~$SERVICE_USER")"
+USER_UNIT_DIR="$SERVICE_HOME/.config/systemd/user"
 
 if ! command -v python3 >/dev/null; then
     echo "Error: python3 is not installed."
@@ -74,14 +66,17 @@ if ! command -v chromium-browser >/dev/null && ! command -v chromium >/dev/null;
     apt-get install -y chromium || apt-get install -y chromium-browser
 fi
 
+run_as_user() {
+    sudo -u "$SERVICE_USER" \
+        XDG_RUNTIME_DIR="/run/user/$SERVICE_UID" \
+        DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$SERVICE_UID/bus" \
+        "$@"
+}
+
 echo "Install folder:  $INSTALL_DIR"
 echo "Service user:    $SERVICE_USER"
-echo "Kiosk HTTP port: $KIOSK_PORT (local only)"
-echo "Kiosk screens:   $KIOSK_SCREENS (all = one browser per HDMI output)"
-echo "UI URL:          http://127.0.0.1:$KIOSK_PORT/index.html?kiosk=1"
-echo ""
-echo "Note: The Pi must boot to the desktop (user logged in) so DISPLAY=:0 works."
-echo "      Enable auto-login in Raspberry Pi Configuration if the browser does not start."
+echo "Kiosk port:      $KIOSK_PORT"
+echo "Kiosk screens:   $KIOSK_SCREENS"
 echo ""
 
 echo "Step 1: Fix folder ownership"
@@ -90,7 +85,7 @@ while [ "$REPO_DIR" != "/" ]; do
     if [ -d "$REPO_DIR/.git" ]; then
         chown -R "$SERVICE_USER:$SERVICE_USER" "$REPO_DIR"
         sudo -u "$SERVICE_USER" git config --global --add safe.directory "$REPO_DIR" 2>/dev/null || true
-        echo "  Git repo owned by $SERVICE_USER: $REPO_DIR"
+        echo "  Git repo: $REPO_DIR"
         break
     fi
     REPO_DIR="$(dirname "$REPO_DIR")"
@@ -100,38 +95,47 @@ chmod +x "$INSTALL_DIR/start-kiosk.sh"
 echo "  Done."
 echo ""
 
-echo "Step 2: Install systemd service"
-TEMP_SERVICE="/tmp/$SERVICE_NAME"
-sed -e "s|INSTALL_DIR|$INSTALL_DIR|g" \
-    -e "s|SERVICE_USER|$SERVICE_USER|g" \
-    -e "s|SERVICE_UID|$SERVICE_UID|g" \
-    -e "s|KIOSK_PORT|$KIOSK_PORT|g" \
-    -e "s|KIOSK_SCREENS|$KIOSK_SCREENS|g" \
-    "$INSTALL_DIR/robot-arm-kiosk.service" > "$TEMP_SERVICE"
-cp "$TEMP_SERVICE" "/etc/systemd/system/$SERVICE_NAME"
-rm -f "$TEMP_SERVICE"
-echo "  Copied to /etc/systemd/system/$SERVICE_NAME"
-echo ""
-
-echo "Step 3: Enable and start service"
+echo "Step 2: Remove old system-wide kiosk service (causes MIT-MAGIC-COOKIE errors)"
+systemctl stop "$SERVICE_NAME" 2>/dev/null || true
+systemctl disable "$SERVICE_NAME" 2>/dev/null || true
+rm -f "/etc/systemd/system/$SERVICE_NAME"
 systemctl daemon-reload
-systemctl enable "$SERVICE_NAME"
-systemctl restart "$SERVICE_NAME"
 echo "  Done."
 echo ""
 
-echo "=========================================="
-echo "Kiosk installation complete"
-echo "=========================================="
-echo ""
-echo "Useful commands:"
-echo "  sudo systemctl status $SERVICE_NAME"
-echo "  sudo systemctl restart $SERVICE_NAME"
-echo "  sudo systemctl stop $SERVICE_NAME"
-echo ""
-echo "Test manually (while logged into the desktop):"
-echo "  cd $INSTALL_DIR"
-echo "  ./start-kiosk.sh"
+echo "Step 3: Install user systemd service (starts with desktop login)"
+mkdir -p "$USER_UNIT_DIR"
+TEMP_SERVICE="/tmp/$SERVICE_NAME"
+sed -e "s|INSTALL_DIR|$INSTALL_DIR|g" \
+    -e "s|KIOSK_PORT|$KIOSK_PORT|g" \
+    -e "s|KIOSK_SCREENS|$KIOSK_SCREENS|g" \
+    "$INSTALL_DIR/robot-arm-kiosk-user.service" > "$TEMP_SERVICE"
+cp "$TEMP_SERVICE" "$USER_UNIT_DIR/$SERVICE_NAME"
+rm -f "$TEMP_SERVICE"
+chown -R "$SERVICE_USER:$SERVICE_USER" "$SERVICE_HOME/.config"
+echo "  Installed $USER_UNIT_DIR/$SERVICE_NAME"
 echo ""
 
-systemctl --no-pager status "$SERVICE_NAME" || true
+echo "Step 4: Enable user service"
+run_as_user systemctl --user daemon-reload
+run_as_user systemctl --user enable "$SERVICE_NAME"
+if run_as_user systemctl --user start "$SERVICE_NAME" 2>/dev/null; then
+    echo "  Started (you are logged into the desktop)."
+else
+    echo "  Enabled — will start on next desktop login / reboot."
+fi
+echo ""
+
+echo "=========================================="
+echo "Installation complete"
+echo "=========================================="
+echo ""
+echo "Status (run as $SERVICE_USER, not sudo):"
+echo "  systemctl --user status $SERVICE_NAME"
+echo "  journalctl --user -u $SERVICE_NAME -n 40 --no-pager"
+echo ""
+echo "Reboot after install if the browser did not start:"
+echo "  sudo reboot"
+echo ""
+
+run_as_user systemctl --user --no-pager status "$SERVICE_NAME" 2>/dev/null || true

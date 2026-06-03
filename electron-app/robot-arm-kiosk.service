@@ -1,5 +1,6 @@
-# Systemd unit: Robot Arm UI in Chromium kiosk mode (static HTTP + browser).
-# install-kiosk-service.sh copies this to /etc/systemd/system/ and fills in paths.
+# DEPRECATED — do not use. System services cannot open Chromium on Pi OS Wayland
+# (MIT-MAGIC-COOKIE-1 / Missing X server). Use robot-arm-kiosk-user.service instead.
+# install-kiosk-service.sh installs the user unit and removes this from /etc/systemd/system/.
 
 [Unit]
 Description=Robot Arm Control UI (Chromium kiosk)

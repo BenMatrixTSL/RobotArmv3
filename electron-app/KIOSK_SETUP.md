@@ -69,11 +69,16 @@ sudo ./install-kiosk-service.sh /opt/RobotArm/electron-app
 
 ## Useful commands
 
+The kiosk runs as a **user** service (after desktop login). Use these as `mxadmin` — **not** `sudo systemctl`:
+
 ```bash
-sudo systemctl status robot-arm-kiosk.service
-sudo systemctl restart robot-arm-kiosk.service
-sudo systemctl stop robot-arm-kiosk.service
+systemctl --user status robot-arm-kiosk.service
+systemctl --user restart robot-arm-kiosk.service
+systemctl --user stop robot-arm-kiosk.service
+journalctl --user -u robot-arm-kiosk.service -n 40 --no-pager
 ```
+
+Do **not** use `/etc/systemd/system/robot-arm-kiosk.service` — that causes `Invalid MIT-MAGIC-COOKIE-1 key` on Pi OS Wayland.
 
 Test without systemd (logged into the desktop):
 
@@ -94,7 +99,8 @@ sudo ./uninstall-kiosk-service.sh
 | Black screen / no browser | Enable desktop auto-login; reboot; check `sudo journalctl -u robot-arm-kiosk.service -e` |
 | UI loads but “Disconnected” | `sudo systemctl status st3215-server.service` — server must be running on port 8080 |
 | `DISPLAY` errors | You are not booting to the desktop, or no user is logged in — enable **auto-login** and reboot |
-| Service `activating (auto-restart)` | `sudo journalctl -u robot-arm-kiosk.service -n 40 --no-pager` — often display not ready at boot; reinstall after `git pull` |
+| `MIT-MAGIC-COOKIE-1` / `Missing X server` | Old **system** service — run `sudo ./install-kiosk-service.sh` again (installs **user** service) and reboot |
+| Service `activating (auto-restart)` | `journalctl --user -u robot-arm-kiosk.service -n 40` — enable desktop **auto-login**, then reboot |
 | Chromium missing | `sudo apt install -y chromium` |
 
 ## Differences from Electron on a PC

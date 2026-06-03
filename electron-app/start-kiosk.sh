@@ -1,24 +1,18 @@
 #!/bin/bash
 #
 # Serve the robot arm UI over HTTP and open Chromium kiosk mode.
+# Run from a graphical login session (desktop auto-login), not as a system service.
 #
 #   ./start-kiosk.sh
-#   ROBOT_ARM_KIOSK_SCREENS=all ./start-kiosk.sh   # one window per monitor (needs 2+ HDMI)
-#
-# Needs a desktop session and the ST3215 server on port 8080.
+#   ROBOT_ARM_KIOSK_SCREENS=all ./start-kiosk.sh
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PORT="${ROBOT_ARM_KIOSK_PORT:-3080}"
 KIOSK_URL="http://127.0.0.1:${PORT}/index.html?kiosk=1"
-# 1 = single window (default, most reliable) | 2 | all
 KIOSK_SCREENS="${ROBOT_ARM_KIOSK_SCREENS:-1}"
 
-CHROMIUM_FLAGS=(
-    --disable-dev-shm-usage
-    --disable-gpu
-    --no-first-run
-    --no-default-browser-check
-)
+CHROMIUM_FLAGS=()
+CHROMIUM_USE_WAYLAND=0
 
 find_chromium() {
     if command -v chromium >/dev/null 2>&1; then
@@ -32,42 +26,76 @@ find_chromium() {
     return 1
 }
 
-setup_display_env() {
+find_xauthority_file() {
+    if [ -n "$XAUTHORITY" ] && [ -f "$XAUTHORITY" ]; then
+        echo "$XAUTHORITY"
+        return 0
+    fi
+    if [ -f "$HOME/.Xauthority" ]; then
+        echo "$HOME/.Xauthority"
+        return 0
+    fi
+    if [ -n "$XDG_RUNTIME_DIR" ]; then
+        local f
+        for f in "$XDG_RUNTIME_DIR"/.mutter-Xwaylandauth.*; do
+            if [ -f "$f" ]; then
+                echo "$f"
+                return 0
+            fi
+        done
+    fi
+    return 1
+}
+
+build_chromium_flags() {
+    CHROMIUM_FLAGS=(
+        --disable-dev-shm-usage
+        --disable-gpu
+        --no-first-run
+        --no-default-browser-check
+    )
+    if [ "$CHROMIUM_USE_WAYLAND" = "1" ]; then
+        CHROMIUM_FLAGS+=(--ozone-platform=wayland)
+    fi
+}
+
+# Call again right before starting Chromium (session may be ready now).
+prepare_chromium_display() {
     local uid
+    local auth
     uid="$(id -u)"
 
     if [ -z "$XDG_RUNTIME_DIR" ] && [ -d "/run/user/$uid" ]; then
         export XDG_RUNTIME_DIR="/run/user/$uid"
     fi
 
+    CHROMIUM_USE_WAYLAND=0
+
     if [ -n "$XDG_RUNTIME_DIR" ] && [ -S "$XDG_RUNTIME_DIR/wayland-0" ]; then
         export WAYLAND_DISPLAY="${WAYLAND_DISPLAY:-wayland-0}"
-        CHROMIUM_FLAGS+=(--ozone-platform=wayland)
-        echo "Kiosk: Wayland session ($WAYLAND_DISPLAY)"
-    fi
-
-    if [ -z "$DISPLAY" ]; then
-        export DISPLAY=:0
-    fi
-
-    if [ -z "$XAUTHORITY" ] || [ ! -f "$XAUTHORITY" ]; then
-        if [ -f "$HOME/.Xauthority" ]; then
-            export XAUTHORITY="$HOME/.Xauthority"
+        CHROMIUM_USE_WAYLAND=1
+        echo "Kiosk: using Wayland ($WAYLAND_DISPLAY)"
+    else
+        export DISPLAY="${DISPLAY:-:0}"
+        auth="$(find_xauthority_file || true)"
+        if [ -n "$auth" ]; then
+            export XAUTHORITY="$auth"
         fi
+        echo "Kiosk: using X11 (DISPLAY=$DISPLAY, XAUTHORITY=${XAUTHORITY:-<none>})"
     fi
 
-    echo "Kiosk: DISPLAY=$DISPLAY  XAUTHORITY=${XAUTHORITY:-<none>}  XDG_RUNTIME_DIR=${XDG_RUNTIME_DIR:-<none>}"
+    build_chromium_flags
 }
 
 wait_for_display() {
     local attempt=0
-    local max_attempts=45
+    local max_attempts=30
 
     while [ "$attempt" -lt "$max_attempts" ]; do
         if [ -n "$XDG_RUNTIME_DIR" ] && [ -S "$XDG_RUNTIME_DIR/wayland-0" ]; then
             return 0
         fi
-        if command -v xdpyinfo >/dev/null 2>&1; then
+        if command -v xdpyinfo >/dev/null 2>&1 && [ -n "$DISPLAY" ]; then
             if xdpyinfo -display "$DISPLAY" >/dev/null 2>&1; then
                 return 0
             fi
@@ -76,8 +104,8 @@ wait_for_display() {
         sleep 2
     done
 
-    echo "Kiosk: warning — display not confirmed ready; starting Chromium anyway." >&2
-    return 0
+    echo "Kiosk: warning — display not ready yet." >&2
+    return 1
 }
 
 MONITOR_LIST=()
@@ -86,8 +114,12 @@ load_monitors_from_xrandr() {
     MONITOR_LIST=()
 
     if ! command -v xrandr >/dev/null 2>&1; then
-        echo "Kiosk: xrandr not found — single window mode."
         return 1
+    fi
+
+    local old_display="$DISPLAY"
+    if [ -z "$DISPLAY" ]; then
+        export DISPLAY=:0
     fi
 
     while IFS= read -r line; do
@@ -99,6 +131,8 @@ load_monitors_from_xrandr() {
                 ;;
         esac
     done < <(xrandr --query 2>/dev/null || true)
+
+    export DISPLAY="$old_display"
 
     if [ "${#MONITOR_LIST[@]}" -eq 0 ]; then
         return 1
@@ -125,7 +159,6 @@ pick_monitors_to_use() {
     fi
 
     if [ "$count" -lt 2 ]; then
-        echo "Kiosk: only one monitor — single window mode."
         return 1
     fi
 
@@ -135,7 +168,7 @@ pick_monitors_to_use() {
         i=$((i + 1))
     done
 
-    echo "Kiosk: ${#MONITORS_TO_USE[@]} Chromium window(s) (screens=$KIOSK_SCREENS)."
+    echo "Kiosk: ${#MONITORS_TO_USE[@]} Chromium window(s)."
     return 0
 }
 
@@ -143,6 +176,13 @@ launch_chromium() {
     local profile_dir="$1"
     shift
     local extra_args=("$@")
+    local saved_display="$DISPLAY"
+
+    prepare_chromium_display
+
+    if [ "$CHROMIUM_USE_WAYLAND" = "1" ]; then
+        unset DISPLAY
+    fi
 
     mkdir -p "$profile_dir"
 
@@ -157,6 +197,8 @@ launch_chromium() {
         --disable-restore-session-state \
         --start-fullscreen \
         "$KIOSK_URL"
+
+    export DISPLAY="$saved_display"
 }
 
 CHROMIUM="$(find_chromium || true)"
@@ -165,8 +207,12 @@ if [ -z "$CHROMIUM" ]; then
     exit 1
 fi
 
-setup_display_env
-wait_for_display
+prepare_chromium_display
+
+if ! wait_for_display; then
+    echo "Kiosk: enable desktop auto-login for $USER and reboot, then try again." >&2
+    exit 1
+fi
 
 PROFILE_BASE="${HOME}/.robot-arm-kiosk"
 

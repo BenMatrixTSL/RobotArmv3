@@ -1,0 +1,20 @@
+# User systemd unit — runs in mxadmin's graphical login session (correct Wayland/X11 auth).
+# install-kiosk-service.sh installs this to ~/.config/systemd/user/
+# Do not use the old system-wide /etc/systemd/system/robot-arm-kiosk.service.
+
+[Unit]
+Description=Robot Arm Control UI (Chromium kiosk)
+After=graphical-session.target
+PartOf=graphical-session.target
+
+[Service]
+Type=simple
+Environment=ROBOT_ARM_KIOSK_PORT=KIOSK_PORT
+Environment=ROBOT_ARM_KIOSK_SCREENS=KIOSK_SCREENS
+ExecStartPre=/bin/sleep 8
+ExecStart=INSTALL_DIR/start-kiosk.sh
+Restart=on-failure
+RestartSec=15
+
+[Install]
+WantedBy=graphical-session.target
