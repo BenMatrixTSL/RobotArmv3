@@ -21,8 +21,8 @@ set -e
 
 SERVICE_NAME="robot-arm-kiosk.service"
 KIOSK_PORT="3080"
-# all | 2 | 1 — see KIOSK_SETUP.md
-KIOSK_SCREENS="${ROBOT_ARM_KIOSK_SCREENS:-all}"
+# 1 = single screen (default) | 2 | all — see KIOSK_SETUP.md
+KIOSK_SCREENS="${ROBOT_ARM_KIOSK_SCREENS:-1}"
 INSTALL_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 if [ -n "$1" ]; then
@@ -60,6 +60,8 @@ if ! id "$SERVICE_USER" &>/dev/null; then
     echo "Error: user '$SERVICE_USER' does not exist."
     exit 1
 fi
+
+SERVICE_UID="$(id -u "$SERVICE_USER")"
 
 if ! command -v python3 >/dev/null; then
     echo "Error: python3 is not installed."
@@ -102,6 +104,7 @@ echo "Step 2: Install systemd service"
 TEMP_SERVICE="/tmp/$SERVICE_NAME"
 sed -e "s|INSTALL_DIR|$INSTALL_DIR|g" \
     -e "s|SERVICE_USER|$SERVICE_USER|g" \
+    -e "s|SERVICE_UID|$SERVICE_UID|g" \
     -e "s|KIOSK_PORT|$KIOSK_PORT|g" \
     -e "s|KIOSK_SCREENS|$KIOSK_SCREENS|g" \
     "$INSTALL_DIR/robot-arm-kiosk.service" > "$TEMP_SERVICE"

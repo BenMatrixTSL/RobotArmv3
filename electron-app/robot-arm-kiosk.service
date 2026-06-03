@@ -13,12 +13,16 @@ Group=SERVICE_USER
 WorkingDirectory=INSTALL_DIR
 Environment=DISPLAY=:0
 Environment=XAUTHORITY=/home/SERVICE_USER/.Xauthority
+Environment=XDG_RUNTIME_DIR=/run/user/SERVICE_UID
 Environment=ROBOT_ARM_KIOSK_PORT=KIOSK_PORT
-# Screens: all = one Chromium per monitor (HDMI-1 and HDMI-2) | 2 = first two | 1 = single fullscreen
 Environment=ROBOT_ARM_KIOSK_SCREENS=KIOSK_SCREENS
+# Wait for desktop session / Wayland socket after boot
+ExecStartPre=/bin/sleep 20
 ExecStart=INSTALL_DIR/start-kiosk.sh
 Restart=on-failure
 RestartSec=15
+StandardOutput=journal
+StandardError=journal
 
 [Install]
 WantedBy=graphical.target

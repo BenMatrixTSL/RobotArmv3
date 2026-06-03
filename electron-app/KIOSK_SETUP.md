@@ -12,7 +12,7 @@ The ST3215 server (`raspberry-pi-control-st3215`) must still run separately — 
 
 ### Two displays (HDMI-1 and HDMI-2)
 
-By default the installer sets `ROBOT_ARM_KIOSK_SCREENS=all`. When **two monitors** are connected, the script:
+By default the installer sets `ROBOT_ARM_KIOSK_SCREENS=1` (one fullscreen window — most reliable at boot). For **two monitors**, set `ROBOT_ARM_KIOSK_SCREENS=all` when installing. When two monitors are connected, the script:
 
 - Reads their position and size with `xrandr`
 - Starts **one separate Chromium instance per screen** (each with its own profile folder)
@@ -93,7 +93,8 @@ sudo ./uninstall-kiosk-service.sh
 |--------|-------------|
 | Black screen / no browser | Enable desktop auto-login; reboot; check `sudo journalctl -u robot-arm-kiosk.service -e` |
 | UI loads but “Disconnected” | `sudo systemctl status st3215-server.service` — server must be running on port 8080 |
-| `DISPLAY` errors | You are not booting to the desktop, or no user is logged in |
+| `DISPLAY` errors | You are not booting to the desktop, or no user is logged in — enable **auto-login** and reboot |
+| Service `activating (auto-restart)` | `sudo journalctl -u robot-arm-kiosk.service -n 40 --no-pager` — often display not ready at boot; reinstall after `git pull` |
 | Chromium missing | `sudo apt install -y chromium` |
 
 ## Differences from Electron on a PC
