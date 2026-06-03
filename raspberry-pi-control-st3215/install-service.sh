@@ -12,6 +12,10 @@
 #
 # Optional: install from a different folder
 #   sudo ./install-service.sh /opt/RobotArm/raspberry-pi-control-st3215
+#
+# Safe to re-run after "git pull" — fixes /opt permissions, runs npm install,
+# refreshes the systemd unit, and restarts the server. Do not run "npm install"
+# by hand in /opt unless you use sudo; use this script instead.
 
 set -e
 
@@ -69,6 +73,8 @@ echo "Service user:    $SERVICE_USER"
 echo "Node:            $NODE_PATH"
 echo "Log folder:      $LOG_DIR"
 echo ""
+echo "(Re-running this script is OK — use it to upgrade after git pull.)"
+echo ""
 
 # Serial port group
 if getent group dialout >/dev/null; then
@@ -76,13 +82,19 @@ if getent group dialout >/dev/null; then
     echo "  User $SERVICE_USER added to dialout group (serial port access)."
 fi
 
-echo "Step 1: npm install"
+echo "Step 1: Fix folder ownership (needed if files are root-owned under /opt)"
+chown -R "$SERVICE_USER:$SERVICE_USER" "$INSTALL_DIR"
+echo "  $INSTALL_DIR owned by $SERVICE_USER"
+echo ""
+
+echo "Step 2: npm install"
 cd "$INSTALL_DIR"
 sudo -u "$SERVICE_USER" npm install
 echo "  Done."
 echo ""
 
-echo "Step 2: Create log directory"
+echo "Step 3: Create log directory"
+
 mkdir -p "$LOG_DIR"
 chown "$SERVICE_USER:$SERVICE_USER" "$LOG_DIR"
 chmod 755 "$LOG_DIR"
@@ -91,7 +103,7 @@ chown "$SERVICE_USER:$SERVICE_USER" "$LOG_DIR/server.log" "$LOG_DIR/server-debug
 echo "  Done."
 echo ""
 
-echo "Step 3: Install systemd service"
+echo "Step 4: Install systemd service"
 TEMP_SERVICE="/tmp/$SERVICE_NAME"
 sed -e "s|INSTALL_DIR|$INSTALL_DIR|g" \
     -e "s|SERVICE_USER|$SERVICE_USER|g" \
@@ -103,7 +115,7 @@ rm -f "$TEMP_SERVICE"
 echo "  Copied to /etc/systemd/system/$SERVICE_NAME"
 echo ""
 
-echo "Step 4: Enable and start service"
+echo "Step 5: Enable and start service"
 systemctl daemon-reload
 systemctl enable "$SERVICE_NAME"
 systemctl restart "$SERVICE_NAME"

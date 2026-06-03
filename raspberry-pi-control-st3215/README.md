@@ -136,6 +136,28 @@ Remove the service:
 sudo ./uninstall-service.sh
 ```
 
+### Update an existing install (after git pull)
+
+If the app is already under `/opt/RobotArm`, **do not run `npm install` as your normal user** — files may be owned by `root` and you will get `EACCES` on `package-lock.json`.
+
+On the Pi:
+
+```bash
+cd /opt/RobotArm
+sudo git pull origin main
+
+cd raspberry-pi-control-st3215
+sudo ./install-service.sh /opt/RobotArm/raspberry-pi-control-st3215
+```
+
+The installer is safe to re-run. It fixes ownership of the server folder, runs `npm install` as the service user, refreshes systemd, and restarts the server.
+
+If you only need a quick restart after pulling (no dependency changes):
+
+```bash
+sudo systemctl restart st3215-server.service
+```
+
 The server will:
 1. Initialize all ST3215 servo controllers
 2. Initialize optional end-tool controller (ID `64`)
