@@ -17,6 +17,8 @@ CapabilityBoundingSet=CAP_NET_BIND_SERVICE
 Environment=ROBOT_ARM_WEB_PORT=WEB_PORT
 Environment=ROBOT_ARM_WEB_BIND=WEB_BIND
 ExecStart=INSTALL_DIR/start-web-server.sh
+StandardOutput=journal
+StandardError=journal
 Restart=on-failure
 RestartSec=5
 

@@ -83,6 +83,16 @@ echo "      Enable auto-login in Raspberry Pi Configuration if the browser does 
 echo ""
 
 echo "Step 1: Fix folder ownership"
+REPO_DIR="$INSTALL_DIR"
+while [ "$REPO_DIR" != "/" ]; do
+    if [ -d "$REPO_DIR/.git" ]; then
+        chown -R "$SERVICE_USER:$SERVICE_USER" "$REPO_DIR"
+        sudo -u "$SERVICE_USER" git config --global --add safe.directory "$REPO_DIR" 2>/dev/null || true
+        echo "  Git repo owned by $SERVICE_USER: $REPO_DIR"
+        break
+    fi
+    REPO_DIR="$(dirname "$REPO_DIR")"
+done
 chown -R "$SERVICE_USER:$SERVICE_USER" "$INSTALL_DIR"
 chmod +x "$INSTALL_DIR/start-kiosk.sh"
 echo "  Done."

@@ -83,6 +83,16 @@ if getent group dialout >/dev/null; then
 fi
 
 echo "Step 1: Fix folder ownership (needed if files are root-owned under /opt)"
+REPO_DIR="$INSTALL_DIR"
+while [ "$REPO_DIR" != "/" ]; do
+    if [ -d "$REPO_DIR/.git" ]; then
+        chown -R "$SERVICE_USER:$SERVICE_USER" "$REPO_DIR"
+        sudo -u "$SERVICE_USER" git config --global --add safe.directory "$REPO_DIR" 2>/dev/null || true
+        echo "  Git repo owned by $SERVICE_USER: $REPO_DIR"
+        break
+    fi
+    REPO_DIR="$(dirname "$REPO_DIR")"
+done
 chown -R "$SERVICE_USER:$SERVICE_USER" "$INSTALL_DIR"
 echo "  $INSTALL_DIR owned by $SERVICE_USER"
 echo ""

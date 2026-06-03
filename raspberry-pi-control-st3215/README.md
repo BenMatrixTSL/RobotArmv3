@@ -138,19 +138,29 @@ sudo ./uninstall-service.sh
 
 ### Update an existing install (after git pull)
 
-If the app is already under `/opt/RobotArm`, **do not run `npm install` as your normal user** — files may be owned by `root` and you will get `EACCES` on `package-lock.json`.
+**Do not use `sudo git pull`** — it makes `.git` owned by root and breaks pulls for your normal user.
 
-On the Pi:
+On the Pi (as `mxadmin`, not root):
 
 ```bash
 cd /opt/RobotArm
-sudo git pull origin main
+git pull origin main
 
 cd raspberry-pi-control-st3215
 sudo ./install-service.sh /opt/RobotArm/raspberry-pi-control-st3215
 ```
 
-The installer is safe to re-run. It fixes ownership of the server folder, runs `npm install` as the service user, refreshes systemd, and restarts the server.
+If you see `dubious ownership` or `Permission denied` on `.git/FETCH_HEAD`, fix once:
+
+```bash
+cd /opt/RobotArm
+sudo ./fix-repo-permissions.sh
+git pull origin main
+```
+
+The installer is safe to re-run. It fixes ownership of the whole git repo and server folder, runs `npm install` as the service user, refreshes systemd, and restarts the server.
+
+**Do not run `npm install` by hand in `/opt`** if files are root-owned — use the install script instead.
 
 If you only need a quick restart after pulling (no dependency changes):
 
