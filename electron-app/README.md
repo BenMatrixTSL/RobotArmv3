@@ -54,6 +54,23 @@ chmod +x install-kiosk-service.sh start-kiosk.sh
 sudo ./install-kiosk-service.sh
 ```
 
+### HTTP on port 80 (Python web server)
+
+Serve this folder on port 80 so other devices can open `http://<pi-ip>/index.html`:
+
+```bash
+sudo ./start-web-server.sh
+```
+
+Install as a boot service:
+
+```bash
+chmod +x install-web-server-service.sh start-web-server.sh
+sudo ./install-web-server-service.sh
+```
+
+The kiosk script uses port **3080** locally; this service uses port **80** for the network.
+
 ## Offline Operation
 
 The application is designed to work **completely offline** after initial setup. See [OFFLINE_SETUP.md](./OFFLINE_SETUP.md) for detailed information.

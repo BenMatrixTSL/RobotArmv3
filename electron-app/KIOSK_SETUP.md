@@ -40,6 +40,10 @@ Check monitor layout:
 xrandr --query
 ```
 
+## HTTP on port 80 (optional)
+
+To serve the same UI on port 80 (e.g. for phones/tablets on the LAN), use `start-web-server.sh` or `install-web-server-service.sh` — see `README.md`. That is separate from the kiosk (port 3080).
+
 ## Requirements
 
 - Raspberry Pi OS **with desktop** (not Lite-only, unless you add a display server yourself).
