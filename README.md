@@ -9,8 +9,9 @@ Legacy PIC/stepper paths have been removed from the active repository layout.
 
 - `raspberry-pi-control-st3215/`  
   Node.js WebSocket server and ST3215 bus controller used on Raspberry Pi.
-- `electron-app/`  
+- `electron-app/`
   Electron desktop app used to control the arm and exchange commands with the Pi server.
+  On a Pi with a touchscreen, use **Chromium kiosk mode** (`electron-app/KIOSK_SETUP.md`) instead of Electron.
 
 ## ST3215 Control Stack (Current)
 

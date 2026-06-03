@@ -42,6 +42,18 @@ A comprehensive Electron-based desktop application for controlling a robot arm v
    npm start
    ```
 
+### Raspberry Pi touchscreen (Chromium kiosk)
+
+To show this UI fullscreen on the Pi at boot (without running heavy Electron on the Pi), see **[KIOSK_SETUP.md](KIOSK_SETUP.md)**.
+
+Quick install on the Pi (after the ST3215 server is installed):
+
+```bash
+cd electron-app
+chmod +x install-kiosk-service.sh start-kiosk.sh
+sudo ./install-kiosk-service.sh
+```
+
 ## Offline Operation
 
 The application is designed to work **completely offline** after initial setup. See [OFFLINE_SETUP.md](./OFFLINE_SETUP.md) for detailed information.

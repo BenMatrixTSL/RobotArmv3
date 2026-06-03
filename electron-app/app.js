@@ -564,6 +564,20 @@ document.addEventListener('DOMContentLoaded', function() {
         console.error('Failed to auto-load demo kinematics:', error);
     }
 
+    // Chromium kiosk on the Pi (?kiosk=1): connect to local WebSocket server
+    if (window.location.search.indexOf('kiosk=1') >= 0) {
+        document.body.classList.add('kiosk-mode');
+        const addrInput = document.getElementById('piAddress');
+        if (addrInput) {
+            addrInput.value = '127.0.0.1';
+        }
+        setTimeout(function () {
+            if (typeof useLocalPiConnectionSettings === 'function') {
+                useLocalPiConnectionSettings();
+            }
+        }, 1500);
+    }
+
     // Local Raspberry Pi panel (only shown on the Pi)
     try {
         if (typeof toggleLocalPiEthernetModeFields === 'function') {

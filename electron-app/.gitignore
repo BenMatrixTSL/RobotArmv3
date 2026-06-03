@@ -5,6 +5,9 @@ node_modules/
 dist/
 out/
 
+# Chromium kiosk profiles (created on the Pi)
+.kiosk-profile-*/
+
 # Logs
 *.log
 npm-debug.log*
