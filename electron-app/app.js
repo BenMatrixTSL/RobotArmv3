@@ -443,32 +443,31 @@ function generateJointStatusCards() {
         }
 
         html += `
-            <div class="joint-status-card">
-                <h3>Joint ${i}</h3>
-                <div class="joint-status-values">
-                    <div class="status-value">Angle: <span id="joint${i}Angle">0.0</span>°</div>
-                    <div class="status-value">Position: <span id="joint${i}Position">0</span></div>
-                    <div class="status-value">Moving: <span id="joint${i}Moving">No</span></div>
-                    <div class="status-value">Speed: <span id="joint${i}SpeedDisplay">0</span> degrees/s</div>
-                    <div class="status-value">Load: <span id="joint${i}Load">0.0</span>%</div>
-                    <div class="status-value">Voltage: <span id="joint${i}Voltage">0.0</span>V</div>
-                    <div class="status-value">Temperature: <span id="joint${i}Temperature">0</span>°C</div>
-                    <div class="status-value">Torque: <span id="joint${i}Torque">Off</span></div>
+            <div class="joint-status-card joint-card-compact">
+                <div class="joint-card-header">
+                    <span class="joint-card-title">J${i}</span>
+                    <button type="button" class="joint-details-toggle" data-joint-details-toggle="${i}" onclick="toggleJointDetails(${i})" aria-expanded="false" title="Show position, load, voltage and temperature">+</button>
                 </div>
-                <div class="joint-control-fields">
-                    <div class="joint-field-group">
-                        <label for="joint${i}Target">Angle (degrees)${limitsLabel}:</label>
-                        <input type="number" id="joint${i}Target" value="0" step="0.1">
-                    </div>
-                    <div class="joint-field-group">
-                        <label for="joint${i}Speed">Speed (degrees/s):</label>
-                        <input type="number" id="joint${i}Speed" value="45" min="0" max="300" step="1">
-                    </div>
-                    <div class="joint-field-group">
-                        <label for="joint${i}Acceleration">Acceleration (0-254):</label>
+                <div class="joint-status-summary">
+                    <div class="joint-angle-line"><span id="joint${i}Angle" class="joint-angle-value">0.0</span>°</div>
+                    <div class="status-value compact">Moving: <span id="joint${i}Moving">No</span></div>
+                    <div class="status-value compact">Torque: <span id="joint${i}Torque">Off</span></div>
+                </div>
+                <div class="joint-status-details" id="joint${i}Details" hidden>
+                    <div class="status-value compact">Position: <span id="joint${i}Position">0</span></div>
+                    <div class="status-value compact">Speed: <span id="joint${i}SpeedDisplay">0</span>°/s</div>
+                    <div class="status-value compact">Load: <span id="joint${i}Load">0.0</span>%</div>
+                    <div class="status-value compact">Voltage: <span id="joint${i}Voltage">0.0</span>V</div>
+                    <div class="status-value compact">Temperature: <span id="joint${i}Temperature">0</span>°C</div>
+                    <div class="joint-field-group compact">
+                        <label for="joint${i}Acceleration">Accel (0-254):</label>
                         <input type="number" id="joint${i}Acceleration" value="50" min="0" max="254" step="1">
                     </div>
-                    <button class="btn btn-small" onclick="moveJoint(${i})">Move</button>
+                </div>
+                <div class="joint-control-fields joint-control-compact">
+                    <input type="number" id="joint${i}Target" value="0" step="0.1" title="Target angle${limitsLabel}">
+                    <input type="number" id="joint${i}Speed" value="45" min="0" max="300" step="1" title="Speed (degrees/s)">
+                    <button class="btn btn-small" onclick="moveJoint(${i})">Go</button>
                 </div>
             </div>
         `;
@@ -484,8 +483,27 @@ function generateJointStatusCards() {
 function generateJointControls() {
     const container = document.getElementById('jointControlsContainer');
     if (!container) return;
-    
-    container.innerHTML = '<p class="info-text">Joint controls are now combined with the status cards above.</p>';
+
+    container.innerHTML = '';
+}
+
+/**
+ * Show or hide extra joint details (position, load, voltage, temperature).
+ * @param {number} jointNumber - Joint number (1-based)
+ */
+function toggleJointDetails(jointNumber) {
+    const details = document.getElementById('joint' + jointNumber + 'Details');
+    const button = document.querySelector('[data-joint-details-toggle="' + jointNumber + '"]');
+
+    if (!details || !button) {
+        return;
+    }
+
+    const willShow = details.hidden;
+    details.hidden = !willShow;
+    button.textContent = willShow ? '−' : '+';
+    button.setAttribute('aria-expanded', willShow ? 'true' : 'false');
+    button.title = willShow ? 'Hide details' : 'Show position, load, voltage and temperature';
 }
 
 /**

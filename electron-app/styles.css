@@ -459,12 +459,12 @@ header h1 {
     }
 }
 
-/* Joint Status Grid */
+/* Joint Status Grid — 6 joints on one row on wide screens */
 .joint-status-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 15px;
-    margin-bottom: 30px;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 8px;
+    margin-bottom: 20px;
 }
 
 .joint-status-card {
@@ -472,6 +472,110 @@ header h1 {
     padding: 15px;
     border-radius: 8px;
     border-left: 4px solid #3498db;
+}
+
+.joint-card-compact {
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+}
+
+.joint-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.joint-card-title {
+    font-weight: 700;
+    font-size: 14px;
+    color: #2c3e50;
+}
+
+.joint-details-toggle {
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border: 1px solid #bdc3c7;
+    border-radius: 4px;
+    background: #fff;
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+    color: #2c3e50;
+}
+
+.joint-details-toggle:hover {
+    background: #f8f9fa;
+}
+
+.joint-status-summary {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.joint-angle-line {
+    font-size: 12px;
+    color: #555;
+}
+
+.joint-angle-value {
+    font-size: 18px;
+    font-weight: bold;
+    color: #27ae60;
+}
+
+.joint-status-details {
+    font-size: 11px;
+    padding-top: 4px;
+    border-top: 1px dashed #bdc3c7;
+}
+
+.joint-status-details[hidden] {
+    display: none;
+}
+
+.joint-control-compact {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    gap: 4px;
+    align-items: center;
+}
+
+.joint-control-compact input {
+    padding: 4px 6px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 12px;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+.joint-control-compact .btn-small {
+    padding: 4px 8px;
+    font-size: 11px;
+    min-width: 0;
+    white-space: nowrap;
+}
+
+.joint-field-group.compact {
+    min-width: 0;
+    margin-top: 4px;
+}
+
+.joint-field-group.compact label {
+    font-size: 11px;
+}
+
+.joint-field-group.compact input {
+    padding: 4px 6px;
+    font-size: 11px;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .joint-status-card h3 {
@@ -484,9 +588,30 @@ header h1 {
     font-size: 14px;
 }
 
+.status-value.compact {
+    margin: 0;
+    font-size: 11px;
+}
+
 .status-value span {
     font-weight: bold;
     color: #27ae60;
+}
+
+#jointControlsContainer:empty {
+    display: none;
+}
+
+@media (max-width: 1200px) {
+    .joint-status-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 900px) {
+    .joint-status-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
 }
 
 /* Control Panel */
@@ -1167,7 +1292,7 @@ header h1 {
     }
 
     .joint-status-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     .joint-controls {
