@@ -20,6 +20,8 @@ Environment=NODE_ENV=production
 # Restart whenever the process stops (crash, exit, or serial error during startup)
 Restart=always
 RestartSec=5
+# Do not wait indefinitely if serial shutdown is slow
+TimeoutStopSec=15
 # Allow access to /dev/serial0 and USB serial adapters
 SupplementaryGroups=dialout
 # Also capture stdout/stderr in a second log file

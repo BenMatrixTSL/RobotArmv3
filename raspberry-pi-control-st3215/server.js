@@ -166,6 +166,11 @@ const serverDiagnostics = {
 
 // WebSocket clients (for pushing status to every app instance)
 const connectedClients = new Set();
+let wss = null;
+let serverShuttingDown = false;
+const SHUTDOWN_BUS_WAIT_MS = 2000;
+const SHUTDOWN_SERIAL_CLOSE_MS = 2000;
+const SHUTDOWN_FORCE_EXIT_MS = 8000;
 
 // Cached servo discovery info (getJointConfigs — no bus read per client)
 let cachedJointConfigs = null;
@@ -583,6 +588,11 @@ async function processWriteQueue() {
  */
 function enqueueBusWrite(commandFn, meta) {
     return new Promise((resolve, reject) => {
+        if (serverShuttingDown) {
+            reject(new Error('Server is shutting down'));
+            return;
+        }
+
         if (busWriteQueue.length >= MAX_BUS_WRITE_QUEUE_SIZE) {
             serverDiagnostics.busWritesRejected++;
             console.warn('Bus write queue full (' + busWriteQueue.length + ' items), rejecting command');
@@ -762,6 +772,10 @@ async function applyJointAccelerationIfChanged(servo, jointIndex, acc) {
  * WebSocket instant commands never run here — only scheduled servo bus work.
  */
 async function runBusTick() {
+    if (serverShuttingDown) {
+        return;
+    }
+
     if (busTickInProgress) {
         serverDiagnostics.busTicksSkipped++;
         return;
@@ -774,7 +788,7 @@ async function runBusTick() {
     try {
         let wroteThisTick = false;
 
-        for (let w = 0; w < MAX_BUS_WRITES_PER_TICK && busWriteQueue.length > 0; w++) {
+        for (let w = 0; w < MAX_BUS_WRITES_PER_TICK && busWriteQueue.length > 0 && !serverShuttingDown; w++) {
             const { commandFn, resolve, reject } = busWriteQueue.shift();
             serverDiagnostics.busWriteQueueLength = busWriteQueue.length;
             const writeStart = Date.now();
@@ -1189,7 +1203,7 @@ function startServer() {
     console.log(`Starting WebSocket server on port ${PORT}...`);
     
     // Create WebSocket server
-    const wss = new WebSocket.Server({ port: PORT });
+    wss = new WebSocket.Server({ port: PORT });
     
     debugLog('Server listening on port ' + PORT);
     debugLog('Waiting for clients to connect...');
@@ -2243,6 +2257,71 @@ async function handleCommand(ws, data) {
 }
 
 /**
+ * Cancel queued and in-flight bus work so shutdown does not wait on the serial port.
+ */
+function abortPendingBusWork() {
+    serverShuttingDown = true;
+    stopBusTickLoop();
+
+    while (busWriteQueue.length > 0) {
+        const item = busWriteQueue.shift();
+        item.reject(new Error('Server shutting down'));
+    }
+    serverDiagnostics.busWriteQueueLength = 0;
+
+    while (writeQueue.length > 0) {
+        const item = writeQueue.shift();
+        item.reject(new Error('Server shutting down'));
+    }
+    isWriting = false;
+
+    for (let i = 0; i < servos.length; i++) {
+        const servo = servos[i];
+        if (servo && typeof servo.clearPendingBusTransaction === 'function') {
+            servo.clearPendingBusTransaction();
+        }
+    }
+    if (endTool && typeof endTool.clearPendingBusTransaction === 'function') {
+        endTool.clearPendingBusTransaction();
+    }
+}
+
+/**
+ * Wait briefly for an in-flight bus tick to finish.
+ * @returns {Promise<void>}
+ */
+async function waitForBusTickToFinish() {
+    const waitStart = Date.now();
+    while (busTickInProgress && Date.now() - waitStart < SHUTDOWN_BUS_WAIT_MS) {
+        await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+}
+
+/**
+ * Close the shared serial port with a timeout so systemctl stop does not hang.
+ * @returns {Promise<void>}
+ */
+async function closeSharedSerialPortWithTimeout() {
+    if (!sharedSerialPort || !sharedSerialPort.isOpen) {
+        return;
+    }
+
+    await Promise.race([
+        new Promise((resolve) => {
+            sharedSerialPort.close((error) => {
+                if (error) {
+                    console.error('Error closing shared serial port:', error.message);
+                } else {
+                    console.log('Shared serial port closed');
+                }
+                resolve();
+            });
+        }),
+        new Promise((resolve) => setTimeout(resolve, SHUTDOWN_SERIAL_CLOSE_MS))
+    ]);
+}
+
+/**
  * Cleanup function - called on exit
  */
 let shutdownInProgress = false;
@@ -2255,35 +2334,31 @@ async function cleanup(signalName) {
 
     debugLog('Shutting down... (signal: ' + (signalName || 'unknown') + ')');
 
-    stopBusTickLoop();
-    
-    // Stop all servos
-    for (let i = 0; i < servos.length; i++) {
-        if (servos[i] !== null) {
+    const forceExitTimer = setTimeout(() => {
+        debugLog('Shutdown timeout — forcing exit', true);
+        process.exit(0);
+    }, SHUTDOWN_FORCE_EXIT_MS);
+
+    try {
+        abortPendingBusWork();
+        await waitForBusTickToFinish();
+
+        if (wss) {
             try {
-                await servos[i].stopServo();
-                await servos[i].close();
+                wss.close();
             } catch (error) {
-                console.error(`Error closing servo ${i + 1}:`, error.message);
+                console.error('Error closing WebSocket server:', error.message);
             }
         }
+
+        // Close the serial port only — skip per-servo stop commands that can block on bus timeouts.
+        await closeSharedSerialPortWithTimeout();
+    } catch (error) {
+        debugLog('Shutdown error: ' + (error.message || error), true);
+    } finally {
+        clearTimeout(forceExitTimer);
+        process.exit(0);
     }
-    
-    // Close shared serial port
-    if (sharedSerialPort && sharedSerialPort.isOpen) {
-        await new Promise((resolve) => {
-            sharedSerialPort.close((error) => {
-                if (error) {
-                    console.error('Error closing shared serial port:', error.message);
-                } else {
-                    console.log('Shared serial port closed');
-                }
-                resolve();
-            });
-        });
-    }
-    
-    process.exit(0);
 }
 
 // Handle process termination (systemctl stop sends SIGTERM)
