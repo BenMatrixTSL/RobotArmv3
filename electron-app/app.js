@@ -40,6 +40,8 @@ let controlStatusInterval = null;
 let serverDiagnosticsInterval = null;
 // Last good joint status from server (avoids UI flicker if a poll times out)
 let lastGoodJointStatus = [];
+// Tracks the angle we last commanded for jog buttons (avoids stale UI reads)
+let jogCommandedAngles = [];
 let robotArm3D = null; // 3D visualization instance
 let useSimulatedAngles = false; // Whether to use simulated angles instead of real robot angles
 let simulatedAngles = [0, 0, 0, 0]; // Simulated joint angles
@@ -1397,14 +1399,19 @@ function initializeConnection() {
 function startStatusUpdates(isKioskView) {
     // Poll the server status cache at this interval. getStatus is cache-only on the server
     // (no bus read, no queue) so this is safe alongside WebSocket pushes.
-    let interval = parseInt(document.getElementById('updateInterval')?.value || '300', 10);
+    let interval = parseInt(document.getElementById('updateInterval')?.value || '150', 10);
 
     if (isNaN(interval)) {
-        interval = 300;
-    } else if (interval < 200) {
-        interval = 200;
+        interval = 150;
+    } else if (interval < 100) {
+        interval = 100;
     } else if (interval > 5000) {
         interval = 5000;
+    }
+
+    // Server already pushes status after each bus read — use a slower backup poll.
+    if (robotArmClient.serverPushesStatus) {
+        interval = Math.max(interval, 400);
     }
 
     stopStatusUpdates();
@@ -1795,6 +1802,7 @@ function updateJointStatus(joints) {
 
         if (hasFreshAngle) {
             lastGoodJointStatus[i] = joint;
+            jogCommandedAngles[i] = angleDegrees;
         } else if (lastGoodJointStatus[i]) {
             joint = Object.assign({}, lastGoodJointStatus[i], { readStale: true });
         }
@@ -2037,12 +2045,9 @@ function moveJoint(jointNumber) {
     // For single joint movements, move directly without dead zone checking.
     // Acceleration is applied on the server when you change it in Settings; do not
     // queue a separate bus command here (it delayed moves on the shared bus).
+    jogCommandedAngles[jointNumber - 1] = targetAngle;
+
     robotArmClient.moveJoint(jointNumber, targetAngle, speedStepsPerSecond)
-        .then(function(response) {
-            if (response && response.type === 'success' && response.message) {
-                showAppMessage(response.message);
-            }
-        })
         .catch(function(error) {
             showAppMessage('Move failed (joint ' + jointNumber + '): ' + error.message);
         });
@@ -2352,29 +2357,40 @@ function quickMove(jointNumber, direction) {
         showAppMessage('Not connected to Raspberry Pi');
         return;
     }
-    
-    // Get current angle from status display
-    const angleElement = document.getElementById(`joint${jointNumber}Angle`);
-    if (!angleElement) {
+
+    if (!robotArmClient.hasArmControl) {
+        showAppMessage('Read-only — use Take control on the Connection tab first');
         return;
     }
     
-    const currentAngle = parseFloat(angleElement.textContent) || 0;
-    
-    // Get step size
+    const jointIndex = jointNumber - 1;
     const stepSizeInput = document.getElementById('stepSize');
     const stepSize = parseFloat(stepSizeInput?.value || '1');
-    
-    // Calculate new angle
-    const newAngle = currentAngle + (direction * stepSize);
+    if (isNaN(stepSize) || stepSize <= 0) {
+        showAppMessage('Please enter a valid step size');
+        return;
+    }
 
-    // For single joint quick moves, move directly without dead zone checking
-    // This allows multiple joints to move simultaneously
-    const speedStepsPerSecond = (typeof degreesPerSecondToStepsPerSecond === 'function') ? 
-        degreesPerSecondToStepsPerSecond(45) : 
+    let currentAngle = jogCommandedAngles[jointIndex];
+    if (typeof currentAngle !== 'number' || isNaN(currentAngle)) {
+        const angleElement = document.getElementById('joint' + jointNumber + 'Angle');
+        currentAngle = parseFloat(angleElement ? angleElement.textContent : '0') || 0;
+    }
+
+    const newAngle = currentAngle + (direction * stepSize);
+    jogCommandedAngles[jointIndex] = newAngle;
+
+    const angleElement = document.getElementById('joint' + jointNumber + 'Angle');
+    if (angleElement) {
+        angleElement.textContent = newAngle.toFixed(2);
+    }
+
+    const speedStepsPerSecond = (typeof degreesPerSecondToStepsPerSecond === 'function') ?
+        degreesPerSecondToStepsPerSecond(45) :
         (typeof window !== 'undefined' && typeof window.degreesPerSecondToStepsPerSecond === 'function' ?
             window.degreesPerSecondToStepsPerSecond(45) : Math.round(45 * 11.37));
-    robotArmClient.moveJoint(jointNumber, newAngle, speedStepsPerSecond);
+
+    robotArmClient.moveJointJog(jointNumber, newAngle, speedStepsPerSecond);
 }
 
 // ===== XYZ Position Control Functions =====

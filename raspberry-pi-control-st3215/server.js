@@ -45,14 +45,16 @@ const PERF_DEBUG = false;
 const BUS_DIAGNOSTICS_LOG_INTERVAL_MS = parseInt(process.env.BUS_DIAGNOSTICS_LOG_INTERVAL_MS || '0', 10);
 
 // Minimum gap between bus ticks (ms). Ticks are chained after work finishes — not a fixed overlap.
-const STATUS_POLL_INTERVAL_MS = parseInt(process.env.STATUS_POLL_INTERVAL_MS || '100', 10);
-const MIN_BUS_TICK_GAP_MS = parseInt(process.env.MIN_BUS_TICK_GAP_MS || '20', 10);
+const STATUS_POLL_INTERVAL_MS = parseInt(process.env.STATUS_POLL_INTERVAL_MS || '80', 10);
+const MIN_BUS_TICK_GAP_MS = parseInt(process.env.MIN_BUS_TICK_GAP_MS || '12', 10);
+const JOINTS_PER_POLL_TICK = parseInt(process.env.JOINTS_PER_POLL_TICK || '2', 10);
 const MAX_BUS_WRITE_QUEUE_SIZE = 100;
 const MAX_BUS_WRITES_WHEN_IDLE = 0;
 const MAX_BUS_WRITES_WHEN_BUSY = 4;
-const SERVER_BUILD_ID = '2026-06-03-write-retry';
-const BUS_QUIET_BEFORE_MOVE_MS = 20;
-const BUS_QUIET_AFTER_MOVE_MS = 25;
+const SERVER_BUILD_ID = '2026-06-03-jog-refresh';
+const BUS_QUIET_BEFORE_MOVE_MS = 12;
+const BUS_QUIET_AFTER_MOVE_MS = 10;
+const BUS_QUIET_JOG_MS = 4;
 
 // Jump to the front of the bus write queue (ahead of status-related work).
 const PRIORITY_BUS_COMMANDS = {
@@ -153,6 +155,8 @@ let busTickLoopActive = false;
 let busTickInProgress = false;
 let busWriteQueue = [];
 let statusPollJointIndex = 0;
+const pendingImmediateMoves = {};
+let immediateMoveDrainRunning = false;
 let lastStatusBroadcastAt = 0;
 
 // Live metrics for debugging bus vs WebSocket load (see getServerDiagnostics).
@@ -679,13 +683,60 @@ function clearAllServoPendingTransactions() {
     }
 }
 
-async function runImmediateBusCommand(ws, data) {
+function scheduleImmediateBusCommand(ws, data) {
+    if (data.command === 'moveJoint' && data.joint !== undefined) {
+        const jointKey = String(data.joint);
+        const prev = pendingImmediateMoves[jointKey];
+        if (prev && prev.data.requestId !== undefined) {
+            try {
+                prev.ws.send(JSON.stringify({
+                    type: 'error',
+                    message: 'Superseded by newer move for joint ' + data.joint,
+                    requestId: prev.data.requestId
+                }));
+            } catch (sendError) {
+                // Client may have disconnected
+            }
+        }
+        pendingImmediateMoves[jointKey] = { ws: ws, data: data };
+        drainImmediateMoveQueue();
+        return;
+    }
+
+    runImmediateBusCommand(ws, data, false);
+}
+
+async function drainImmediateMoveQueue() {
+    if (immediateMoveDrainRunning) {
+        return;
+    }
+
+    immediateMoveDrainRunning = true;
+
+    try {
+        while (Object.keys(pendingImmediateMoves).length > 0) {
+            const jointKey = Object.keys(pendingImmediateMoves)[0];
+            const item = pendingImmediateMoves[jointKey];
+            delete pendingImmediateMoves[jointKey];
+            const moreAfterThis = Object.keys(pendingImmediateMoves).length > 0;
+            await runImmediateBusCommand(item.ws, item.data, moreAfterThis);
+        }
+    } finally {
+        immediateMoveDrainRunning = false;
+    }
+}
+
+async function runImmediateBusCommand(ws, data, moreMovesQueued) {
     await waitForBusTickToFinish();
 
     if (busTickTimer) {
         clearTimeout(busTickTimer);
         busTickTimer = null;
     }
+
+    const isRapidJog = moreMovesQueued === true;
+    const quietBefore = isRapidJog ? BUS_QUIET_JOG_MS : BUS_QUIET_BEFORE_MOVE_MS;
+    const quietAfter = isRapidJog ? BUS_QUIET_JOG_MS : BUS_QUIET_AFTER_MOVE_MS;
 
     const resumeLoop = busTickLoopActive;
     busTickLoopActive = false;
@@ -694,12 +745,12 @@ async function runImmediateBusCommand(ws, data) {
 
     try {
         clearAllServoPendingTransactions();
-        await new Promise((resolve) => setTimeout(resolve, BUS_QUIET_BEFORE_MOVE_MS));
+        await new Promise((resolve) => setTimeout(resolve, quietBefore));
 
         await handleCommand(ws, data);
         serverDiagnostics.immediateBusCommands++;
 
-        await new Promise((resolve) => setTimeout(resolve, BUS_QUIET_AFTER_MOVE_MS));
+        await new Promise((resolve) => setTimeout(resolve, quietAfter));
 
         debugLog('Immediate bus command OK: ' + data.command +
             (data.joint !== undefined ? ' joint=' + data.joint : '') +
@@ -932,12 +983,17 @@ async function runBusTick() {
             }
         }
 
-        if (busWriteQueue.length === 0 && !wroteThisTick) {
+        if (busWriteQueue.length === 0 && !wroteThisTick && immediateMoveDrainRunning === false) {
             const pollStart = Date.now();
-            await refreshSingleJointStatusFromBus(statusPollJointIndex);
-            statusPollJointIndex = (statusPollJointIndex + 1) % JOINT_COUNT;
+            for (let p = 0; p < JOINTS_PER_POLL_TICK; p++) {
+                await refreshSingleJointStatusFromBus(statusPollJointIndex);
+                statusPollJointIndex = (statusPollJointIndex + 1) % JOINT_COUNT;
+                if (p < JOINTS_PER_POLL_TICK - 1) {
+                    await new Promise((resolve) => setTimeout(resolve, 5));
+                }
+            }
             serverDiagnostics.statusPollJointIndex = statusPollJointIndex;
-            await new Promise((resolve) => setTimeout(resolve, 8));
+            await new Promise((resolve) => setTimeout(resolve, 5));
             broadcastStatusToClients();
             serverDiagnostics.statusPollsCompleted++;
             serverDiagnostics.lastStatusPollDurationMs = Date.now() - pollStart;
@@ -1404,7 +1460,7 @@ function startServer() {
                     return;
                 }
                 if (IMMEDIATE_BUS_COMMANDS[data.command]) {
-                    runImmediateBusCommand(ws, data);
+                    scheduleImmediateBusCommand(ws, data);
                     return;
                 }
                 // Other bus writes are scheduled on the tick loop — do not await here.
@@ -2147,8 +2203,10 @@ async function handleCommand(ws, data) {
                 await servo.moveToAngle(angle, moveSpeed);
                 serverDiagnostics.busMovesCompleted++;
 
-                // Round-robin polling updates position soon — skip an extra bus read here
-                // to avoid write-then-read collisions on the shared serial port.
+                const jointKey = String(data.joint);
+                if (!pendingImmediateMoves[jointKey]) {
+                    await refreshSingleJointStatusFromBus(jointNumber);
+                }
                 broadcastStatusToClients();
                 sendResponse({
                     type: 'success',

@@ -411,6 +411,21 @@ class RobotArmClient {
     }
 
     /**
+     * Fire-and-forget move for jog buttons (no wait for server reply).
+     * @param {number} jointNumber
+     * @param {number} angle
+     * @param {number} speed
+     */
+    moveJointJog(jointNumber, angle, speed = 1500) {
+        const speedValue = (typeof speed === 'number' && !isNaN(speed) && speed >= 0) ? speed : 1500;
+        return this.sendCommand('moveJoint', {
+            joint: jointNumber,
+            angle: angle,
+            speed: speedValue
+        });
+    }
+
+    /**
      * Sets the movement speed for a specific joint
      * @param {number} jointNumber - Joint number (1, 2, 3, etc.)
      * @param {number} speed - Speed in step/s (0-3400)
