@@ -2131,6 +2131,8 @@ function stopAllJoints() {
     robotArmClient.stopAllJoints();
 }
 
+let homingInProgress = false;
+
 /**
  * Homes all joints (moves them to 0 degrees)
  */
@@ -2144,7 +2146,13 @@ async function homeAllJoints() {
         showAppMessage('Read-only — use Take control on the Connection tab first');
         return;
     }
-    
+
+    if (homingInProgress) {
+        showAppMessage('Homing already in progress — please wait');
+        return;
+    }
+    homingInProgress = true;
+
     // Convert default speed from degrees/s to steps/s
     const defaultSpeedDegreesPerSecond = 45;
     let speedStepsPerSecond;
@@ -2153,42 +2161,40 @@ async function homeAllJoints() {
     } else if (typeof window !== 'undefined' && typeof window.degreesPerSecondToStepsPerSecond === 'function') {
         speedStepsPerSecond = window.degreesPerSecondToStepsPerSecond(defaultSpeedDegreesPerSecond);
     } else {
-        // Fallback: use conversion factor directly (1 degree ≈ 11.37 steps)
         speedStepsPerSecond = Math.round(defaultSpeedDegreesPerSecond * 11.37);
     }
-    
+
     const numJoints = getNumJoints();
     showAppMessage('Homing ' + numJoints + ' joints to 0°...');
 
-    try {
-        await robotArmClient.rescanServos();
-    } catch (scanError) {
-        console.warn('Pre-home servo rescan failed:', scanError.message);
-    }
-
     let homedCount = 0;
     const skippedJoints = [];
+    const faultedJoints = [];
 
-    for (let i = 1; i <= numJoints; i++) {
-        try {
-            await robotArmClient.moveJoint(i, 0, speedStepsPerSecond);
-            homedCount = homedCount + 1;
-        } catch (error) {
-            const msg = error && error.message ? error.message : String(error);
-            if (msg.indexOf('not available') >= 0) {
-                skippedJoints.push(i);
-                continue;
+    try {
+        for (let i = 1; i <= numJoints; i++) {
+            try {
+                await robotArmClient.moveJoint(i, 0, speedStepsPerSecond);
+                homedCount++;
+            } catch (error) {
+                const msg = error && error.message ? error.message : String(error);
+                if (msg.indexOf('not available') >= 0) {
+                    skippedJoints.push(i);
+                } else {
+                    faultedJoints.push('J' + i + ': ' + msg);
+                    console.warn('Home failed on joint ' + i + ':', msg);
+                }
             }
-            showAppMessage('Home failed on joint ' + i + ': ' + msg);
-            return;
         }
+    } finally {
+        homingInProgress = false;
     }
 
-    if (skippedJoints.length > 0) {
-        showAppMessage('Home sent for ' + homedCount + ' joint(s); unavailable: ' + skippedJoints.join(', '));
-    } else {
-        showAppMessage('Home command sent for all ' + homedCount + ' joints');
-    }
+    const parts = [];
+    if (homedCount > 0) parts.push('Homed ' + homedCount + ' joint(s)');
+    if (skippedJoints.length > 0) parts.push('unavailable: ' + skippedJoints.join(', '));
+    if (faultedJoints.length > 0) parts.push('faulted: ' + faultedJoints.join('; '));
+    showAppMessage(parts.join(' — ') || 'No joints homed');
 }
 
 /**
