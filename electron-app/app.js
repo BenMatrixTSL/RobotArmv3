@@ -432,13 +432,13 @@ function generateJointStatusCards() {
     
     for (let i = 1; i <= numJoints; i++) {
         // Angle label includes URDF min-max when available.
-        let angleLabel = 'Angle (deg):';
+        let angleLabel = 'Angle:';
         const cfg = jointConfigsForLimits[i - 1];
         if (cfg && cfg.limits) {
             const lower = (typeof cfg.limits.lowerDegrees === 'number') ? cfg.limits.lowerDegrees.toFixed(1) : null;
             const upper = (typeof cfg.limits.upperDegrees === 'number') ? cfg.limits.upperDegrees.toFixed(1) : null;
             if (lower !== null && upper !== null) {
-                angleLabel = `Angle (deg) (${lower}-${upper}):`;
+                angleLabel = `Angle ${lower} to ${upper}:`;
             }
         }
 
