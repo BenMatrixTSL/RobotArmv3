@@ -6,12 +6,12 @@
 # - Writes debug logs under /var/log/robot-arm-st3215/
 #
 # Usage (on the Raspberry Pi):
-#   cd raspberry-pi-control-st3215
-#   chmod +x install-service.sh
-#   sudo ./install-service.sh
+#   cd /opt/RobotArm/raspberry-pi-control-st3215
+#   sudo bash install-service.sh /opt/RobotArm/raspberry-pi-control-st3215
 #
+# If ./install-service.sh says "command not found", use "sudo bash ..." (Windows CRLF fix).
 # Optional: install from a different folder
-#   sudo ./install-service.sh /opt/RobotArm/raspberry-pi-control-st3215
+#   sudo bash install-service.sh /path/to/raspberry-pi-control-st3215
 #
 # Safe to re-run after "git pull" — fixes /opt permissions, runs npm install,
 # refreshes the systemd unit, and restarts the server. Do not run "npm install"

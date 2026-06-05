@@ -1,0 +1,2 @@
+# Shell scripts must use LF so Linux can run them (CRLF breaks #!/bin/bash).
+*.sh text eol=lf
