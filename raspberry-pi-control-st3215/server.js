@@ -45,13 +45,13 @@ const PERF_DEBUG = false;
 const BUS_DIAGNOSTICS_LOG_INTERVAL_MS = parseInt(process.env.BUS_DIAGNOSTICS_LOG_INTERVAL_MS || '0', 10);
 
 // Minimum gap between bus ticks (ms). Ticks are chained after work finishes — not a fixed overlap.
-const STATUS_POLL_INTERVAL_MS = parseInt(process.env.STATUS_POLL_INTERVAL_MS || '80', 10);
-const MIN_BUS_TICK_GAP_MS = parseInt(process.env.MIN_BUS_TICK_GAP_MS || '12', 10);
-const JOINTS_PER_POLL_TICK = parseInt(process.env.JOINTS_PER_POLL_TICK || '2', 10);
+const STATUS_POLL_INTERVAL_MS = parseInt(process.env.STATUS_POLL_INTERVAL_MS || '60', 10);
+const MIN_BUS_TICK_GAP_MS = parseInt(process.env.MIN_BUS_TICK_GAP_MS || '8', 10);
+const JOINTS_PER_POLL_TICK = parseInt(process.env.JOINTS_PER_POLL_TICK || '3', 10);
 const MAX_BUS_WRITE_QUEUE_SIZE = 100;
 const MAX_BUS_WRITES_WHEN_IDLE = 0;
 const MAX_BUS_WRITES_WHEN_BUSY = 4;
-const SERVER_BUILD_ID = '2026-06-03-jog-refresh';
+const SERVER_BUILD_ID = '2026-06-03-refresh-fix';
 const BUS_QUIET_BEFORE_MOVE_MS = 12;
 const BUS_QUIET_AFTER_MOVE_MS = 10;
 const BUS_QUIET_JOG_MS = 4;
@@ -983,7 +983,7 @@ async function runBusTick() {
             }
         }
 
-        if (busWriteQueue.length === 0 && !wroteThisTick && immediateMoveDrainRunning === false) {
+        if (busWriteQueue.length === 0 && !wroteThisTick) {
             const pollStart = Date.now();
             for (let p = 0; p < JOINTS_PER_POLL_TICK; p++) {
                 await refreshSingleJointStatusFromBus(statusPollJointIndex);
@@ -2203,10 +2203,7 @@ async function handleCommand(ws, data) {
                 await servo.moveToAngle(angle, moveSpeed);
                 serverDiagnostics.busMovesCompleted++;
 
-                const jointKey = String(data.joint);
-                if (!pendingImmediateMoves[jointKey]) {
-                    await refreshSingleJointStatusFromBus(jointNumber);
-                }
+                await refreshSingleJointStatusFromBus(jointNumber);
                 broadcastStatusToClients();
                 sendResponse({
                     type: 'success',

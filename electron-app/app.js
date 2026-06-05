@@ -38,6 +38,10 @@ function setToolOrientationVector(x, y, z) {
 let statusUpdateInterval = null;
 let controlStatusInterval = null;
 let serverDiagnosticsInterval = null;
+let pendingStatusJoints = null;
+let statusUiFramePending = false;
+let lastHeavyUiUpdateAt = 0;
+const HEAVY_UI_INTERVAL_MS = 100;
 // Last good joint status from server (avoids UI flicker if a poll times out)
 let lastGoodJointStatus = [];
 // Tracks the angle we last commanded for jog buttons (avoids stale UI reads)
@@ -1290,7 +1294,7 @@ function initializeConnection() {
             await robotArmClient.connect(address, port);
             
             // Set up status update callback
-            robotArmClient.onStatusUpdate = updateJointStatus;
+            robotArmClient.onStatusUpdate = scheduleStatusUiUpdate;
             
             // Set up configuration update callback
             robotArmClient.onConfigUpdate = onJointConfigsLoaded;
@@ -1409,22 +1413,20 @@ function startStatusUpdates(isKioskView) {
         interval = 5000;
     }
 
-    // Server already pushes status after each bus read — use a slower backup poll.
-    if (robotArmClient.serverPushesStatus) {
-        interval = Math.max(interval, 400);
-    }
-
     stopStatusUpdates();
 
+    // One initial read; after that rely on server WebSocket pushes (no duplicate polling).
     robotArmClient.requestStatus();
 
-    statusUpdateInterval = setInterval(function() {
-        if (!robotArmClient.isConnected) {
-            stopStatusUpdates();
-            return;
-        }
-        robotArmClient.requestStatus();
-    }, interval);
+    if (!robotArmClient.serverPushesStatus) {
+        statusUpdateInterval = setInterval(function() {
+            if (!robotArmClient.isConnected) {
+                stopStatusUpdates();
+                return;
+            }
+            robotArmClient.requestStatus();
+        }, interval);
+    }
 }
 
 /**
@@ -1779,6 +1781,26 @@ function initializeStatusUpdates() {
 }
 
 /**
+ * Coalesce rapid status pushes into one UI refresh per animation frame.
+ * @param {Array} joints
+ */
+function scheduleStatusUiUpdate(joints) {
+    pendingStatusJoints = joints;
+    if (statusUiFramePending) {
+        return;
+    }
+    statusUiFramePending = true;
+    requestAnimationFrame(function() {
+        statusUiFramePending = false;
+        const snapshot = pendingStatusJoints;
+        pendingStatusJoints = null;
+        if (snapshot) {
+            updateJointStatus(snapshot);
+        }
+    });
+}
+
+/**
  * Updates the joint status display in the UI
  * @param {Array} joints - Array of joint status objects
  */
@@ -1800,18 +1822,20 @@ function updateJointStatus(joints) {
             && typeof joint.angleDegrees === 'number'
             && !isNaN(joint.angleDegrees);
 
+        const angleDegrees =
+            (joint && typeof joint.angleDegrees === 'number' && !isNaN(joint.angleDegrees))
+                ? joint.angleDegrees
+                : (lastGoodJointStatus[i] && typeof lastGoodJointStatus[i].angleDegrees === 'number')
+                    ? lastGoodJointStatus[i].angleDegrees
+                    : 0;
+
         if (hasFreshAngle) {
             lastGoodJointStatus[i] = joint;
             jogCommandedAngles[i] = angleDegrees;
         } else if (lastGoodJointStatus[i]) {
             joint = Object.assign({}, lastGoodJointStatus[i], { readStale: true });
         }
-        
-        // Collect joint angles for 3D visualization
-        const angleDegrees =
-            (joint && typeof joint.angleDegrees === 'number' && !isNaN(joint.angleDegrees))
-                ? joint.angleDegrees
-                : 0;
+
         jointAngles.push(angleDegrees);
         
         // Update angle display
@@ -1916,11 +1940,12 @@ function updateJointStatus(joints) {
         ? simulatedAngles
         : jointAngles;
     
-    // Update 3D visualization if available
-    update3DVisualizationWithAngles(anglesForDisplay);
-    
-    // Update XYZ position display
-    updateXYZPosition(anglesForDisplay);
+    const now = Date.now();
+    if (now - lastHeavyUiUpdateAt >= HEAVY_UI_INTERVAL_MS) {
+        lastHeavyUiUpdateAt = now;
+        update3DVisualizationWithAngles(anglesForDisplay);
+        updateXYZPosition(anglesForDisplay);
+    }
 }
 
 // ===== Joint Control Functions =====
