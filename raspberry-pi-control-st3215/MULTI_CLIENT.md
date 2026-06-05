@@ -6,7 +6,7 @@ Several UIs can connect to one Pi server (port 8080). The server centralizes bus
 
 | Data / action | How it works |
 |---------------|--------------|
-| **Joint angles & torque** | Polled every **300 ms** on the server (`STATUS_POLL_INTERVAL_MS`). Cached in `jointStatusCache`. |
+| **Joint angles & torque** | Polled every **50 ms** on the server (`STATUS_POLL_INTERVAL_MS`). Cached in `jointStatusCache`. |
 | **getStatus** | Returns cache only — **no bus read** per client request. |
 | **Status push** | After each poll, server **broadcasts** `type: status` to **all** connected WebSockets. |
 | **getJointConfigs** | Returns `cachedJointConfigs` (rebuilt on init / rescan). |
@@ -62,7 +62,7 @@ You can still change **Settings → Update interval**; minimum fallback is 2 s w
 
 ```bash
 # Poll interval (ms) — in st3215-server.service or environment
-STATUS_POLL_INTERVAL_MS=300
+STATUS_POLL_INTERVAL_MS=50
 ```
 
 ## Deploy

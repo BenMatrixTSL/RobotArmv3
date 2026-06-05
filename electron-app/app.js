@@ -1298,7 +1298,7 @@ function initializeConnection() {
 
             startControlStatusUpdates();
             
-            // Status: server pushes every ~300ms; fallback poll only if pushes stop
+            // Status: server pushes every ~50ms; fallback poll only if pushes stop
             startStatusUpdates(isKioskView);
             
             // Joint configs are sent on connect; request again if needed

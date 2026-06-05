@@ -236,7 +236,7 @@ The server accepts JSON commands via WebSocket. All commands follow this format:
 ### Available Commands
 
 #### `getStatus`
-Get cached status for all servos. The server polls the bus on a fixed interval (default 300 ms) and stores the latest readings. This command returns that cache immediately — it does not read the bus on every client request (reduces timeouts and UI flicker).
+Get cached status for all servos. The server polls the bus on a fixed interval (default 50 ms) and stores the latest readings. This command returns that cache immediately — it does not read the bus on every client request (reduces timeouts and UI flicker).
 
 **Request**:
 ```json
