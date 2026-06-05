@@ -540,9 +540,13 @@ header h1 {
 
 .joint-control-compact {
     display: grid;
-    grid-template-columns: 1fr 1fr auto;
+    grid-template-columns: 1fr auto;
     gap: 4px 6px;
     align-items: end;
+}
+
+.joint-control-compact .joint-angle-field {
+    min-width: 0;
 }
 
 .joint-control-compact .joint-field-group.compact {

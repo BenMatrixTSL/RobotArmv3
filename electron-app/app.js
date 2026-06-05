@@ -446,7 +446,7 @@ function generateJointStatusCards() {
             <div class="joint-status-card joint-card-compact">
                 <div class="joint-card-header">
                     <span class="joint-card-title">J${i}</span>
-                    <button type="button" class="joint-details-toggle" data-joint-details-toggle="${i}" onclick="toggleJointDetails(${i})" aria-expanded="false" title="Show position, load, voltage and temperature">+</button>
+                    <button type="button" class="joint-details-toggle" data-joint-details-toggle="${i}" onclick="toggleJointDetails(${i})" aria-expanded="false" title="Show position, load, voltage, temperature, speed and acceleration">+</button>
                 </div>
                 <div class="joint-status-summary">
                     <div class="joint-angle-line"><span id="joint${i}Angle" class="joint-angle-value">0.0</span>°</div>
@@ -460,18 +460,18 @@ function generateJointStatusCards() {
                     <div class="status-value compact">Voltage: <span id="joint${i}Voltage">0.0</span>V</div>
                     <div class="status-value compact">Temperature: <span id="joint${i}Temperature">0</span>°C</div>
                     <div class="joint-field-group compact">
+                        <label for="joint${i}Speed">Speed (deg/s):</label>
+                        <input type="number" id="joint${i}Speed" value="45" min="0" max="300" step="1">
+                    </div>
+                    <div class="joint-field-group compact">
                         <label for="joint${i}Acceleration">Accel (0-254):</label>
                         <input type="number" id="joint${i}Acceleration" value="50" min="0" max="254" step="1">
                     </div>
                 </div>
                 <div class="joint-control-fields joint-control-compact">
-                    <div class="joint-field-group compact">
+                    <div class="joint-field-group compact joint-angle-field">
                         <label for="joint${i}Target">${angleLabel}</label>
                         <input type="number" id="joint${i}Target" value="0" step="0.1">
-                    </div>
-                    <div class="joint-field-group compact">
-                        <label for="joint${i}Speed">Speed (deg/s):</label>
-                        <input type="number" id="joint${i}Speed" value="45" min="0" max="300" step="1">
                     </div>
                     <button class="btn btn-small joint-go-button" onclick="moveJoint(${i})">Go</button>
                 </div>
@@ -509,7 +509,7 @@ function toggleJointDetails(jointNumber) {
     details.hidden = !willShow;
     button.textContent = willShow ? '−' : '+';
     button.setAttribute('aria-expanded', willShow ? 'true' : 'false');
-    button.title = willShow ? 'Hide details' : 'Show position, load, voltage and temperature';
+    button.title = willShow ? 'Hide details' : 'Show position, load, voltage, temperature, speed and acceleration';
 }
 
 /**
