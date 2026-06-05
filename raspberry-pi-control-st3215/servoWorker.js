@@ -1,24 +1,24 @@
 'use strict';
 /**
- * servoWorker.js — Dedicated worker thread for ST3215 serial bus communication.
+ * servoWorker.js — Dedicated child process for ST3215 serial bus communication.
  *
- * Owns the serial port exclusively and runs the bus tick loop.
- * Communicates with server.js (main thread) via parentPort messages:
+ * Runs as a forked child process (child_process.fork) so native serialport
+ * bindings stay in their own process and cannot SIGABRT the WebSocket server.
+ * Communicates with server.js via process.send / process.on('message'):
  *
- *   Worker → Main:
+ *   Child → Parent:
  *     { type: 'ready',           jointConfigs: {...} }
  *     { type: 'status',          joints, cacheAgeMs, diagnostics }
  *     { type: 'jointConfigs',    count, total, joints }
  *     { type: 'commandResponse', clientId, requestId, payload }
  *     { type: 'initError',       message }
  *
- *   Main → Worker:
+ *   Parent → Child:
  *     { type: 'busCommand',          clientId, command, requestId, ...data }
  *     { type: 'immediateBusCommand', clientId, command, requestId, ...data }
  *     { type: 'shutdown' }
  */
 
-const { parentPort } = require('worker_threads');
 const { SerialPort } = require('serialport');
 const RobotArm = require('./robotArmST3215');
 
@@ -97,7 +97,7 @@ function sendResponse(clientId, requestId, payload) {
     if (requestId !== undefined && requestId !== null) {
         payload.requestId = requestId;
     }
-    parentPort.postMessage({ type: 'commandResponse', clientId, payload });
+    process.send({ type: 'commandResponse', clientId, payload });
 }
 
 function formatCommandError(error) {
@@ -182,7 +182,7 @@ function rebuildJointConfigsCache() {
             : { jointNumber: i + 1, servoId: SERVO_IDS[i], available: false });
     }
     cachedJointConfigs = { count: discovered, total: JOINT_COUNT, joints };
-    parentPort.postMessage({ type: 'jointConfigs', count: discovered, total: JOINT_COUNT, joints });
+    process.send({ type: 'jointConfigs', count: discovered, total: JOINT_COUNT, joints });
 }
 
 function getJointConfigsSnapshot() {
@@ -193,7 +193,7 @@ function getJointConfigsSnapshot() {
 // ===== Status Push to Main Thread =====
 function postStatusToMain() {
     diag.cacheAgeMs = getJointStatusCacheAgeMs();
-    parentPort.postMessage({
+    process.send({
         type: 'status',
         joints: getJointStatusSnapshot(),
         cacheAgeMs: diag.cacheAgeMs,
@@ -885,7 +885,7 @@ async function shutdown() {
 }
 
 // ===== Message Handler (Main → Worker) =====
-parentPort.on('message', (msg) => {
+process.on('message', (msg) => {
     if (!msg || !msg.type) return;
 
     if (msg.type === 'shutdown') {
@@ -916,10 +916,10 @@ parentPort.on('message', (msg) => {
 initializeServos().then(async () => {
     await refreshJointStatusCacheFromBus();
     startBusTickLoop();
-    parentPort.postMessage({ type: 'ready', jointConfigs: getJointConfigsSnapshot() });
+    process.send({ type: 'ready', jointConfigs: getJointConfigsSnapshot() });
     log('Servo worker ready');
 }).catch((error) => {
     log('Servo worker init failed: ' + (error.message || error), true);
-    parentPort.postMessage({ type: 'initError', message: error.message || String(error) });
+    process.send({ type: 'initError', message: error.message || String(error) });
     process.exit(1);
 });

@@ -3,7 +3,7 @@
  * Robot Arm WebSocket Server (ST3215 Version)
  *
  * Main thread: WebSocket server, control-session management, instant commands, kinematics.
- * Servo bus: delegated entirely to servoWorker.js (worker_threads).
+ * Servo bus: delegated entirely to servoWorker.js (child_process.fork).
  *
  * Usage:  node server.js
  * Env:    SERIAL_PORT, STATUS_POLL_INTERVAL_MS, BUS_DIAGNOSTICS_LOG_INTERVAL_MS,
@@ -14,9 +14,7 @@ const WebSocket   = require('ws');
 const os          = require('os');
 const fs          = require('fs');
 const path        = require('path');
-const { exec }    = require('child_process');
-const { execFile }  = require('child_process');
-const { Worker }    = require('worker_threads');
+const { exec, execFile, fork } = require('child_process');
 const { promisify } = require('util');
 const { robotKinematics } = require('./kinematicsService');
 const execFileAsync = promisify(execFile);
@@ -261,9 +259,9 @@ function handleWorkerMessage(msg) {
     }
 }
 
-// ===== Worker Thread Setup =====
+// ===== Child Process Setup =====
 function startServoWorker() {
-    servoWorker = new Worker(path.join(__dirname, 'servoWorker.js'));
+    servoWorker = fork(path.join(__dirname, 'servoWorker.js'));
     servoWorker.on('message', handleWorkerMessage);
     servoWorker.on('error', (err) => {
         debugLog('Servo worker error: ' + (err.message || err), true);
@@ -601,7 +599,7 @@ function startServer() {
 
                 // Moves and stops bypass the bus write queue.
                 const msgType = IMMEDIATE_BUS_COMMANDS[data.command] ? 'immediateBusCommand' : 'busCommand';
-                servoWorker.postMessage({ type: msgType, clientId: ws.clientId, ...data });
+                servoWorker.send({ type: msgType, clientId: ws.clientId, ...data });
 
             } catch (error) {
                 ws.send(JSON.stringify({ type: 'error', message: error.message }));
@@ -638,7 +636,7 @@ async function cleanup(signalName) {
 
     try {
         if (servoWorker) {
-            servoWorker.postMessage({ type: 'shutdown' });
+            servoWorker.send({ type: 'shutdown' });
             await new Promise(resolve => servoWorker.once('exit', resolve));
         }
         if (wss) { try { wss.close(); } catch (e) { /* ignore */ } }
