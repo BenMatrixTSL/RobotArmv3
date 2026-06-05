@@ -125,6 +125,14 @@ header h1 {
     background-color: #e67e22;
 }
 
+.status-indicator.control-held-by-other {
+    background-color: #e74c3c;
+}
+
+.status-indicator.control-available {
+    background-color: #3498db;
+}
+
 .status-indicator.control-unknown {
     background-color: #95a5a6;
 }

@@ -1256,8 +1256,10 @@ function initializeConnection() {
                     updateArmControlDisplay(control);
                     if (control && (control.youHaveControl || control.hasControl)) {
                         console.log('Arm control acquired');
-                    } else {
+                    } else if (anotherClientHasControl(control)) {
                         showAppMessage('Connected (read-only): arm is controlled by ' + formatControlHolderLabel(control));
+                    } else {
+                        showAppMessage('Connected: robot is available for control');
                     }
                 } catch (controlError) {
                     console.warn('Could not take arm control (another app may be controlling):', controlError.message);
@@ -1379,6 +1381,24 @@ function stopStatusUpdates() {
 }
 
 /**
+ * True when another client currently holds arm control.
+ * @param {Object|null} controlInfo - From server controlStatus
+ * @returns {boolean}
+ */
+function anotherClientHasControl(controlInfo) {
+    if (controlInfo && controlInfo.hasHolder !== undefined) {
+        return !!controlInfo.hasHolder;
+    }
+    if (controlInfo && (controlInfo.holder || controlInfo.holderHostname || controlInfo.holderIp)) {
+        return true;
+    }
+    if (robotArmClient.controlHolder) {
+        return true;
+    }
+    return false;
+}
+
+/**
  * Builds a user-friendly label for who holds arm control.
  * @param {Object|null} controlInfo - From server controlStatus
  * @returns {string}
@@ -1424,7 +1444,13 @@ function updateArmControlDisplay(controlInfo) {
         return;
     }
 
-    indicator.classList.remove('control-active', 'control-readonly', 'control-unknown');
+    indicator.classList.remove(
+        'control-active',
+        'control-readonly',
+        'control-unknown',
+        'control-available',
+        'control-held-by-other'
+    );
 
     if (!robotArmClient.isConnected) {
         text.textContent = 'Control: —';
@@ -1448,13 +1474,23 @@ function updateArmControlDisplay(controlInfo) {
         return;
     }
 
+    if (!anotherClientHasControl(controlInfo)) {
+        text.textContent = 'Robot available for control';
+        indicator.classList.add('control-available');
+        if (releaseButton) {
+            releaseButton.style.display = 'none';
+        }
+        updateTakeControlButtonState();
+        return;
+    }
+
     let holderLabel = formatControlHolderLabel(controlInfo);
     if (holderLabel === 'another app' && robotArmClient.controlHolder) {
         holderLabel = robotArmClient.controlHolder;
     }
 
     text.textContent = 'Read-only (' + holderLabel + ')';
-    indicator.classList.add('control-readonly');
+    indicator.classList.add('control-held-by-other');
     if (releaseButton) {
         releaseButton.style.display = 'none';
     }

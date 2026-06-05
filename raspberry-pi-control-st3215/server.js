@@ -147,7 +147,9 @@ const jointSettingsCache = [];
 let cachedTorqueEnabled = null;
 
 // One client at a time may send move/torque/stop commands (multi-app safety)
-const controlSession = { ws: null, label: '', hostname: null, clientIp: null, since: null };
+const CONTROL_IDLE_TIMEOUT_MS = 5 * 60 * 1000;
+const CONTROL_IDLE_CHECK_INTERVAL_MS = 30 * 1000;
+const controlSession = { ws: null, label: '', hostname: null, clientIp: null, since: null, lastMoveAt: null };
 
 function normalizeClientIp(raw) {
     if (!raw || typeof raw !== 'string') {
@@ -186,6 +188,45 @@ function assignControlSession(ws, label) {
     controlSession.clientIp = ws ? ws.clientIp : null;
     controlSession.hostname = ws ? getWsClientHostname(ws) : null;
     controlSession.since = Date.now();
+    controlSession.lastMoveAt = Date.now();
+}
+
+function touchControlMoveActivity(ws) {
+    if (controlSession.ws === ws) {
+        controlSession.lastMoveAt = Date.now();
+    }
+}
+
+function broadcastControlStatus(extraForClient) {
+    connectedClients.forEach((clientWs) => {
+        if (clientWs.readyState !== WebSocket.OPEN) {
+            return;
+        }
+        const payload = getControlStatusPayload(clientWs);
+        if (extraForClient && extraForClient.ws === clientWs) {
+            Object.assign(payload, extraForClient.data);
+        }
+        clientWs.send(JSON.stringify(payload));
+    });
+}
+
+function releaseControlForIdle() {
+    if (!controlSession.ws || !controlSession.lastMoveAt) {
+        return;
+    }
+    if (Date.now() - controlSession.lastMoveAt < CONTROL_IDLE_TIMEOUT_MS) {
+        return;
+    }
+
+    const idleHolderWs = controlSession.ws;
+    releaseControlSession(idleHolderWs);
+    broadcastControlStatus({
+        ws: idleHolderWs,
+        data: {
+            message: 'Arm control released automatically after 5 minutes with no movement'
+        }
+    });
+    console.log('Arm control released due to 5 minute idle timeout');
 }
 
 function formatControlHolder(info) {
@@ -227,6 +268,7 @@ function getControlStatusPayload(ws, extra) {
         type: 'controlStatus',
         hasControl: controlSession.ws === ws,
         youHaveControl: controlSession.ws === ws,
+        hasHolder: !!controlSession.ws,
         holder: controlSession.ws ? formatControlHolder(controlSession) : null,
         holderHostname: controlSession.hostname || null,
         holderIp: controlSession.clientIp || null,
@@ -624,6 +666,7 @@ function releaseControlSession(ws) {
         controlSession.hostname = null;
         controlSession.clientIp = null;
         controlSession.since = null;
+        controlSession.lastMoveAt = null;
     }
 }
 
@@ -1119,6 +1162,8 @@ function startServer() {
             console.error('WebSocket error:', error);
         });
     });
+
+    setInterval(releaseControlForIdle, CONTROL_IDLE_CHECK_INTERVAL_MS);
 }
 
 /**
@@ -1143,6 +1188,10 @@ async function handleCommand(ws, data) {
                 controlRequired: true
             });
             return;
+        }
+
+        if (command === 'moveJoint' || command === 'setServo' || command === 'setServoAngle') {
+            touchControlMoveActivity(ws);
         }
     }
 

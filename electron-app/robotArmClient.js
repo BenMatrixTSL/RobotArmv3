@@ -199,7 +199,9 @@ class RobotArmClient {
             this.hasArmControl = !!data.hasControl;
         }
 
-        if (data.holder !== undefined) {
+        if (data.hasHolder === false) {
+            this.controlHolder = null;
+        } else if (data.holder !== undefined) {
             this.controlHolder = data.holder || null;
         }
     }
