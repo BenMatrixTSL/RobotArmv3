@@ -1254,8 +1254,14 @@ function initializeConnection() {
                 try {
                     const control = await robotArmClient.takeControl('electron');
                     updateArmControlDisplay(control);
-                    if (control && control.hasControl) {
+                    if (control && (control.youHaveControl || control.hasControl)) {
                         console.log('Arm control acquired');
+                    } else {
+                        let holder = 'another app';
+                        if (control && control.holder) {
+                            holder = control.holder;
+                        }
+                        showAppMessage('Connected (read-only): arm is controlled by ' + holder);
                     }
                 } catch (controlError) {
                     console.warn('Could not take arm control (another app may be controlling):', controlError.message);
@@ -1265,6 +1271,7 @@ function initializeConnection() {
             } else {
                 console.log('Kiosk view: read-only — not taking arm control');
                 await refreshArmControlStatus();
+                showAppMessage('Connected (read-only): kiosk view does not take arm control');
             }
 
             startControlStatusUpdates();
@@ -1399,12 +1406,16 @@ function updateArmControlDisplay(controlInfo) {
         return;
     }
 
-    if (robotArmClient.hasArmControl) {
+    const iHaveControl = robotArmClient.hasArmControl ||
+        (controlInfo && (controlInfo.youHaveControl || controlInfo.hasControl));
+
+    if (iHaveControl) {
         text.textContent = 'In control';
         indicator.classList.add('control-active');
         if (releaseButton) {
             releaseButton.style.display = 'inline-block';
         }
+        updateTakeControlButtonState();
         return;
     }
 

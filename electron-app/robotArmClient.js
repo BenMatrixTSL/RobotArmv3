@@ -185,6 +185,26 @@ class RobotArmClient {
     }
 
     /**
+     * Updates local control state from a controlStatus message or takeControl response.
+     * @param {Object} data - Server message with youHaveControl / hasControl / holder
+     */
+    applyControlStatus(data) {
+        if (!data) {
+            return;
+        }
+
+        if (data.youHaveControl !== undefined) {
+            this.hasArmControl = !!data.youHaveControl;
+        } else if (data.hasControl !== undefined) {
+            this.hasArmControl = !!data.hasControl;
+        }
+
+        if (data.holder !== undefined) {
+            this.controlHolder = data.holder || null;
+        }
+    }
+
+    /**
      * Handles incoming messages from the Raspberry Pi
      * @param {Object} data - Parsed message data
      */
@@ -195,6 +215,12 @@ class RobotArmClient {
             if (pending) {
                 clearTimeout(pending.timeout);
                 this.pendingRequests.delete(data.requestId);
+                if (data.type === 'controlStatus' || data.youHaveControl !== undefined || data.hasControl !== undefined) {
+                    this.applyControlStatus(data);
+                    if (this.onControlUpdate) {
+                        this.onControlUpdate(data);
+                    }
+                }
                 pending.resolve(data);
                 return;
             }
@@ -215,12 +241,7 @@ class RobotArmClient {
         }
 
         if (data.type === 'controlStatus') {
-            if (data.youHaveControl !== undefined) {
-                this.hasArmControl = !!data.youHaveControl;
-            } else {
-                this.hasArmControl = !!data.hasControl;
-            }
-            this.controlHolder = data.holder || null;
+            this.applyControlStatus(data);
             if (data.message && typeof showAppMessage === 'function') {
                 showAppMessage(data.message);
             }
