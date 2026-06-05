@@ -527,6 +527,13 @@ class RobotArmClient {
     }
 
     /**
+     * Read Pi server bus tick / queue diagnostics (instant — does not use servo bus).
+     */
+    getServerDiagnostics() {
+        return this.sendRequest('getServerDiagnostics', {}, 3000);
+    }
+
+    /**
      * Gets the current status from all joints and returns it as a promise
      * This is useful for waiting for status in Blockly programs
      * @returns {Promise<Array>} Promise that resolves with array of joint status objects

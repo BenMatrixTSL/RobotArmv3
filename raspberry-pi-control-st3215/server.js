@@ -41,10 +41,14 @@ const SERIAL_BAUDRATE = 1000000; // ST3215 default baud rate
 const DEBUG = false;
 // Simple performance logging flag (set to true to see timing info)
 const PERF_DEBUG = false;
+// Log bus diagnostics to console/debug log every N ms (0 = off)
+const BUS_DIAGNOSTICS_LOG_INTERVAL_MS = parseInt(process.env.BUS_DIAGNOSTICS_LOG_INTERVAL_MS || '0', 10);
 
-// Background status poll interval (ms). Servo angles are read on this timer and cached.
-// getStatus returns the cache — clients do not trigger a bus read each time.
+// Bus tick interval (ms). All servo reads and writes are scheduled on this timer.
+// getStatus returns the cache — clients do not trigger a bus read.
 const STATUS_POLL_INTERVAL_MS = parseInt(process.env.STATUS_POLL_INTERVAL_MS || '100', 10);
+const MAX_BUS_WRITE_QUEUE_SIZE = 100;
+const MAX_BUS_WRITES_PER_TICK = 1;
 
 // Optional file log (set by install-service.sh: ROBOT_ARM_DEBUG_LOG)
 const DEBUG_LOG_FILE = process.env.ROBOT_ARM_DEBUG_LOG || '';
@@ -129,11 +133,36 @@ process.on('exit', (code) => {
 const servos = [];
 let endTool = null;
 
-// Cached joint status (updated by background poll; served to clients via getStatus)
+// Cached joint status (updated by bus tick; served to clients via getStatus)
 const jointStatusCache = [];
-let statusPollTimer = null;
-let statusPollPending = false;
+let busTickTimer = null;
+let busTickInProgress = false;
+let busWriteQueue = [];
 let lastStatusBroadcastAt = 0;
+
+// Live metrics for debugging bus vs WebSocket load (see getServerDiagnostics).
+const serverDiagnostics = {
+    startedAt: Date.now(),
+    busTickIntervalMs: STATUS_POLL_INTERVAL_MS,
+    busTicks: 0,
+    busTicksSkipped: 0,
+    busTickErrors: 0,
+    lastBusTickAt: null,
+    lastBusTickDurationMs: 0,
+    busWriteQueueLength: 0,
+    busWritesCompleted: 0,
+    busWritesFailed: 0,
+    busWritesRejected: 0,
+    lastBusWriteAt: null,
+    lastBusWriteDurationMs: 0,
+    statusPollsCompleted: 0,
+    lastStatusPollAt: null,
+    lastStatusPollDurationMs: 0,
+    lastBroadcastAt: null,
+    cacheAgeMs: null,
+    wsClients: 0,
+    instantCommands: 0
+};
 
 // WebSocket clients (for pushing status to every app instance)
 const connectedClients = new Set();
@@ -289,6 +318,7 @@ let lastRescanTime = 0;
 // Commands that do not touch the servo bus — handle immediately, not via the bus queue.
 const INSTANT_SERVER_COMMANDS = {
     getStatus: true,
+    getServerDiagnostics: true,
     getControlStatus: true,
     takeControl: true,
     releaseControl: true,
@@ -341,14 +371,6 @@ let allServoControllers = [];
  */
 let writeQueue = [];
 let isWriting = false;
-
-/**
- * Global command queue for serializing ALL commands across all clients and servos
- * This ensures only one command is processed at a time, preventing conflicts
- */
-let commandQueue = [];
-let isProcessingCommand = false;
-const MAX_COMMAND_QUEUE_SIZE = 100; // Maximum queue size (status polls + moves)
 
 function refreshDataRoutingControllers() {
     allServoControllers = servos.filter(s => s !== null);
@@ -554,58 +576,49 @@ async function processWriteQueue() {
 }
 
 /**
- * Queue a command to be processed (ensures only one command at a time across all clients)
+ * Queue a servo-bus write to run on the next bus tick (WebSocket handlers do not await the bus).
  * @param {Function} commandFn - Function that executes the command
- * @returns {Promise} Promise that resolves when command completes
+ * @param {Object} meta - { command, joint }
+ * @returns {Promise}
  */
-async function queueCommand(commandFn, meta) {
+function enqueueBusWrite(commandFn, meta) {
     return new Promise((resolve, reject) => {
-        // Prevent queue from growing too large (could indicate a problem)
-        if (commandQueue.length >= MAX_COMMAND_QUEUE_SIZE) {
-            console.warn(`Command queue full (${commandQueue.length} items), rejecting new command`);
-            reject(new Error('Command queue is full, server may be overloaded'));
+        if (busWriteQueue.length >= MAX_BUS_WRITE_QUEUE_SIZE) {
+            serverDiagnostics.busWritesRejected++;
+            console.warn('Bus write queue full (' + busWriteQueue.length + ' items), rejecting command');
+            reject(new Error('Bus write queue is full, server may be overloaded'));
             return;
         }
 
-        // Drop older queued moveJoint for the same joint (pendant spam / multi-app)
+        // Drop older queued moveJoint for the same joint (pendant spam / multi-app).
         if (meta && meta.command === 'moveJoint' && meta.joint !== undefined) {
-            for (let i = commandQueue.length - 1; i >= 0; i--) {
-                const item = commandQueue[i];
+            for (let i = busWriteQueue.length - 1; i >= 0; i--) {
+                const item = busWriteQueue[i];
                 if (item.meta && item.meta.command === 'moveJoint' && item.meta.joint === meta.joint) {
                     item.reject(new Error('Superseded by newer move for joint ' + meta.joint));
-                    commandQueue.splice(i, 1);
+                    busWriteQueue.splice(i, 1);
                 }
             }
         }
 
-        const item = { commandFn, resolve, reject, meta: meta || null };
-
-        // Only one background status poll may wait in the queue at a time.
-        if (meta && meta.command === '__statusPoll') {
-            const alreadyQueued = commandQueue.some((queued) => {
-                return queued.meta && queued.meta.command === '__statusPoll';
-            });
-            if (alreadyQueued) {
-                resolve();
-                return;
-            }
-            commandQueue.push(item);
-        } else if (meta && meta.priority === true) {
-            // User move/torque commands jump ahead of queued status polls.
-            let insertAt = commandQueue.length;
-            for (let i = 0; i < commandQueue.length; i++) {
-                if (!(commandQueue[i].meta && commandQueue[i].meta.command === '__statusPoll')) {
-                    insertAt = i;
-                    break;
-                }
-            }
-            commandQueue.splice(insertAt, 0, item);
-        } else {
-            commandQueue.push(item);
-        }
-
-        processCommandQueue();
+        busWriteQueue.push({ commandFn, resolve, reject, meta: meta || null, enqueuedAt: Date.now() });
+        serverDiagnostics.busWriteQueueLength = busWriteQueue.length;
     });
+}
+
+/**
+ * Snapshot of bus / WebSocket diagnostics for debugging.
+ * @returns {Object}
+ */
+function getServerDiagnosticsSnapshot() {
+    return {
+        ...serverDiagnostics,
+        cacheAgeMs: getJointStatusCacheAgeMs(),
+        wsClients: connectedClients.size,
+        busWriteQueueLength: busWriteQueue.length,
+        lastBroadcastAt: lastStatusBroadcastAt || serverDiagnostics.lastBroadcastAt,
+        uptimeMs: Date.now() - serverDiagnostics.startedAt
+    };
 }
 
 /**
@@ -668,6 +681,7 @@ function broadcastStatusToClients() {
     });
 
     lastStatusBroadcastAt = Date.now();
+    serverDiagnostics.lastBroadcastAt = lastStatusBroadcastAt;
 }
 
 /**
@@ -744,35 +758,61 @@ async function applyJointAccelerationIfChanged(servo, jointIndex, acc) {
 }
 
 /**
- * Process the command queue (one command at a time)
+ * One bus tick: process pending writes, then refresh status when the write queue is idle.
+ * WebSocket instant commands never run here — only scheduled servo bus work.
  */
-async function processCommandQueue() {
-    if (isProcessingCommand || commandQueue.length === 0) {
+async function runBusTick() {
+    if (busTickInProgress) {
+        serverDiagnostics.busTicksSkipped++;
         return;
     }
-    
-    isProcessingCommand = true;
-    const { commandFn, resolve, reject } = commandQueue.shift();
-    
-    try {
-        const result = await commandFn();
-        // Short gap before next bus command (end tool needs a little longer)
-        await new Promise(resolve => setTimeout(resolve, 25));
-        resolve(result);
-    } catch (error) {
-        reject(error);
-    } finally {
-        isProcessingCommand = false;
-        // Process next command in queue
-        processCommandQueue();
 
-        // If the queue is idle and readback is stale, schedule a background poll.
-        if (commandQueue.length === 0 && !statusPollPending) {
-            const sinceBroadcast = Date.now() - lastStatusBroadcastAt;
-            if (sinceBroadcast >= STATUS_POLL_INTERVAL_MS) {
-                scheduleStatusPoll();
+    busTickInProgress = true;
+    const tickStart = Date.now();
+    serverDiagnostics.busTicks++;
+
+    try {
+        let wroteThisTick = false;
+
+        for (let w = 0; w < MAX_BUS_WRITES_PER_TICK && busWriteQueue.length > 0; w++) {
+            const { commandFn, resolve, reject } = busWriteQueue.shift();
+            serverDiagnostics.busWriteQueueLength = busWriteQueue.length;
+            const writeStart = Date.now();
+
+            try {
+                await commandFn();
+                await new Promise((r) => setTimeout(r, 25));
+                resolve();
+                wroteThisTick = true;
+                serverDiagnostics.busWritesCompleted++;
+                serverDiagnostics.lastBusWriteDurationMs = Date.now() - writeStart;
+                serverDiagnostics.lastBusWriteAt = Date.now();
+            } catch (error) {
+                reject(error);
+                serverDiagnostics.busWritesFailed++;
             }
         }
+
+        if (busWriteQueue.length === 0 && !wroteThisTick) {
+            const pollStart = Date.now();
+            await refreshJointStatusCacheFromBus();
+            broadcastStatusToClients();
+            serverDiagnostics.statusPollsCompleted++;
+            serverDiagnostics.lastStatusPollDurationMs = Date.now() - pollStart;
+            serverDiagnostics.lastStatusPollAt = Date.now();
+        } else if (busWriteQueue.length === 0 && wroteThisTick) {
+            broadcastStatusToClients();
+        }
+    } catch (error) {
+        serverDiagnostics.busTickErrors++;
+        debugLog('Bus tick error: ' + (error.message || error), true);
+    } finally {
+        serverDiagnostics.lastBusTickDurationMs = Date.now() - tickStart;
+        serverDiagnostics.lastBusTickAt = Date.now();
+        serverDiagnostics.cacheAgeMs = getJointStatusCacheAgeMs();
+        serverDiagnostics.wsClients = connectedClients.size;
+        serverDiagnostics.busWriteQueueLength = busWriteQueue.length;
+        busTickInProgress = false;
     }
 }
 
@@ -1082,48 +1122,45 @@ function getJointStatusSnapshot() {
 }
 
 /**
- * Queue a background bus poll (serialized with other commands on the shared port).
+ * Start the fixed-interval bus tick loop (reads + writes).
  */
-function scheduleStatusPoll() {
-    if (statusPollPending) {
-        return;
-    }
-    statusPollPending = true;
-
-    queueCommand(async () => {
-        await refreshJointStatusCacheFromBus();
-        broadcastStatusToClients();
-    }, { command: '__statusPoll' }).catch((error) => {
-        console.warn('Background status poll failed:', error.message);
-    }).finally(() => {
-        statusPollPending = false;
-    });
-}
-
-/**
- * Start regular background polling of servo status into jointStatusCache.
- */
-function startStatusPolling() {
-    if (statusPollTimer) {
+function startBusTickLoop() {
+    if (busTickTimer) {
         return;
     }
 
-    debugLog('Starting joint status polling every ' + STATUS_POLL_INTERVAL_MS + ' ms');
+    debugLog('Starting bus tick loop every ' + STATUS_POLL_INTERVAL_MS + ' ms');
 
-    scheduleStatusPoll();
+    runBusTick();
 
-    statusPollTimer = setInterval(() => {
-        scheduleStatusPoll();
+    busTickTimer = setInterval(() => {
+        runBusTick();
     }, STATUS_POLL_INTERVAL_MS);
+
+    if (BUS_DIAGNOSTICS_LOG_INTERVAL_MS > 0) {
+        setInterval(() => {
+            const d = getServerDiagnosticsSnapshot();
+            debugLog(
+                'BUS diag: ticks=' + d.busTicks +
+                ' skipped=' + d.busTicksSkipped +
+                ' writeQ=' + d.busWriteQueueLength +
+                ' cacheAgeMs=' + d.cacheAgeMs +
+                ' lastTickMs=' + d.lastBusTickDurationMs +
+                ' lastPollMs=' + d.lastStatusPollDurationMs +
+                ' ws=' + d.wsClients +
+                ' instant=' + d.instantCommands
+            );
+        }, BUS_DIAGNOSTICS_LOG_INTERVAL_MS);
+    }
 }
 
 /**
- * Stop background status polling (shutdown).
+ * Stop bus tick loop (shutdown).
  */
-function stopStatusPolling() {
-    if (statusPollTimer) {
-        clearInterval(statusPollTimer);
-        statusPollTimer = null;
+function stopBusTickLoop() {
+    if (busTickTimer) {
+        clearInterval(busTickTimer);
+        busTickTimer = null;
     }
 }
 
@@ -1171,7 +1208,8 @@ function startServer() {
             type: 'connected',
             message: 'Connected to Robot Arm Server (ST3215)',
             pushesStatus: true,
-            statusIntervalMs: STATUS_POLL_INTERVAL_MS
+            statusIntervalMs: STATUS_POLL_INTERVAL_MS,
+            busTickIntervalMs: STATUS_POLL_INTERVAL_MS
         }));
 
         ws.send(JSON.stringify({
@@ -1195,17 +1233,30 @@ function startServer() {
                 const data = JSON.parse(message);
                 // Cache reads, control status, and kinematics do not use the servo bus.
                 if (INSTANT_SERVER_COMMANDS[data.command]) {
+                    serverDiagnostics.instantCommands++;
                     await handleCommand(ws, data);
                     return;
                 }
-                // Queue bus commands; move/torque requests get priority over status polls.
-                const isBusWrite = !!BUS_WRITE_COMMANDS[data.command];
-                await queueCommand(async () => {
+                // Bus writes are scheduled on the tick loop — do not await here (keeps WS responsive).
+                enqueueBusWrite(async () => {
                     await handleCommand(ws, data);
                 }, {
                     command: data.command,
-                    joint: data.joint,
-                    priority: isBusWrite
+                    joint: data.joint
+                }).catch((error) => {
+                    const msg = error && error.message ? error.message : String(error);
+                    if (msg.indexOf('Superseded by newer move') >= 0) {
+                        return;
+                    }
+                    debugLog('Bus command failed (' + data.command + '): ' + msg, true);
+                    const errPayload = {
+                        type: 'error',
+                        message: formatCommandError(error)
+                    };
+                    if (data.requestId !== undefined) {
+                        errPayload.requestId = data.requestId;
+                    }
+                    ws.send(JSON.stringify(errPayload));
                 });
             } catch (error) {
                 console.error('Error handling message:', error);
@@ -1602,11 +1653,19 @@ async function handleCommand(ws, data) {
         }
             
         case 'getStatus': {
-            // Return cached values (updated by background poll) — no bus read here.
+            // Return cached values (updated by bus tick) — no bus read here.
             sendResponse({
                 type: 'status',
                 joints: getJointStatusSnapshot(),
                 cacheAgeMs: getJointStatusCacheAgeMs()
+            });
+            break;
+        }
+
+        case 'getServerDiagnostics': {
+            sendResponse({
+                type: 'serverDiagnostics',
+                diagnostics: getServerDiagnosticsSnapshot()
             });
             break;
         }
@@ -2196,7 +2255,7 @@ async function cleanup(signalName) {
 
     debugLog('Shutting down... (signal: ' + (signalName || 'unknown') + ')');
 
-    stopStatusPolling();
+    stopBusTickLoop();
     
     // Stop all servos
     for (let i = 0; i < servos.length; i++) {
@@ -2241,9 +2300,9 @@ async function main() {
         // Initialize servos
         await initializeServos();
 
-        // Prime cache and poll servos on a fixed interval
+        // Prime cache and run servo bus on a fixed tick interval
         await refreshJointStatusCacheFromBus();
-        startStatusPolling();
+        startBusTickLoop();
         
         // Start WebSocket server
         startServer();

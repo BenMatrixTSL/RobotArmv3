@@ -37,6 +37,7 @@ function setToolOrientationVector(x, y, z) {
 // Global variables
 let statusUpdateInterval = null;
 let controlStatusInterval = null;
+let serverDiagnosticsInterval = null;
 // Last good joint status from server (avoids UI flicker if a poll times out)
 let lastGoodJointStatus = [];
 let robotArm3D = null; // 3D visualization instance
@@ -1321,6 +1322,7 @@ function initializeConnection() {
             
             // Status: server pushes updates; app also polls cached status at Settings interval
             startStatusUpdates(isKioskView);
+            startServerDiagnosticsUpdates();
             
             // Joint configs are sent on connect; request again if needed
             if (!robotArmClient.jointConfigs || robotArmClient.jointConfigs.length === 0) {
@@ -1344,6 +1346,7 @@ function initializeConnection() {
     disconnectButton.addEventListener('click', function() {
         robotArmClient.disconnect();
         stopStatusUpdates();
+        stopServerDiagnosticsUpdates();
         stopControlStatusUpdates();
             if (connectButton) connectButton.disabled = false;
         disconnectButton.disabled = true;
@@ -1407,6 +1410,95 @@ function stopStatusUpdates() {
     if (statusUpdateInterval) {
         clearInterval(statusUpdateInterval);
         statusUpdateInterval = null;
+    }
+}
+
+/**
+ * Format server bus diagnostics for the Connection tab.
+ * @param {Object} diag
+ * @returns {string}
+ */
+function formatServerDiagnosticsText(diag) {
+    if (!diag) {
+        return 'No diagnostics yet';
+    }
+
+    const lines = [];
+    lines.push('Bus tick interval: ' + (diag.busTickIntervalMs || '?') + ' ms');
+    lines.push('Cache age (oldest joint): ' + (diag.cacheAgeMs != null ? diag.cacheAgeMs + ' ms' : '—'));
+    lines.push('Write queue depth: ' + (diag.busWriteQueueLength != null ? diag.busWriteQueueLength : 0));
+    lines.push('Last tick duration: ' + (diag.lastBusTickDurationMs != null ? diag.lastBusTickDurationMs + ' ms' : '—'));
+    lines.push('Last status poll: ' + (diag.lastStatusPollDurationMs != null ? diag.lastStatusPollDurationMs + ' ms' : '—'));
+    lines.push('Ticks: ' + (diag.busTicks || 0) + ' (skipped ' + (diag.busTicksSkipped || 0) + ')');
+    lines.push('Writes done / failed / rejected: ' +
+        (diag.busWritesCompleted || 0) + ' / ' +
+        (diag.busWritesFailed || 0) + ' / ' +
+        (diag.busWritesRejected || 0));
+    lines.push('Instant WS commands (cache, kinematics): ' + (diag.instantCommands || 0));
+    lines.push('WebSocket clients: ' + (diag.wsClients != null ? diag.wsClients : 0));
+    lines.push('Server uptime: ' + Math.round((diag.uptimeMs || 0) / 1000) + ' s');
+    return lines.join('\n');
+}
+
+/**
+ * Update the diagnostics panel on the Connection tab.
+ */
+async function refreshServerDiagnosticsDisplay() {
+    const panel = document.getElementById('serverDiagnosticsPanel');
+    const display = document.getElementById('serverDiagnosticsDisplay');
+
+    if (!panel || !display) {
+        return;
+    }
+
+    if (!robotArmClient.isConnected) {
+        panel.style.display = 'none';
+        display.textContent = 'Not connected';
+        return;
+    }
+
+    panel.style.display = 'block';
+
+    try {
+        const response = await robotArmClient.getServerDiagnostics();
+        display.textContent = formatServerDiagnosticsText(response.diagnostics);
+    } catch (error) {
+        display.textContent = 'Diagnostics unavailable: ' + error.message;
+    }
+}
+
+/**
+ * Poll server bus diagnostics every 2 seconds while connected.
+ */
+function startServerDiagnosticsUpdates() {
+    stopServerDiagnosticsUpdates();
+    refreshServerDiagnosticsDisplay();
+
+    serverDiagnosticsInterval = setInterval(function() {
+        if (!robotArmClient.isConnected) {
+            stopServerDiagnosticsUpdates();
+            return;
+        }
+        refreshServerDiagnosticsDisplay();
+    }, 2000);
+}
+
+/**
+ * Stop polling server diagnostics.
+ */
+function stopServerDiagnosticsUpdates() {
+    if (serverDiagnosticsInterval) {
+        clearInterval(serverDiagnosticsInterval);
+        serverDiagnosticsInterval = null;
+    }
+
+    const panel = document.getElementById('serverDiagnosticsPanel');
+    const display = document.getElementById('serverDiagnosticsDisplay');
+    if (panel) {
+        panel.style.display = 'none';
+    }
+    if (display) {
+        display.textContent = 'Not connected';
     }
 }
 

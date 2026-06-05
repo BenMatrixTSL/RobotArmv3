@@ -1919,6 +1919,20 @@ header h1 {
     font-style: italic;
 }
 
+.diagnostics-display {
+    font-family: Consolas, Monaco, 'Courier New', monospace;
+    font-size: 12px;
+    line-height: 1.45;
+    color: #333;
+    background-color: #f4f4f4;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 10px 12px;
+    margin: 0;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
 .kinematics-display {
     margin-top: 20px;
 }

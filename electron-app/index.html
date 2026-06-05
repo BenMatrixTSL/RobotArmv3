@@ -92,6 +92,14 @@
                 </p>
                 <button id="takeControlButton" class="btn btn-warning" disabled>Take control</button>
             </div>
+
+            <div class="connection-panel" id="serverDiagnosticsPanel" style="display: none;">
+                <h3>Server bus diagnostics</h3>
+                <p class="info-text">
+                    The Pi server talks to servos on a fixed tick. This app reads cached status and does not block the bus.
+                </p>
+                <pre id="serverDiagnosticsDisplay" class="diagnostics-display">Not connected</pre>
+            </div>
         </div>
 
         <!-- Joint Control Tab -->
