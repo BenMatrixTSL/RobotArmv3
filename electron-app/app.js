@@ -471,7 +471,7 @@ function generateJointStatusCards() {
                 <div class="joint-control-fields joint-control-compact">
                     <div class="joint-field-group compact joint-angle-field">
                         <label for="joint${i}Target">${angleLabel}</label>
-                        <input type="number" id="joint${i}Target" value="0" step="0.1">
+                        <input type="number" id="joint${i}Target" value="0" step="0.1" onkeydown="moveJointOnEnter(event, ${i})">
                     </div>
                     <button class="btn btn-small joint-go-button" onclick="moveJoint(${i})">Go</button>
                 </div>
@@ -1796,6 +1796,18 @@ function updateJointStatus(joints) {
 }
 
 // ===== Joint Control Functions =====
+
+/**
+ * Press Enter in a joint angle box to run that joint's Go button.
+ * @param {KeyboardEvent} event
+ * @param {number} jointNumber - Joint number (1, 2, 3, etc.)
+ */
+function moveJointOnEnter(event, jointNumber) {
+    if (event.key === 'Enter') {
+        event.preventDefault();
+        moveJoint(jointNumber);
+    }
+}
 
 /**
  * Moves a joint to the target angle specified in the input field
