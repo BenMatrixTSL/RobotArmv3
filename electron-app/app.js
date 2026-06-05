@@ -2119,16 +2119,35 @@ async function homeAllJoints() {
     const numJoints = getNumJoints();
     showAppMessage('Homing ' + numJoints + ' joints to 0°...');
 
+    try {
+        await robotArmClient.rescanServos();
+    } catch (scanError) {
+        console.warn('Pre-home servo rescan failed:', scanError.message);
+    }
+
+    let homedCount = 0;
+    const skippedJoints = [];
+
     for (let i = 1; i <= numJoints; i++) {
         try {
             await robotArmClient.moveJoint(i, 0, speedStepsPerSecond);
+            homedCount = homedCount + 1;
         } catch (error) {
-            showAppMessage('Home failed on joint ' + i + ': ' + error.message);
+            const msg = error && error.message ? error.message : String(error);
+            if (msg.indexOf('not available') >= 0) {
+                skippedJoints.push(i);
+                continue;
+            }
+            showAppMessage('Home failed on joint ' + i + ': ' + msg);
             return;
         }
     }
 
-    showAppMessage('Home command sent for all joints');
+    if (skippedJoints.length > 0) {
+        showAppMessage('Home sent for ' + homedCount + ' joint(s); unavailable: ' + skippedJoints.join(', '));
+    } else {
+        showAppMessage('Home command sent for all ' + homedCount + ' joints');
+    }
 }
 
 /**

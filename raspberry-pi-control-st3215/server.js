@@ -51,7 +51,7 @@ const JOINTS_PER_POLL_TICK = parseInt(process.env.JOINTS_PER_POLL_TICK || '3', 1
 const MAX_BUS_WRITE_QUEUE_SIZE = 100;
 const MAX_BUS_WRITES_WHEN_IDLE = 0;
 const MAX_BUS_WRITES_WHEN_BUSY = 4;
-const SERVER_BUILD_ID = '2026-06-03-refresh-fix';
+const SERVER_BUILD_ID = '2026-06-03-servo-recover';
 const BUS_QUIET_BEFORE_MOVE_MS = 12;
 const BUS_QUIET_AFTER_MOVE_MS = 10;
 const BUS_QUIET_JOG_MS = 4;
@@ -1094,24 +1094,20 @@ async function initializeServos() {
         process.exit(1);
     }
     
-    // Create servo controllers, all sharing the same serial port
+    // Create servo controllers, all sharing the same serial port (fixed indices 0..JOINT_COUNT-1)
     for (let i = 0; i < JOINT_COUNT; i++) {
-        // Pass the shared SerialPort instance instead of the path
-        const servo = new RobotArm.ServoController(i + 1, sharedSerialPort, SERVO_IDS[i], SERIAL_BAUDRATE);
-        
-        try {
-            // This will set up the data handler but won't try to open the port
-            await servo.open();
-            
-            // Register before ping so serial replies are routed to this controller
-            servos.push(servo);
+        servos[i] = null;
 
-            // Add a delay between servo initializations to avoid simultaneous writes
-            if (i > 0) {
-                await new Promise(resolve => setTimeout(resolve, 150));
-            }
-            
-            // First, try to ping the servo to verify communication
+        if (i > 0) {
+            await new Promise(resolve => setTimeout(resolve, 150));
+        }
+
+        const servo = new RobotArm.ServoController(i + 1, sharedSerialPort, SERVO_IDS[i], SERIAL_BAUDRATE);
+
+        try {
+            await servo.open();
+            servos[i] = servo;
+
             console.log(`Pinging servo ${i + 1} (ST3215 ID: ${SERVO_IDS[i]})...`);
             const pingResult = await servo.ping();
             if (!pingResult) {
@@ -1120,18 +1116,14 @@ async function initializeServos() {
                 continue;
             }
             console.log(`✓ Servo ${i + 1} (ID: ${SERVO_IDS[i]}) responded to ping`);
-            
-            // Small delay after ping
+
             await new Promise(resolve => setTimeout(resolve, 50));
-            
-            // Enable torque (start servo)
             await servo.startServo();
-            
+
             console.log(`Servo ${i + 1} initialized (ST3215 ID: ${SERVO_IDS[i]})`);
         } catch (error) {
             console.error(`Failed to initialize servo ${i + 1} (ST3215 ID: ${SERVO_IDS[i]}):`, error.message);
-            // Create a placeholder so the array stays aligned
-            servos.push(null);
+            servos[i] = null;
         }
     }
     
@@ -1157,6 +1149,31 @@ async function initializeServos() {
     refreshDataRoutingControllers();
     rebuildJointConfigsCache();
     cachedTorqueEnabled = true;
+}
+
+/**
+ * Try to bring a joint online if it was missing at startup (ping retry).
+ * @param {number} jointIndex - 0-based
+ * @param {number} jointNum - 1-based for messages
+ * @returns {Promise<Object|null>}
+ */
+async function resolveServoForJoint(jointIndex, jointNum) {
+    if (servos[jointIndex] !== null && servos[jointIndex] !== undefined) {
+        return servos[jointIndex];
+    }
+
+    try {
+        clearAllServoPendingTransactions();
+        await new Promise((resolve) => setTimeout(resolve, 20));
+        const servo = await createAndInitializeServo(jointIndex);
+        refreshDataRoutingControllers();
+        rebuildJointConfigsCache();
+        debugLog('Recovered servo for joint ' + jointNum + ' (ID ' + SERVO_IDS[jointIndex] + ')');
+        return servo;
+    } catch (error) {
+        debugLog('Could not recover joint ' + jointNum + ': ' + (error.message || error), true);
+        return null;
+    }
 }
 
 async function createAndInitializeServo(jointIndex) {
@@ -2184,11 +2201,11 @@ async function handleCommand(ws, data) {
                 return;
             }
             
-            const servo = servos[jointNumber];
-            if (servo === null) {
+            const servo = await resolveServoForJoint(jointNumber, data.joint);
+            if (!servo) {
                 sendResponse({
                     type: 'error',
-                    message: `Servo ${data.joint} is not available`
+                    message: `Servo ${data.joint} is not available (no reply from bus servo ID ${SERVO_IDS[jointNumber]})`
                 });
                 return;
             }

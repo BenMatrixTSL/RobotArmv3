@@ -510,6 +510,13 @@ class RobotArmClient {
     }
 
     /**
+     * Ask the Pi to re-ping all servos and recreate any that were missing at startup.
+     */
+    rescanServos() {
+        return this.sendRequest('rescanServos', {}, 20000);
+    }
+
+    /**
      * Best-effort hostname for this computer (Electron / Node only).
      * @returns {string|null}
      */
