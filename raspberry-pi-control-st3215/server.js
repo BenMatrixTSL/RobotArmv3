@@ -1134,6 +1134,11 @@ function startServer() {
         ws.on('message', async function incoming(message) {
             try {
                 const data = JSON.parse(message);
+                // getStatus only reads the cache — handle immediately (do not queue behind bus work)
+                if (data.command === 'getStatus') {
+                    await handleCommand(ws, data);
+                    return;
+                }
                 // Queue the command to ensure only one command is processed at a time
                 await queueCommand(async () => {
                     await handleCommand(ws, data);

@@ -224,6 +224,12 @@ class RobotArmClient {
                         this.onControlUpdate(data);
                     }
                 }
+                if (data.type === 'status') {
+                    this.lastStatusPushAt = Date.now();
+                    if (this.onStatusUpdate) {
+                        this.onStatusUpdate(data.joints);
+                    }
+                }
                 pending.resolve(data);
                 return;
             }

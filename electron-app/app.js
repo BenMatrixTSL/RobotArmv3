@@ -1298,7 +1298,7 @@ function initializeConnection() {
 
             startControlStatusUpdates();
             
-            // Status: server may push updates; app also polls cached status at Settings interval
+            // Status: server pushes updates; app polls only if pushes go quiet
             startStatusUpdates(isKioskView);
             
             // Joint configs are sent on connect; request again if needed
@@ -1353,31 +1353,44 @@ function initializeConnection() {
 /**
  * Starts periodic status updates
  */
-function startStatusUpdates(isKioskView) {
-    // How often the app asks the server for cached joint status (Settings tab).
-    // This is cheap on the server — it does not read the servo bus per request.
-    // WebSocket pushes from the server still update the UI immediately when they arrive.
-    let interval = parseInt(document.getElementById('updateInterval')?.value || '100', 10);
+function getStatusStaleThresholdMs() {
+    const serverInterval = robotArmClient.serverStatusIntervalMs || 50;
+    // Server may poll all joints on one timer tick — allow time for a full bus cycle.
+    return Math.max(1500, serverInterval * 30);
+}
 
-    if (isNaN(interval)) {
-        interval = 100;
-    } else if (interval < 50) {
-        interval = 50;
-    } else if (interval > 5000) {
-        interval = 5000;
+function startStatusUpdates(isKioskView) {
+    // Primary updates come from server WebSocket pushes.
+    // We only send getStatus when pushes have gone quiet (fallback).
+    let checkInterval = parseInt(document.getElementById('updateInterval')?.value || '500', 10);
+
+    if (isNaN(checkInterval)) {
+        checkInterval = 500;
+    } else if (checkInterval < 200) {
+        checkInterval = 200;
+    } else if (checkInterval > 5000) {
+        checkInterval = 5000;
     }
 
     stopStatusUpdates();
 
     robotArmClient.requestStatus();
 
+    const staleThresholdMs = getStatusStaleThresholdMs();
+
     statusUpdateInterval = setInterval(function() {
         if (!robotArmClient.isConnected) {
             stopStatusUpdates();
             return;
         }
+
+        const sinceLastStatus = Date.now() - (robotArmClient.lastStatusPushAt || 0);
+        if (sinceLastStatus < staleThresholdMs) {
+            return;
+        }
+
         robotArmClient.requestStatus();
-    }, interval);
+    }, checkInterval);
 }
 
 /**
