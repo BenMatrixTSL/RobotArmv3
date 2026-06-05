@@ -1298,7 +1298,7 @@ function initializeConnection() {
 
             startControlStatusUpdates();
             
-            // Status: server pushes every ~50ms; fallback poll only if pushes stop
+            // Status: server may push updates; app also polls cached status at Settings interval
             startStatusUpdates(isKioskView);
             
             // Joint configs are sent on connect; request again if needed
@@ -1353,45 +1353,27 @@ function initializeConnection() {
 /**
  * Starts periodic status updates
  */
-function getStatusStaleThresholdMs() {
-    const numJoints = typeof getNumJoints === 'function' ? getNumJoints() : 6;
-    const serverInterval = robotArmClient.serverStatusIntervalMs || 50;
-    // Round-robin: expect one joint per tick, plus buffer for bus queue delays.
-    return Math.max(500, (serverInterval * numJoints) + 300);
-}
-
 function startStatusUpdates(isKioskView) {
-    // Fallback poll interval from settings (used only if server push stops)
-    let interval = parseInt(document.getElementById('updateInterval')?.value || '500', 10);
+    // How often the app asks the server for cached joint status (Settings tab).
+    // This is cheap on the server — it does not read the servo bus per request.
+    // WebSocket pushes from the server still update the UI immediately when they arrive.
+    let interval = parseInt(document.getElementById('updateInterval')?.value || '100', 10);
 
     if (isNaN(interval)) {
-        interval = 500;
-    } else if (interval < 100) {
         interval = 100;
+    } else if (interval < 50) {
+        interval = 50;
     } else if (interval > 5000) {
         interval = 5000;
     }
 
-    if (robotArmClient.serverPushesStatus) {
-        interval = Math.max(interval, 500);
-    }
-
     stopStatusUpdates();
 
-    if (!robotArmClient.lastStatusPushAt) {
-        robotArmClient.requestStatus();
-    }
+    robotArmClient.requestStatus();
 
-    const staleThresholdMs = getStatusStaleThresholdMs();
-
-    // Fallback poll only when server push has gone quiet
     statusUpdateInterval = setInterval(function() {
         if (!robotArmClient.isConnected) {
             stopStatusUpdates();
-            return;
-        }
-        const sincePush = Date.now() - (robotArmClient.lastStatusPushAt || 0);
-        if (robotArmClient.serverPushesStatus && sincePush < staleThresholdMs) {
             return;
         }
         robotArmClient.requestStatus();

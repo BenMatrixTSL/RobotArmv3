@@ -132,7 +132,7 @@ let endTool = null;
 // Cached joint status (updated by background poll; served to clients via getStatus)
 const jointStatusCache = [];
 let statusPollTimer = null;
-let statusPollJointIndex = 0;
+let statusPollPending = false;
 
 // WebSocket clients (for pushing status to every app instance)
 const connectedClients = new Set();
@@ -562,22 +562,7 @@ async function queueCommand(commandFn, meta) {
             }
         }
 
-        const item = { commandFn, resolve, reject, meta: meta || null };
-
-        // Keep status polls moving: one queued, jumped ahead of move commands.
-        if (meta && meta.command === '__statusPoll') {
-            const alreadyQueued = commandQueue.some((queued) => {
-                return queued.meta && queued.meta.command === '__statusPoll';
-            });
-            if (alreadyQueued) {
-                resolve();
-                return;
-            }
-            commandQueue.unshift(item);
-        } else {
-            commandQueue.push(item);
-        }
-
+        commandQueue.push({ commandFn, resolve, reject, meta: meta || null });
         processCommandQueue();
     });
 }
@@ -724,13 +709,12 @@ async function processCommandQueue() {
     }
     
     isProcessingCommand = true;
-    const { commandFn, resolve, reject, meta } = commandQueue.shift();
-
+    const { commandFn, resolve, reject } = commandQueue.shift();
+    
     try {
         const result = await commandFn();
-        // Short gap before next bus command (status polls use a smaller gap)
-        const gapMs = (meta && meta.command === '__statusPoll') ? 5 : 25;
-        await new Promise(resolve => setTimeout(resolve, gapMs));
+        // Short gap before next bus command (end tool needs a little longer)
+        await new Promise(resolve => setTimeout(resolve, 25));
         resolve(result);
     } catch (error) {
         reject(error);
@@ -964,56 +948,6 @@ async function readServoQuickStatusWithRetry(servo) {
 }
 
 /**
- * Poll one servo and update jointStatusCache for that joint.
- * On timeout/error, keeps the last good reading instead of resetting to 0 / torque off.
- * @param {number} jointIndex - 0-based joint index
- */
-async function refreshSingleJointStatusFromBus(jointIndex) {
-    const jointNum = jointIndex + 1;
-    const servo = servos[jointIndex];
-    const previous = jointStatusCache[jointIndex] || defaultJointStatus(jointNum);
-
-    if (servo === null) {
-        jointStatusCache[jointIndex] = defaultJointStatus(jointNum);
-        return;
-    }
-
-    const startServo = Date.now();
-    try {
-        const status = await readServoQuickStatusWithRetry(servo);
-        jointStatusCache[jointIndex] = {
-            joint: jointNum,
-            available: true,
-            ...status,
-            stepPosition: status.position,
-            readStale: false,
-            lastGoodAt: Date.now()
-        };
-    } catch (error) {
-        if (previous.lastGoodAt) {
-            jointStatusCache[jointIndex] = {
-                ...previous,
-                available: true,
-                readStale: true,
-                pollError: error.message
-            };
-        } else {
-            jointStatusCache[jointIndex] = {
-                ...defaultJointStatus(jointNum),
-                readStale: true,
-                pollError: error.message
-            };
-        }
-        console.warn(`Status poll joint ${jointNum}: ${error.message}`);
-    }
-
-    const servoDuration = Date.now() - startServo;
-    if (PERF_DEBUG && servoDuration > 50) {
-        console.log(`PERF: status poll joint ${jointNum} took ${servoDuration} ms`);
-    }
-}
-
-/**
  * Poll all servos on the bus and update jointStatusCache.
  * On timeout/error, keeps the last good reading instead of resetting to 0 / torque off.
  */
@@ -1021,7 +955,49 @@ async function refreshJointStatusCacheFromBus() {
     const startAll = Date.now();
 
     for (let i = 0; i < servos.length; i++) {
-        await refreshSingleJointStatusFromBus(i);
+        const jointNum = i + 1;
+        const servo = servos[i];
+        const previous = jointStatusCache[i] || defaultJointStatus(jointNum);
+
+        if (servo === null) {
+            jointStatusCache[i] = defaultJointStatus(jointNum);
+            continue;
+        }
+
+        const startServo = Date.now();
+        try {
+            const status = await readServoQuickStatusWithRetry(servo);
+            jointStatusCache[i] = {
+                joint: jointNum,
+                available: true,
+                ...status,
+                stepPosition: status.position,
+                readStale: false,
+                lastGoodAt: Date.now()
+            };
+            await new Promise(resolve => setTimeout(resolve, 5));
+        } catch (error) {
+            if (previous.lastGoodAt) {
+                jointStatusCache[i] = {
+                    ...previous,
+                    available: true,
+                    readStale: true,
+                    pollError: error.message
+                };
+            } else {
+                jointStatusCache[i] = {
+                    ...defaultJointStatus(jointNum),
+                    readStale: true,
+                    pollError: error.message
+                };
+            }
+            console.warn(`Status poll joint ${jointNum}: ${error.message}`);
+        }
+
+        const servoDuration = Date.now() - startServo;
+        if (PERF_DEBUG && servoDuration > 50) {
+            console.log(`PERF: status poll joint ${jointNum} took ${servoDuration} ms`);
+        }
     }
 
     if (PERF_DEBUG) {
@@ -1050,14 +1026,18 @@ function getJointStatusSnapshot() {
  * Queue a background bus poll (serialized with other commands on the shared port).
  */
 function scheduleStatusPoll() {
-    const jointIndex = statusPollJointIndex % servos.length;
-    statusPollJointIndex = (statusPollJointIndex + 1) % servos.length;
+    if (statusPollPending) {
+        return;
+    }
+    statusPollPending = true;
 
     queueCommand(async () => {
-        await refreshSingleJointStatusFromBus(jointIndex);
+        await refreshJointStatusCacheFromBus();
         broadcastStatusToClients();
-    }, { command: '__statusPoll' }).catch((error) => {
+    }).catch((error) => {
         console.warn('Background status poll failed:', error.message);
+    }).finally(() => {
+        statusPollPending = false;
     });
 }
 
