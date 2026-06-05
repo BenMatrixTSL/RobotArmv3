@@ -42,6 +42,10 @@ const DEBUG = false;
 // Simple performance logging flag (set to true to see timing info)
 const PERF_DEBUG = false;
 
+// Background status poll interval (ms). Servo angles are read on this timer and cached.
+// getStatus returns the cache — clients do not trigger a bus read each time.
+const STATUS_POLL_INTERVAL_MS = parseInt(process.env.STATUS_POLL_INTERVAL_MS || '300', 10);
+
 // Optional file log (set by install-service.sh: ROBOT_ARM_DEBUG_LOG)
 const DEBUG_LOG_FILE = process.env.ROBOT_ARM_DEBUG_LOG || '';
 
@@ -124,6 +128,50 @@ process.on('exit', (code) => {
 // Array to store servo controllers
 const servos = [];
 let endTool = null;
+
+// Cached joint status (updated by background poll; served to clients via getStatus)
+const jointStatusCache = [];
+let statusPollTimer = null;
+let statusPollPending = false;
+
+// WebSocket clients (for pushing status to every app instance)
+const connectedClients = new Set();
+
+// Cached servo discovery info (getJointConfigs — no bus read per client)
+let cachedJointConfigs = null;
+
+// Cached per-joint speed/acceleration (skip bus write when unchanged)
+const jointSettingsCache = [];
+
+// Cached global torque state
+let cachedTorqueEnabled = null;
+
+// One client at a time may send move/torque/stop commands (multi-app safety)
+const controlSession = { ws: null, label: '', since: null };
+
+const RESCAN_MIN_INTERVAL_MS = 10000;
+let lastRescanTime = 0;
+
+// Commands that write to the servo bus — require control session
+const BUS_WRITE_COMMANDS = {
+    moveJoint: true,
+    stopJoint: true,
+    stopAllJoints: true,
+    setServoAngle: true,
+    setSpeed: true,
+    setSpeedAll: true,
+    setTorqueAll: true,
+    setAcceleration: true,
+    rescanServos: true,
+    toolPing: true,
+    toolSetPwm: true,
+    toolSetServoEnabled: true,
+    toolSetServoPosition: true,
+    toolSetServoAngle: true,
+    toolSetWatchdog: true,
+    toolClearFaults: true,
+    toolReset: true
+};
 
 /**
  * Shared serial port instance (all servos use the same port)
@@ -359,7 +407,7 @@ async function processWriteQueue() {
  * @param {Function} commandFn - Function that executes the command
  * @returns {Promise} Promise that resolves when command completes
  */
-async function queueCommand(commandFn) {
+async function queueCommand(commandFn, meta) {
     return new Promise((resolve, reject) => {
         // Prevent queue from growing too large (could indicate a problem)
         if (commandQueue.length >= MAX_COMMAND_QUEUE_SIZE) {
@@ -367,9 +415,152 @@ async function queueCommand(commandFn) {
             reject(new Error('Command queue is full, server may be overloaded'));
             return;
         }
-        commandQueue.push({ commandFn, resolve, reject });
+
+        // Drop older queued moveJoint for the same joint (pendant spam / multi-app)
+        if (meta && meta.command === 'moveJoint' && meta.joint !== undefined) {
+            for (let i = commandQueue.length - 1; i >= 0; i--) {
+                const item = commandQueue[i];
+                if (item.meta && item.meta.command === 'moveJoint' && item.meta.joint === meta.joint) {
+                    item.reject(new Error('Superseded by newer move for joint ' + meta.joint));
+                    commandQueue.splice(i, 1);
+                }
+            }
+        }
+
+        commandQueue.push({ commandFn, resolve, reject, meta: meta || null });
         processCommandQueue();
     });
+}
+
+/**
+ * Rebuild cached joint config list after init/rescan.
+ */
+function rebuildJointConfigsCache() {
+    const discoveredServos = servos.filter(s => s !== null).length;
+    const jointConfigs = [];
+
+    for (let i = 0; i < servos.length; i++) {
+        if (servos[i] !== null) {
+            jointConfigs.push({
+                jointNumber: i + 1,
+                servoId: servos[i].servoIdNumber,
+                available: true
+            });
+        }
+    }
+
+    cachedJointConfigs = {
+        count: discoveredServos,
+        total: servos.length,
+        joints: jointConfigs
+    };
+}
+
+/**
+ * @returns {Object}
+ */
+function getJointConfigsSnapshot() {
+    if (!cachedJointConfigs) {
+        rebuildJointConfigsCache();
+    }
+    return {
+        count: cachedJointConfigs.count,
+        total: cachedJointConfigs.total,
+        joints: cachedJointConfigs.joints.map(j => ({ ...j }))
+    };
+}
+
+/**
+ * Push status snapshot to every connected WebSocket client.
+ */
+function broadcastStatusToClients() {
+    if (connectedClients.size === 0) {
+        return;
+    }
+
+    const payload = JSON.stringify({
+        type: 'status',
+        joints: getJointStatusSnapshot(),
+        cacheAgeMs: getJointStatusCacheAgeMs(),
+        pushed: true
+    });
+
+    connectedClients.forEach((ws) => {
+        if (ws.readyState === WebSocket.OPEN) {
+            ws.send(payload);
+        }
+    });
+}
+
+/**
+ * @param {WebSocket} ws
+ * @returns {{ok: boolean, message?: string}}
+ */
+function requireControl(ws) {
+    if (!controlSession.ws) {
+        return {
+            ok: false,
+            message: 'No client has arm control. Send takeControl first (kiosk/read-only views should not take control).'
+        };
+    }
+    if (controlSession.ws !== ws) {
+        const who = controlSession.label || 'another client';
+        return {
+            ok: false,
+            message: 'Arm control is held by ' + who + '.'
+        };
+    }
+    return { ok: true };
+}
+
+/**
+ * @param {WebSocket} ws
+ * @param {string} command
+ * @returns {{ok: boolean, message?: string}}
+ */
+function requireControlForCommand(ws, command) {
+    if (!BUS_WRITE_COMMANDS[command]) {
+        return { ok: true };
+    }
+    return requireControl(ws);
+}
+
+function releaseControlSession(ws) {
+    if (controlSession.ws === ws) {
+        controlSession.ws = null;
+        controlSession.label = '';
+        controlSession.since = null;
+    }
+}
+
+/**
+ * Apply speed only if it changed (reduces bus traffic).
+ */
+async function applyJointSpeedIfChanged(servo, jointIndex, speed) {
+    if (!jointSettingsCache[jointIndex]) {
+        jointSettingsCache[jointIndex] = {};
+    }
+    if (jointSettingsCache[jointIndex].speed === speed) {
+        return false;
+    }
+    await servo.setSpeed(speed);
+    jointSettingsCache[jointIndex].speed = speed;
+    return true;
+}
+
+/**
+ * Apply acceleration only if it changed.
+ */
+async function applyJointAccelerationIfChanged(servo, jointIndex, acc) {
+    if (!jointSettingsCache[jointIndex]) {
+        jointSettingsCache[jointIndex] = {};
+    }
+    if (jointSettingsCache[jointIndex].acceleration === acc) {
+        return false;
+    }
+    await servo.setAcceleration(acc);
+    jointSettingsCache[jointIndex].acceleration = acc;
+    return true;
 }
 
 /**
@@ -513,6 +704,8 @@ async function initializeServos() {
     }
 
     refreshDataRoutingControllers();
+    rebuildJointConfigsCache();
+    cachedTorqueEnabled = true;
 }
 
 async function createAndInitializeServo(jointIndex) {
@@ -581,79 +774,179 @@ async function rescanServos() {
 }
 
 /**
- * Get status from all servos
- * 
- * IMPORTANT: Read servos one-by-one on the shared serial bus.
- * This is simpler and more reliable than doing all reads in parallel.
+ * Default status object for one joint (before first successful bus read).
+ * @param {number} jointNum
+ * @returns {Object}
  */
-async function getAllServoStatus() {
-    const statuses = [];
+function defaultJointStatus(jointNum) {
+    return {
+        joint: jointNum,
+        available: false,
+        isMoving: false,
+        angleDegrees: 0,
+        position: 0,
+        stepPosition: 0,
+        speed: 0,
+        load: 0,
+        voltage: 0,
+        temperature: 0,
+        torqueEnabled: false,
+        readStale: false,
+        lastGoodAt: null
+    };
+}
+
+/**
+ * Read quick status with one retry (shared bus can miss a reply under load).
+ * @param {Object} servo
+ * @returns {Promise<Object>}
+ */
+async function readServoQuickStatusWithRetry(servo) {
+    try {
+        return await servo.readQuickStatus();
+    } catch (firstError) {
+        await new Promise(resolve => setTimeout(resolve, 15));
+        return await servo.readQuickStatus();
+    }
+}
+
+/**
+ * Poll all servos on the bus and update jointStatusCache.
+ * On timeout/error, keeps the last good reading instead of resetting to 0 / torque off.
+ */
+async function refreshJointStatusCacheFromBus() {
     const startAll = Date.now();
 
     for (let i = 0; i < servos.length; i++) {
+        const jointNum = i + 1;
         const servo = servos[i];
+        const previous = jointStatusCache[i] || defaultJointStatus(jointNum);
 
         if (servo === null) {
-            // Servo not available - push default status
-            statuses.push({
-                joint: i + 1,
-                available: false,
-                isMoving: false,
-                angleDegrees: 0,
-                position: 0,
-                stepPosition: 0,
-                speed: 0,
-                load: 0,
-                voltage: 0,
-                temperature: 0,
-                torqueEnabled: false
-            });
+            jointStatusCache[i] = defaultJointStatus(jointNum);
             continue;
         }
 
         const startServo = Date.now();
         try {
-            // Fast path: one bulk read per servo (angle, speed, load, voltage, temp, moving, torque)
-            const status = await servo.readQuickStatus();
-            statuses.push({
-                joint: i + 1,
+            const status = await readServoQuickStatusWithRetry(servo);
+            jointStatusCache[i] = {
+                joint: jointNum,
                 available: true,
                 ...status,
-                stepPosition: status.position
-            });
-            // Brief gap so the next servo reply is not mixed with trailing bus bytes
+                stepPosition: status.position,
+                readStale: false,
+                lastGoodAt: Date.now()
+            };
             await new Promise(resolve => setTimeout(resolve, 5));
         } catch (error) {
-            console.error(`Error reading status from servo ${i + 1}:`, error.message);
-            statuses.push({
-                joint: i + 1,
-                available: false,
-                isMoving: false,
-                angleDegrees: 0,
-                position: 0,
-                stepPosition: 0,
-                speed: 0,
-                load: 0,
-                voltage: 0,
-                temperature: 0,
-                torqueEnabled: false,
-                error: error.message
-            });
+            if (previous.lastGoodAt) {
+                jointStatusCache[i] = {
+                    ...previous,
+                    available: true,
+                    readStale: true,
+                    pollError: error.message
+                };
+            } else {
+                jointStatusCache[i] = {
+                    ...defaultJointStatus(jointNum),
+                    readStale: true,
+                    pollError: error.message
+                };
+            }
+            console.warn(`Status poll joint ${jointNum}: ${error.message}`);
         }
 
         const servoDuration = Date.now() - startServo;
         if (PERF_DEBUG && servoDuration > 50) {
-            console.log(`PERF: readStatus for servo ${i + 1} took ${servoDuration} ms`);
+            console.log(`PERF: status poll joint ${jointNum} took ${servoDuration} ms`);
         }
     }
 
-    const totalDuration = Date.now() - startAll;
     if (PERF_DEBUG) {
-        console.log(`PERF: getAllServoStatus for ${servos.length} servos took ${totalDuration} ms`);
+        console.log(`PERF: refreshJointStatusCacheFromBus took ${Date.now() - startAll} ms`);
+    }
+}
+
+/**
+ * Copy of cached joint status for WebSocket clients (getStatus).
+ * @returns {Array}
+ */
+function getJointStatusSnapshot() {
+    const snapshot = [];
+    for (let i = 0; i < JOINT_COUNT; i++) {
+        const jointNum = i + 1;
+        if (jointStatusCache[i]) {
+            snapshot.push({ ...jointStatusCache[i] });
+        } else {
+            snapshot.push(defaultJointStatus(jointNum));
+        }
+    }
+    return snapshot;
+}
+
+/**
+ * Queue a background bus poll (serialized with other commands on the shared port).
+ */
+function scheduleStatusPoll() {
+    if (statusPollPending) {
+        return;
+    }
+    statusPollPending = true;
+
+    queueCommand(async () => {
+        await refreshJointStatusCacheFromBus();
+        broadcastStatusToClients();
+    }).catch((error) => {
+        console.warn('Background status poll failed:', error.message);
+    }).finally(() => {
+        statusPollPending = false;
+    });
+}
+
+/**
+ * Start regular background polling of servo status into jointStatusCache.
+ */
+function startStatusPolling() {
+    if (statusPollTimer) {
+        return;
     }
 
-    // Already in joint order
-    return statuses;
+    debugLog('Starting joint status polling every ' + STATUS_POLL_INTERVAL_MS + ' ms');
+
+    scheduleStatusPoll();
+
+    statusPollTimer = setInterval(() => {
+        scheduleStatusPoll();
+    }, STATUS_POLL_INTERVAL_MS);
+}
+
+/**
+ * Stop background status polling (shutdown).
+ */
+function stopStatusPolling() {
+    if (statusPollTimer) {
+        clearInterval(statusPollTimer);
+        statusPollTimer = null;
+    }
+}
+
+/**
+ * Age in ms of the oldest lastGoodAt in the cache (for debugging).
+ * @returns {number|null}
+ */
+function getJointStatusCacheAgeMs() {
+    let oldest = null;
+    for (let i = 0; i < jointStatusCache.length; i++) {
+        const entry = jointStatusCache[i];
+        if (entry && entry.lastGoodAt) {
+            const age = Date.now() - entry.lastGoodAt;
+            if (oldest === null || age > oldest) {
+                oldest = age;
+            }
+        }
+    }
+    return oldest;
 }
 
 /**
@@ -672,11 +965,30 @@ function startServer() {
     wss.on('connection', function connection(ws, req) {
         const clientIp = req.socket.remoteAddress;
         console.log(`Client connected from ${clientIp}`);
+
+        connectedClients.add(ws);
         
-        // Send welcome message
+        // Welcome + cached snapshots (no bus read per connect)
         ws.send(JSON.stringify({
             type: 'connected',
-            message: 'Connected to Robot Arm Server (ST3215)'
+            message: 'Connected to Robot Arm Server (ST3215)',
+            pushesStatus: true,
+            statusIntervalMs: STATUS_POLL_INTERVAL_MS
+        }));
+
+        ws.send(JSON.stringify({
+            type: 'status',
+            joints: getJointStatusSnapshot(),
+            cacheAgeMs: getJointStatusCacheAgeMs(),
+            pushed: true
+        }));
+
+        const configsOnConnect = getJointConfigsSnapshot();
+        ws.send(JSON.stringify({
+            type: 'jointConfigs',
+            count: configsOnConnect.count,
+            total: configsOnConnect.total,
+            joints: configsOnConnect.joints
         }));
         
         // Handle incoming messages from client
@@ -686,6 +998,9 @@ function startServer() {
                 // Queue the command to ensure only one command is processed at a time
                 await queueCommand(async () => {
                     await handleCommand(ws, data);
+                }, {
+                    command: data.command,
+                    joint: data.joint
                 });
             } catch (error) {
                 console.error('Error handling message:', error);
@@ -698,6 +1013,8 @@ function startServer() {
         
         // Handle client disconnect
         ws.on('close', function() {
+            connectedClients.delete(ws);
+            releaseControlSession(ws);
             console.log(`Client disconnected from ${clientIp}`);
         });
         
@@ -720,6 +1037,18 @@ async function handleCommand(ws, data) {
         }
         ws.send(JSON.stringify(payload));
     };
+
+    if (command !== 'takeControl' && command !== 'releaseControl' && command !== 'getControlStatus') {
+        const controlCheck = requireControlForCommand(ws, command);
+        if (!controlCheck.ok) {
+            sendResponse({
+                type: 'error',
+                message: controlCheck.message,
+                controlRequired: true
+            });
+            return;
+        }
+    }
 
     const requireEndTool = () => {
         if (!endTool) {
@@ -862,29 +1191,61 @@ async function handleCommand(ws, data) {
             });
             break;
         }
-        case 'getJointConfigs':
-            // Return the number of servos discovered and their basic configuration
-            const discoveredServos = servos.filter(s => s !== null).length;
-            const jointConfigs = [];
-            
-            // Create config for each discovered servo
-            for (let i = 0; i < servos.length; i++) {
-                if (servos[i] !== null) {
-                    jointConfigs.push({
-                        jointNumber: i + 1,
-                        servoId: servos[i].servoIdNumber,
-                        available: true
-                    });
-                }
-            }
-            
+        case 'getJointConfigs': {
+            const snapshot = getJointConfigsSnapshot();
             sendResponse({
                 type: 'jointConfigs',
-                count: discoveredServos,
-                total: servos.length,
-                joints: jointConfigs
+                count: snapshot.count,
+                total: snapshot.total,
+                joints: snapshot.joints
             });
             break;
+        }
+
+        case 'takeControl': {
+            if (controlSession.ws && controlSession.ws !== ws) {
+                sendResponse({
+                    type: 'controlStatus',
+                    hasControl: false,
+                    youHaveControl: false,
+                    holder: controlSession.label || 'another client'
+                });
+                return;
+            }
+            controlSession.ws = ws;
+            controlSession.label = (typeof data.label === 'string' && data.label) ? data.label : 'client';
+            controlSession.since = Date.now();
+            sendResponse({
+                type: 'controlStatus',
+                hasControl: true,
+                youHaveControl: true,
+                holder: controlSession.label
+            });
+            break;
+        }
+
+        case 'releaseControl': {
+            if (controlSession.ws === ws) {
+                releaseControlSession(ws);
+            }
+            sendResponse({
+                type: 'controlStatus',
+                hasControl: false,
+                youHaveControl: false,
+                holder: controlSession.ws ? controlSession.label : null
+            });
+            break;
+        }
+
+        case 'getControlStatus': {
+            sendResponse({
+                type: 'controlStatus',
+                hasControl: controlSession.ws === ws,
+                holder: controlSession.label || null,
+                youHaveControl: controlSession.ws === ws
+            });
+            break;
+        }
 
         case 'kinematicsLoadURDF': {
             try {
@@ -1029,24 +1390,28 @@ async function handleCommand(ws, data) {
         }
             
         case 'getStatus': {
-            try {
-                const statuses = await getAllServoStatus();
-                sendResponse({
-                    type: 'status',
-                    joints: statuses
-                });
-            } catch (error) {
-                sendResponse({
-                    type: 'error',
-                    message: `Failed to read servo status: ${error.message}`
-                });
-            }
+            // Return cached values (updated by background poll) — no bus read here.
+            sendResponse({
+                type: 'status',
+                joints: getJointStatusSnapshot(),
+                cacheAgeMs: getJointStatusCacheAgeMs()
+            });
             break;
         }
 
         case 'rescanServos': {
+            const now = Date.now();
+            if (now - lastRescanTime < RESCAN_MIN_INTERVAL_MS) {
+                sendResponse({
+                    type: 'error',
+                    message: 'Rescan rate limited — wait ' + Math.ceil((RESCAN_MIN_INTERVAL_MS - (now - lastRescanTime)) / 1000) + ' s'
+                });
+                return;
+            }
+            lastRescanTime = now;
             try {
                 const scanResults = await rescanServos();
+                rebuildJointConfigsCache();
                 sendResponse({
                     type: 'servoRescan',
                     joints: scanResults
@@ -1483,10 +1848,12 @@ async function handleCommand(ws, data) {
             }
             
             try {
-                await speedServo.setSpeed(speed);
+                const changed = await applyJointSpeedIfChanged(speedServo, speedJointNumber, speed);
                 sendResponse({
                     type: 'success',
-                    message: `Servo ${data.joint} speed set to ${speed} step/s`
+                    message: changed
+                        ? `Servo ${data.joint} speed set to ${speed} step/s`
+                        : `Servo ${data.joint} speed already ${speed} step/s`
                 });
             } catch (error) {
                 sendResponse({
@@ -1505,7 +1872,7 @@ async function handleCommand(ws, data) {
             try {
                 for (let i = 0; i < servos.length; i++) {
                     if (servos[i] !== null) {
-                        await servos[i].setSpeed(speedAll);
+                        await applyJointSpeedIfChanged(servos[i], i, speedAll);
                     }
                 }
                 sendResponse({
@@ -1525,6 +1892,13 @@ async function handleCommand(ws, data) {
             const torqueEnabled = data.enabled !== false; // Default to true if not specified
             
             try {
+                if (cachedTorqueEnabled === torqueEnabled) {
+                    sendResponse({
+                        type: 'success',
+                        message: `All servos torque already ${torqueEnabled ? 'enabled' : 'disabled'}`
+                    });
+                    return;
+                }
                 for (let i = 0; i < servos.length; i++) {
                     if (servos[i] !== null) {
                         if (torqueEnabled) {
@@ -1534,6 +1908,7 @@ async function handleCommand(ws, data) {
                         }
                     }
                 }
+                cachedTorqueEnabled = torqueEnabled;
                 sendResponse({
                     type: 'success',
                     message: `All servos torque ${torqueEnabled ? 'enabled' : 'disabled'}`
@@ -1569,10 +1944,12 @@ async function handleCommand(ws, data) {
             }
             
             try {
-                await accServo.setAcceleration(acc);
+                const changed = await applyJointAccelerationIfChanged(accServo, accJointNumber, acc);
                 sendResponse({
                     type: 'success',
-                    message: `Servo ${data.joint} acceleration set to ${acc}`
+                    message: changed
+                        ? `Servo ${data.joint} acceleration set to ${acc}`
+                        : `Servo ${data.joint} acceleration already ${acc}`
                 });
             } catch (error) {
                 sendResponse({
@@ -1602,6 +1979,8 @@ async function cleanup(signalName) {
     shutdownInProgress = true;
 
     debugLog('Shutting down... (signal: ' + (signalName || 'unknown') + ')');
+
+    stopStatusPolling();
     
     // Stop all servos
     for (let i = 0; i < servos.length; i++) {
@@ -1645,6 +2024,10 @@ async function main() {
     try {
         // Initialize servos
         await initializeServos();
+
+        // Prime cache and poll servos on a fixed interval
+        await refreshJointStatusCacheFromBus();
+        startStatusPolling();
         
         // Start WebSocket server
         startServer();

@@ -5,7 +5,7 @@ node_modules/
 dist/
 out/
 
-# Chromium kiosk profiles (created on the Pi)
+# Chromium kiosk profiles (created on the Pi — legacy paths)
 .kiosk-profile-*/
 
 # Logs

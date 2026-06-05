@@ -6,6 +6,7 @@ This project is similar to the I2C-based robot arm control system, but uses ST32
 
 ## Features
 
+- **Multi-client safe:** cached status, server push, control lock — see [MULTI_CLIENT.md](MULTI_CLIENT.md)
 - Control up to 6 ST3215 serial bus servo motors
 - Optional ESP32 end-tool node support on ST3215-compatible bus ID `64`
 - WebSocket server for communication with Electron desktop app
@@ -235,7 +236,7 @@ The server accepts JSON commands via WebSocket. All commands follow this format:
 ### Available Commands
 
 #### `getStatus`
-Get status from all servos.
+Get cached status for all servos. The server polls the bus on a fixed interval (default 300 ms) and stores the latest readings. This command returns that cache immediately — it does not read the bus on every client request (reduces timeouts and UI flicker).
 
 **Request**:
 ```json
@@ -248,6 +249,7 @@ Get status from all servos.
 ```json
 {
   "type": "status",
+  "cacheAgeMs": 120,
   "joints": [
     {
       "joint": 1,

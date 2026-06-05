@@ -21,6 +21,10 @@ class RobotArmClient {
         this.hasEverConnected = false; // Track if we've ever successfully connected
         this.pendingRequests = new Map(); // requestId -> {resolve, reject, timeout}
         this.nextRequestId = 1;
+        this.serverPushesStatus = false;
+        this.lastStatusPushAt = 0;
+        this.hasArmControl = false;
+        this.onControlUpdate = null;
     }
 
     /**
@@ -193,10 +197,28 @@ class RobotArmClient {
             }
         }
 
-        // Handle status updates
+        if (data.type === 'connected' && data.pushesStatus) {
+            this.serverPushesStatus = true;
+        }
+
+        // Handle status updates (from getStatus or server push)
         if (data.type === 'status') {
+            if (data.pushed) {
+                this.lastStatusPushAt = Date.now();
+            }
             if (this.onStatusUpdate) {
                 this.onStatusUpdate(data.joints);
+            }
+        }
+
+        if (data.type === 'controlStatus') {
+            if (data.youHaveControl !== undefined) {
+                this.hasArmControl = !!data.youHaveControl;
+            } else {
+                this.hasArmControl = !!data.hasControl;
+            }
+            if (this.onControlUpdate) {
+                this.onControlUpdate(data);
             }
         }
 
@@ -412,6 +434,29 @@ class RobotArmClient {
      */
     requestStatus() {
         return this.sendCommand('getStatus');
+    }
+
+    /**
+     * Request exclusive control of arm bus writes (moves, torque, etc.).
+     * Kiosk/read-only clients should not call this.
+     * @param {string} label - Display name for this client
+     */
+    takeControl(label) {
+        return this.sendRequest('takeControl', { label: label || 'electron' }, 3000);
+    }
+
+    /**
+     * Release arm control so another client can takeControl.
+     */
+    releaseControl() {
+        return this.sendRequest('releaseControl', {}, 3000);
+    }
+
+    /**
+     * Query who holds arm control.
+     */
+    getControlStatus() {
+        return this.sendRequest('getControlStatus', {}, 3000);
     }
 
     /**

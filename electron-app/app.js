@@ -36,6 +36,8 @@ function setToolOrientationVector(x, y, z) {
 
 // Global variables
 let statusUpdateInterval = null;
+// Last good joint status from server (avoids UI flicker if a poll times out)
+let lastGoodJointStatus = [];
 let robotArm3D = null; // 3D visualization instance
 let useSimulatedAngles = false; // Whether to use simulated angles instead of real robot angles
 let simulatedAngles = [0, 0, 0, 0]; // Simulated joint angles
@@ -1243,12 +1245,28 @@ function initializeConnection() {
             
             // Set up configuration update callback
             robotArmClient.onConfigUpdate = onJointConfigsLoaded;
+
+            const isKioskView = window.location.search.indexOf('kiosk=1') >= 0;
+            if (!isKioskView) {
+                try {
+                    const control = await robotArmClient.takeControl('electron');
+                    if (control && control.hasControl) {
+                        console.log('Arm control acquired');
+                    }
+                } catch (controlError) {
+                    console.warn('Could not take arm control (another app may be controlling):', controlError.message);
+                }
+            } else {
+                console.log('Kiosk view: read-only — not taking arm control');
+            }
             
-            // Start requesting status updates
-            startStatusUpdates();
+            // Status: server pushes every ~300ms; fallback poll only if pushes stop
+            startStatusUpdates(isKioskView);
             
-            // Request joint configurations
-            robotArmClient.requestJointConfigs();
+            // Joint configs are sent on connect; request again if needed
+            if (!robotArmClient.jointConfigs || robotArmClient.jointConfigs.length === 0) {
+                robotArmClient.requestJointConfigs();
+            }
             
         } catch (error) {
                 console.error('Connection error:', error);
@@ -1282,7 +1300,7 @@ function initializeConnection() {
 /**
  * Starts periodic status updates
  */
-function startStatusUpdates() {
+function startStatusUpdates(isKioskView) {
     // Get update interval from settings (default 500ms)
     let interval = parseInt(document.getElementById('updateInterval')?.value || '500', 10);
     
@@ -1295,20 +1313,31 @@ function startStatusUpdates() {
     } else if (interval > 5000) {
         interval = 5000;
     }
+
+    // Server pushes status to all clients — use a slower fallback poll only
+    if (robotArmClient.serverPushesStatus) {
+        interval = Math.max(interval, 2000);
+    }
     
     // Clear any existing interval
     stopStatusUpdates();
     
-    // Request status immediately
-    robotArmClient.requestStatus();
+    // Request status once if server has not pushed yet
+    if (!robotArmClient.lastStatusPushAt) {
+        robotArmClient.requestStatus();
+    }
     
-    // Set up periodic status requests
+    // Fallback poll if server push stops (multi-app safe: reads server cache only)
     statusUpdateInterval = setInterval(function() {
-        if (robotArmClient.isConnected) {
-            robotArmClient.requestStatus();
-        } else {
+        if (!robotArmClient.isConnected) {
             stopStatusUpdates();
+            return;
         }
+        const sincePush = Date.now() - (robotArmClient.lastStatusPushAt || 0);
+        if (robotArmClient.serverPushesStatus && sincePush < 2500) {
+            return;
+        }
+        robotArmClient.requestStatus();
     }, interval);
 }
 
@@ -1360,10 +1389,23 @@ function updateJointStatus(joints) {
     // Only process up to the configured number of joints
     for (let i = 0; i < Math.min(joints.length, numJoints); i++) {
         const jointNumber = i + 1;
-        const joint = joints[i];
+        let joint = joints[i];
+
+        // Server keeps last good values when a bus read fails (readStale).
+        // Extra safety: if we still get a bad/empty reading, reuse the last UI values.
+        const hasFreshAngle = joint
+            && joint.available !== false
+            && !joint.readStale
+            && typeof joint.angleDegrees === 'number'
+            && !isNaN(joint.angleDegrees);
+
+        if (hasFreshAngle) {
+            lastGoodJointStatus[i] = joint;
+        } else if (lastGoodJointStatus[i]) {
+            joint = Object.assign({}, lastGoodJointStatus[i], { readStale: true });
+        }
         
         // Collect joint angles for 3D visualization
-        // Be defensive: if the server sends null/undefined/non-number, treat it as 0
         const angleDegrees =
             (joint && typeof joint.angleDegrees === 'number' && !isNaN(joint.angleDegrees))
                 ? joint.angleDegrees

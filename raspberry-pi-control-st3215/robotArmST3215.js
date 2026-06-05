@@ -73,7 +73,7 @@ const MAX_ANGLE = 180;   // Maximum angle in degrees
 const END_TOOL_ID = 64;
 
 // Shared half-duplex bus: ST3215 reads need more than a few ms under load
-const BUS_READ_TIMEOUT_MS = 100;
+const BUS_READ_TIMEOUT_MS = 150;
 const BUS_READ_TIMEOUT_END_TOOL_MS = 250;
 const BUS_WRITE_RETRY_DELAY_MS = 50;
 const BUS_WRITE_MAX_ATTEMPTS = 2;
