@@ -286,6 +286,21 @@ function getControlStatusPayload(ws, extra) {
 const RESCAN_MIN_INTERVAL_MS = 10000;
 let lastRescanTime = 0;
 
+// Commands that do not touch the servo bus — handle immediately, not via the bus queue.
+const INSTANT_SERVER_COMMANDS = {
+    getStatus: true,
+    getControlStatus: true,
+    takeControl: true,
+    releaseControl: true,
+    kinematicsLoadURDF: true,
+    kinematicsForwardKinematics: true,
+    kinematicsForwardKinematicsSteps: true,
+    kinematicsForwardKinematicsBatch: true,
+    kinematicsInverseKinematics: true,
+    kinematicsRefineOrientationWithAccuracy: true,
+    kinematicsGetInfo: true
+};
+
 // Commands that write to the servo bus — require control session
 const BUS_WRITE_COMMANDS = {
     moveJoint: true,
@@ -1178,8 +1193,8 @@ function startServer() {
         ws.on('message', async function incoming(message) {
             try {
                 const data = JSON.parse(message);
-                // getStatus only reads the cache — handle immediately (do not queue behind bus work)
-                if (data.command === 'getStatus') {
+                // Cache reads, control status, and kinematics do not use the servo bus.
+                if (INSTANT_SERVER_COMMANDS[data.command]) {
                     await handleCommand(ws, data);
                     return;
                 }

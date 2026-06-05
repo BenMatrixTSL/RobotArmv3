@@ -286,6 +286,27 @@ function getRevoluteJointCount() {
 }
 
 /**
+ * Build a joint-angle array sized for URDF forward/inverse kinematics.
+ * @param {Array<number>} jointAngles - Raw angles (e.g. from joint status)
+ * @returns {Array<number>}
+ */
+function getJointAnglesForKinematics(jointAngles) {
+    const fkJointCount = getRevoluteJointCount();
+    const anglesForFk = [];
+
+    for (let i = 0; i < fkJointCount; i++) {
+        const angle = jointAngles[i];
+        if (typeof angle === 'number' && !isNaN(angle)) {
+            anglesForFk.push(angle);
+        } else {
+            anglesForFk.push(0);
+        }
+    }
+
+    return anglesForFk;
+}
+
+/**
  * True when URDF defines a fixed tool-mount frame (7th kinematic coordinate, not a servo).
  * @returns {boolean}
  */
@@ -2235,8 +2256,7 @@ function quickMove(jointNumber, direction) {
  * @param {Array} jointAngles - Array of joint angles in degrees
  */
 async function updateXYZPosition(jointAngles) {
-    // Check if kinematics is configured
-    if (!robotKinematics.isConfigured() || !jointAngles || jointAngles.length === 0) {
+    const clearDisplay = function() {
         const currentXSpan = document.getElementById('currentX');
         const currentYSpan = document.getElementById('currentY');
         const currentZSpan = document.getElementById('currentZ');
@@ -2250,17 +2270,32 @@ async function updateXYZPosition(jointAngles) {
         if (pendantXSpan) pendantXSpan.textContent = '-';
         if (pendantYSpan) pendantYSpan.textContent = '-';
         if (pendantZSpan) pendantZSpan.textContent = '-';
+    };
+
+    if (!jointAngles || jointAngles.length === 0) {
+        clearDisplay();
         return;
     }
-    
+
+    const anglesForFk = getJointAnglesForKinematics(jointAngles);
+    const canUseLocalFk = robotKinematics.isConfigured();
+    const canUseServerFk = robotArmClient &&
+        robotArmClient.isConnected &&
+        typeof robotArmClient.forwardKinematics === 'function';
+
+    if (!canUseLocalFk && !canUseServerFk) {
+        clearDisplay();
+        return;
+    }
+
     try {
-        // Calculate forward kinematics on the Pi server when connected.
-        // Fallback to local kinematics only if the server is not connected.
+        // Use local URDF kinematics for the live display (fast and always available after load).
+        // Fall back to the Pi server only if local kinematics is not configured yet.
         let pose = null;
-        if (robotArmClient && robotArmClient.isConnected && typeof robotArmClient.forwardKinematics === 'function') {
-            pose = await robotArmClient.forwardKinematics(jointAngles);
+        if (canUseLocalFk) {
+            pose = robotKinematics.forwardKinematics(anglesForFk);
         } else {
-            pose = robotKinematics.forwardKinematics(jointAngles);
+            pose = await robotArmClient.forwardKinematics(anglesForFk);
         }
         const pos = pose.position;
         
@@ -2308,10 +2343,12 @@ async function updateXYZPosition(jointAngles) {
         if (jointTracesEnabled) {
             try {
                 let fkSteps = null;
-                if (robotArmClient && robotArmClient.isConnected && typeof robotArmClient.forwardKinematicsSteps === 'function') {
-                    fkSteps = await robotArmClient.forwardKinematicsSteps(jointAngles);
+                if (canUseLocalFk) {
+                    fkSteps = robotKinematics.getForwardKinematicsSteps(anglesForFk);
+                } else if (robotArmClient && robotArmClient.isConnected && typeof robotArmClient.forwardKinematicsSteps === 'function') {
+                    fkSteps = await robotArmClient.forwardKinematicsSteps(anglesForFk);
                 } else {
-                    fkSteps = robotKinematics.getForwardKinematicsSteps(jointAngles);
+                    fkSteps = robotKinematics.getForwardKinematicsSteps(anglesForFk);
                 }
                 const steps = fkSteps.steps || [];
 
