@@ -767,7 +767,7 @@ class ServoController {
                     }
                 };
 
-                const writeTimeoutMs = this.servoIdNumber === END_TOOL_ID ? 1000 : 300;
+                const writeTimeoutMs = this.servoIdNumber === END_TOOL_ID ? 1000 : 450;
                 this.responseTimeout = setTimeout(() => {
                     if (DEBUG) {
                         console.log(`[DEBUG Servo ${this.servoId}] Write timeout - no response received`);
@@ -1068,8 +1068,10 @@ class ServoController {
             // Check explicitly for null/undefined, but allow 0 as a valid speed value
             const speedToUse = (speed !== null && speed !== undefined) ? speed : this.currentSpeed;
             
-            // Always set speed to ensure it's applied (either the provided one or the stored one)
-            await this.setSpeed(speedToUse);
+            // Only write speed when it changed — avoids an extra bus transaction before every move.
+            if (speedToUse !== this.currentSpeed) {
+                await this.setSpeed(speedToUse);
+            }
             
             // Don't read position before move - it can cause response matching issues
             // Just proceed with the move

@@ -1424,11 +1424,12 @@ function formatServerDiagnosticsText(diag) {
     }
 
     const lines = [];
-    lines.push('Bus tick interval: ' + (diag.busTickIntervalMs || '?') + ' ms');
+    lines.push('Bus tick target period: ' + (diag.busTickIntervalMs || '?') + ' ms');
     lines.push('Cache age (oldest joint): ' + (diag.cacheAgeMs != null ? diag.cacheAgeMs + ' ms' : '—'));
     lines.push('Write queue depth: ' + (diag.busWriteQueueLength != null ? diag.busWriteQueueLength : 0));
     lines.push('Last tick duration: ' + (diag.lastBusTickDurationMs != null ? diag.lastBusTickDurationMs + ' ms' : '—'));
-    lines.push('Last status poll: ' + (diag.lastStatusPollDurationMs != null ? diag.lastStatusPollDurationMs + ' ms' : '—'));
+    lines.push('Last joint read: ' + (diag.lastStatusPollDurationMs != null ? diag.lastStatusPollDurationMs + ' ms' : '—'));
+    lines.push('Status round-robin index: ' + (diag.statusPollJointIndex != null ? diag.statusPollJointIndex : '—'));
     lines.push('Ticks: ' + (diag.busTicks || 0) + ' (skipped ' + (diag.busTicksSkipped || 0) + ')');
     lines.push('Writes done / failed / rejected: ' +
         (diag.busWritesCompleted || 0) + ' / ' +

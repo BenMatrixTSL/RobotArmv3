@@ -44,11 +44,12 @@ const PERF_DEBUG = false;
 // Log bus diagnostics to console/debug log every N ms (0 = off)
 const BUS_DIAGNOSTICS_LOG_INTERVAL_MS = parseInt(process.env.BUS_DIAGNOSTICS_LOG_INTERVAL_MS || '0', 10);
 
-// Bus tick interval (ms). All servo reads and writes are scheduled on this timer.
-// getStatus returns the cache — clients do not trigger a bus read.
+// Minimum gap between bus ticks (ms). Ticks are chained after work finishes — not a fixed overlap.
 const STATUS_POLL_INTERVAL_MS = parseInt(process.env.STATUS_POLL_INTERVAL_MS || '100', 10);
+const MIN_BUS_TICK_GAP_MS = parseInt(process.env.MIN_BUS_TICK_GAP_MS || '20', 10);
 const MAX_BUS_WRITE_QUEUE_SIZE = 100;
-const MAX_BUS_WRITES_PER_TICK = 1;
+const MAX_BUS_WRITES_WHEN_IDLE = 0;
+const MAX_BUS_WRITES_WHEN_BUSY = 4;
 
 // Optional file log (set by install-service.sh: ROBOT_ARM_DEBUG_LOG)
 const DEBUG_LOG_FILE = process.env.ROBOT_ARM_DEBUG_LOG || '';
@@ -136,8 +137,10 @@ let endTool = null;
 // Cached joint status (updated by bus tick; served to clients via getStatus)
 const jointStatusCache = [];
 let busTickTimer = null;
+let busTickLoopActive = false;
 let busTickInProgress = false;
 let busWriteQueue = [];
+let statusPollJointIndex = 0;
 let lastStatusBroadcastAt = 0;
 
 // Live metrics for debugging bus vs WebSocket load (see getServerDiagnostics).
@@ -156,6 +159,7 @@ const serverDiagnostics = {
     lastBusWriteAt: null,
     lastBusWriteDurationMs: 0,
     statusPollsCompleted: 0,
+    statusPollJointIndex: 0,
     lastStatusPollAt: null,
     lastStatusPollDurationMs: 0,
     lastBroadcastAt: null,
@@ -768,11 +772,11 @@ async function applyJointAccelerationIfChanged(servo, jointIndex, acc) {
 }
 
 /**
- * One bus tick: process pending writes, then refresh status when the write queue is idle.
- * WebSocket instant commands never run here — only scheduled servo bus work.
+ * One bus tick: drain pending writes first, then read one joint (round-robin) when idle.
+ * Chained scheduling avoids overlapping ticks that starve moves.
  */
 async function runBusTick() {
-    if (serverShuttingDown) {
+    if (serverShuttingDown || !busTickLoopActive) {
         return;
     }
 
@@ -787,15 +791,17 @@ async function runBusTick() {
 
     try {
         let wroteThisTick = false;
+        const queueAtStart = busWriteQueue.length;
+        const maxWrites = queueAtStart > 0 ? MAX_BUS_WRITES_WHEN_BUSY : MAX_BUS_WRITES_WHEN_IDLE;
 
-        for (let w = 0; w < MAX_BUS_WRITES_PER_TICK && busWriteQueue.length > 0 && !serverShuttingDown; w++) {
+        for (let w = 0; w < maxWrites && busWriteQueue.length > 0 && !serverShuttingDown; w++) {
             const { commandFn, resolve, reject } = busWriteQueue.shift();
             serverDiagnostics.busWriteQueueLength = busWriteQueue.length;
             const writeStart = Date.now();
 
             try {
                 await commandFn();
-                await new Promise((r) => setTimeout(r, 25));
+                await new Promise((r) => setTimeout(r, 15));
                 resolve();
                 wroteThisTick = true;
                 serverDiagnostics.busWritesCompleted++;
@@ -809,12 +815,14 @@ async function runBusTick() {
 
         if (busWriteQueue.length === 0 && !wroteThisTick) {
             const pollStart = Date.now();
-            await refreshJointStatusCacheFromBus();
+            await refreshSingleJointStatusFromBus(statusPollJointIndex);
+            statusPollJointIndex = (statusPollJointIndex + 1) % JOINT_COUNT;
+            serverDiagnostics.statusPollJointIndex = statusPollJointIndex;
             broadcastStatusToClients();
             serverDiagnostics.statusPollsCompleted++;
             serverDiagnostics.lastStatusPollDurationMs = Date.now() - pollStart;
             serverDiagnostics.lastStatusPollAt = Date.now();
-        } else if (busWriteQueue.length === 0 && wroteThisTick) {
+        } else if (wroteThisTick) {
             broadcastStatusToClients();
         }
     } catch (error) {
@@ -827,7 +835,32 @@ async function runBusTick() {
         serverDiagnostics.wsClients = connectedClients.size;
         serverDiagnostics.busWriteQueueLength = busWriteQueue.length;
         busTickInProgress = false;
+
+        if (busTickLoopActive && !serverShuttingDown) {
+            const elapsed = Date.now() - tickStart;
+            const delay = Math.max(MIN_BUS_TICK_GAP_MS, STATUS_POLL_INTERVAL_MS - elapsed);
+            scheduleNextBusTick(delay);
+        }
     }
+}
+
+/**
+ * Schedule the next bus tick after a delay (chained loop — no overlapping ticks).
+ * @param {number} delayMs
+ */
+function scheduleNextBusTick(delayMs) {
+    if (!busTickLoopActive || serverShuttingDown) {
+        return;
+    }
+
+    if (busTickTimer) {
+        clearTimeout(busTickTimer);
+    }
+
+    busTickTimer = setTimeout(() => {
+        busTickTimer = null;
+        runBusTick();
+    }, delayMs);
 }
 
 /**
@@ -1139,17 +1172,14 @@ function getJointStatusSnapshot() {
  * Start the fixed-interval bus tick loop (reads + writes).
  */
 function startBusTickLoop() {
-    if (busTickTimer) {
+    if (busTickLoopActive) {
         return;
     }
 
-    debugLog('Starting bus tick loop every ' + STATUS_POLL_INTERVAL_MS + ' ms');
+    busTickLoopActive = true;
+    debugLog('Starting bus tick loop (gap ' + MIN_BUS_TICK_GAP_MS + ' ms, target period ' + STATUS_POLL_INTERVAL_MS + ' ms)');
 
     runBusTick();
-
-    busTickTimer = setInterval(() => {
-        runBusTick();
-    }, STATUS_POLL_INTERVAL_MS);
 
     if (BUS_DIAGNOSTICS_LOG_INTERVAL_MS > 0) {
         setInterval(() => {
@@ -1172,8 +1202,9 @@ function startBusTickLoop() {
  * Stop bus tick loop (shutdown).
  */
 function stopBusTickLoop() {
+    busTickLoopActive = false;
     if (busTickTimer) {
-        clearInterval(busTickTimer);
+        clearTimeout(busTickTimer);
         busTickTimer = null;
     }
 }
@@ -1983,7 +2014,15 @@ async function handleCommand(ws, data) {
             
             try {
                 await servo.moveToAngle(angle, moveSpeed);
-                await refreshSingleJointStatusFromBus(jointNumber);
+                const prevStatus = jointStatusCache[jointNumber] || defaultJointStatus(data.joint);
+                jointStatusCache[jointNumber] = {
+                    ...prevStatus,
+                    joint: data.joint,
+                    available: true,
+                    angleDegrees: angle,
+                    readStale: true,
+                    lastGoodAt: prevStatus.lastGoodAt || Date.now()
+                };
                 broadcastStatusToClients();
                 sendResponse({
                     type: 'success',
