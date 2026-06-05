@@ -24,6 +24,7 @@ class RobotArmClient {
         this.serverPushesStatus = false;
         this.lastStatusPushAt = 0;
         this.hasArmControl = false;
+        this.controlHolder = null;
         this.onControlUpdate = null;
     }
 
@@ -119,6 +120,8 @@ class RobotArmClient {
             this.ws = null;
         }
         this.isConnected = false;
+        this.hasArmControl = false;
+        this.controlHolder = null;
         this.updateConnectionStatus(false);
     }
 
@@ -216,6 +219,10 @@ class RobotArmClient {
                 this.hasArmControl = !!data.youHaveControl;
             } else {
                 this.hasArmControl = !!data.hasControl;
+            }
+            this.controlHolder = data.holder || null;
+            if (data.message && typeof showAppMessage === 'function') {
+                showAppMessage(data.message);
             }
             if (this.onControlUpdate) {
                 this.onControlUpdate(data);
@@ -444,11 +451,14 @@ class RobotArmClient {
 
     /**
      * Request exclusive control of arm bus writes (moves, torque, etc.).
-     * Kiosk/read-only clients should not call this.
      * @param {string} label - Display name for this client
+     * @param {boolean} force - If true, take control from another app instance
      */
-    takeControl(label) {
-        return this.sendRequest('takeControl', { label: label || 'electron' }, 3000);
+    takeControl(label, force) {
+        return this.sendRequest('takeControl', {
+            label: label || 'electron',
+            force: force === true
+        }, 3000);
     }
 
     /**

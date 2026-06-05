@@ -1206,23 +1206,44 @@ async function handleCommand(ws, data) {
         }
 
         case 'takeControl': {
-            if (controlSession.ws && controlSession.ws !== ws) {
+            const forceTake = data.force === true;
+            const previousWs = controlSession.ws;
+            const previousLabel = controlSession.label || 'another client';
+
+            if (controlSession.ws && controlSession.ws !== ws && !forceTake) {
                 sendResponse({
                     type: 'controlStatus',
                     hasControl: false,
                     youHaveControl: false,
-                    holder: controlSession.label || 'another client'
+                    holder: previousLabel
                 });
                 return;
             }
+
             controlSession.ws = ws;
             controlSession.label = (typeof data.label === 'string' && data.label) ? data.label : 'client';
             controlSession.since = Date.now();
+
+            if (previousWs && previousWs !== ws && forceTake) {
+                try {
+                    previousWs.send(JSON.stringify({
+                        type: 'controlStatus',
+                        hasControl: false,
+                        youHaveControl: false,
+                        holder: controlSession.label,
+                        message: 'Another app took arm control'
+                    }));
+                } catch (notifyError) {
+                    // Previous client may have disconnected
+                }
+            }
+
             sendResponse({
                 type: 'controlStatus',
                 hasControl: true,
                 youHaveControl: true,
-                holder: controlSession.label
+                holder: controlSession.label,
+                takenFrom: (forceTake && previousWs && previousWs !== ws) ? previousLabel : null
             });
             break;
         }

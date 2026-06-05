@@ -36,6 +36,7 @@ function setToolOrientationVector(x, y, z) {
 
 // Global variables
 let statusUpdateInterval = null;
+let controlStatusInterval = null;
 // Last good joint status from server (avoids UI flicker if a poll times out)
 let lastGoodJointStatus = [];
 let robotArm3D = null; // 3D visualization instance
@@ -1246,20 +1247,27 @@ function initializeConnection() {
             // Set up configuration update callback
             robotArmClient.onConfigUpdate = onJointConfigsLoaded;
 
+            robotArmClient.onControlUpdate = updateArmControlDisplay;
+
             const isKioskView = window.location.search.indexOf('kiosk=1') >= 0;
             if (!isKioskView) {
                 try {
                     const control = await robotArmClient.takeControl('electron');
+                    updateArmControlDisplay(control);
                     if (control && control.hasControl) {
                         console.log('Arm control acquired');
                     }
                 } catch (controlError) {
                     console.warn('Could not take arm control (another app may be controlling):', controlError.message);
                     showAppMessage('Connected (read-only): ' + controlError.message);
+                    await refreshArmControlStatus();
                 }
             } else {
                 console.log('Kiosk view: read-only — not taking arm control');
+                await refreshArmControlStatus();
             }
+
+            startControlStatusUpdates();
             
             // Status: server pushes every ~300ms; fallback poll only if pushes stop
             startStatusUpdates(isKioskView);
@@ -1286,9 +1294,24 @@ function initializeConnection() {
     disconnectButton.addEventListener('click', function() {
         robotArmClient.disconnect();
         stopStatusUpdates();
+        stopControlStatusUpdates();
             if (connectButton) connectButton.disabled = false;
         disconnectButton.disabled = true;
     });
+
+    const releaseControlButton = document.getElementById('releaseControlButton');
+    if (releaseControlButton) {
+        releaseControlButton.addEventListener('click', function() {
+            releaseArmControl();
+        });
+    }
+
+    const takeControlButton = document.getElementById('takeControlButton');
+    if (takeControlButton) {
+        takeControlButton.addEventListener('click', function() {
+            requestArmControl();
+        });
+    }
     } else {
         console.warn('Disconnect button not found');
     }
@@ -1349,6 +1372,158 @@ function stopStatusUpdates() {
     if (statusUpdateInterval) {
         clearInterval(statusUpdateInterval);
         statusUpdateInterval = null;
+    }
+}
+
+/**
+ * Updates the arm control indicator in the header.
+ * @param {Object|null} controlInfo - From server controlStatus, or null when disconnected
+ */
+function updateArmControlDisplay(controlInfo) {
+    const indicator = document.getElementById('controlIndicator');
+    const text = document.getElementById('controlText');
+    const releaseButton = document.getElementById('releaseControlButton');
+
+    if (!indicator || !text) {
+        return;
+    }
+
+    indicator.classList.remove('control-active', 'control-readonly', 'control-unknown');
+
+    if (!robotArmClient.isConnected) {
+        text.textContent = 'Control: —';
+        indicator.classList.add('control-unknown');
+        if (releaseButton) {
+            releaseButton.style.display = 'none';
+        }
+        return;
+    }
+
+    if (robotArmClient.hasArmControl) {
+        text.textContent = 'In control';
+        indicator.classList.add('control-active');
+        if (releaseButton) {
+            releaseButton.style.display = 'inline-block';
+        }
+        return;
+    }
+
+    let holderLabel = 'another app';
+    if (controlInfo && controlInfo.holder) {
+        holderLabel = controlInfo.holder;
+    } else if (robotArmClient.controlHolder) {
+        holderLabel = robotArmClient.controlHolder;
+    }
+
+    text.textContent = 'Read-only (' + holderLabel + ')';
+    indicator.classList.add('control-readonly');
+    if (releaseButton) {
+        releaseButton.style.display = 'none';
+    }
+
+    updateTakeControlButtonState();
+}
+
+/**
+ * Enable/disable the Connection tab "Take control" button.
+ */
+function updateTakeControlButtonState() {
+    const takeButton = document.getElementById('takeControlButton');
+    if (!takeButton) {
+        return;
+    }
+
+    if (!robotArmClient.isConnected) {
+        takeButton.disabled = true;
+        return;
+    }
+
+    takeButton.disabled = robotArmClient.hasArmControl;
+}
+
+/**
+ * Take arm control from another app instance (Connection tab).
+ */
+async function requestArmControl() {
+    if (!robotArmClient.isConnected) {
+        showAppMessage('Connect to the Raspberry Pi first');
+        return;
+    }
+
+    try {
+        const info = await robotArmClient.takeControl('electron', true);
+        updateArmControlDisplay(info);
+
+        if (info && info.youHaveControl) {
+            if (info.takenFrom) {
+                showAppMessage('Arm control taken from ' + info.takenFrom + '.');
+            } else {
+                showAppMessage('You have arm control.');
+            }
+        } else {
+            showAppMessage('Could not take control — held by ' + (info.holder || 'another app'));
+        }
+    } catch (error) {
+        showAppMessage('Take control failed: ' + error.message);
+    }
+}
+
+/**
+ * Ask the server who has arm control and refresh the header indicator.
+ */
+async function refreshArmControlStatus() {
+    if (!robotArmClient.isConnected) {
+        updateArmControlDisplay(null);
+        return;
+    }
+
+    try {
+        const info = await robotArmClient.getControlStatus();
+        updateArmControlDisplay(info);
+    } catch (error) {
+        console.warn('Could not refresh arm control status:', error.message);
+        updateArmControlDisplay(null);
+    }
+}
+
+/**
+ * Poll control status so the UI updates after auto-grant or another app takes over.
+ */
+function startControlStatusUpdates() {
+    stopControlStatusUpdates();
+    refreshArmControlStatus();
+    controlStatusInterval = setInterval(function() {
+        if (robotArmClient.isConnected) {
+            refreshArmControlStatus();
+        } else {
+            stopControlStatusUpdates();
+        }
+    }, 3000);
+}
+
+function stopControlStatusUpdates() {
+    if (controlStatusInterval) {
+        clearInterval(controlStatusInterval);
+        controlStatusInterval = null;
+    }
+    updateArmControlDisplay(null);
+}
+
+/**
+ * Release arm control so another app instance can move the arm.
+ */
+async function releaseArmControl() {
+    if (!robotArmClient.isConnected) {
+        showAppMessage('Not connected to Raspberry Pi');
+        return;
+    }
+
+    try {
+        await robotArmClient.releaseControl();
+        await refreshArmControlStatus();
+        showAppMessage('Arm control released.');
+    } catch (error) {
+        showAppMessage('Could not release control: ' + error.message);
     }
 }
 

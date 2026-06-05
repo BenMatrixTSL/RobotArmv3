@@ -29,7 +29,7 @@ Read-only commands always work: `getStatus`, `getJointConfigs`, kinematics, etc.
 
 | Command | Purpose |
 |---------|---------|
-| `takeControl` | Claim control before another app connects. |
+| `takeControl` | Claim control (`force: true` takes it from another app). |
 | `releaseControl` | Give up control so another app can move the arm. |
 | `getControlStatus` | See who has control. |
 

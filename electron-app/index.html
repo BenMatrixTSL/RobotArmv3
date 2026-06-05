@@ -30,9 +30,16 @@
                 <img src="Matrix 2024 White_Allcode Robot Arm.svg" alt="Matrix Robot Arm Logo" class="header-logo">
                 <h1>Robot Arm Control System</h1>
             </div>
-            <div class="connection-status" id="connectionStatus">
-                <span class="status-indicator" id="statusIndicator"></span>
-                <span id="statusText">Disconnected</span>
+            <div class="header-status">
+                <div class="connection-status" id="connectionStatus">
+                    <span class="status-indicator" id="statusIndicator"></span>
+                    <span id="statusText">Disconnected</span>
+                </div>
+                <div class="control-status" id="armControlStatus">
+                    <span class="status-indicator" id="controlIndicator"></span>
+                    <span id="controlText">Control: —</span>
+                    <button type="button" id="releaseControlButton" class="btn btn-small btn-secondary" style="display: none;">Release control</button>
+                </div>
             </div>
         </header>
 
@@ -76,6 +83,14 @@
                     <button id="disconnectButton" class="btn btn-secondary" disabled>Disconnect</button>
                     <div id="autoDetectStatus" class="auto-detect-status"></div>
                 </div>
+            </div>
+
+            <div class="connection-panel">
+                <h3>Arm control</h3>
+                <p class="info-text">
+                    Only one app can move the arm at a time. If another window or kiosk has control, use the button below to take over.
+                </p>
+                <button id="takeControlButton" class="btn btn-warning" disabled>Take control</button>
             </div>
         </div>
 
