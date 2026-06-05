@@ -147,7 +147,98 @@ const jointSettingsCache = [];
 let cachedTorqueEnabled = null;
 
 // One client at a time may send move/torque/stop commands (multi-app safety)
-const controlSession = { ws: null, label: '', since: null };
+const controlSession = { ws: null, label: '', hostname: null, clientIp: null, since: null };
+
+function normalizeClientIp(raw) {
+    if (!raw || typeof raw !== 'string') {
+        return null;
+    }
+    if (raw.startsWith('::ffff:')) {
+        return raw.substring(7);
+    }
+    if (raw === '::1') {
+        return '127.0.0.1';
+    }
+    return raw;
+}
+
+function isLocalClientIp(ip) {
+    return !ip || ip === '127.0.0.1';
+}
+
+function getWsClientHostname(ws) {
+    if (ws && ws.clientHostname) {
+        return ws.clientHostname;
+    }
+    if (ws && ws.clientIp && isLocalClientIp(ws.clientIp)) {
+        try {
+            return os.hostname();
+        } catch (error) {
+            return null;
+        }
+    }
+    return null;
+}
+
+function assignControlSession(ws, label) {
+    controlSession.ws = ws;
+    controlSession.label = (typeof label === 'string' && label) ? label : 'client';
+    controlSession.clientIp = ws ? ws.clientIp : null;
+    controlSession.hostname = ws ? getWsClientHostname(ws) : null;
+    controlSession.since = Date.now();
+}
+
+function formatControlHolder(info) {
+    if (!info || !info.ws) {
+        return null;
+    }
+
+    const hostname = info.hostname || getWsClientHostname(info.ws);
+    const ip = info.clientIp || (info.ws ? info.ws.clientIp : null);
+    const label = info.label;
+
+    if (hostname && ip && !isLocalClientIp(ip)) {
+        return hostname + ' (' + ip + ')';
+    }
+    if (hostname) {
+        if (isLocalClientIp(ip)) {
+            return hostname + ' (this Pi)';
+        }
+        return hostname;
+    }
+    if (ip && !isLocalClientIp(ip)) {
+        return ip;
+    }
+    if (ip && isLocalClientIp(ip)) {
+        try {
+            return os.hostname() + ' (this Pi)';
+        } catch (error) {
+            return 'this Pi';
+        }
+    }
+    if (label && label !== 'auto' && label !== 'client' && label !== 'electron') {
+        return label;
+    }
+    return 'another app';
+}
+
+function getControlStatusPayload(ws, extra) {
+    const payload = {
+        type: 'controlStatus',
+        hasControl: controlSession.ws === ws,
+        youHaveControl: controlSession.ws === ws,
+        holder: controlSession.ws ? formatControlHolder(controlSession) : null,
+        holderHostname: controlSession.hostname || null,
+        holderIp: controlSession.clientIp || null,
+        holderLabel: controlSession.label || null
+    };
+
+    if (extra) {
+        Object.assign(payload, extra);
+    }
+
+    return payload;
+}
 
 const RESCAN_MIN_INTERVAL_MS = 10000;
 let lastRescanTime = 0;
@@ -501,13 +592,11 @@ function broadcastStatusToClients() {
 function requireControl(ws) {
     // No holder yet — grant this client automatically (keeps old apps working)
     if (!controlSession.ws) {
-        controlSession.ws = ws;
-        controlSession.label = 'auto';
-        controlSession.since = Date.now();
+        assignControlSession(ws, 'auto');
         return { ok: true };
     }
     if (controlSession.ws !== ws) {
-        const who = controlSession.label || 'another client';
+        const who = formatControlHolder(controlSession) || 'another client';
         return {
             ok: false,
             message: 'Arm control is held by ' + who + '. Only one app can move the arm at a time.'
@@ -532,6 +621,8 @@ function releaseControlSession(ws) {
     if (controlSession.ws === ws) {
         controlSession.ws = null;
         controlSession.label = '';
+        controlSession.hostname = null;
+        controlSession.clientIp = null;
         controlSession.since = null;
     }
 }
@@ -966,8 +1057,10 @@ function startServer() {
     
     // Handle new client connections
     wss.on('connection', function connection(ws, req) {
-        const clientIp = req.socket.remoteAddress;
-        console.log(`Client connected from ${clientIp}`);
+        const clientIp = normalizeClientIp(req.socket.remoteAddress);
+        ws.clientIp = clientIp;
+        ws.clientHostname = null;
+        console.log(`Client connected from ${clientIp || 'unknown'}`);
 
         connectedClients.add(ws);
         
@@ -1208,43 +1301,33 @@ async function handleCommand(ws, data) {
         case 'takeControl': {
             const forceTake = data.force === true;
             const previousWs = controlSession.ws;
-            const previousLabel = controlSession.label || 'another client';
+            const previousHolder = controlSession.ws ? formatControlHolder(controlSession) : null;
+
+            if (typeof data.hostname === 'string' && data.hostname.trim()) {
+                ws.clientHostname = data.hostname.trim();
+            }
 
             if (controlSession.ws && controlSession.ws !== ws && !forceTake) {
-                sendResponse({
-                    type: 'controlStatus',
-                    hasControl: false,
-                    youHaveControl: false,
-                    holder: previousLabel
-                });
+                sendResponse(getControlStatusPayload(ws));
                 return;
             }
 
-            controlSession.ws = ws;
-            controlSession.label = (typeof data.label === 'string' && data.label) ? data.label : 'client';
-            controlSession.since = Date.now();
+            const label = (typeof data.label === 'string' && data.label) ? data.label : 'client';
+            assignControlSession(ws, label);
 
             if (previousWs && previousWs !== ws && forceTake) {
                 try {
-                    previousWs.send(JSON.stringify({
-                        type: 'controlStatus',
-                        hasControl: false,
-                        youHaveControl: false,
-                        holder: controlSession.label,
+                    previousWs.send(JSON.stringify(getControlStatusPayload(previousWs, {
                         message: 'Another app took arm control'
-                    }));
+                    })));
                 } catch (notifyError) {
                     // Previous client may have disconnected
                 }
             }
 
-            sendResponse({
-                type: 'controlStatus',
-                hasControl: true,
-                youHaveControl: true,
-                holder: controlSession.label,
-                takenFrom: (forceTake && previousWs && previousWs !== ws) ? previousLabel : null
-            });
+            sendResponse(getControlStatusPayload(ws, {
+                takenFrom: (forceTake && previousWs && previousWs !== ws) ? previousHolder : null
+            }));
             break;
         }
 
@@ -1252,22 +1335,12 @@ async function handleCommand(ws, data) {
             if (controlSession.ws === ws) {
                 releaseControlSession(ws);
             }
-            sendResponse({
-                type: 'controlStatus',
-                hasControl: false,
-                youHaveControl: false,
-                holder: controlSession.ws ? controlSession.label : null
-            });
+            sendResponse(getControlStatusPayload(ws));
             break;
         }
 
         case 'getControlStatus': {
-            sendResponse({
-                type: 'controlStatus',
-                hasControl: controlSession.ws === ws,
-                holder: controlSession.label || null,
-                youHaveControl: controlSession.ws === ws
-            });
+            sendResponse(getControlStatusPayload(ws));
             break;
         }
 

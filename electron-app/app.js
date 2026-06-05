@@ -1257,11 +1257,7 @@ function initializeConnection() {
                     if (control && (control.youHaveControl || control.hasControl)) {
                         console.log('Arm control acquired');
                     } else {
-                        let holder = 'another app';
-                        if (control && control.holder) {
-                            holder = control.holder;
-                        }
-                        showAppMessage('Connected (read-only): arm is controlled by ' + holder);
+                        showAppMessage('Connected (read-only): arm is controlled by ' + formatControlHolderLabel(control));
                     }
                 } catch (controlError) {
                     console.warn('Could not take arm control (another app may be controlling):', controlError.message);
@@ -1383,6 +1379,39 @@ function stopStatusUpdates() {
 }
 
 /**
+ * Builds a user-friendly label for who holds arm control.
+ * @param {Object|null} controlInfo - From server controlStatus
+ * @returns {string}
+ */
+function formatControlHolderLabel(controlInfo) {
+    if (!controlInfo) {
+        return 'another app';
+    }
+
+    if (controlInfo.holder) {
+        return controlInfo.holder;
+    }
+
+    const hostname = controlInfo.holderHostname;
+    const ip = controlInfo.holderIp;
+
+    if (hostname && ip) {
+        return hostname + ' (' + ip + ')';
+    }
+    if (hostname) {
+        return hostname;
+    }
+    if (ip) {
+        return ip;
+    }
+    if (controlInfo.holderLabel) {
+        return controlInfo.holderLabel;
+    }
+
+    return 'another app';
+}
+
+/**
  * Updates the arm control indicator in the header.
  * @param {Object|null} controlInfo - From server controlStatus, or null when disconnected
  */
@@ -1419,10 +1448,8 @@ function updateArmControlDisplay(controlInfo) {
         return;
     }
 
-    let holderLabel = 'another app';
-    if (controlInfo && controlInfo.holder) {
-        holderLabel = controlInfo.holder;
-    } else if (robotArmClient.controlHolder) {
+    let holderLabel = formatControlHolderLabel(controlInfo);
+    if (holderLabel === 'another app' && robotArmClient.controlHolder) {
         holderLabel = robotArmClient.controlHolder;
     }
 
@@ -1472,7 +1499,7 @@ async function requestArmControl() {
                 showAppMessage('You have arm control.');
             }
         } else {
-            showAppMessage('Could not take control — held by ' + (info.holder || 'another app'));
+            showAppMessage('Could not take control — held by ' + formatControlHolderLabel(info));
         }
     } catch (error) {
         showAppMessage('Take control failed: ' + error.message);

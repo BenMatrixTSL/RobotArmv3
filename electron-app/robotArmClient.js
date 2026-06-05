@@ -471,6 +471,23 @@ class RobotArmClient {
     }
 
     /**
+     * Best-effort hostname for this computer (Electron / Node only).
+     * @returns {string|null}
+     */
+    getClientHostname() {
+        try {
+            const os = require('os');
+            const name = os.hostname();
+            if (typeof name === 'string' && name.trim()) {
+                return name.trim();
+            }
+        } catch (error) {
+            // Browser-only build has no os module
+        }
+        return null;
+    }
+
+    /**
      * Request exclusive control of arm bus writes (moves, torque, etc.).
      * @param {string} label - Display name for this client
      * @param {boolean} force - If true, take control from another app instance
@@ -478,7 +495,8 @@ class RobotArmClient {
     takeControl(label, force) {
         return this.sendRequest('takeControl', {
             label: label || 'electron',
-            force: force === true
+            force: force === true,
+            hostname: this.getClientHostname()
         }, 3000);
     }
 
