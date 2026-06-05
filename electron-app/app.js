@@ -431,14 +431,14 @@ function generateJointStatusCards() {
     let html = '';
     
     for (let i = 1; i <= numJoints; i++) {
-        // Default to an open range; we'll just display URDF limits if we have them.
-        let limitsLabel = '';
+        // Angle label includes URDF min-max when available.
+        let angleLabel = 'Angle (deg):';
         const cfg = jointConfigsForLimits[i - 1];
         if (cfg && cfg.limits) {
             const lower = (typeof cfg.limits.lowerDegrees === 'number') ? cfg.limits.lowerDegrees.toFixed(1) : null;
             const upper = (typeof cfg.limits.upperDegrees === 'number') ? cfg.limits.upperDegrees.toFixed(1) : null;
             if (lower !== null && upper !== null) {
-                limitsLabel = ` (URDF: ${lower}° to ${upper}°)`;
+                angleLabel = `Angle (deg) (${lower}-${upper}):`;
             }
         }
 
@@ -465,9 +465,15 @@ function generateJointStatusCards() {
                     </div>
                 </div>
                 <div class="joint-control-fields joint-control-compact">
-                    <input type="number" id="joint${i}Target" value="0" step="0.1" title="Target angle${limitsLabel}">
-                    <input type="number" id="joint${i}Speed" value="45" min="0" max="300" step="1" title="Speed (degrees/s)">
-                    <button class="btn btn-small" onclick="moveJoint(${i})">Go</button>
+                    <div class="joint-field-group compact">
+                        <label for="joint${i}Target">${angleLabel}</label>
+                        <input type="number" id="joint${i}Target" value="0" step="0.1">
+                    </div>
+                    <div class="joint-field-group compact">
+                        <label for="joint${i}Speed">Speed (deg/s):</label>
+                        <input type="number" id="joint${i}Speed" value="45" min="0" max="300" step="1">
+                    </div>
+                    <button class="btn btn-small joint-go-button" onclick="moveJoint(${i})">Go</button>
                 </div>
             </div>
         `;

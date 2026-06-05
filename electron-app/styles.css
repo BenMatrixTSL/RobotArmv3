@@ -541,8 +541,18 @@ header h1 {
 .joint-control-compact {
     display: grid;
     grid-template-columns: 1fr 1fr auto;
-    gap: 4px;
-    align-items: center;
+    gap: 4px 6px;
+    align-items: end;
+}
+
+.joint-control-compact .joint-field-group.compact {
+    margin-top: 0;
+}
+
+.joint-control-compact .joint-field-group.compact label {
+    font-size: 10px;
+    line-height: 1.2;
+    margin-bottom: 2px;
 }
 
 .joint-control-compact input {
@@ -555,11 +565,13 @@ header h1 {
     box-sizing: border-box;
 }
 
-.joint-control-compact .btn-small {
+.joint-control-compact .joint-go-button {
     padding: 4px 8px;
     font-size: 11px;
     min-width: 0;
     white-space: nowrap;
+    align-self: end;
+    margin-bottom: 1px;
 }
 
 .joint-field-group.compact {
