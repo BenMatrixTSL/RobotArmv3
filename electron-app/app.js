@@ -1353,12 +1353,17 @@ function initializeConnection() {
 /**
  * Starts periodic status updates
  */
+function getStatusStaleThresholdMs() {
+    const numJoints = typeof getNumJoints === 'function' ? getNumJoints() : 6;
+    const serverInterval = robotArmClient.serverStatusIntervalMs || 50;
+    // Round-robin: expect one joint per tick, plus buffer for bus queue delays.
+    return Math.max(500, (serverInterval * numJoints) + 300);
+}
+
 function startStatusUpdates(isKioskView) {
-    // Get update interval from settings (default 500ms)
+    // Fallback poll interval from settings (used only if server push stops)
     let interval = parseInt(document.getElementById('updateInterval')?.value || '500', 10);
-    
-    // Make sure the interval is a sensible value
-    // Clamp to between 100 ms and 5000 ms to avoid "too fast" or "never updates"
+
     if (isNaN(interval)) {
         interval = 500;
     } else if (interval < 100) {
@@ -1367,27 +1372,26 @@ function startStatusUpdates(isKioskView) {
         interval = 5000;
     }
 
-    // Server pushes status to all clients — use a slower fallback poll only
     if (robotArmClient.serverPushesStatus) {
-        interval = Math.max(interval, 2000);
+        interval = Math.max(interval, 500);
     }
-    
-    // Clear any existing interval
+
     stopStatusUpdates();
-    
-    // Request status once if server has not pushed yet
+
     if (!robotArmClient.lastStatusPushAt) {
         robotArmClient.requestStatus();
     }
-    
-    // Fallback poll if server push stops (multi-app safe: reads server cache only)
+
+    const staleThresholdMs = getStatusStaleThresholdMs();
+
+    // Fallback poll only when server push has gone quiet
     statusUpdateInterval = setInterval(function() {
         if (!robotArmClient.isConnected) {
             stopStatusUpdates();
             return;
         }
         const sincePush = Date.now() - (robotArmClient.lastStatusPushAt || 0);
-        if (robotArmClient.serverPushesStatus && sincePush < 2500) {
+        if (robotArmClient.serverPushesStatus && sincePush < staleThresholdMs) {
             return;
         }
         robotArmClient.requestStatus();

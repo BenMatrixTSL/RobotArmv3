@@ -6,7 +6,7 @@ Several UIs can connect to one Pi server (port 8080). The server centralizes bus
 
 | Data / action | How it works |
 |---------------|--------------|
-| **Joint angles & torque** | Polled every **50 ms** on the server (`STATUS_POLL_INTERVAL_MS`). Cached in `jointStatusCache`. |
+| **Joint angles & torque** | One joint polled every **50 ms** (round-robin on the server). Cached in `jointStatusCache` and pushed after each read. |
 | **getStatus** | Returns cache only — **no bus read** per client request. |
 | **Status push** | After each poll, server **broadcasts** `type: status` to **all** connected WebSockets. |
 | **getJointConfigs** | Returns `cachedJointConfigs` (rebuilt on init / rescan). |

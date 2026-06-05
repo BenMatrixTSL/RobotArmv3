@@ -22,6 +22,7 @@ class RobotArmClient {
         this.pendingRequests = new Map(); // requestId -> {resolve, reject, timeout}
         this.nextRequestId = 1;
         this.serverPushesStatus = false;
+        this.serverStatusIntervalMs = 50;
         this.lastStatusPushAt = 0;
         this.hasArmControl = false;
         this.controlHolder = null;
@@ -230,13 +231,14 @@ class RobotArmClient {
 
         if (data.type === 'connected' && data.pushesStatus) {
             this.serverPushesStatus = true;
+            if (typeof data.statusIntervalMs === 'number' && data.statusIntervalMs > 0) {
+                this.serverStatusIntervalMs = data.statusIntervalMs;
+            }
         }
 
         // Handle status updates (from getStatus or server push)
         if (data.type === 'status') {
-            if (data.pushed) {
-                this.lastStatusPushAt = Date.now();
-            }
+            this.lastStatusPushAt = Date.now();
             if (this.onStatusUpdate) {
                 this.onStatusUpdate(data.joints);
             }
