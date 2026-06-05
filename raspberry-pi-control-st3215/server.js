@@ -44,7 +44,7 @@ const PERF_DEBUG = false;
 
 // Background status poll interval (ms). Servo angles are read on this timer and cached.
 // getStatus returns the cache — clients do not trigger a bus read each time.
-const STATUS_POLL_INTERVAL_MS = parseInt(process.env.STATUS_POLL_INTERVAL_MS || '50', 10);
+const STATUS_POLL_INTERVAL_MS = parseInt(process.env.STATUS_POLL_INTERVAL_MS || '100', 10);
 
 // Optional file log (set by install-service.sh: ROBOT_ARM_DEBUG_LOG)
 const DEBUG_LOG_FILE = process.env.ROBOT_ARM_DEBUG_LOG || '';

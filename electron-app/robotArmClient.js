@@ -22,7 +22,7 @@ class RobotArmClient {
         this.pendingRequests = new Map(); // requestId -> {resolve, reject, timeout}
         this.nextRequestId = 1;
         this.serverPushesStatus = false;
-        this.serverStatusIntervalMs = 50;
+        this.serverStatusIntervalMs = 100;
         this.lastStatusPushAt = 0;
         this.hasArmControl = false;
         this.controlHolder = null;

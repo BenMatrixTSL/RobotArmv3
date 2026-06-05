@@ -1354,7 +1354,7 @@ function initializeConnection() {
  * Starts periodic status updates
  */
 function getStatusStaleThresholdMs() {
-    const serverInterval = robotArmClient.serverStatusIntervalMs || 50;
+    const serverInterval = robotArmClient.serverStatusIntervalMs || 100;
     // Server may poll all joints on one timer tick — allow time for a full bus cycle.
     return Math.max(1500, serverInterval * 30);
 }
