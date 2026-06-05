@@ -70,6 +70,10 @@ let isWriting           = false;
 
 const servoConsecFails    = new Array(JOINT_COUNT).fill(0);
 const servoBackoffUntilMs = new Array(JOINT_COUNT).fill(0);
+// Local torque state — set by explicit commands, not by polled status reads.
+// Polled reads are unreliable (stale/timed-out) and would cause spurious
+// startServo() calls before every move if used for this check.
+const servoTorqueEnabled  = new Array(JOINT_COUNT).fill(true);
 
 const diag = {
     startedAt: Date.now(),
@@ -206,7 +210,7 @@ async function readServoQuickStatusWithRetry(servo) {
     try {
         return await servo.readQuickStatus();
     } catch (firstError) {
-        await new Promise(r => setTimeout(r, 5));
+        await new Promise(r => setTimeout(r, 10));
         return await servo.readQuickStatus();
     }
 }
@@ -290,7 +294,7 @@ async function runBusTick() {
         for (let p = 0; p < jointsToPoll; p++) {
             await refreshSingleJointStatusFromBus(statusPollJointIndex);
             statusPollJointIndex = (statusPollJointIndex + 1) % JOINT_COUNT;
-            if (p < jointsToPoll - 1) await new Promise(r => setTimeout(r, 1));
+            if (p < jointsToPoll - 1) await new Promise(r => setTimeout(r, 4));
         }
         diag.statusPollJointIndex = statusPollJointIndex;
         await new Promise(r => setTimeout(r, 1));
@@ -522,6 +526,7 @@ async function createAndInitializeServo(jointIndex) {
         throw new Error(`Servo ${jointIndex + 1} (ID: ${servoId}) did not respond`);
     }
     await servo.startServo();
+    servoTorqueEnabled[jointIndex] = true;
     return servo;
 }
 
@@ -566,6 +571,7 @@ async function rescanServos() {
             await createAndInitializeServo(i);
             servoConsecFails[i] = 0;
             servoBackoffUntilMs[i] = 0;
+            servoTorqueEnabled[i] = true;
             results.push({ joint: jointNumber, servoId, available: true, action: 'rediscovered' });
         } catch (e) {
             servos[i] = null;
@@ -640,8 +646,10 @@ async function handleBusCommand(clientId, data) {
                 return;
             }
             try {
-                const cached = jointStatusCache[jointIndex];
-                if (!cached || cached.torqueEnabled !== true) await servo.startServo();
+                if (!servoTorqueEnabled[jointIndex]) {
+                    await servo.startServo();
+                    servoTorqueEnabled[jointIndex] = true;
+                }
                 await servo.moveToAngle(angle, moveSpeed);
                 diag.busMovesCompleted++;
                 await refreshSingleJointStatusFromBus(jointIndex);
@@ -661,6 +669,7 @@ async function handleBusCommand(clientId, data) {
             try {
                 const stopped = await sv.stopServo();
                 if (stopped) {
+                    servoTorqueEnabled[idx] = false;
                     reply({ type: 'success', message: `Servo ${data.joint} stopped` });
                 } else {
                     reply({ type: 'error', message: `Could not disable torque on joint ${data.joint}`, joint: data.joint });
@@ -678,7 +687,7 @@ async function handleBusCommand(clientId, data) {
                 for (let i = 0; i < servos.length; i++) {
                     if (servos[i] !== null) {
                         const ok = await servos[i].stopServo();
-                        if (!ok) failed.push(i + 1);
+                        if (ok) { servoTorqueEnabled[i] = false; } else { failed.push(i + 1); }
                     }
                 }
                 if (failed.length === 0) {
@@ -743,6 +752,7 @@ async function handleBusCommand(clientId, data) {
                 for (let i = 0; i < servos.length; i++) {
                     if (servos[i] !== null) {
                         if (torqueEnabled) await servos[i].startServo(); else await servos[i].stopServo();
+                        servoTorqueEnabled[i] = torqueEnabled;
                     }
                 }
                 cachedTorqueEnabled = torqueEnabled;
