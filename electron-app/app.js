@@ -1451,6 +1451,7 @@ function formatServerDiagnosticsText(diag) {
     lines.push('Server build: ' + (diag.buildId || 'unknown'));
     lines.push('Moves completed: ' + (diag.busMovesCompleted != null ? diag.busMovesCompleted : '—'));
     lines.push('Immediate bus commands: ' + (diag.immediateBusCommands != null ? diag.immediateBusCommands : '—'));
+    lines.push('Write timeouts: ' + (diag.writeTimeouts != null ? diag.writeTimeouts : '—'));
     lines.push('Bus commands done / failed / rejected: ' +
         (diag.busWritesCompleted || 0) + ' / ' +
         (diag.busWritesFailed || 0) + ' / ' +

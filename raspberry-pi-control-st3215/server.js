@@ -50,7 +50,9 @@ const MIN_BUS_TICK_GAP_MS = parseInt(process.env.MIN_BUS_TICK_GAP_MS || '20', 10
 const MAX_BUS_WRITE_QUEUE_SIZE = 100;
 const MAX_BUS_WRITES_WHEN_IDLE = 0;
 const MAX_BUS_WRITES_WHEN_BUSY = 4;
-const SERVER_BUILD_ID = '2026-06-03-immediate-moves';
+const SERVER_BUILD_ID = '2026-06-03-write-retry';
+const BUS_QUIET_BEFORE_MOVE_MS = 20;
+const BUS_QUIET_AFTER_MOVE_MS = 25;
 
 // Jump to the front of the bus write queue (ahead of status-related work).
 const PRIORITY_BUS_COMMANDS = {
@@ -178,7 +180,8 @@ const serverDiagnostics = {
     cacheAgeMs: null,
     wsClients: 0,
     instantCommands: 0,
-    immediateBusCommands: 0
+    immediateBusCommands: 0,
+    writeTimeouts: 0
 };
 
 // WebSocket clients (for pushing status to every app instance)
@@ -664,6 +667,18 @@ function kickBusTickIfIdle() {
  * @param {WebSocket} ws
  * @param {Object} data
  */
+function clearAllServoPendingTransactions() {
+    for (let i = 0; i < servos.length; i++) {
+        const servo = servos[i];
+        if (servo && typeof servo.clearPendingBusTransaction === 'function') {
+            servo.clearPendingBusTransaction();
+        }
+    }
+    if (endTool && typeof endTool.clearPendingBusTransaction === 'function') {
+        endTool.clearPendingBusTransaction();
+    }
+}
+
 async function runImmediateBusCommand(ws, data) {
     await waitForBusTickToFinish();
 
@@ -672,17 +687,29 @@ async function runImmediateBusCommand(ws, data) {
         busTickTimer = null;
     }
 
+    const resumeLoop = busTickLoopActive;
+    busTickLoopActive = false;
     busTickInProgress = true;
     const cmdStart = Date.now();
 
     try {
+        clearAllServoPendingTransactions();
+        await new Promise((resolve) => setTimeout(resolve, BUS_QUIET_BEFORE_MOVE_MS));
+
         await handleCommand(ws, data);
         serverDiagnostics.immediateBusCommands++;
+
+        await new Promise((resolve) => setTimeout(resolve, BUS_QUIET_AFTER_MOVE_MS));
+
         debugLog('Immediate bus command OK: ' + data.command +
             (data.joint !== undefined ? ' joint=' + data.joint : '') +
             ' (' + (Date.now() - cmdStart) + ' ms)');
     } catch (error) {
-        debugLog('Immediate bus command failed: ' + data.command + ' — ' + (error.message || error), true);
+        const errMsg = error && error.message ? error.message : String(error);
+        if (errMsg.indexOf('timeout') >= 0 || errMsg.indexOf('Timeout') >= 0) {
+            serverDiagnostics.writeTimeouts++;
+        }
+        debugLog('Immediate bus command failed: ' + data.command + ' — ' + errMsg, true);
         const errPayload = {
             type: 'error',
             message: formatCommandError(error)
@@ -693,8 +720,9 @@ async function runImmediateBusCommand(ws, data) {
         ws.send(JSON.stringify(errPayload));
     } finally {
         busTickInProgress = false;
-        if (busTickLoopActive && !serverShuttingDown) {
-            scheduleNextBusTick(MIN_BUS_TICK_GAP_MS);
+        busTickLoopActive = resumeLoop;
+        if (resumeLoop && !serverShuttingDown) {
+            scheduleNextBusTick(MIN_BUS_TICK_GAP_MS + BUS_QUIET_AFTER_MOVE_MS);
         }
     }
 }
@@ -909,6 +937,7 @@ async function runBusTick() {
             await refreshSingleJointStatusFromBus(statusPollJointIndex);
             statusPollJointIndex = (statusPollJointIndex + 1) % JOINT_COUNT;
             serverDiagnostics.statusPollJointIndex = statusPollJointIndex;
+            await new Promise((resolve) => setTimeout(resolve, 8));
             broadcastStatusToClients();
             serverDiagnostics.statusPollsCompleted++;
             serverDiagnostics.lastStatusPollDurationMs = Date.now() - pollStart;
@@ -2118,7 +2147,8 @@ async function handleCommand(ws, data) {
                 await servo.moveToAngle(angle, moveSpeed);
                 serverDiagnostics.busMovesCompleted++;
 
-                await refreshSingleJointStatusFromBus(jointNumber);
+                // Round-robin polling updates position soon — skip an extra bus read here
+                // to avoid write-then-read collisions on the shared serial port.
                 broadcastStatusToClients();
                 sendResponse({
                     type: 'success',

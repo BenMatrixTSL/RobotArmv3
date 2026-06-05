@@ -75,8 +75,9 @@ const END_TOOL_ID = 64;
 // Shared half-duplex bus: ST3215 reads need more than a few ms under load
 const BUS_READ_TIMEOUT_MS = 150;
 const BUS_READ_TIMEOUT_END_TOOL_MS = 250;
-const BUS_WRITE_RETRY_DELAY_MS = 50;
-const BUS_WRITE_MAX_ATTEMPTS = 2;
+const BUS_WRITE_RETRY_DELAY_MS = 80;
+const BUS_WRITE_MAX_ATTEMPTS = 3;
+const BUS_GAP_BETWEEN_WRITES_MS = 15;
 
 // ST3215 status bits in the response packet error byte (register 0x41 style flags)
 const SERVO_ERR_VOLTAGE = 1;
@@ -767,7 +768,7 @@ class ServoController {
                     }
                 };
 
-                const writeTimeoutMs = this.servoIdNumber === END_TOOL_ID ? 1000 : 450;
+                const writeTimeoutMs = this.servoIdNumber === END_TOOL_ID ? 1000 : 600;
                 this.responseTimeout = setTimeout(() => {
                     if (DEBUG) {
                         console.log(`[DEBUG Servo ${this.servoId}] Write timeout - no response received`);
@@ -1068,8 +1069,13 @@ class ServoController {
             // Check explicitly for null/undefined, but allow 0 as a valid speed value
             const speedToUse = (speed !== null && speed !== undefined) ? speed : this.currentSpeed;
             
-            // Always set speed before goal position (ST3215 expects both for a reliable move).
-            await this.setSpeed(speedToUse);
+            // Set speed before goal position, with a short gap so the bus can settle.
+            if (speedToUse !== this.currentSpeed) {
+                await this.setSpeed(speedToUse);
+                await new Promise((resolve) => setTimeout(resolve, BUS_GAP_BETWEEN_WRITES_MS));
+            } else {
+                await new Promise((resolve) => setTimeout(resolve, 8));
+            }
             
             // Don't read position before move - it can cause response matching issues
             // Just proceed with the move
