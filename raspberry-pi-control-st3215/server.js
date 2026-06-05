@@ -45,13 +45,13 @@ const PERF_DEBUG = false;
 const BUS_DIAGNOSTICS_LOG_INTERVAL_MS = parseInt(process.env.BUS_DIAGNOSTICS_LOG_INTERVAL_MS || '0', 10);
 
 // Minimum gap between bus ticks (ms). Ticks are chained after work finishes — not a fixed overlap.
-const STATUS_POLL_INTERVAL_MS = parseInt(process.env.STATUS_POLL_INTERVAL_MS || '60', 10);
+const STATUS_POLL_INTERVAL_MS = parseInt(process.env.STATUS_POLL_INTERVAL_MS || '50', 10);
 const MIN_BUS_TICK_GAP_MS = parseInt(process.env.MIN_BUS_TICK_GAP_MS || '8', 10);
-const JOINTS_PER_POLL_TICK = parseInt(process.env.JOINTS_PER_POLL_TICK || '3', 10);
+const JOINTS_PER_POLL_TICK = parseInt(process.env.JOINTS_PER_POLL_TICK || '6', 10);
 const MAX_BUS_WRITE_QUEUE_SIZE = 100;
 const MAX_BUS_WRITES_WHEN_IDLE = 0;
 const MAX_BUS_WRITES_WHEN_BUSY = 4;
-const SERVER_BUILD_ID = '2026-06-03-servo-recover';
+const SERVER_BUILD_ID = '2026-06-03-fast-status';
 const BUS_QUIET_BEFORE_MOVE_MS = 12;
 const BUS_QUIET_AFTER_MOVE_MS = 10;
 const BUS_QUIET_JOG_MS = 4;
@@ -347,6 +347,7 @@ let lastRescanTime = 0;
 // Commands that do not touch the servo bus — handle immediately, not via the bus queue.
 const INSTANT_SERVER_COMMANDS = {
     getStatus: true,
+    getJointConfigs: true,
     getServerDiagnostics: true,
     getControlStatus: true,
     takeControl: true,
@@ -960,7 +961,6 @@ async function runBusTick() {
     serverDiagnostics.busTicks++;
 
     try {
-        let wroteThisTick = false;
         const queueAtStart = busWriteQueue.length;
         const maxWrites = queueAtStart > 0 ? MAX_BUS_WRITES_WHEN_BUSY : MAX_BUS_WRITES_WHEN_IDLE;
 
@@ -973,7 +973,6 @@ async function runBusTick() {
                 await commandFn();
                 await new Promise((r) => setTimeout(r, 15));
                 resolve();
-                wroteThisTick = true;
                 serverDiagnostics.busWritesCompleted++;
                 serverDiagnostics.lastBusWriteDurationMs = Date.now() - writeStart;
                 serverDiagnostics.lastBusWriteAt = Date.now();
@@ -983,24 +982,22 @@ async function runBusTick() {
             }
         }
 
-        if (busWriteQueue.length === 0 && !wroteThisTick) {
-            const pollStart = Date.now();
-            for (let p = 0; p < JOINTS_PER_POLL_TICK; p++) {
-                await refreshSingleJointStatusFromBus(statusPollJointIndex);
-                statusPollJointIndex = (statusPollJointIndex + 1) % JOINT_COUNT;
-                if (p < JOINTS_PER_POLL_TICK - 1) {
-                    await new Promise((resolve) => setTimeout(resolve, 5));
-                }
+        // Always poll servos each tick (even after bus writes) so status cache stays fresh.
+        const pollStart = Date.now();
+        const jointsToPoll = Math.min(JOINTS_PER_POLL_TICK, JOINT_COUNT);
+        for (let p = 0; p < jointsToPoll; p++) {
+            await refreshSingleJointStatusFromBus(statusPollJointIndex);
+            statusPollJointIndex = (statusPollJointIndex + 1) % JOINT_COUNT;
+            if (p < jointsToPoll - 1) {
+                await new Promise((resolve) => setTimeout(resolve, 4));
             }
-            serverDiagnostics.statusPollJointIndex = statusPollJointIndex;
-            await new Promise((resolve) => setTimeout(resolve, 5));
-            broadcastStatusToClients();
-            serverDiagnostics.statusPollsCompleted++;
-            serverDiagnostics.lastStatusPollDurationMs = Date.now() - pollStart;
-            serverDiagnostics.lastStatusPollAt = Date.now();
-        } else if (wroteThisTick) {
-            broadcastStatusToClients();
         }
+        serverDiagnostics.statusPollJointIndex = statusPollJointIndex;
+        await new Promise((resolve) => setTimeout(resolve, 4));
+        broadcastStatusToClients();
+        serverDiagnostics.statusPollsCompleted++;
+        serverDiagnostics.lastStatusPollDurationMs = Date.now() - pollStart;
+        serverDiagnostics.lastStatusPollAt = Date.now();
     } catch (error) {
         serverDiagnostics.busTickErrors++;
         debugLog('Bus tick error: ' + (error.message || error), true);

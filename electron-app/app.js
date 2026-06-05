@@ -36,6 +36,11 @@ function setToolOrientationVector(x, y, z) {
 
 // Global variables
 let statusUpdateInterval = null;
+let statusWatchdogInterval = null;
+let statusSetupTimer = null;
+const STATUS_WATCHDOG_CHECK_MS = 150;
+const STATUS_WATCHDOG_MAX_GAP_MS = 400;
+const STATUS_FALLBACK_POLL_MAX_MS = 250;
 let controlStatusInterval = null;
 let serverDiagnosticsInterval = null;
 let pendingStatusJoints = null;
@@ -1295,6 +1300,12 @@ function initializeConnection() {
             
             // Set up status update callback
             robotArmClient.onStatusUpdate = scheduleStatusUiUpdate;
+
+            robotArmClient.onPushModeReady = function() {
+                if (robotArmClient.isConnected) {
+                    startStatusUpdates();
+                }
+            };
             
             // Set up configuration update callback
             robotArmClient.onConfigUpdate = onJointConfigsLoaded;
@@ -1401,24 +1412,40 @@ function initializeConnection() {
  * Starts periodic status updates
  */
 function startStatusUpdates(isKioskView) {
-    // Poll the server status cache at this interval. getStatus is cache-only on the server
-    // (no bus read, no queue) so this is safe alongside WebSocket pushes.
-    let interval = parseInt(document.getElementById('updateInterval')?.value || '150', 10);
-
-    if (isNaN(interval)) {
-        interval = 150;
-    } else if (interval < 100) {
-        interval = 100;
-    } else if (interval > 5000) {
-        interval = 5000;
-    }
-
     stopStatusUpdates();
-
-    // One initial read; after that rely on server WebSocket pushes (no duplicate polling).
     robotArmClient.requestStatus();
 
-    if (!robotArmClient.serverPushesStatus) {
+    // Wait briefly so the server's "connected" message (pushesStatus) arrives first.
+    statusSetupTimer = setTimeout(function() {
+        statusSetupTimer = null;
+        if (!robotArmClient.isConnected) {
+            return;
+        }
+
+        if (robotArmClient.serverPushesStatus) {
+            statusWatchdogInterval = setInterval(function() {
+                if (!robotArmClient.isConnected) {
+                    stopStatusUpdates();
+                    return;
+                }
+                const gapMs = Date.now() - robotArmClient.lastStatusPushAt;
+                if (gapMs > STATUS_WATCHDOG_MAX_GAP_MS) {
+                    robotArmClient.requestStatus();
+                }
+            }, STATUS_WATCHDOG_CHECK_MS);
+            return;
+        }
+
+        // Older servers without push: poll cached status often (cap slow saved settings).
+        let interval = parseInt(document.getElementById('updateInterval')?.value || '200', 10);
+        if (isNaN(interval)) {
+            interval = 200;
+        } else if (interval < 100) {
+            interval = 100;
+        } else if (interval > STATUS_FALLBACK_POLL_MAX_MS) {
+            interval = STATUS_FALLBACK_POLL_MAX_MS;
+        }
+
         statusUpdateInterval = setInterval(function() {
             if (!robotArmClient.isConnected) {
                 stopStatusUpdates();
@@ -1426,7 +1453,7 @@ function startStatusUpdates(isKioskView) {
             }
             robotArmClient.requestStatus();
         }, interval);
-    }
+    }, 250);
 }
 
 /**
@@ -1436,6 +1463,14 @@ function stopStatusUpdates() {
     if (statusUpdateInterval) {
         clearInterval(statusUpdateInterval);
         statusUpdateInterval = null;
+    }
+    if (statusWatchdogInterval) {
+        clearInterval(statusWatchdogInterval);
+        statusWatchdogInterval = null;
+    }
+    if (statusSetupTimer) {
+        clearTimeout(statusSetupTimer);
+        statusSetupTimer = null;
     }
 }
 
@@ -1458,6 +1493,12 @@ function formatServerDiagnosticsText(diag) {
     lines.push('Status round-robin index: ' + (diag.statusPollJointIndex != null ? diag.statusPollJointIndex : '—'));
     lines.push('Ticks: ' + (diag.busTicks || 0) + ' (skipped ' + (diag.busTicksSkipped || 0) + ')');
     lines.push('Server build: ' + (diag.buildId || 'unknown'));
+    if (robotArmClient.lastStatusPushAt > 0) {
+        lines.push('Last status push from server: ' + (Date.now() - robotArmClient.lastStatusPushAt) + ' ms ago');
+    } else {
+        lines.push('Last status push from server: never');
+    }
+    lines.push('Server push mode: ' + (robotArmClient.serverPushesStatus ? 'yes' : 'no (fallback poll)'));
     lines.push('Moves completed: ' + (diag.busMovesCompleted != null ? diag.busMovesCompleted : '—'));
     lines.push('Immediate bus commands: ' + (diag.immediateBusCommands != null ? diag.immediateBusCommands : '—'));
     lines.push('Write timeouts: ' + (diag.writeTimeouts != null ? diag.writeTimeouts : '—'));
@@ -4940,7 +4981,10 @@ async function updateSt3215FromGit() {
 function saveSettings() {
     const settings = {
         numJoints: parseInt(document.getElementById('numJoints').value),
-        updateInterval: parseInt(document.getElementById('updateInterval').value),
+        updateInterval: Math.min(
+            STATUS_FALLBACK_POLL_MAX_MS,
+            Math.max(100, parseInt(document.getElementById('updateInterval').value, 10) || 200)
+        ),
         defaultStepSize: parseFloat(document.getElementById('defaultStepSize').value),
         piAddress: document.getElementById('piAddress').value
     };
@@ -4976,7 +5020,13 @@ function loadSettings() {
                 document.getElementById('numJoints').value = settings.numJoints;
             }
             if (settings.updateInterval) {
-                document.getElementById('updateInterval').value = settings.updateInterval;
+                let savedInterval = parseInt(settings.updateInterval, 10);
+                if (isNaN(savedInterval) || savedInterval < 100) {
+                    savedInterval = 200;
+                } else if (savedInterval > STATUS_FALLBACK_POLL_MAX_MS) {
+                    savedInterval = STATUS_FALLBACK_POLL_MAX_MS;
+                }
+                document.getElementById('updateInterval').value = savedInterval;
             }
             if (settings.defaultStepSize) {
                 document.getElementById('defaultStepSize').value = settings.defaultStepSize;

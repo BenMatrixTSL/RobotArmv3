@@ -28,6 +28,7 @@ class RobotArmClient {
         this.controlHolder = null;
         this.onControlUpdate = null;
         this.onReconnected = null;
+        this.onPushModeReady = null;
     }
 
     /**
@@ -51,6 +52,8 @@ class RobotArmClient {
         this.piAddress = address;
         this.piPort = port;
         this.isConnecting = true;
+        this.serverPushesStatus = false;
+        this.lastStatusPushAt = 0;
 
         return new Promise((resolve, reject) => {
             try {
@@ -130,6 +133,8 @@ class RobotArmClient {
         this.isConnected = false;
         this.hasArmControl = false;
         this.controlHolder = null;
+        this.serverPushesStatus = false;
+        this.lastStatusPushAt = 0;
         this.updateConnectionStatus(false);
     }
 
@@ -250,6 +255,9 @@ class RobotArmClient {
             this.serverPushesStatus = true;
             if (typeof data.statusIntervalMs === 'number' && data.statusIntervalMs > 0) {
                 this.serverStatusIntervalMs = data.statusIntervalMs;
+            }
+            if (typeof this.onPushModeReady === 'function') {
+                this.onPushModeReady();
             }
         }
 

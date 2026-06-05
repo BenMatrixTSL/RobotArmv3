@@ -794,9 +794,9 @@
                         <p class="info-text">Coordinate 7 is the fixed tool mounting point from the URDF (no servo angle).</p>
                     </div>
                     <div class="setting-item">
-                        <label>UI refresh interval (ms):</label>
-                        <input type="number" id="updateInterval" value="150" min="100" max="5000">
-                        <p class="info-text">How often the app reads cached joint status from the server. Lower is smoother (200–300 ms is typical).</p>
+                        <label>Fallback status poll (ms):</label>
+                        <input type="number" id="updateInterval" value="200" min="100" max="250">
+                        <p class="info-text">The Pi pushes live status automatically. This setting is only used if push mode is unavailable (100–250 ms).</p>
                     </div>
                     <div class="setting-item">
                         <label>Default Step Size (degrees):</label>
@@ -1151,7 +1151,7 @@
     
     <!-- Application Scripts - Loaded in order -->
     <!-- Robot Arm Client: Handles WebSocket communication with Raspberry Pi -->
-    <script src="robotArmClient.js?v=20260603e"></script>
+    <script src="robotArmClient.js?v=20260603f"></script>
     <!-- G-Code Processor: Parses and executes G-code commands -->
     <script src="gcodeProcessor.js"></script>
     <!-- Kinematics: Forward and inverse kinematics calculations -->
@@ -1164,7 +1164,7 @@
     <!-- Positions Manager: Manages stored preset positions (0-99) -->
     <script src="positionsManager.js"></script>
     <!-- Main Application: UI logic and event handlers -->
-    <script src="app.js?v=20260603e"></script>
+    <script src="app.js?v=20260603f"></script>
     
     <!-- Check if Blockly loaded after page load -->
     <!-- This verifies that Blockly loaded successfully and hides the loading message -->
