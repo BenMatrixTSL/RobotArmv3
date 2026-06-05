@@ -1295,6 +1295,23 @@ function initializeConnection() {
 
             robotArmClient.onControlUpdate = updateArmControlDisplay;
 
+            robotArmClient.onReconnected = async function() {
+                const isKioskView = window.location.search.indexOf('kiosk=1') >= 0;
+                if (isKioskView) {
+                    await refreshArmControlStatus();
+                    return;
+                }
+                try {
+                    const control = await robotArmClient.takeControl('electron', true);
+                    updateArmControlDisplay(control);
+                    showAppMessage('Reconnected — arm control restored');
+                } catch (reconnectControlError) {
+                    console.warn('Reconnect: could not take arm control:', reconnectControlError.message);
+                    await refreshArmControlStatus();
+                    showAppMessage('Reconnected (read-only): ' + reconnectControlError.message);
+                }
+            };
+
             const isKioskView = window.location.search.indexOf('kiosk=1') >= 0;
             if (!isKioskView) {
                 try {
@@ -1433,6 +1450,7 @@ function formatServerDiagnosticsText(diag) {
     lines.push('Ticks: ' + (diag.busTicks || 0) + ' (skipped ' + (diag.busTicksSkipped || 0) + ')');
     lines.push('Server build: ' + (diag.buildId || 'unknown'));
     lines.push('Moves completed: ' + (diag.busMovesCompleted != null ? diag.busMovesCompleted : '—'));
+    lines.push('Immediate bus commands: ' + (diag.immediateBusCommands != null ? diag.immediateBusCommands : '—'));
     lines.push('Bus commands done / failed / rejected: ' +
         (diag.busWritesCompleted || 0) + ' / ' +
         (diag.busWritesFailed || 0) + ' / ' +
@@ -2044,9 +2062,14 @@ function stopAllJoints() {
 /**
  * Homes all joints (moves them to 0 degrees)
  */
-function homeAllJoints() {
+async function homeAllJoints() {
     if (!robotArmClient.isConnected) {
         showAppMessage('Not connected to Raspberry Pi');
+        return;
+    }
+
+    if (!robotArmClient.hasArmControl) {
+        showAppMessage('Read-only — use Take control on the Connection tab first');
         return;
     }
     
@@ -2062,11 +2085,19 @@ function homeAllJoints() {
         speedStepsPerSecond = Math.round(defaultSpeedDegreesPerSecond * 11.37);
     }
     
-    // Move all joints to 0 degrees at the default speed
     const numJoints = getNumJoints();
+    showAppMessage('Homing ' + numJoints + ' joints to 0°...');
+
     for (let i = 1; i <= numJoints; i++) {
-        robotArmClient.moveJoint(i, 0, speedStepsPerSecond);
+        try {
+            await robotArmClient.moveJoint(i, 0, speedStepsPerSecond);
+        } catch (error) {
+            showAppMessage('Home failed on joint ' + i + ': ' + error.message);
+            return;
+        }
     }
+
+    showAppMessage('Home command sent for all joints');
 }
 
 /**

@@ -50,7 +50,7 @@ const MIN_BUS_TICK_GAP_MS = parseInt(process.env.MIN_BUS_TICK_GAP_MS || '20', 10
 const MAX_BUS_WRITE_QUEUE_SIZE = 100;
 const MAX_BUS_WRITES_WHEN_IDLE = 0;
 const MAX_BUS_WRITES_WHEN_BUSY = 4;
-const SERVER_BUILD_ID = '2026-06-03-move-fix';
+const SERVER_BUILD_ID = '2026-06-03-immediate-moves';
 
 // Jump to the front of the bus write queue (ahead of status-related work).
 const PRIORITY_BUS_COMMANDS = {
@@ -95,7 +95,7 @@ function debugLog(message, isError) {
     }
 }
 
-debugLog('Server process starting (pid ' + process.pid + ')');
+debugLog('Server process starting (pid ' + process.pid + ', build ' + SERVER_BUILD_ID + ')');
 if (DEBUG_LOG_FILE) {
     debugLog('Debug log file: ' + DEBUG_LOG_FILE);
 }
@@ -177,7 +177,8 @@ const serverDiagnostics = {
     lastBroadcastAt: null,
     cacheAgeMs: null,
     wsClients: 0,
-    instantCommands: 0
+    instantCommands: 0,
+    immediateBusCommands: 0
 };
 
 // WebSocket clients (for pushing status to every app instance)
@@ -373,6 +374,14 @@ const BUS_WRITE_COMMANDS = {
     toolSetWatchdog: true,
     toolClearFaults: true,
     toolReset: true
+};
+
+// Joint moves run immediately on the bus (not queued behind status polls).
+const IMMEDIATE_BUS_COMMANDS = {
+    moveJoint: true,
+    stopJoint: true,
+    stopAll: true,
+    stopAllJoints: true
 };
 
 /**
@@ -651,6 +660,46 @@ function kickBusTickIfIdle() {
 }
 
 /**
+ * Run a move/stop command on the bus right away (not behind the status poll queue).
+ * @param {WebSocket} ws
+ * @param {Object} data
+ */
+async function runImmediateBusCommand(ws, data) {
+    await waitForBusTickToFinish();
+
+    if (busTickTimer) {
+        clearTimeout(busTickTimer);
+        busTickTimer = null;
+    }
+
+    busTickInProgress = true;
+    const cmdStart = Date.now();
+
+    try {
+        await handleCommand(ws, data);
+        serverDiagnostics.immediateBusCommands++;
+        debugLog('Immediate bus command OK: ' + data.command +
+            (data.joint !== undefined ? ' joint=' + data.joint : '') +
+            ' (' + (Date.now() - cmdStart) + ' ms)');
+    } catch (error) {
+        debugLog('Immediate bus command failed: ' + data.command + ' — ' + (error.message || error), true);
+        const errPayload = {
+            type: 'error',
+            message: formatCommandError(error)
+        };
+        if (data.requestId !== undefined) {
+            errPayload.requestId = data.requestId;
+        }
+        ws.send(JSON.stringify(errPayload));
+    } finally {
+        busTickInProgress = false;
+        if (busTickLoopActive && !serverShuttingDown) {
+            scheduleNextBusTick(MIN_BUS_TICK_GAP_MS);
+        }
+    }
+}
+
+/**
  * Snapshot of bus / WebSocket diagnostics for debugging.
  * @returns {Object}
  */
@@ -732,7 +781,19 @@ function broadcastStatusToClients() {
  * @param {WebSocket} ws
  * @returns {{ok: boolean, message?: string}}
  */
+function pruneStaleControlSession() {
+    if (!controlSession.ws) {
+        return;
+    }
+    if (controlSession.ws.readyState !== WebSocket.OPEN) {
+        debugLog('Releasing arm control from disconnected client');
+        releaseControlSession(controlSession.ws);
+    }
+}
+
 function requireControl(ws) {
+    pruneStaleControlSession();
+
     // No holder yet — grant this client automatically (keeps old apps working)
     if (!controlSession.ws) {
         assignControlSession(ws, 'auto');
@@ -1284,7 +1345,8 @@ function startServer() {
             message: 'Connected to Robot Arm Server (ST3215)',
             pushesStatus: true,
             statusIntervalMs: STATUS_POLL_INTERVAL_MS,
-            busTickIntervalMs: STATUS_POLL_INTERVAL_MS
+            busTickIntervalMs: STATUS_POLL_INTERVAL_MS,
+            serverBuildId: SERVER_BUILD_ID
         }));
 
         ws.send(JSON.stringify({
@@ -1312,7 +1374,11 @@ function startServer() {
                     await handleCommand(ws, data);
                     return;
                 }
-                // Bus writes are scheduled on the tick loop — do not await here (keeps WS responsive).
+                if (IMMEDIATE_BUS_COMMANDS[data.command]) {
+                    runImmediateBusCommand(ws, data);
+                    return;
+                }
+                // Other bus writes are scheduled on the tick loop — do not await here.
                 enqueueBusWrite(async () => {
                     await handleCommand(ws, data);
                 }, {
@@ -2048,6 +2114,7 @@ async function handleCommand(ws, data) {
                     await servo.startServo();
                 }
 
+                debugLog('moveJoint: joint ' + data.joint + ' -> ' + angle + ' deg, speed ' + moveSpeed + ' step/s');
                 await servo.moveToAngle(angle, moveSpeed);
                 serverDiagnostics.busMovesCompleted++;
 

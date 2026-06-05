@@ -27,6 +27,7 @@ class RobotArmClient {
         this.hasArmControl = false;
         this.controlHolder = null;
         this.onControlUpdate = null;
+        this.onReconnected = null;
     }
 
     /**
@@ -63,11 +64,15 @@ class RobotArmClient {
                 // Handle connection open
                 this.ws.onopen = () => {
                     console.log('Connected to Raspberry Pi');
+                    const isReconnect = this.hasEverConnected;
                     this.isConnected = true;
                     this.hasEverConnected = true;
                     this.isConnecting = false;
                     this.updateConnectionStatus(true);
                     this.stopReconnect();
+                    if (isReconnect && typeof this.onReconnected === 'function') {
+                        this.onReconnected();
+                    }
                     resolve();
                 };
 
@@ -95,6 +100,8 @@ class RobotArmClient {
                     this.clearPendingRequests('Connection closed');
                     this.isConnected = false;
                     this.isConnecting = false;
+                    this.hasArmControl = false;
+                    this.controlHolder = null;
                     this.updateConnectionStatus(false);
                     // Only start reconnecting if we had successfully connected before
                     if (this.hasEverConnected) {
