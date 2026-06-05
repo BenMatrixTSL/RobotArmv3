@@ -45,13 +45,13 @@ const PERF_DEBUG = false;
 const BUS_DIAGNOSTICS_LOG_INTERVAL_MS = parseInt(process.env.BUS_DIAGNOSTICS_LOG_INTERVAL_MS || '0', 10);
 
 // Minimum gap between bus ticks (ms). Ticks are chained after work finishes — not a fixed overlap.
-const STATUS_POLL_INTERVAL_MS = parseInt(process.env.STATUS_POLL_INTERVAL_MS || '50', 10);
-const MIN_BUS_TICK_GAP_MS = parseInt(process.env.MIN_BUS_TICK_GAP_MS || '8', 10);
+const STATUS_POLL_INTERVAL_MS = parseInt(process.env.STATUS_POLL_INTERVAL_MS || '20', 10);
+const MIN_BUS_TICK_GAP_MS = parseInt(process.env.MIN_BUS_TICK_GAP_MS || '4', 10);
 const JOINTS_PER_POLL_TICK = parseInt(process.env.JOINTS_PER_POLL_TICK || '6', 10);
 const MAX_BUS_WRITE_QUEUE_SIZE = 100;
 const MAX_BUS_WRITES_WHEN_IDLE = 0;
 const MAX_BUS_WRITES_WHEN_BUSY = 4;
-const SERVER_BUILD_ID = '2026-06-03-fast-status';
+const SERVER_BUILD_ID = '2026-06-05-low-latency';
 const BUS_QUIET_BEFORE_MOVE_MS = 12;
 const BUS_QUIET_AFTER_MOVE_MS = 10;
 const BUS_QUIET_JOG_MS = 4;
@@ -156,6 +156,14 @@ let busTickInProgress = false;
 let busWriteQueue = [];
 let statusPollJointIndex = 0;
 const pendingImmediateMoves = {};
+
+// Offline servo backoff: after SERVO_BACKOFF_FAIL_THRESHOLD consecutive read
+// failures, skip that servo for SERVO_BACKOFF_DURATION_MS before retrying.
+// Prevents a dead servo from consuming 50 ms of timeout every single tick.
+const SERVO_BACKOFF_FAIL_THRESHOLD = 3;
+const SERVO_BACKOFF_DURATION_MS = 2000;
+const servoConsecFails = new Array(JOINT_COUNT).fill(0);
+const servoBackoffUntilMs = new Array(JOINT_COUNT).fill(0);
 let immediateMoveDrainRunning = false;
 let lastStatusBroadcastAt = 0;
 
@@ -989,11 +997,11 @@ async function runBusTick() {
             await refreshSingleJointStatusFromBus(statusPollJointIndex);
             statusPollJointIndex = (statusPollJointIndex + 1) % JOINT_COUNT;
             if (p < jointsToPoll - 1) {
-                await new Promise((resolve) => setTimeout(resolve, 4));
+                await new Promise((resolve) => setTimeout(resolve, 1));
             }
         }
         serverDiagnostics.statusPollJointIndex = statusPollJointIndex;
-        await new Promise((resolve) => setTimeout(resolve, 4));
+        await new Promise((resolve) => setTimeout(resolve, 1));
         broadcastStatusToClients();
         serverDiagnostics.statusPollsCompleted++;
         serverDiagnostics.lastStatusPollDurationMs = Date.now() - pollStart;
@@ -1270,7 +1278,7 @@ async function readServoQuickStatusWithRetry(servo) {
     try {
         return await servo.readQuickStatus();
     } catch (firstError) {
-        await new Promise(resolve => setTimeout(resolve, 15));
+        await new Promise(resolve => setTimeout(resolve, 5));
         return await servo.readQuickStatus();
     }
 }
@@ -1289,9 +1297,17 @@ async function refreshSingleJointStatusFromBus(jointIndex) {
         return;
     }
 
+    // Skip servos that are in backoff (repeated failures) to keep tick time short.
+    // They will be retried once the backoff window expires.
+    const nowMs = Date.now();
+    if (servoBackoffUntilMs[jointIndex] > nowMs) {
+        return;
+    }
+
     const startServo = Date.now();
     try {
         const status = await readServoQuickStatusWithRetry(servo);
+        servoConsecFails[jointIndex] = 0;
         jointStatusCache[jointIndex] = {
             joint: jointNum,
             available: true,
@@ -1301,6 +1317,12 @@ async function refreshSingleJointStatusFromBus(jointIndex) {
             lastGoodAt: Date.now()
         };
     } catch (error) {
+        servoConsecFails[jointIndex]++;
+        if (servoConsecFails[jointIndex] >= SERVO_BACKOFF_FAIL_THRESHOLD) {
+            servoBackoffUntilMs[jointIndex] = Date.now() + SERVO_BACKOFF_DURATION_MS;
+            servoConsecFails[jointIndex] = 0;
+            console.warn(`Joint ${jointNum}: entering ${SERVO_BACKOFF_DURATION_MS}ms backoff after repeated read failures`);
+        }
         if (previous.lastGoodAt) {
             jointStatusCache[jointIndex] = {
                 ...previous,

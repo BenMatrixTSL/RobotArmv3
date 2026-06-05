@@ -72,9 +72,11 @@ const MAX_ANGLE = 180;   // Maximum angle in degrees
 // ESP32 end-tool constants (ST3215-compatible node on same bus)
 const END_TOOL_ID = 64;
 
-// Shared half-duplex bus: ST3215 reads need more than a few ms under load
-const BUS_READ_TIMEOUT_MS = 150;
-const BUS_READ_TIMEOUT_END_TOOL_MS = 250;
+// At 1 Mbps the full UART round-trip for a 27-byte read is ~400 µs.
+// 25 ms gives 60× margin for Pi OS scheduling jitter while avoiding
+// long stalls when a servo is offline.
+const BUS_READ_TIMEOUT_MS = 25;
+const BUS_READ_TIMEOUT_END_TOOL_MS = 50;
 const BUS_WRITE_RETRY_DELAY_MS = 80;
 const BUS_WRITE_MAX_ATTEMPTS = 3;
 const BUS_GAP_BETWEEN_WRITES_MS = 15;
