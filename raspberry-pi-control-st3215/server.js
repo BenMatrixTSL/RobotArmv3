@@ -562,7 +562,32 @@ async function queueCommand(commandFn, meta) {
             }
         }
 
-        commandQueue.push({ commandFn, resolve, reject, meta: meta || null });
+        const item = { commandFn, resolve, reject, meta: meta || null };
+
+        // Only one background status poll may wait in the queue at a time.
+        if (meta && meta.command === '__statusPoll') {
+            const alreadyQueued = commandQueue.some((queued) => {
+                return queued.meta && queued.meta.command === '__statusPoll';
+            });
+            if (alreadyQueued) {
+                resolve();
+                return;
+            }
+            commandQueue.push(item);
+        } else if (meta && meta.priority === true) {
+            // User move/torque commands jump ahead of queued status polls.
+            let insertAt = commandQueue.length;
+            for (let i = 0; i < commandQueue.length; i++) {
+                if (!(commandQueue[i].meta && commandQueue[i].meta.command === '__statusPoll')) {
+                    insertAt = i;
+                    break;
+                }
+            }
+            commandQueue.splice(insertAt, 0, item);
+        } else {
+            commandQueue.push(item);
+        }
+
         processCommandQueue();
     });
 }
@@ -1034,7 +1059,7 @@ function scheduleStatusPoll() {
     queueCommand(async () => {
         await refreshJointStatusCacheFromBus();
         broadcastStatusToClients();
-    }).catch((error) => {
+    }, { command: '__statusPoll' }).catch((error) => {
         console.warn('Background status poll failed:', error.message);
     }).finally(() => {
         statusPollPending = false;
@@ -1139,12 +1164,14 @@ function startServer() {
                     await handleCommand(ws, data);
                     return;
                 }
-                // Queue the command to ensure only one command is processed at a time
+                // Queue bus commands; move/torque requests get priority over status polls.
+                const isBusWrite = !!BUS_WRITE_COMMANDS[data.command];
                 await queueCommand(async () => {
                     await handleCommand(ws, data);
                 }, {
                     command: data.command,
-                    joint: data.joint
+                    joint: data.joint,
+                    priority: isBusWrite
                 });
             } catch (error) {
                 console.error('Error handling message:', error);
@@ -1195,7 +1222,7 @@ async function handleCommand(ws, data) {
             return;
         }
 
-        if (command === 'moveJoint' || command === 'setServo' || command === 'setServoAngle') {
+        if (command === 'moveJoint' || command === 'setServo' || command === 'setServoAngle' || command === 'setAcceleration') {
             touchControlMoveActivity(ws);
         }
     }

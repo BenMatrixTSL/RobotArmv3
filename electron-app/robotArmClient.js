@@ -294,8 +294,10 @@ class RobotArmClient {
 
         if (data.type === 'error') {
             console.error('Server error:', data.message);
-            if (data.controlRequired && typeof showAppMessage === 'function') {
-                showAppMessage(data.message);
+            if (typeof showAppMessage === 'function') {
+                if (data.controlRequired || data.joint !== undefined) {
+                    showAppMessage(data.message);
+                }
             }
         }
 
