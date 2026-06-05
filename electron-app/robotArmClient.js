@@ -254,9 +254,15 @@ class RobotArmClient {
             console.log('Joint configurations loaded:', this.jointConfigs);
         }
 
-        // Handle other message types here if needed
         if (data.type === 'error') {
             console.error('Server error:', data.message);
+            if (data.controlRequired && typeof showAppMessage === 'function') {
+                showAppMessage(data.message);
+            }
+        }
+
+        if (data.type === 'success' && data.message && data.message.indexOf('moving to') >= 0) {
+            console.log('Server:', data.message);
         }
     }
 

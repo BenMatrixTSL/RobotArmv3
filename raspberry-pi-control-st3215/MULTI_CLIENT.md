@@ -16,20 +16,21 @@ Several UIs can connect to one Pi server (port 8080). The server centralizes bus
 | **rescanServos** | Rate-limited (10 s minimum between rescans). |
 | **Kinematics** | Runs on the Pi in memory — no servo bus. |
 
-## Control lock (one writer)
+## Control lock (one writer at a time)
 
-Commands that **move** the arm or change torque/speed require **`takeControl`**:
+Commands that **move** the arm or change torque/speed go through the control lock:
 
 - `moveJoint`, `stopJoint`, `stopAllJoints`, `setTorqueAll`, `setSpeed`, `setAcceleration`, `rescanServos`, end-tool writes, etc.
 
-Read-only commands work without control:
+- If **no client** has control yet, the **first** command (or `takeControl`) **auto-grants** control to that client.
+- If **another** client already has control, move commands are rejected.
 
-- `getStatus`, `getJointConfigs`, kinematics, `getPiNetworkInfo`, etc.
+Read-only commands always work: `getStatus`, `getJointConfigs`, kinematics, etc.
 
 | Command | Purpose |
 |---------|---------|
-| `takeControl` | This client becomes the sole writer (`label` optional). |
-| `releaseControl` | Give up control. |
+| `takeControl` | Claim control before another app connects. |
+| `releaseControl` | Give up control so another app can move the arm. |
 | `getControlStatus` | See who has control. |
 
 When a client disconnects, control is released automatically.

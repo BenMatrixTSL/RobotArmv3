@@ -156,7 +156,9 @@ let lastRescanTime = 0;
 const BUS_WRITE_COMMANDS = {
     moveJoint: true,
     stopJoint: true,
+    stopAll: true,
     stopAllJoints: true,
+    setServo: true,
     setServoAngle: true,
     setSpeed: true,
     setSpeedAll: true,
@@ -497,17 +499,18 @@ function broadcastStatusToClients() {
  * @returns {{ok: boolean, message?: string}}
  */
 function requireControl(ws) {
+    // No holder yet — grant this client automatically (keeps old apps working)
     if (!controlSession.ws) {
-        return {
-            ok: false,
-            message: 'No client has arm control. Send takeControl first (kiosk/read-only views should not take control).'
-        };
+        controlSession.ws = ws;
+        controlSession.label = 'auto';
+        controlSession.since = Date.now();
+        return { ok: true };
     }
     if (controlSession.ws !== ws) {
         const who = controlSession.label || 'another client';
         return {
             ok: false,
-            message: 'Arm control is held by ' + who + '.'
+            message: 'Arm control is held by ' + who + '. Only one app can move the arm at a time.'
         };
     }
     return { ok: true };
@@ -1756,6 +1759,7 @@ async function handleCommand(ws, data) {
             }
             break;
             
+        case 'stopAll':
         case 'stopAllJoints':
             // Stop all servos
             try {
@@ -1789,6 +1793,7 @@ async function handleCommand(ws, data) {
             }
             break;
             
+        case 'setServo':
         case 'setServoAngle':
             // Set servo angle (for gripper or other servo-controlled joints)
             const servoJointNumber = data.joint - 1;

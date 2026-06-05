@@ -1255,6 +1255,7 @@ function initializeConnection() {
                     }
                 } catch (controlError) {
                     console.warn('Could not take arm control (another app may be controlling):', controlError.message);
+                    showAppMessage('Connected (read-only): ' + controlError.message);
                 }
             } else {
                 console.log('Kiosk view: read-only — not taking arm control');
