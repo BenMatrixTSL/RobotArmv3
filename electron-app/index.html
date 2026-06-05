@@ -786,9 +786,9 @@
                         <p class="info-text">Coordinate 7 is the fixed tool mounting point from the URDF (no servo angle).</p>
                     </div>
                     <div class="setting-item">
-                        <label>Status fallback check (ms):</label>
-                        <input type="number" id="updateInterval" value="500" min="200" max="5000">
-                        <p class="info-text">The server pushes live updates. This setting is only how often the app checks for a missed update (fallback).</p>
+                        <label>UI refresh interval (ms):</label>
+                        <input type="number" id="updateInterval" value="300" min="200" max="5000">
+                        <p class="info-text">How often the app reads cached joint status from the server. Lower is smoother (200–300 ms is typical).</p>
                     </div>
                     <div class="setting-item">
                         <label>Default Step Size (degrees):</label>

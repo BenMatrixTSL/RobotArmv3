@@ -133,6 +133,7 @@ let endTool = null;
 const jointStatusCache = [];
 let statusPollTimer = null;
 let statusPollPending = false;
+let lastStatusBroadcastAt = 0;
 
 // WebSocket clients (for pushing status to every app instance)
 const connectedClients = new Set();
@@ -650,6 +651,8 @@ function broadcastStatusToClients() {
             ws.send(payload);
         }
     });
+
+    lastStatusBroadcastAt = Date.now();
 }
 
 /**
@@ -747,6 +750,14 @@ async function processCommandQueue() {
         isProcessingCommand = false;
         // Process next command in queue
         processCommandQueue();
+
+        // If the queue is idle and readback is stale, schedule a background poll.
+        if (commandQueue.length === 0 && !statusPollPending) {
+            const sinceBroadcast = Date.now() - lastStatusBroadcastAt;
+            if (sinceBroadcast >= STATUS_POLL_INTERVAL_MS) {
+                scheduleStatusPoll();
+            }
+        }
     }
 }
 
@@ -973,6 +984,55 @@ async function readServoQuickStatusWithRetry(servo) {
 }
 
 /**
+ * Poll one servo and update jointStatusCache for that joint.
+ * @param {number} jointIndex - 0-based joint index
+ */
+async function refreshSingleJointStatusFromBus(jointIndex) {
+    const jointNum = jointIndex + 1;
+    const servo = servos[jointIndex];
+    const previous = jointStatusCache[jointIndex] || defaultJointStatus(jointNum);
+
+    if (servo === null) {
+        jointStatusCache[jointIndex] = defaultJointStatus(jointNum);
+        return;
+    }
+
+    const startServo = Date.now();
+    try {
+        const status = await readServoQuickStatusWithRetry(servo);
+        jointStatusCache[jointIndex] = {
+            joint: jointNum,
+            available: true,
+            ...status,
+            stepPosition: status.position,
+            readStale: false,
+            lastGoodAt: Date.now()
+        };
+    } catch (error) {
+        if (previous.lastGoodAt) {
+            jointStatusCache[jointIndex] = {
+                ...previous,
+                available: true,
+                readStale: true,
+                pollError: error.message
+            };
+        } else {
+            jointStatusCache[jointIndex] = {
+                ...defaultJointStatus(jointNum),
+                readStale: true,
+                pollError: error.message
+            };
+        }
+        console.warn(`Status poll joint ${jointNum}: ${error.message}`);
+    }
+
+    const servoDuration = Date.now() - startServo;
+    if (PERF_DEBUG && servoDuration > 50) {
+        console.log(`PERF: status poll joint ${jointNum} took ${servoDuration} ms`);
+    }
+}
+
+/**
  * Poll all servos on the bus and update jointStatusCache.
  * On timeout/error, keeps the last good reading instead of resetting to 0 / torque off.
  */
@@ -980,49 +1040,8 @@ async function refreshJointStatusCacheFromBus() {
     const startAll = Date.now();
 
     for (let i = 0; i < servos.length; i++) {
-        const jointNum = i + 1;
-        const servo = servos[i];
-        const previous = jointStatusCache[i] || defaultJointStatus(jointNum);
-
-        if (servo === null) {
-            jointStatusCache[i] = defaultJointStatus(jointNum);
-            continue;
-        }
-
-        const startServo = Date.now();
-        try {
-            const status = await readServoQuickStatusWithRetry(servo);
-            jointStatusCache[i] = {
-                joint: jointNum,
-                available: true,
-                ...status,
-                stepPosition: status.position,
-                readStale: false,
-                lastGoodAt: Date.now()
-            };
-            await new Promise(resolve => setTimeout(resolve, 5));
-        } catch (error) {
-            if (previous.lastGoodAt) {
-                jointStatusCache[i] = {
-                    ...previous,
-                    available: true,
-                    readStale: true,
-                    pollError: error.message
-                };
-            } else {
-                jointStatusCache[i] = {
-                    ...defaultJointStatus(jointNum),
-                    readStale: true,
-                    pollError: error.message
-                };
-            }
-            console.warn(`Status poll joint ${jointNum}: ${error.message}`);
-        }
-
-        const servoDuration = Date.now() - startServo;
-        if (PERF_DEBUG && servoDuration > 50) {
-            console.log(`PERF: status poll joint ${jointNum} took ${servoDuration} ms`);
-        }
+        await refreshSingleJointStatusFromBus(i);
+        await new Promise(resolve => setTimeout(resolve, 5));
     }
 
     if (PERF_DEBUG) {
@@ -1876,6 +1895,8 @@ async function handleCommand(ws, data) {
             
             try {
                 await servo.moveToAngle(angle, moveSpeed);
+                await refreshSingleJointStatusFromBus(jointNumber);
+                broadcastStatusToClients();
                 sendResponse({
                     type: 'success',
                     message: `Servo ${data.joint} moving to ${angle}° at ${moveSpeed} step/s`

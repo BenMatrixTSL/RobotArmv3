@@ -1298,7 +1298,7 @@ function initializeConnection() {
 
             startControlStatusUpdates();
             
-            // Status: server pushes updates; app polls only if pushes go quiet
+            // Status: server pushes updates; app also polls cached status at Settings interval
             startStatusUpdates(isKioskView);
             
             // Joint configs are sent on connect; request again if needed
@@ -1353,44 +1353,30 @@ function initializeConnection() {
 /**
  * Starts periodic status updates
  */
-function getStatusStaleThresholdMs() {
-    const serverInterval = robotArmClient.serverStatusIntervalMs || 100;
-    // Server may poll all joints on one timer tick — allow time for a full bus cycle.
-    return Math.max(1500, serverInterval * 30);
-}
-
 function startStatusUpdates(isKioskView) {
-    // Primary updates come from server WebSocket pushes.
-    // We only send getStatus when pushes have gone quiet (fallback).
-    let checkInterval = parseInt(document.getElementById('updateInterval')?.value || '500', 10);
+    // Poll the server status cache at this interval. getStatus is cache-only on the server
+    // (no bus read, no queue) so this is safe alongside WebSocket pushes.
+    let interval = parseInt(document.getElementById('updateInterval')?.value || '300', 10);
 
-    if (isNaN(checkInterval)) {
-        checkInterval = 500;
-    } else if (checkInterval < 200) {
-        checkInterval = 200;
-    } else if (checkInterval > 5000) {
-        checkInterval = 5000;
+    if (isNaN(interval)) {
+        interval = 300;
+    } else if (interval < 200) {
+        interval = 200;
+    } else if (interval > 5000) {
+        interval = 5000;
     }
 
     stopStatusUpdates();
 
     robotArmClient.requestStatus();
 
-    const staleThresholdMs = getStatusStaleThresholdMs();
-
     statusUpdateInterval = setInterval(function() {
         if (!robotArmClient.isConnected) {
             stopStatusUpdates();
             return;
         }
-
-        const sinceLastStatus = Date.now() - (robotArmClient.lastStatusPushAt || 0);
-        if (sinceLastStatus < staleThresholdMs) {
-            return;
-        }
-
         robotArmClient.requestStatus();
-    }, checkInterval);
+    }, interval);
 }
 
 /**
