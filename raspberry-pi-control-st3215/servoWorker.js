@@ -29,6 +29,7 @@ const JOINT_COUNT = 6;
 const SERVO_IDS = [1, 2, 3, 4, 5, 6];
 const DEBUG = false;
 const PERF_DEBUG = false;
+const VERBOSE_LOG = process.env.VERBOSE_LOG === '1';
 const BUS_DIAGNOSTICS_LOG_INTERVAL_MS = parseInt(process.env.BUS_DIAGNOSTICS_LOG_INTERVAL_MS || '0', 10);
 
 const STATUS_POLL_INTERVAL_MS = parseInt(process.env.STATUS_POLL_INTERVAL_MS || '20', 10);
@@ -90,12 +91,10 @@ const diag = {
 
 // ===== Helpers =====
 function log(msg, isError) {
-    if (isError) {
-        console.error(msg);
-    } else {
-        console.log(msg);
-    }
+    const line = '[' + new Date().toISOString().slice(11, 23) + '] ' + msg;
+    if (isError) { console.error(line); } else { console.log(line); }
 }
+function vlog(msg) { if (VERBOSE_LOG) log(msg); }
 
 function sendResponse(clientId, requestId, payload) {
     if (requestId !== undefined && requestId !== null) {
@@ -232,20 +231,27 @@ async function refreshSingleJointStatusFromBus(jointIndex) {
     try {
         const status = await readServoQuickStatusWithRetry(servo);
         servoConsecFails[jointIndex] = 0;
+        // If the servo has self-disabled torque (overload/fault), sync local tracking
+        // so the next moveJoint will re-enable it.
+        if (!status.torqueEnabled && servoTorqueEnabled[jointIndex]) {
+            log(`[TORQUE] Joint ${jointNum}: servo self-disabled torque (fault/overload) — will re-enable on next move`);
+            servoTorqueEnabled[jointIndex] = false;
+        }
+        vlog(`[POLL] joint=${jointNum} pos=${status.position} angle=${status.angleDegrees.toFixed(1)} torque=${status.torqueEnabled} moving=${status.isMoving}`);
         jointStatusCache[jointIndex] = { joint: jointNum, available: true, ...status, stepPosition: status.position, readStale: false, lastGoodAt: Date.now() };
     } catch (error) {
         servoConsecFails[jointIndex]++;
         if (servoConsecFails[jointIndex] >= SERVO_BACKOFF_FAIL_THRESHOLD) {
             servoBackoffUntilMs[jointIndex] = Date.now() + SERVO_BACKOFF_DURATION_MS;
             servoConsecFails[jointIndex] = 0;
-            log(`Joint ${jointNum}: entering ${SERVO_BACKOFF_DURATION_MS}ms backoff after repeated read failures`);
+            log(`[BUS] Joint ${jointNum}: entering ${SERVO_BACKOFF_DURATION_MS}ms backoff after ${SERVO_BACKOFF_FAIL_THRESHOLD} consecutive failures`);
         }
         if (previous.lastGoodAt) {
             jointStatusCache[jointIndex] = { ...previous, available: true, readStale: true, pollError: error.message };
         } else {
             jointStatusCache[jointIndex] = { ...defaultJointStatus(jointNum), readStale: true, pollError: error.message };
         }
-        log(`Status poll joint ${jointNum}: ${error.message}`);
+        log(`[BUS] Joint ${jointNum}: read failed (${error.message}) consec=${servoConsecFails[jointIndex]}`);
     }
 
     const dur = Date.now() - startServo;
@@ -620,12 +626,17 @@ async function handleBusCommand(clientId, data) {
                 return;
             }
             lastRescanTime = now;
+            log('[SCAN] Rescanning all servos...');
             try {
                 const results = await rescanServos();
                 refreshDataRoutingControllers();
                 rebuildJointConfigsCache();
+                const found = results.filter(r => r.available).map(r => r.joint).join(',') || 'none';
+                const lost  = results.filter(r => !r.available).map(r => r.joint).join(',') || 'none';
+                log(`[SCAN] Rescan complete — available=${found} unavailable=${lost}`);
                 reply({ type: 'servoRescan', joints: results });
             } catch (error) {
+                log('[SCAN] Rescan failed: ' + error.message, true);
                 reply({ type: 'error', message: 'Failed to rescan servos: ' + error.message });
             }
             break;
@@ -636,26 +647,35 @@ async function handleBusCommand(clientId, data) {
             const angle      = data.angle;
             const moveSpeed  = (typeof data.speed === 'number' && !isNaN(data.speed) && data.speed >= 0) ? data.speed : 1500;
 
+            log(`[MOVE] joint=${data.joint} angle=${angle} speed=${moveSpeed} torqueTracked=${servoTorqueEnabled[jointIndex]} servoSlot=${servos[jointIndex] !== null ? 'present' : 'null'}`);
+
             if (jointIndex < 0 || jointIndex >= servos.length) {
+                log(`[MOVE] joint=${data.joint} REJECTED: invalid joint number`, true);
                 reply({ type: 'error', message: `Invalid joint number: ${data.joint}` });
                 return;
             }
             const servo = await resolveServoForJoint(jointIndex, data.joint);
             if (!servo) {
+                log(`[MOVE] joint=${data.joint} REJECTED: servo not available`, true);
                 reply({ type: 'error', message: `Servo ${data.joint} is not available` });
                 return;
             }
+            const moveStart = Date.now();
             try {
                 if (!servoTorqueEnabled[jointIndex]) {
-                    await servo.startServo();
+                    log(`[TORQUE] joint=${data.joint}: re-enabling torque before move`);
+                    const ok = await servo.startServo();
                     servoTorqueEnabled[jointIndex] = true;
+                    log(`[TORQUE] joint=${data.joint}: startServo result=${ok}`);
                 }
                 await servo.moveToAngle(angle, moveSpeed);
                 diag.busMovesCompleted++;
                 await refreshSingleJointStatusFromBus(jointIndex);
                 postStatusToMain();
+                log(`[MOVE] joint=${data.joint} OK (${Date.now() - moveStart}ms)`);
                 reply({ type: 'success', message: `Servo ${data.joint} moving to ${angle}° at ${moveSpeed} step/s` });
             } catch (error) {
+                log(`[MOVE] joint=${data.joint} FAILED after ${Date.now() - moveStart}ms: ${formatCommandError(error)}`, true);
                 reply({ type: 'error', message: `Failed to move joint ${data.joint}: ${formatCommandError(error)}`, servoFault: !!(error && error.isOverload), joint: data.joint });
             }
             break;
@@ -667,11 +687,14 @@ async function handleBusCommand(clientId, data) {
             const sv = servos[idx];
             if (!sv) { reply({ type: 'error', message: `Servo ${data.joint} is not available` }); return; }
             try {
+                log(`[TORQUE] joint=${data.joint}: stopJoint — disabling torque`);
                 const stopped = await sv.stopServo();
                 if (stopped) {
                     servoTorqueEnabled[idx] = false;
+                    log(`[TORQUE] joint=${data.joint}: torque disabled`);
                     reply({ type: 'success', message: `Servo ${data.joint} stopped` });
                 } else {
+                    log(`[TORQUE] joint=${data.joint}: stopServo returned false`, true);
                     reply({ type: 'error', message: `Could not disable torque on joint ${data.joint}`, joint: data.joint });
                 }
             } catch (error) {
@@ -682,6 +705,7 @@ async function handleBusCommand(clientId, data) {
 
         case 'stopAll':
         case 'stopAllJoints': {
+            log(`[TORQUE] ${command}: disabling torque on all joints`);
             try {
                 const failed = [];
                 for (let i = 0; i < servos.length; i++) {
@@ -744,8 +768,10 @@ async function handleBusCommand(clientId, data) {
 
         case 'setTorqueAll': {
             const torqueEnabled = data.enabled !== false;
+            log(`[TORQUE] setTorqueAll enabled=${torqueEnabled}`);
             try {
                 if (cachedTorqueEnabled === torqueEnabled) {
+                    log(`[TORQUE] setTorqueAll: already ${torqueEnabled ? 'enabled' : 'disabled'}, no-op`);
                     reply({ type: 'success', message: `All servos torque already ${torqueEnabled ? 'enabled' : 'disabled'}` });
                     return;
                 }
@@ -898,6 +924,10 @@ async function shutdown() {
 process.on('message', (msg) => {
     if (!msg || !msg.type) return;
 
+    if (msg.type !== 'status') {
+        vlog(`[CMD] type=${msg.type}${msg.command ? ' cmd=' + msg.command : ''}${msg.joint !== undefined ? ' joint=' + msg.joint : ''}${msg.angle !== undefined ? ' angle=' + msg.angle : ''} client=${msg.clientId || '-'}`);
+    }
+
     if (msg.type === 'shutdown') {
         shutdown();
         return;
@@ -914,7 +944,7 @@ process.on('message', (msg) => {
         }, { command: msg.command, joint: msg.joint }).catch((error) => {
             const errMsg = error && error.message ? error.message : String(error);
             if (!errMsg.includes('Superseded')) {
-                log('Bus command failed (' + msg.command + '): ' + errMsg, true);
+                log('[CMD] Bus command failed (' + msg.command + '): ' + errMsg, true);
             }
             sendResponse(msg.clientId, msg.requestId, { type: 'error', message: errMsg });
         });
@@ -923,6 +953,7 @@ process.on('message', (msg) => {
 });
 
 // ===== Start =====
+log(`Servo worker starting (pid=${process.pid} VERBOSE_LOG=${VERBOSE_LOG} STATUS_POLL_MS=${STATUS_POLL_INTERVAL_MS} MIN_GAP_MS=${MIN_BUS_TICK_GAP_MS})`);
 initializeServos().then(async () => {
     await refreshJointStatusCacheFromBus();
     startBusTickLoop();
