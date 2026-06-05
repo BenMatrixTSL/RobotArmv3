@@ -1068,10 +1068,8 @@ class ServoController {
             // Check explicitly for null/undefined, but allow 0 as a valid speed value
             const speedToUse = (speed !== null && speed !== undefined) ? speed : this.currentSpeed;
             
-            // Only write speed when it changed — avoids an extra bus transaction before every move.
-            if (speedToUse !== this.currentSpeed) {
-                await this.setSpeed(speedToUse);
-            }
+            // Always set speed before goal position (ST3215 expects both for a reliable move).
+            await this.setSpeed(speedToUse);
             
             // Don't read position before move - it can cause response matching issues
             // Just proceed with the move

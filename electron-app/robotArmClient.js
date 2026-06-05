@@ -230,7 +230,11 @@ class RobotArmClient {
                         this.onStatusUpdate(data.joints);
                     }
                 }
-                pending.resolve(data);
+                if (data.type === 'error') {
+                    pending.reject(new Error(data.message || 'Server error'));
+                } else {
+                    pending.resolve(data);
+                }
                 return;
             }
         }
@@ -304,6 +308,7 @@ class RobotArmClient {
         if (data.type === 'success' && data.message && data.message.indexOf('moving to') >= 0) {
             console.log('Server:', data.message);
         }
+
     }
 
     /**
@@ -391,11 +396,11 @@ class RobotArmClient {
     moveJoint(jointNumber, angle, speed = 1500) {
         // Ensure speed is a valid number
         const speedValue = (typeof speed === 'number' && !isNaN(speed) && speed >= 0) ? speed : 1500;
-        return this.sendCommand('moveJoint', {
+        return this.sendRequest('moveJoint', {
             joint: jointNumber,
             angle: angle,
             speed: speedValue
-        });
+        }, 8000);
     }
 
     /**

@@ -50,6 +50,16 @@ const MIN_BUS_TICK_GAP_MS = parseInt(process.env.MIN_BUS_TICK_GAP_MS || '20', 10
 const MAX_BUS_WRITE_QUEUE_SIZE = 100;
 const MAX_BUS_WRITES_WHEN_IDLE = 0;
 const MAX_BUS_WRITES_WHEN_BUSY = 4;
+const SERVER_BUILD_ID = '2026-06-03-move-fix';
+
+// Jump to the front of the bus write queue (ahead of status-related work).
+const PRIORITY_BUS_COMMANDS = {
+    moveJoint: true,
+    stopJoint: true,
+    stopAll: true,
+    stopAllJoints: true,
+    setTorqueAll: true
+};
 
 // Optional file log (set by install-service.sh: ROBOT_ARM_DEBUG_LOG)
 const DEBUG_LOG_FILE = process.env.ROBOT_ARM_DEBUG_LOG || '';
@@ -154,8 +164,10 @@ const serverDiagnostics = {
     lastBusTickDurationMs: 0,
     busWriteQueueLength: 0,
     busWritesCompleted: 0,
+    busMovesCompleted: 0,
     busWritesFailed: 0,
     busWritesRejected: 0,
+    buildId: SERVER_BUILD_ID,
     lastBusWriteAt: null,
     lastBusWriteDurationMs: 0,
     statusPollsCompleted: 0,
@@ -615,9 +627,27 @@ function enqueueBusWrite(commandFn, meta) {
             }
         }
 
-        busWriteQueue.push({ commandFn, resolve, reject, meta: meta || null, enqueuedAt: Date.now() });
+        const item = { commandFn, resolve, reject, meta: meta || null, enqueuedAt: Date.now() };
+
+        if (meta && PRIORITY_BUS_COMMANDS[meta.command]) {
+            busWriteQueue.unshift(item);
+        } else {
+            busWriteQueue.push(item);
+        }
+
         serverDiagnostics.busWriteQueueLength = busWriteQueue.length;
+        kickBusTickIfIdle();
     });
+}
+
+/**
+ * Run a bus tick immediately when the bus is idle (so moves are not delayed).
+ */
+function kickBusTickIfIdle() {
+    if (!busTickLoopActive || serverShuttingDown || busTickInProgress) {
+        return;
+    }
+    runBusTick();
 }
 
 /**
@@ -2013,16 +2043,15 @@ async function handleCommand(ws, data) {
             }
             
             try {
+                const cachedStatus = jointStatusCache[jointNumber];
+                if (!cachedStatus || cachedStatus.torqueEnabled !== true) {
+                    await servo.startServo();
+                }
+
                 await servo.moveToAngle(angle, moveSpeed);
-                const prevStatus = jointStatusCache[jointNumber] || defaultJointStatus(data.joint);
-                jointStatusCache[jointNumber] = {
-                    ...prevStatus,
-                    joint: data.joint,
-                    available: true,
-                    angleDegrees: angle,
-                    readStale: true,
-                    lastGoodAt: prevStatus.lastGoodAt || Date.now()
-                };
+                serverDiagnostics.busMovesCompleted++;
+
+                await refreshSingleJointStatusFromBus(jointNumber);
                 broadcastStatusToClients();
                 sendResponse({
                     type: 'success',

@@ -1431,7 +1431,9 @@ function formatServerDiagnosticsText(diag) {
     lines.push('Last joint read: ' + (diag.lastStatusPollDurationMs != null ? diag.lastStatusPollDurationMs + ' ms' : '—'));
     lines.push('Status round-robin index: ' + (diag.statusPollJointIndex != null ? diag.statusPollJointIndex : '—'));
     lines.push('Ticks: ' + (diag.busTicks || 0) + ' (skipped ' + (diag.busTicksSkipped || 0) + ')');
-    lines.push('Writes done / failed / rejected: ' +
+    lines.push('Server build: ' + (diag.buildId || 'unknown'));
+    lines.push('Moves completed: ' + (diag.busMovesCompleted != null ? diag.busMovesCompleted : '—'));
+    lines.push('Bus commands done / failed / rejected: ' +
         (diag.busWritesCompleted || 0) + ' / ' +
         (diag.busWritesFailed || 0) + ' / ' +
         (diag.busWritesRejected || 0));
@@ -1917,6 +1919,11 @@ function moveJoint(jointNumber) {
         showAppMessage('Not connected to Raspberry Pi');
         return;
     }
+
+    if (!robotArmClient.hasArmControl) {
+        showAppMessage('Read-only — use Take control on the Connection tab first');
+        return;
+    }
     
     // Get the target angle from the input field
     const inputElement = document.getElementById(`joint${jointNumber}Target`);
@@ -2008,22 +2015,18 @@ function moveJoint(jointNumber) {
         console.warn(`Acceleration input element not found for joint ${jointNumber}`);
     }
 
-    // Send acceleration command before moving the joint
-    // This uses the existing setAcceleration API on the Raspberry Pi
-    try {
-        if (typeof robotArmClient.setAcceleration === 'function') {
-            console.log(`Setting acceleration for joint ${jointNumber} to ${accelerationValue}`);
-            // We do not await the result here to keep the UI responsive
-            robotArmClient.setAcceleration(jointNumber, accelerationValue);
-        }
-    } catch (error) {
-        console.error(`Failed to set acceleration for joint ${jointNumber}:`, error);
-    }
-    
-    // For single joint movements, move directly without dead zone checking
-    // Dead zone checking is only needed for multi-joint movements that might cause
-    // the end effector to pass through a dead zone
-    robotArmClient.moveJoint(jointNumber, targetAngle, speedStepsPerSecond);
+    // For single joint movements, move directly without dead zone checking.
+    // Acceleration is applied on the server when you change it in Settings; do not
+    // queue a separate bus command here (it delayed moves on the shared bus).
+    robotArmClient.moveJoint(jointNumber, targetAngle, speedStepsPerSecond)
+        .then(function(response) {
+            if (response && response.type === 'success' && response.message) {
+                showAppMessage(response.message);
+            }
+        })
+        .catch(function(error) {
+            showAppMessage('Move failed (joint ' + jointNumber + '): ' + error.message);
+        });
 }
 
 /**
