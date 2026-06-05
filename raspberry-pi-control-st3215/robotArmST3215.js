@@ -73,10 +73,10 @@ const MAX_ANGLE = 180;   // Maximum angle in degrees
 const END_TOOL_ID = 64;
 
 // At 1 Mbps the full UART round-trip for a 27-byte read is ~400 µs.
-// 25 ms gives 60× margin for Pi OS scheduling jitter while avoiding
-// long stalls when a servo is offline.
-const BUS_READ_TIMEOUT_MS = 25;
-const BUS_READ_TIMEOUT_END_TOOL_MS = 50;
+// 40 ms gives ample margin for Pi OS scheduling jitter and half-duplex
+// GPIO direction switching while still being far faster than the old 150 ms.
+const BUS_READ_TIMEOUT_MS = 40;
+const BUS_READ_TIMEOUT_END_TOOL_MS = 80;
 const BUS_WRITE_RETRY_DELAY_MS = 80;
 const BUS_WRITE_MAX_ATTEMPTS = 3;
 const BUS_GAP_BETWEEN_WRITES_MS = 15;
