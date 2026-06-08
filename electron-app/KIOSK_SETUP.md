@@ -198,6 +198,8 @@ sudo ./uninstall-kiosk-service.sh
 | Port 80 not responding | `sudo systemctl status robot-arm-web-server.service` — install with `install-web-server-service.sh` |
 | White screen | `tail -50 ~/.robot-arm-kiosk/kiosk.log` — check web server; try `curl http://127.0.0.1/index.html` on the Pi |
 | "Unlock keyring" popup | Re-run installer after `git pull` — Chromium uses `--password-store=basic` to suppress this |
+| `DEPRECATED_ENDPOINT` / `QUOTA_EXCEEDED` in log | Harmless — Chromium trying to reach Google push services; safe to ignore |
+| `Kiosk: already running — exit` | Normal — two autostart entries tried to start at once; one exits, one keeps running |
 | Port 3080 already in use | Only if using `ROBOT_ARM_KIOSK_PORT=3080` — reboot or `fuser -k 3080/tcp` |
 | `command not found` (file exists) | `chmod +x install-kiosk-service.sh` then `sed -i 's/\r$//' install-kiosk-service.sh` — or run `sudo bash install-kiosk-service.sh /opt/RobotArm/electron-app` |
 | `bad interpreter` / `/bin/bash^M` | Windows line endings — run `sed -i 's/\r$//' *.sh` in `electron-app`, then try again |

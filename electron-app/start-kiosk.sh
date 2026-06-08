@@ -102,7 +102,10 @@ build_chromium_flags() {
         --disable-sync
         --disable-translate
         --disable-background-networking
-        --disable-features=TranslateUI,PasswordCheck,AutofillServerCommunication
+        --disable-component-update
+        --disable-domain-reliability
+        --bwsi
+        --disable-features=TranslateUI,PasswordCheck,AutofillServerCommunication,MediaRouter,OptimizationHints
     )
     if [ "$CHROMIUM_USE_WAYLAND" = "1" ]; then
         CHROMIUM_FLAGS+=(--ozone-platform=wayland --enable-features=UseOzonePlatform --disable-gpu)
