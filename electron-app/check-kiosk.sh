@@ -74,25 +74,60 @@ fi
 
 section "2. Boot autostart (how kiosk should start after reboot)"
 
+AUTOLOGIN_USER=""
+if [ -f /etc/lightdm/lightdm.conf ]; then
+    AUTOLOGIN_USER="$(grep -E '^autologin-user=' /etc/lightdm/lightdm.conf 2>/dev/null | cut -d= -f2 | tr -d ' ')"
+fi
+
+if [ -n "$AUTOLOGIN_USER" ] && [ "$AUTOLOGIN_USER" != "$USER" ]; then
+    bad "Auto-login user is '$AUTOLOGIN_USER' but you are '$USER'"
+    echo "         Kiosk autostart must be in /home/$AUTOLOGIN_USER/.config/ — not only in your home folder."
+    AUTOLOGIN_DESKTOP="/home/$AUTOLOGIN_USER/.config/autostart/robot-arm-kiosk.desktop"
+    if [ -f "$AUTOLOGIN_DESKTOP" ]; then
+        ok "Autostart exists for auto-login user $AUTOLOGIN_USER"
+    else
+        bad "No autostart for auto-login user $AUTOLOGIN_USER"
+        echo "         Fix: sudo bash $SCRIPT_DIR/install-kiosk-service.sh $SCRIPT_DIR $AUTOLOGIN_USER"
+    fi
+fi
+
 if [ -f "$AUTOSTART_DESKTOP" ]; then
     ok "Desktop autostart file exists: $AUTOSTART_DESKTOP"
     echo "       Exec line:"
     grep "^Exec=" "$AUTOSTART_DESKTOP" | sed 's/^/         /'
 else
-    bad "Desktop autostart missing — run: sudo bash $SCRIPT_DIR/install-kiosk-service.sh $SCRIPT_DIR"
+    if [ -z "$AUTOLOGIN_USER" ] || [ "$AUTOLOGIN_USER" = "$USER" ]; then
+        bad "Desktop autostart missing — run: sudo bash $SCRIPT_DIR/install-kiosk-service.sh $SCRIPT_DIR"
+    else
+        warn "No autostart in your home ($USER) — see auto-login user check above"
+    fi
 fi
 
-if [ -f "$LABWC_AUTOSTART" ]; then
-    if grep -q "start-kiosk.sh" "$LABWC_AUTOSTART" 2>/dev/null; then
-        ok "labwc autostart includes start-kiosk.sh"
-        grep "start-kiosk.sh" "$LABWC_AUTOSTART" | sed 's/^/         /'
-    else
-        warn "labwc autostart exists but has no start-kiosk.sh line (Pi OS Wayland/labwc may need this)"
-        echo "         File: $LABWC_AUTOSTART"
+check_labwc_autostart() {
+    local user_home="$1"
+    local label="$2"
+    local file="$user_home/.config/labwc/autostart"
+
+    if [ -f "$file" ] && grep -q "start-kiosk.sh" "$file" 2>/dev/null; then
+        ok "labwc autostart for $label includes start-kiosk.sh"
+        grep "start-kiosk.sh" "$file" | sed 's/^/         /'
+        return 0
     fi
-else
-    warn "No labwc autostart file — on Pi OS Bookworm+ with Wayland this may be required"
-    echo "         Expected: $LABWC_AUTOSTART"
+    return 1
+}
+
+LABWC_OK=0
+if check_labwc_autostart "$HOME" "$USER"; then
+    LABWC_OK=1
+elif [ -n "$AUTOLOGIN_USER" ] && [ "$AUTOLOGIN_USER" != "$USER" ]; then
+    if check_labwc_autostart "/home/$AUTOLOGIN_USER" "$AUTOLOGIN_USER"; then
+        LABWC_OK=1
+    fi
+fi
+
+if [ "$LABWC_OK" -eq 0 ]; then
+    warn "No labwc autostart with start-kiosk.sh (often required on Pi OS Bookworm+ Wayland)"
+    echo "         Re-run: sudo bash $SCRIPT_DIR/install-kiosk-service.sh $SCRIPT_DIR"
 fi
 
 if [ -f "/etc/systemd/system/robot-arm-kiosk.service" ]; then
@@ -130,23 +165,17 @@ if [ "$WAYLAND_FOUND" -eq 0 ]; then
         fi
     elif [ -n "$DISPLAY" ]; then
         warn "DISPLAY=$DISPLAY (xdpyinfo not installed to verify)"
+    elif [ -n "$SSH_CONNECTION" ] || [ -n "$SSH_CLIENT" ]; then
+        warn "No display here — you are on SSH. Open a terminal ON the Pi screen to test the kiosk."
     else
-        bad "No Wayland socket and no DISPLAY — kiosk cannot open a browser"
+        bad "No Wayland socket and no DISPLAY — open a terminal on the Pi desktop (not SSH)"
     fi
 fi
 
 section "4. Auto-login (needed for kiosk at boot)"
 
-AUTOLOGIN_USER=""
-if [ -f /etc/lightdm/lightdm.conf ]; then
-    AUTOLOGIN_USER="$(grep -E '^autologin-user=' /etc/lightdm/lightdm.conf 2>/dev/null | cut -d= -f2)"
-fi
-
 if [ -n "$AUTOLOGIN_USER" ]; then
     ok "Desktop auto-login user: $AUTOLOGIN_USER"
-    if [ "$AUTOLOGIN_USER" != "$USER" ] && [ "$(whoami)" != "$AUTOLOGIN_USER" ]; then
-        warn "You are logged in as $(whoami) but auto-login is set to $AUTOLOGIN_USER"
-    fi
 else
     warn "Could not detect auto-login — enable it in raspi-config (Boot -> Desktop Autologin)"
 fi

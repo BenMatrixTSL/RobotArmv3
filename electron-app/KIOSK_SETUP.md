@@ -53,6 +53,7 @@ To serve the same UI on port 80 (e.g. for phones/tablets on the LAN), use `start
 
 - Raspberry Pi OS **with desktop** (not Lite-only, unless you add a display server yourself).
 - **Auto-login** to the desktop is strongly recommended (`raspi-config` → System Options → Boot / Auto Login → Desktop).
+- **Kiosk must be installed for the auto-login user.** If auto-login is `mxuser` but you run `sudo` as `mxadmin`, the installer now detects that and installs for `mxuser` automatically.
 - **Chromium** installed: `sudo apt install -y chromium`
 - **ST3215 server** installed and running (`st3215-server.service`).
 

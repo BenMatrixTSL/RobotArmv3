@@ -14,6 +14,9 @@
 #   cd /opt/RobotArm/electron-app
 #   chmod +x install-kiosk-service.sh start-kiosk.sh
 #   sudo ./install-kiosk-service.sh /opt/RobotArm/electron-app
+#
+# Optional: install for a specific desktop user (must match auto-login):
+#   sudo ./install-kiosk-service.sh /opt/RobotArm/electron-app mxuser
 
 set -e
 
@@ -26,6 +29,8 @@ INSTALL_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 if [ -n "$1" ]; then
     INSTALL_DIR="$(cd "$1" && pwd)"
 fi
+
+KIOSK_DESKTOP_USER="$2"
 
 echo "=========================================="
 echo "Robot Arm UI — install Chromium kiosk"
@@ -42,7 +47,16 @@ if [ ! -f "$INSTALL_DIR/index.html" ] || [ ! -f "$INSTALL_DIR/start-kiosk.sh" ];
     exit 1
 fi
 
-if [ -n "$SUDO_USER" ]; then
+AUTOLOGIN_USER=""
+if [ -f /etc/lightdm/lightdm.conf ]; then
+    AUTOLOGIN_USER="$(grep -E '^autologin-user=' /etc/lightdm/lightdm.conf 2>/dev/null | cut -d= -f2 | tr -d ' ')"
+fi
+
+if [ -n "$KIOSK_DESKTOP_USER" ]; then
+    SERVICE_USER="$KIOSK_DESKTOP_USER"
+elif [ -n "$AUTOLOGIN_USER" ]; then
+    SERVICE_USER="$AUTOLOGIN_USER"
+elif [ -n "$SUDO_USER" ]; then
     SERVICE_USER="$SUDO_USER"
 else
     SERVICE_USER="pi"
@@ -51,6 +65,12 @@ fi
 if ! id "$SERVICE_USER" &>/dev/null; then
     echo "Error: user '$SERVICE_USER' does not exist."
     exit 1
+fi
+
+if [ -n "$SUDO_USER" ] && [ -n "$AUTOLOGIN_USER" ] && [ "$SUDO_USER" != "$AUTOLOGIN_USER" ] && [ -z "$KIOSK_DESKTOP_USER" ]; then
+    echo "NOTE: You ran sudo as '$SUDO_USER' but desktop auto-login is '$AUTOLOGIN_USER'."
+    echo "      Installing kiosk for '$AUTOLOGIN_USER' (the user who gets the desktop at boot)."
+    echo ""
 fi
 
 SERVICE_UID="$(id -u "$SERVICE_USER")"
