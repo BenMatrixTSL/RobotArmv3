@@ -82,6 +82,21 @@ sudo ./install-kiosk-service.sh /opt/RobotArm/electron-app
 sudo reboot
 ```
 
+**Git pull on the Pi:** use your SSH user (`mxadmin`) — **never** `sudo git pull`:
+
+```bash
+cd /opt/RobotArm
+git pull origin main
+```
+
+If you see `Permission denied` on `.git/FETCH_HEAD`, fix ownership once:
+
+```bash
+cd /opt/RobotArm
+sudo bash fix-repo-permissions.sh /opt/RobotArm mxadmin
+git pull origin main
+```
+
 ## Easy diagnostics (start here if kiosk does not appear)
 
 While logged into the Pi desktop, run:

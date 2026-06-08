@@ -7,10 +7,12 @@
 #   sudo ./fix-repo-permissions.sh
 #
 # Optional: sudo ./fix-repo-permissions.sh /opt/RobotArm
+# Optional: sudo ./fix-repo-permissions.sh /opt/RobotArm mxadmin
 
 set -e
 
 REPO_DIR="${1:-/opt/RobotArm}"
+REPO_USER_ARG="$2"
 
 if [ "$EUID" -ne 0 ]; then
     echo "Error: run with sudo"
@@ -18,7 +20,9 @@ if [ "$EUID" -ne 0 ]; then
     exit 1
 fi
 
-if [ -n "$SUDO_USER" ]; then
+if [ -n "$REPO_USER_ARG" ]; then
+    REPO_USER="$REPO_USER_ARG"
+elif [ -n "$SUDO_USER" ]; then
     REPO_USER="$SUDO_USER"
 else
     REPO_USER="pi"
