@@ -62,4 +62,11 @@ if [ -f "$KIOSK_ENV" ]; then
     echo "Removed $KIOSK_ENV"
 fi
 
+LABWC_AUTOSTART="$SERVICE_HOME/.config/labwc/autostart"
+if [ -f "$LABWC_AUTOSTART" ]; then
+    grep -v "start-kiosk.sh" "$LABWC_AUTOSTART" > "${LABWC_AUTOSTART}.tmp" 2>/dev/null || true
+    mv "${LABWC_AUTOSTART}.tmp" "$LABWC_AUTOSTART"
+    echo "Removed kiosk line from $LABWC_AUTOSTART"
+fi
+
 echo "Done."

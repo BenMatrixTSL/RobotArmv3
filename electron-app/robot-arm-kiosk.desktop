@@ -2,7 +2,7 @@
 Type=Application
 Name=Robot Arm Kiosk
 Comment=Fullscreen robot arm control UI in Chromium
-Exec=INSTALL_DIR/start-kiosk.sh
+Exec=/bin/bash INSTALL_DIR/start-kiosk.sh
 Path=INSTALL_DIR
 Terminal=false
 Categories=Utility;

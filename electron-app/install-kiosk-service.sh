@@ -94,7 +94,11 @@ while [ "$REPO_DIR" != "/" ]; do
     REPO_DIR="$(dirname "$REPO_DIR")"
 done
 chown -R "$SERVICE_USER:$SERVICE_USER" "$INSTALL_DIR"
-chmod +x "$INSTALL_DIR/start-kiosk.sh"
+chmod +x "$INSTALL_DIR/start-kiosk.sh" "$INSTALL_DIR/check-kiosk.sh" 2>/dev/null || true
+if [ -f "$INSTALL_DIR/check-kiosk.sh" ]; then
+    sed -i 's/\r$//' "$INSTALL_DIR/check-kiosk.sh" 2>/dev/null || true
+fi
+sed -i 's/\r$//' "$INSTALL_DIR/start-kiosk.sh" "$INSTALL_DIR/install-kiosk-service.sh" 2>/dev/null || true
 echo "  Done."
 echo ""
 
@@ -132,7 +136,26 @@ chown -R "$SERVICE_USER:$SERVICE_USER" "$SERVICE_HOME/.config"
 echo "  Installed $AUTOSTART_DIR/$AUTOSTART_NAME"
 echo ""
 
-echo "Step 5: Write kiosk environment file"
+echo "Step 5: Install labwc autostart (Pi OS Bookworm+ Wayland — often required)"
+LABWC_AUTOSTART="$SERVICE_HOME/.config/labwc/autostart"
+mkdir -p "$(dirname "$LABWC_AUTOSTART")"
+if [ -f "$LABWC_AUTOSTART" ]; then
+    grep -v "start-kiosk.sh" "$LABWC_AUTOSTART" > "${LABWC_AUTOSTART}.tmp" 2>/dev/null || true
+    mv "${LABWC_AUTOSTART}.tmp" "$LABWC_AUTOSTART"
+else
+    touch "$LABWC_AUTOSTART"
+fi
+if command -v lwrespawn >/dev/null 2>&1; then
+    echo "/usr/bin/lwrespawn $INSTALL_DIR/start-kiosk.sh &" >> "$LABWC_AUTOSTART"
+else
+    echo "$INSTALL_DIR/start-kiosk.sh &" >> "$LABWC_AUTOSTART"
+fi
+chmod +x "$LABWC_AUTOSTART"
+chown "$SERVICE_USER:$SERVICE_USER" "$LABWC_AUTOSTART"
+echo "  Installed $LABWC_AUTOSTART"
+echo ""
+
+echo "Step 6: Write kiosk environment file"
 KIOSK_ENV="$SERVICE_HOME/.config/robot-arm-kiosk.env"
 cat > "$KIOSK_ENV" <<EOF
 ROBOT_ARM_KIOSK_PORT=$KIOSK_PORT
@@ -156,7 +179,10 @@ echo ""
 echo "Test while logged into the desktop (as $SERVICE_USER):"
 echo "  $INSTALL_DIR/start-kiosk.sh"
 echo ""
-echo "If it fails, read the log:"
+echo "If kiosk does not appear, run diagnostics (as $SERVICE_USER):"
+echo "  bash $INSTALL_DIR/check-kiosk.sh"
+echo ""
+echo "Or read the log:"
 echo "  tail -50 $SERVICE_HOME/.robot-arm-kiosk/kiosk.log"
 echo ""
 echo "Do NOT use: sudo systemctl status robot-arm-kiosk"

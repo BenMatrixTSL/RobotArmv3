@@ -81,9 +81,20 @@ sudo ./install-kiosk-service.sh /opt/RobotArm/electron-app
 sudo reboot
 ```
 
+## Easy diagnostics (start here if kiosk does not appear)
+
+While logged into the Pi desktop, run:
+
+```bash
+cd /opt/RobotArm/electron-app
+bash check-kiosk.sh
+```
+
+This prints **OK / FAIL / WARN** for each check and shows the last lines of the kiosk log.
+
 ## Useful commands
 
-The kiosk starts from **desktop autostart** after graphical login.
+The kiosk starts from **desktop autostart** and **labwc autostart** (Pi OS Wayland) after graphical login.
 
 Test manually while logged into the desktop (as `mxadmin`):
 
@@ -101,6 +112,7 @@ Check autostart is installed:
 
 ```bash
 ls -la ~/.config/autostart/robot-arm-kiosk.desktop
+cat ~/.config/labwc/autostart
 ```
 
 ### Do NOT use the old system service
