@@ -29,6 +29,7 @@ mkdir -p "$PROFILE_BASE"
 exec >>"$LOG_FILE" 2>&1
 echo ""
 echo "========== Kiosk start $(date) =========="
+echo "Kiosk: script version 2026-06-08c"
 
 # Only one kiosk script at a time (desktop autostart + labwc may both try to start it)
 KIOSK_LOCK_FILE="${PROFILE_BASE}/kiosk.lock"
@@ -350,7 +351,32 @@ pick_monitors_to_use() {
 
 chromium_profile_is_running() {
     local profile_dir="$1"
-    pgrep -f "user-data-dir=${profile_dir}" >/dev/null 2>&1
+    local profile_name
+
+    profile_name="$(basename "$profile_dir")"
+
+    if pgrep -af chromium 2>/dev/null | grep -qF "user-data-dir=${profile_dir}"; then
+        return 0
+    fi
+    if pgrep -af chromium 2>/dev/null | grep -qF "${PROFILE_BASE}/${profile_name}"; then
+        return 0
+    fi
+    return 1
+}
+
+any_kiosk_chromium_running() {
+    if pgrep -af chromium 2>/dev/null | grep -qE "kiosk|index\.html\?kiosk=1|${PROFILE_BASE}"; then
+        return 0
+    fi
+    if pgrep -x chromium >/dev/null 2>&1; then
+        return 0
+    fi
+    return 1
+}
+
+clear_chromium_singleton_lock() {
+    local profile_dir="$1"
+    rm -f "${profile_dir}/SingletonLock" "${profile_dir}/SingletonCookie" 2>/dev/null || true
 }
 
 wait_for_chromium_profiles() {
@@ -363,7 +389,7 @@ wait_for_chromium_profiles() {
         local profile_dir
 
         for profile_dir in "${profile_dirs[@]}"; do
-            if chromium_profile_is_running "$profile_dir"; then
+            if chromium_profile_is_running "$profile_dir" || any_kiosk_chromium_running; then
                 any_running=1
                 break
             fi
@@ -394,6 +420,7 @@ launch_chromium() {
     fi
 
     mkdir -p "$profile_dir"
+    clear_chromium_singleton_lock "$profile_dir"
 
     echo "Kiosk: launching Chromium -> $KIOSK_URL"
 
@@ -417,8 +444,8 @@ launch_chromium() {
     local wait_count=0
 
     # Chromium parent often exits immediately with code 0 ("Opening in existing browser session")
-    while [ "$wait_count" -lt 10 ]; do
-        if chromium_profile_is_running "$profile_dir"; then
+    while [ "$wait_count" -lt 15 ]; do
+        if chromium_profile_is_running "$profile_dir" || any_kiosk_chromium_running; then
             echo "Kiosk: Chromium browser process is running"
             export DISPLAY="$saved_display"
             return 0
@@ -432,8 +459,8 @@ launch_chromium() {
 
     wait "$launcher_pid" 2>/dev/null || true
 
-    if chromium_profile_is_running "$profile_dir"; then
-        echo "Kiosk: Chromium browser process is running"
+    if chromium_profile_is_running "$profile_dir" || any_kiosk_chromium_running; then
+        echo "Kiosk: Chromium browser process is running (handed off to existing session)"
         export DISPLAY="$saved_display"
         return 0
     fi
@@ -474,30 +501,15 @@ if pick_monitors_to_use; then
         index=$((index + 1))
     done
 
-    while true; do
-        wait_for_chromium_profiles "${PROFILE_DIRS[@]}"
-        echo "Kiosk: Chromium closed — restarting in 5 seconds..." >&2
-        sleep 5
-        wait_for_display || sleep 10
-        index=0
-        for entry in "${MONITORS_TO_USE[@]}"; do
-            read -r width height x y <<< "$entry"
-            profile_dir="${PROFILE_DIRS[$index]}"
-            launch_chromium "$profile_dir" \
-                --window-position="${x},${y}" \
-                --window-size="${width},${height}"
-            index=$((index + 1))
-        done
-    done
+    wait_for_chromium_profiles "${PROFILE_DIRS[@]}"
+    echo "Kiosk: Chromium closed — done"
+    exit 0
 fi
 
 echo "Kiosk: single fullscreen window"
 PROFILE_DIR="${PROFILE_BASE}/profile-0"
 
-while true; do
-    launch_chromium "$PROFILE_DIR"
-    wait_for_chromium_profiles "$PROFILE_DIR"
-    echo "Kiosk: Chromium closed — restarting in 5 seconds..." >&2
-    sleep 5
-    wait_for_display || sleep 10
-done
+launch_chromium "$PROFILE_DIR"
+wait_for_chromium_profiles "$PROFILE_DIR"
+echo "Kiosk: Chromium closed — done"
+exit 0
