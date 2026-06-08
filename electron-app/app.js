@@ -627,6 +627,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Chromium kiosk on the Pi (?kiosk=1): connect to local WebSocket server
     if (window.location.search.indexOf('kiosk=1') >= 0) {
         document.body.classList.add('kiosk-mode');
+        document.body.classList.add('small-display');
 
         const addrInput = document.getElementById('piAddress');
         if (addrInput) {

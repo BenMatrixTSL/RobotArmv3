@@ -2225,10 +2225,165 @@ body.kiosk-mode .app-footer {
 
 body.kiosk-mode .container {
     max-width: none;
-    padding: 10px;
+    padding: 6px;
+}
+
+body.kiosk-mode header {
+    padding: 6px 10px;
+    margin-bottom: 6px;
+}
+
+body.kiosk-mode .header-logo {
+    height: 40px;
+    max-width: 140px;
 }
 
 body.kiosk-mode header h1 {
-    font-size: 1.1rem;
+    font-size: 1rem;
+}
+
+/* Tabs across the top — more room for content */
+body.kiosk-mode .main-layout {
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 6px;
+}
+
+body.kiosk-mode .tabs {
+    flex-direction: row;
+    flex-wrap: wrap;
+    min-width: 0;
+    width: 100%;
+    border-right: none;
+    border-bottom: 2px solid #ddd;
+    padding-right: 0;
+    padding-bottom: 6px;
+    gap: 4px;
+}
+
+body.kiosk-mode .tab-button {
+    padding: 6px 10px;
+    font-size: 11px;
+    border-right: none;
+    border-bottom: 3px solid transparent;
+}
+
+body.kiosk-mode .tab-button.active {
+    border-right-color: transparent;
+    border-bottom-color: #3498db;
+}
+
+body.kiosk-mode .tab-content {
+    padding: 8px;
+}
+
+body.kiosk-mode .tab-content > h2 {
+    font-size: 14px;
+    margin-bottom: 6px;
+}
+
+/* Joint Control — compact 3×2 grid for six joints */
+body.kiosk-mode .joint-status-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+    margin-bottom: 8px;
+}
+
+body.kiosk-mode .joint-status-card {
+    padding: 6px 8px;
+}
+
+body.kiosk-mode .joint-card-title {
+    font-size: 12px;
+}
+
+body.kiosk-mode .joint-angle-value {
+    font-size: 15px;
+}
+
+body.kiosk-mode .status-value.compact {
+    font-size: 10px;
+}
+
+body.kiosk-mode .joint-control-compact input {
+    padding: 3px 5px;
+    font-size: 11px;
+}
+
+body.kiosk-mode .joint-control-compact .joint-field-group.compact label {
+    font-size: 9px;
+}
+
+body.kiosk-mode .control-panel {
+    padding: 8px;
+    margin-bottom: 8px;
+}
+
+body.kiosk-mode .control-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+body.kiosk-mode .control-buttons .btn {
+    flex: 1 1 auto;
+    min-width: 120px;
+    padding: 8px 10px;
+    font-size: 12px;
+}
+
+/* XYZ + quick jog duplicate Pendant Control — hide on kiosk */
+body.kiosk-mode #jointControlXyzPanel,
+body.kiosk-mode #pendant-tab .joystick-area {
+    display: none;
+}
+
+/* Pendant Control — tighter touchscreen layout */
+body.kiosk-mode .pendant-layout {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: 0;
+}
+
+body.kiosk-mode .pendant-panel {
+    padding: 8px;
+}
+
+body.kiosk-mode .pendant-panel h3 {
+    font-size: 12px;
+    margin-bottom: 6px;
+}
+
+body.kiosk-mode .pendant-position {
+    padding: 6px 10px;
+    font-size: 13px;
+}
+
+body.kiosk-mode .pendant-xy-wheel {
+    width: 150px;
+    height: 150px;
+}
+
+body.kiosk-mode .pendant-xy-btn {
+    min-width: 48px;
+    padding: 8px 10px;
+    font-size: 13px;
+}
+
+body.kiosk-mode .pendant-btn,
+body.kiosk-mode .pendant-wide-btn {
+    font-size: 13px;
+    padding: 10px 12px;
+}
+
+/* Very narrow Pi displays (e.g. 800×480) */
+@media (max-width: 900px) {
+    body.kiosk-mode .joint-status-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    body.kiosk-mode .pendant-layout {
+        grid-template-columns: 1fr;
+    }
 }
 
