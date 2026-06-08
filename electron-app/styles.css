@@ -2223,17 +2223,6 @@ body.kiosk-mode .app-footer {
     display: none;
 }
 
-body.kiosk-mode .tabs .tab-button[data-tab="connection"],
-body.kiosk-mode .tabs .tab-button[data-tab="settings"],
-body.kiosk-mode .tabs .tab-button[data-tab="gcode"],
-body.kiosk-mode .tabs .tab-button[data-tab="rapid"],
-body.kiosk-mode .tabs .tab-button[data-tab="blockly"],
-body.kiosk-mode .tabs .tab-button[data-tab="kinematics"],
-body.kiosk-mode .tabs .tab-button[data-tab="positions"],
-body.kiosk-mode .tabs .tab-button[data-tab="deadzones"] {
-    display: none;
-}
-
 body.kiosk-mode .container {
     max-width: none;
     padding: 10px;
