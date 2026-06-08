@@ -113,7 +113,7 @@ while [ "$REPO_DIR" != "/" ]; do
     fi
     REPO_DIR="$(dirname "$REPO_DIR")"
 done
-chmod +x "$INSTALL_DIR/start-kiosk.sh" "$INSTALL_DIR/check-kiosk.sh" 2>/dev/null || true
+chmod +x "$INSTALL_DIR/start-kiosk.sh" "$INSTALL_DIR/check-kiosk.sh" "$INSTALL_DIR/stop-kiosk.sh" 2>/dev/null || true
 if [ -f "$INSTALL_DIR/check-kiosk.sh" ]; then
     sed -i 's/\r$//' "$INSTALL_DIR/check-kiosk.sh" 2>/dev/null || true
 fi

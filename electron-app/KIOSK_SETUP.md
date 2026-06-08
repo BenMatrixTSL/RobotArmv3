@@ -103,6 +103,31 @@ sudo bash fix-repo-permissions.sh /opt/RobotArm mxadmin
 git pull origin main
 ```
 
+## Stop the kiosk
+
+Kiosk runs as the **auto-login user** (`mxuser`), not your SSH user (`mxadmin`). `pkill` as mxadmin often does nothing.
+
+```bash
+sudo bash /opt/RobotArm/electron-app/stop-kiosk.sh mxuser
+```
+
+Check nothing is left:
+
+```bash
+pgrep -af 'start-kiosk|chromium' -u mxuser
+```
+
+## Update the kiosk script (git pull)
+
+```bash
+cd /opt/RobotArm
+sudo chown -R mxadmin:mxadmin /opt/RobotArm
+git pull origin main
+grep "script version" electron-app/start-kiosk.sh
+```
+
+You should see `Kiosk: script version 2026-06-08c`. If grep returns nothing, `git pull` did not update the file.
+
 ## Easy diagnostics (start here if kiosk does not appear)
 
 While logged into the Pi desktop, run:
