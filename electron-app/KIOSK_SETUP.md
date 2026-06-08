@@ -6,7 +6,7 @@ The ST3215 server (`raspberry-pi-control-st3215`) must still run separately — 
 
 ## What it does
 
-1. Starts a small **Python HTTP server** on `127.0.0.1:3080` (serves `electron-app/` files).
+1. Opens Chromium to `http://127.0.0.1:80/index.html?kiosk=1` (uses the port **80** web server if installed).
 2. Opens **Chromium in kiosk mode** to `index.html?kiosk=1`.
 3. The page **auto-connects** to `127.0.0.1:8080` (local WebSocket server) and opens the **Pendant Control** tab.
 
@@ -47,7 +47,13 @@ xrandr --query
 
 ## HTTP on port 80 (optional)
 
-To serve the same UI on port 80 (e.g. for phones/tablets on the LAN), use `start-web-server.sh` or `install-web-server-service.sh` — see `README.md`. That is separate from the kiosk (port 3080).
+Install the port **80** web server first (kiosk uses it):
+
+```bash
+sudo ./install-web-server-service.sh /opt/RobotArm/electron-app
+```
+
+For a standalone kiosk-only setup without the port 80 service, set `ROBOT_ARM_KIOSK_PORT=3080` in `~/.config/robot-arm-kiosk.env`.
 
 ## Requirements
 
@@ -164,7 +170,8 @@ sudo ./uninstall-kiosk-service.sh
 | `MIT-MAGIC-COOKIE-1` / `Missing X server` | Old **system** service still enabled — run `sudo ./install-kiosk-service.sh` again and reboot |
 | Browser opens but not fullscreen | Check URL includes `?kiosk=1`; reinstall autostart with `install-kiosk-service.sh` |
 | Chromium missing | `sudo apt install -y chromium` |
-| Port 3080 already in use | Reboot, or `fuser -k 3080/tcp` then run `start-kiosk.sh` again |
+| Port 80 not responding | `sudo systemctl status robot-arm-web-server.service` — install with `install-web-server-service.sh` |
+| Port 3080 already in use | Only if using `ROBOT_ARM_KIOSK_PORT=3080` — reboot or `fuser -k 3080/tcp` |
 | `command not found` (file exists) | `chmod +x install-kiosk-service.sh` then `sed -i 's/\r$//' install-kiosk-service.sh` — or run `sudo bash install-kiosk-service.sh /opt/RobotArm/electron-app` |
 | `bad interpreter` / `/bin/bash^M` | Windows line endings — run `sed -i 's/\r$//' *.sh` in `electron-app`, then try again |
 

@@ -7,7 +7,7 @@
 #   ROBOT_ARM_WEB_PORT=8081 ./start-web-server.sh
 #
 # Then open in a browser: http://<pi-ip>/index.html
-# Kiosk on the Pi still uses port 3080 locally; this is for port 80 / network access.
+# Kiosk on the Pi uses this port 80 server when installed (see install-web-server-service.sh).
 
 set -e
 

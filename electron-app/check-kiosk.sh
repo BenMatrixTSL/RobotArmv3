@@ -13,7 +13,7 @@ AUTOSTART_DESKTOP="$HOME/.config/autostart/robot-arm-kiosk.desktop"
 LABWC_AUTOSTART="$HOME/.config/labwc/autostart"
 KIOSK_LOG="$HOME/.robot-arm-kiosk/kiosk.log"
 KIOSK_ENV="$HOME/.config/robot-arm-kiosk.env"
-PORT="${ROBOT_ARM_KIOSK_PORT:-3080}"
+PORT="${ROBOT_ARM_KIOSK_PORT:-80}"
 
 PASS_COUNT=0
 FAIL_COUNT=0

@@ -15,7 +15,7 @@ if [ -f "$HOME/.config/robot-arm-kiosk.env" ]; then
     source "$HOME/.config/robot-arm-kiosk.env"
 fi
 
-PORT="${ROBOT_ARM_KIOSK_PORT:-3080}"
+PORT="${ROBOT_ARM_KIOSK_PORT:-80}"
 KIOSK_URL="http://127.0.0.1:${PORT}/index.html?kiosk=1"
 KIOSK_SCREENS="${ROBOT_ARM_KIOSK_SCREENS:-1}"
 PROFILE_BASE="${HOME}/.robot-arm-kiosk"
@@ -224,6 +224,23 @@ wait_for_http_server() {
 
 start_http_server() {
     cd "$SCRIPT_DIR"
+
+    # Port 80 is usually served by robot-arm-web-server.service — reuse it, do not kill it.
+    if http_page_is_ready; then
+        echo "Kiosk: using existing HTTP server on port $PORT"
+        HTTP_PID=""
+        return 0
+    fi
+
+    if [ "$PORT" -lt 1024 ]; then
+        echo "Kiosk: waiting for existing service on port $PORT (needs root to start here) ..."
+        if wait_for_http_server; then
+            HTTP_PID=""
+            return 0
+        fi
+        echo "Kiosk: error — nothing is serving port $PORT. Install: sudo ./install-web-server-service.sh" >&2
+        return 1
+    fi
 
     free_port_if_busy
 

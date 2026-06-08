@@ -69,7 +69,7 @@ chmod +x install-web-server-service.sh start-web-server.sh
 sudo ./install-web-server-service.sh
 ```
 
-The kiosk script uses port **3080** locally; this service uses port **80** for the network.
+The kiosk uses this port **80** service when installed (`install-web-server-service.sh`).
 
 ## Offline Operation
 

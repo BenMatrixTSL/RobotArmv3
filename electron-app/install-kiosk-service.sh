@@ -22,7 +22,7 @@ set -e
 
 SERVICE_NAME="robot-arm-kiosk.service"
 AUTOSTART_NAME="robot-arm-kiosk.desktop"
-KIOSK_PORT="3080"
+KIOSK_PORT="80"
 KIOSK_SCREENS="${ROBOT_ARM_KIOSK_SCREENS:-1}"
 INSTALL_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
