@@ -164,11 +164,8 @@ if [ -f "$LABWC_AUTOSTART" ]; then
 else
     touch "$LABWC_AUTOSTART"
 fi
-if command -v lwrespawn >/dev/null 2>&1; then
-    echo "/usr/bin/lwrespawn $INSTALL_DIR/start-kiosk.sh &" >> "$LABWC_AUTOSTART"
-else
-    echo "$INSTALL_DIR/start-kiosk.sh &" >> "$LABWC_AUTOSTART"
-fi
+# start-kiosk.sh runs until Chromium closes — do not use lwrespawn (causes duplicate launches)
+echo "$INSTALL_DIR/start-kiosk.sh &" >> "$LABWC_AUTOSTART"
 chmod +x "$LABWC_AUTOSTART"
 chown "$SERVICE_USER:$SERVICE_USER" "$LABWC_AUTOSTART"
 echo "  Installed $LABWC_AUTOSTART"
