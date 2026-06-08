@@ -30,11 +30,19 @@
         var reloadKey = 'kioskReloadAttempts';
         var attempts = parseInt(sessionStorage.getItem(reloadKey) || '0', 10);
         var maxAttempts = 40;
+        var hideTimer = null;
 
         function setStatus(message) {
             var status = document.getElementById('kiosk-loading-status');
             if (status) {
                 status.textContent = message;
+            }
+        }
+
+        function showLoadingScreen() {
+            var screen = document.getElementById('kiosk-loading-screen');
+            if (screen) {
+                screen.style.display = 'flex';
             }
         }
 
@@ -46,12 +54,39 @@
             sessionStorage.removeItem(reloadKey);
         }
 
+        function stylesLookLoaded() {
+            var i;
+            var sheet;
+            var bodyColor = window.getComputedStyle(document.body).backgroundColor;
+            if (bodyColor && bodyColor !== 'rgba(0, 0, 0, 0)' && bodyColor !== 'rgb(255, 255, 255)') {
+                return true;
+            }
+            for (i = 0; i < document.styleSheets.length; i++) {
+                sheet = document.styleSheets[i];
+                try {
+                    if (sheet.href && sheet.href.indexOf('styles.css') >= 0 && sheet.cssRules.length > 0) {
+                        return true;
+                    }
+                } catch (e) {
+                    return false;
+                }
+            }
+            return false;
+        }
+
         function pageLooksReady() {
             var title = document.querySelector('header h1');
-            if (!title) {
+            var header = document.querySelector('header');
+            if (!title || !header) {
                 return false;
             }
-            return title.textContent.indexOf('Robot Arm') >= 0;
+            if (title.textContent.indexOf('Robot Arm') < 0) {
+                return false;
+            }
+            if (header.offsetHeight < 10) {
+                return false;
+            }
+            return stylesLookLoaded();
         }
 
         function reloadSoon(reason) {
@@ -67,34 +102,48 @@
             }, 2000);
         }
 
-        document.addEventListener('DOMContentLoaded', function () {
-            var screen = document.getElementById('kiosk-loading-screen');
-            if (screen) {
-                screen.style.display = 'flex';
+        function tryHideLoadingScreen() {
+            if (pageLooksReady()) {
+                hideLoadingScreen();
+                return true;
             }
+            return false;
+        }
+
+        function scheduleReadyCheck() {
+            if (tryHideLoadingScreen()) {
+                return;
+            }
+            if (hideTimer) {
+                clearTimeout(hideTimer);
+            }
+            hideTimer = setTimeout(function () {
+                if (!tryHideLoadingScreen()) {
+                    reloadSoon('Waiting for web server');
+                }
+            }, 5000);
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            showLoadingScreen();
+            scheduleReadyCheck();
         });
 
         window.addEventListener('load', function () {
-            if (pageLooksReady()) {
-                hideLoadingScreen();
-                return;
-            }
-            reloadSoon('Waiting for web server');
+            scheduleReadyCheck();
         });
-
-        // Blank white screen — server may not have been ready yet
-        setTimeout(function () {
-            if (!pageLooksReady()) {
-                reloadSoon('Page not ready yet');
-            }
-        }, 4000);
     })();
     </script>
 </head>
-<body>
-    <div id="kiosk-loading-screen" class="kiosk-loading-screen" style="display: none;">
-        <p class="kiosk-loading-title">Loading robot arm UI...</p>
-        <p id="kiosk-loading-status" class="kiosk-loading-status">Starting</p>
+<body style="background-color:#ede9f0;">
+    <script>
+    if (window.location.search.indexOf('kiosk=1') >= 0) {
+        document.body.style.backgroundColor = '#ede9f0';
+    }
+    </script>
+    <div id="kiosk-loading-screen" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; z-index:999999; background-color:#ede9f0; color:#2c3e50; flex-direction:column; align-items:center; justify-content:center; font-family:sans-serif; font-size:1.2rem; text-align:center; padding:20px;">
+        <p style="font-size:1.4rem; margin-bottom:10px;">Loading robot arm UI...</p>
+        <p id="kiosk-loading-status" style="font-size:1rem; color:#5c6370;">Starting</p>
     </div>
 
     <!-- Main Application Container -->

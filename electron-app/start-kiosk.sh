@@ -89,9 +89,13 @@ build_chromium_flags() {
         --no-first-run
         --no-default-browser-check
         --touch-events=enabled
+        --password-store=basic
+        --disable-sync
+        --disable-translate
+        --disable-features=TranslateUI,PasswordCheck,AutofillServerCommunication
     )
     if [ "$CHROMIUM_USE_WAYLAND" = "1" ]; then
-        CHROMIUM_FLAGS+=(--ozone-platform=wayland --enable-features=UseOzonePlatform)
+        CHROMIUM_FLAGS+=(--ozone-platform=wayland --enable-features=UseOzonePlatform --disable-gpu)
     else
         CHROMIUM_FLAGS+=(--disable-gpu)
     fi
@@ -183,8 +187,10 @@ http_page_is_ready() {
     local url="http://127.0.0.1:${PORT}/index.html"
 
     if command -v curl >/dev/null 2>&1; then
-        curl -sf --max-time 3 "$url" 2>/dev/null | grep -q "Robot Arm Control"
-        return $?
+        curl -sf --max-time 3 "$url" 2>/dev/null | grep -q "Robot Arm Control" || return 1
+        curl -sf --max-time 3 "http://127.0.0.1:${PORT}/styles.css" 2>/dev/null | grep -q "body" || return 1
+        curl -sf --max-time 3 "http://127.0.0.1:${PORT}/app.js" 2>/dev/null | grep -q "function" || return 1
+        return 0
     fi
 
     python3 - "$url" <<'PY'
@@ -349,12 +355,15 @@ launch_chromium() {
 
     echo "Kiosk: launching Chromium -> $KIOSK_URL"
 
+    # Stop GNOME keyring "Unlock keyring" popup in kiosk mode
+    unset GNOME_KEYRING_CONTROL
+    unset SSH_AUTH_SOCK
+
     "$CHROMIUM" \
         --user-data-dir="$profile_dir" \
         "${CHROMIUM_FLAGS[@]}" \
         "${extra_args[@]}" \
         --kiosk \
-        --app="$KIOSK_URL" \
         --noerrdialogs \
         --disable-infobars \
         --disable-session-crashed-bubble \
