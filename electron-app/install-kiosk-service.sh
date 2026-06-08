@@ -102,18 +102,25 @@ echo "Kiosk port:      $KIOSK_PORT"
 echo "Kiosk screens:   $KIOSK_SCREENS"
 echo ""
 
-echo "Step 1: Fix electron-app folder ownership (does not change whole git repo owner)"
-chown -R "$SERVICE_USER:$SERVICE_USER" "$INSTALL_DIR"
+echo "Step 1: Repo owned by git user (for git pull), scripts readable by $SERVICE_USER"
+if [ -n "$SUDO_USER" ]; then
+    GIT_OWNER="$SUDO_USER"
+else
+    GIT_OWNER="$SERVICE_USER"
+fi
 REPO_DIR="$INSTALL_DIR"
 while [ "$REPO_DIR" != "/" ]; do
     if [ -d "$REPO_DIR/.git" ]; then
-        sudo -u "$SERVICE_USER" git config --global --add safe.directory "$REPO_DIR" 2>/dev/null || true
-        echo "  Git safe.directory set for $SERVICE_USER: $REPO_DIR"
+        chown -R "$GIT_OWNER:$GIT_OWNER" "$REPO_DIR"
+        sudo -u "$GIT_OWNER" git config --global --add safe.directory "$REPO_DIR" 2>/dev/null || true
+        echo "  Git repo owner: $GIT_OWNER ($REPO_DIR)"
         break
     fi
     REPO_DIR="$(dirname "$REPO_DIR")"
 done
+chmod -R a+rX "$INSTALL_DIR"
 chmod +x "$INSTALL_DIR/start-kiosk.sh" "$INSTALL_DIR/check-kiosk.sh" "$INSTALL_DIR/stop-kiosk.sh" 2>/dev/null || true
+sudo -u "$SERVICE_USER" git config --global --add safe.directory "$REPO_DIR" 2>/dev/null || true
 if [ -f "$INSTALL_DIR/check-kiosk.sh" ]; then
     sed -i 's/\r$//' "$INSTALL_DIR/check-kiosk.sh" 2>/dev/null || true
 fi

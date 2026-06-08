@@ -95,13 +95,22 @@ cd /opt/RobotArm
 git pull origin main
 ```
 
-If you see `Permission denied` on `.git/FETCH_HEAD`, fix ownership once:
+If you see `Permission denied` on `.git/FETCH_HEAD` or `unable to unlink old electron-app/...`:
 
 ```bash
 cd /opt/RobotArm
+sudo chown -R mxadmin:mxadmin /opt/RobotArm
+git pull origin main
+```
+
+Or use the helper script:
+
+```bash
 sudo bash fix-repo-permissions.sh /opt/RobotArm mxadmin
 git pull origin main
 ```
+
+**Never** run `sudo git pull` — that breaks ownership again.
 
 ## Stop the kiosk
 
