@@ -63,7 +63,14 @@ cd /opt/RobotArm/electron-app
 # or: cd ~/RobotArmv3/electron-app
 
 chmod +x install-kiosk-service.sh start-kiosk.sh uninstall-kiosk-service.sh
+
+# If you get "command not found" or "bad interpreter", fix line endings first:
+sed -i 's/\r$//' install-kiosk-service.sh start-kiosk.sh uninstall-kiosk-service.sh
+
 sudo ./install-kiosk-service.sh /opt/RobotArm/electron-app
+# Or bypass the shebang entirely:
+# sudo bash install-kiosk-service.sh /opt/RobotArm/electron-app
+
 sudo reboot
 ```
 
@@ -130,6 +137,8 @@ sudo ./uninstall-kiosk-service.sh
 | Browser opens but not fullscreen | Check URL includes `?kiosk=1`; reinstall autostart with `install-kiosk-service.sh` |
 | Chromium missing | `sudo apt install -y chromium` |
 | Port 3080 already in use | Reboot, or `fuser -k 3080/tcp` then run `start-kiosk.sh` again |
+| `command not found` (file exists) | `chmod +x install-kiosk-service.sh` then `sed -i 's/\r$//' install-kiosk-service.sh` — or run `sudo bash install-kiosk-service.sh /opt/RobotArm/electron-app` |
+| `bad interpreter` / `/bin/bash^M` | Windows line endings — run `sed -i 's/\r$//' *.sh` in `electron-app`, then try again |
 
 ## Differences from Electron on a PC
 
