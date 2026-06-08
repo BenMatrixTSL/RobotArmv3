@@ -8,7 +8,9 @@ The ST3215 server (`raspberry-pi-control-st3215`) must still run separately — 
 
 1. Starts a small **Python HTTP server** on `127.0.0.1:3080` (serves `electron-app/` files).
 2. Opens **Chromium in kiosk mode** to `index.html?kiosk=1`.
-3. The page **auto-connects** to `127.0.0.1:8080` (local WebSocket server).
+3. The page **auto-connects** to `127.0.0.1:8080` (local WebSocket server) and opens the **Pendant Control** tab.
+
+At boot, a **desktop autostart** entry runs the kiosk script after you log into the graphical desktop (auto-login recommended).
 
 ### Two displays (HDMI-1 and HDMI-2)
 
@@ -21,7 +23,7 @@ By default the installer sets `ROBOT_ARM_KIOSK_SCREENS=1` (one fullscreen window
 Both show the same UI. **Important:** each browser opens its own WebSocket to the server, so both can send commands. Use one touchscreen for control, or set `ROBOT_ARM_KIOSK_SCREENS=1` for a single fullscreen window only.
 
 ```bash
-# Install with dual-screen kiosk (default)
+# Install with single-screen kiosk (default)
 sudo ./install-kiosk-service.sh
 
 # Single display only (one fullscreen window)
@@ -29,6 +31,9 @@ sudo ROBOT_ARM_KIOSK_SCREENS=1 ./install-kiosk-service.sh /opt/RobotArm/electron
 
 # Exactly two windows (first two outputs from xrandr)
 sudo ROBOT_ARM_KIOSK_SCREENS=2 ./install-kiosk-service.sh /opt/RobotArm/electron-app
+
+# All connected monitors
+sudo ROBOT_ARM_KIOSK_SCREENS=all ./install-kiosk-service.sh /opt/RobotArm/electron-app
 
 # Test dual screen manually
 ROBOT_ARM_KIOSK_SCREENS=all ./start-kiosk.sh
@@ -47,7 +52,7 @@ To serve the same UI on port 80 (e.g. for phones/tablets on the LAN), use `start
 ## Requirements
 
 - Raspberry Pi OS **with desktop** (not Lite-only, unless you add a display server yourself).
-- **Auto-login** to the desktop is strongly recommended (`raspi-config` or Raspberry Pi Configuration → Desktop → Auto Login).
+- **Auto-login** to the desktop is strongly recommended (`raspi-config` → System Options → Boot / Auto Login → Desktop).
 - **Chromium** installed: `sudo apt install -y chromium`
 - **ST3215 server** installed and running (`st3215-server.service`).
 
@@ -59,32 +64,53 @@ cd /opt/RobotArm/electron-app
 
 chmod +x install-kiosk-service.sh start-kiosk.sh uninstall-kiosk-service.sh
 sudo ./install-kiosk-service.sh /opt/RobotArm/electron-app
+sudo reboot
 ```
 
 Re-run after `git pull` (same as the server installer):
 
 ```bash
 sudo ./install-kiosk-service.sh /opt/RobotArm/electron-app
+sudo reboot
 ```
 
 ## Useful commands
 
-The kiosk runs as a **user** service (after desktop login). Use these as `mxadmin` — **not** `sudo systemctl`:
+The kiosk starts from **desktop autostart** after graphical login.
+
+Test manually while logged into the desktop (as `mxadmin`):
 
 ```bash
-systemctl --user status robot-arm-kiosk.service
-systemctl --user restart robot-arm-kiosk.service
-systemctl --user stop robot-arm-kiosk.service
-journalctl --user -u robot-arm-kiosk.service -n 40 --no-pager
+/opt/RobotArm/electron-app/start-kiosk.sh
 ```
 
-Do **not** use `/etc/systemd/system/robot-arm-kiosk.service` — that causes `Invalid MIT-MAGIC-COOKIE-1 key` on Pi OS Wayland.
-
-Test without systemd (logged into the desktop):
+Read the log if the browser does not appear:
 
 ```bash
-./start-kiosk.sh
+tail -50 ~/.robot-arm-kiosk/kiosk.log
 ```
+
+Check autostart is installed:
+
+```bash
+ls -la ~/.config/autostart/robot-arm-kiosk.desktop
+```
+
+### Do NOT use the old system service
+
+```bash
+# WRONG — this was the old broken approach:
+sudo systemctl status robot-arm-kiosk.service
+```
+
+A system-wide service cannot access your Wayland/X11 session and causes:
+
+```text
+Invalid MIT-MAGIC-COOKIE-1 key
+Missing X server or $DISPLAY
+```
+
+The installer removes that service and installs desktop autostart instead.
 
 ## Uninstall
 
@@ -96,12 +122,14 @@ sudo ./uninstall-kiosk-service.sh
 
 | Problem | What to try |
 |--------|-------------|
-| Black screen / no browser | Enable desktop auto-login; reboot; check `sudo journalctl -u robot-arm-kiosk.service -e` |
+| No browser at all after reboot | Enable desktop **auto-login** for your user, then reboot |
+| Black screen / no browser | `tail -50 ~/.robot-arm-kiosk/kiosk.log` — look for display or Chromium errors |
 | UI loads but “Disconnected” | `sudo systemctl status st3215-server.service` — server must be running on port 8080 |
-| `DISPLAY` errors | You are not booting to the desktop, or no user is logged in — enable **auto-login** and reboot |
-| `MIT-MAGIC-COOKIE-1` / `Missing X server` | Old **system** service — run `sudo ./install-kiosk-service.sh` again (installs **user** service) and reboot |
-| Service `activating (auto-restart)` | `journalctl --user -u robot-arm-kiosk.service -n 40` — enable desktop **auto-login**, then reboot |
+| `DISPLAY` errors in log | You are not booting to the desktop — enable **auto-login** and reboot |
+| `MIT-MAGIC-COOKIE-1` / `Missing X server` | Old **system** service still enabled — run `sudo ./install-kiosk-service.sh` again and reboot |
+| Browser opens but not fullscreen | Check URL includes `?kiosk=1`; reinstall autostart with `install-kiosk-service.sh` |
 | Chromium missing | `sudo apt install -y chromium` |
+| Port 3080 already in use | Reboot, or `fuser -k 3080/tcp` then run `start-kiosk.sh` again |
 
 ## Differences from Electron on a PC
 

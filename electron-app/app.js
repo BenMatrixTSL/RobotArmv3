@@ -627,10 +627,20 @@ document.addEventListener('DOMContentLoaded', function() {
     // Chromium kiosk on the Pi (?kiosk=1): connect to local WebSocket server
     if (window.location.search.indexOf('kiosk=1') >= 0) {
         document.body.classList.add('kiosk-mode');
+
         const addrInput = document.getElementById('piAddress');
         if (addrInput) {
             addrInput.value = '127.0.0.1';
         }
+
+        // Open the pendant screen automatically in kiosk mode
+        setTimeout(function () {
+            const pendantTabButton = document.querySelector('.tab-button[data-tab="pendant-ui"]');
+            if (pendantTabButton) {
+                pendantTabButton.click();
+            }
+        }, 300);
+
         setTimeout(function () {
             if (typeof useLocalPiConnectionSettings === 'function') {
                 useLocalPiConnectionSettings();

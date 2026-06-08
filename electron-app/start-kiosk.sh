@@ -1,18 +1,34 @@
 #!/bin/bash
 #
 # Serve the robot arm UI over HTTP and open Chromium kiosk mode.
-# Run from a graphical login session (desktop auto-login), not as a system service.
+# Must run inside a graphical desktop session (auto-login recommended).
 #
 #   ./start-kiosk.sh
 #   ROBOT_ARM_KIOSK_SCREENS=all ./start-kiosk.sh
+#
+# Log file: ~/.robot-arm-kiosk/kiosk.log
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+if [ -f "$HOME/.config/robot-arm-kiosk.env" ]; then
+    # shellcheck disable=SC1091
+    source "$HOME/.config/robot-arm-kiosk.env"
+fi
+
 PORT="${ROBOT_ARM_KIOSK_PORT:-3080}"
 KIOSK_URL="http://127.0.0.1:${PORT}/index.html?kiosk=1"
 KIOSK_SCREENS="${ROBOT_ARM_KIOSK_SCREENS:-1}"
+PROFILE_BASE="${HOME}/.robot-arm-kiosk"
+LOG_FILE="${PROFILE_BASE}/kiosk.log"
 
 CHROMIUM_FLAGS=()
 CHROMIUM_USE_WAYLAND=0
+HTTP_PID=""
+
+mkdir -p "$PROFILE_BASE"
+exec >>"$LOG_FILE" 2>&1
+echo ""
+echo "========== Kiosk start $(date) =========="
 
 find_chromium() {
     if command -v chromium >/dev/null 2>&1; then
@@ -26,7 +42,26 @@ find_chromium() {
     return 1
 }
 
+find_wayland_socket() {
+    local sock
+
+    if [ -z "$XDG_RUNTIME_DIR" ] || [ ! -d "$XDG_RUNTIME_DIR" ]; then
+        return 1
+    fi
+
+    for sock in "$XDG_RUNTIME_DIR"/wayland-*; do
+        if [ -S "$sock" ]; then
+            basename "$sock"
+            return 0
+        fi
+    done
+
+    return 1
+}
+
 find_xauthority_file() {
+    local f
+
     if [ -n "$XAUTHORITY" ] && [ -f "$XAUTHORITY" ]; then
         echo "$XAUTHORITY"
         return 0
@@ -36,8 +71,9 @@ find_xauthority_file() {
         return 0
     fi
     if [ -n "$XDG_RUNTIME_DIR" ]; then
-        local f
-        for f in "$XDG_RUNTIME_DIR"/.mutter-Xwaylandauth.*; do
+        for f in "$XDG_RUNTIME_DIR"/.mutter-Xwaylandauth.* \
+                 "$XDG_RUNTIME_DIR"/.xwaylandauth* \
+                 "$XDG_RUNTIME_DIR"/gdm/Xauthority; do
             if [ -f "$f" ]; then
                 echo "$f"
                 return 0
@@ -50,19 +86,22 @@ find_xauthority_file() {
 build_chromium_flags() {
     CHROMIUM_FLAGS=(
         --disable-dev-shm-usage
-        --disable-gpu
         --no-first-run
         --no-default-browser-check
+        --touch-events=enabled
     )
     if [ "$CHROMIUM_USE_WAYLAND" = "1" ]; then
-        CHROMIUM_FLAGS+=(--ozone-platform=wayland)
+        CHROMIUM_FLAGS+=(--ozone-platform=wayland --enable-features=UseOzonePlatform)
+    else
+        CHROMIUM_FLAGS+=(--disable-gpu)
     fi
 }
 
-# Call again right before starting Chromium (session may be ready now).
 prepare_chromium_display() {
     local uid
     local auth
+    local wayland_name
+
     uid="$(id -u)"
 
     if [ -z "$XDG_RUNTIME_DIR" ] && [ -d "/run/user/$uid" ]; then
@@ -70,9 +109,10 @@ prepare_chromium_display() {
     fi
 
     CHROMIUM_USE_WAYLAND=0
+    wayland_name="$(find_wayland_socket || true)"
 
-    if [ -n "$XDG_RUNTIME_DIR" ] && [ -S "$XDG_RUNTIME_DIR/wayland-0" ]; then
-        export WAYLAND_DISPLAY="${WAYLAND_DISPLAY:-wayland-0}"
+    if [ -n "$wayland_name" ]; then
+        export WAYLAND_DISPLAY="$wayland_name"
         CHROMIUM_USE_WAYLAND=1
         echo "Kiosk: using Wayland ($WAYLAND_DISPLAY)"
     else
@@ -87,26 +127,84 @@ prepare_chromium_display() {
     build_chromium_flags
 }
 
-wait_for_display() {
-    local attempt=0
-    local max_attempts=30
+display_is_ready() {
+    local wayland_name
 
-    while [ "$attempt" -lt "$max_attempts" ]; do
-        if [ -n "$XDG_RUNTIME_DIR" ] && [ -S "$XDG_RUNTIME_DIR/wayland-0" ]; then
+    wayland_name="$(find_wayland_socket || true)"
+    if [ -n "$wayland_name" ]; then
+        return 0
+    fi
+    if command -v xdpyinfo >/dev/null 2>&1 && [ -n "$DISPLAY" ]; then
+        if xdpyinfo -display "$DISPLAY" >/dev/null 2>&1; then
             return 0
         fi
-        if command -v xdpyinfo >/dev/null 2>&1 && [ -n "$DISPLAY" ]; then
-            if xdpyinfo -display "$DISPLAY" >/dev/null 2>&1; then
-                return 0
-            fi
+    fi
+    return 1
+}
+
+wait_for_display() {
+    local attempt=0
+    local max_attempts=60
+
+    while [ "$attempt" -lt "$max_attempts" ]; do
+        prepare_chromium_display
+        if display_is_ready; then
+            echo "Kiosk: display ready after $((attempt * 2)) seconds"
+            return 0
         fi
         attempt=$((attempt + 1))
         sleep 2
     done
 
-    echo "Kiosk: warning — display not ready yet." >&2
+    echo "Kiosk: display still not ready after $((max_attempts * 2)) seconds" >&2
     return 1
 }
+
+free_port_if_busy() {
+    local pid
+
+    if command -v fuser >/dev/null 2>&1; then
+        fuser -k "${PORT}/tcp" 2>/dev/null || true
+        sleep 1
+        return 0
+    fi
+
+    if command -v ss >/dev/null 2>&1; then
+        pid="$(ss -ltnp "sport = :$PORT" 2>/dev/null | grep -o 'pid=[0-9]*' | head -1 | cut -d= -f2)"
+        if [ -n "$pid" ]; then
+            echo "Kiosk: stopping old process on port $PORT (pid $pid)"
+            kill "$pid" 2>/dev/null || true
+            sleep 1
+        fi
+    fi
+}
+
+start_http_server() {
+    cd "$SCRIPT_DIR"
+
+    free_port_if_busy
+
+    if python3 -m http.server --help 2>&1 | grep -q -- '--bind'; then
+        python3 -m http.server "$PORT" --bind 127.0.0.1 &
+    else
+        python3 -m http.server "$PORT" &
+    fi
+    HTTP_PID=$!
+    echo "Kiosk: HTTP server pid $HTTP_PID on port $PORT"
+    sleep 2
+}
+
+stop_http_server() {
+    if [ -n "$HTTP_PID" ]; then
+        kill "$HTTP_PID" 2>/dev/null || true
+        HTTP_PID=""
+    fi
+}
+
+cleanup() {
+    stop_http_server
+}
+trap cleanup EXIT INT TERM
 
 MONITOR_LIST=()
 
@@ -186,11 +284,14 @@ launch_chromium() {
 
     mkdir -p "$profile_dir"
 
+    echo "Kiosk: launching Chromium -> $KIOSK_URL"
+
     "$CHROMIUM" \
         --user-data-dir="$profile_dir" \
         "${CHROMIUM_FLAGS[@]}" \
         "${extra_args[@]}" \
         --kiosk \
+        --app="$KIOSK_URL" \
         --noerrdialogs \
         --disable-infobars \
         --disable-session-crashed-bubble \
@@ -198,7 +299,9 @@ launch_chromium() {
         --start-fullscreen \
         "$KIOSK_URL"
 
+    local exit_code=$?
     export DISPLAY="$saved_display"
+    return "$exit_code"
 }
 
 CHROMIUM="$(find_chromium || true)"
@@ -207,53 +310,45 @@ if [ -z "$CHROMIUM" ]; then
     exit 1
 fi
 
-prepare_chromium_display
+echo "Kiosk: serving $SCRIPT_DIR"
+echo "Kiosk: URL $KIOSK_URL"
+echo "Kiosk: log $LOG_FILE"
 
 if ! wait_for_display; then
-    echo "Kiosk: enable desktop auto-login for $USER and reboot, then try again." >&2
+    echo "Kiosk: enable desktop auto-login for $USER, reboot, then check $LOG_FILE" >&2
     exit 1
 fi
 
-PROFILE_BASE="${HOME}/.robot-arm-kiosk"
-
-echo "Kiosk: serving $SCRIPT_DIR on port $PORT"
-echo "Kiosk: URL $KIOSK_URL"
-
-cd "$SCRIPT_DIR"
-
-if python3 -m http.server --help 2>&1 | grep -q -- '--bind'; then
-    python3 -m http.server "$PORT" --bind 127.0.0.1 &
-else
-    python3 -m http.server "$PORT" &
-fi
-HTTP_PID=$!
-
-cleanup() {
-    kill "$HTTP_PID" 2>/dev/null || true
-}
-trap cleanup EXIT INT TERM
-
-sleep 2
+start_http_server
 
 if pick_monitors_to_use; then
-    CHROMIUM_PIDS=()
-    index=0
-    for entry in "${MONITORS_TO_USE[@]}"; do
-        read -r width height x y <<< "$entry"
-        profile_dir="${PROFILE_BASE}/profile-${index}"
-        echo "Kiosk: display $index at ${x},${y} ${width}x${height}"
-        launch_chromium "$profile_dir" \
-            --window-position="${x},${y}" \
-            --window-size="${width},${height}" &
-        CHROMIUM_PIDS+=("$!")
-        index=$((index + 1))
-    done
+    while true; do
+        CHROMIUM_PIDS=()
+        index=0
+        for entry in "${MONITORS_TO_USE[@]}"; do
+            read -r width height x y <<< "$entry"
+            profile_dir="${PROFILE_BASE}/profile-${index}"
+            echo "Kiosk: display $index at ${x},${y} ${width}x${height}"
+            launch_chromium "$profile_dir" \
+                --window-position="${x},${y}" \
+                --window-size="${width},${height}" &
+            CHROMIUM_PIDS+=("$!")
+            index=$((index + 1))
+        done
 
-    wait "${CHROMIUM_PIDS[@]}"
-    exit_code=$?
-    echo "Kiosk: Chromium exited (code $exit_code)" >&2
-    exit "$exit_code"
+        wait "${CHROMIUM_PIDS[@]}"
+        exit_code=$?
+        echo "Kiosk: Chromium exited (code $exit_code), restarting in 5 seconds..." >&2
+        sleep 5
+        wait_for_display || sleep 10
+    done
 fi
 
 echo "Kiosk: single fullscreen window"
-launch_chromium "${PROFILE_BASE}/profile-0"
+while true; do
+    launch_chromium "${PROFILE_BASE}/profile-0"
+    exit_code=$?
+    echo "Kiosk: Chromium exited (code $exit_code), restarting in 5 seconds..." >&2
+    sleep 5
+    wait_for_display || sleep 10
+done

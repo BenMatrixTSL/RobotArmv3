@@ -2189,3 +2189,28 @@ header h1 {
     flex-wrap: wrap;
 }
 
+/* Chromium kiosk mode on the Pi (?kiosk=1 in the URL) */
+body.kiosk-mode .app-footer {
+    display: none;
+}
+
+body.kiosk-mode .tabs .tab-button[data-tab="connection"],
+body.kiosk-mode .tabs .tab-button[data-tab="settings"],
+body.kiosk-mode .tabs .tab-button[data-tab="gcode"],
+body.kiosk-mode .tabs .tab-button[data-tab="rapid"],
+body.kiosk-mode .tabs .tab-button[data-tab="blockly"],
+body.kiosk-mode .tabs .tab-button[data-tab="kinematics"],
+body.kiosk-mode .tabs .tab-button[data-tab="positions"],
+body.kiosk-mode .tabs .tab-button[data-tab="deadzones"] {
+    display: none;
+}
+
+body.kiosk-mode .container {
+    max-width: none;
+    padding: 10px;
+}
+
+body.kiosk-mode header h1 {
+    font-size: 1.1rem;
+}
+

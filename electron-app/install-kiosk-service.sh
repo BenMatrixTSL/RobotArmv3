@@ -1,8 +1,9 @@
 #!/bin/bash
 #
 # Install Chromium kiosk for the robot arm UI.
-# Uses a USER systemd service (runs after desktop login) — not a system service.
-# System-wide services cannot access the Wayland/X11 session (MIT-MAGIC-COOKIE error).
+#
+# Uses desktop AUTOSTART (most reliable on Pi OS Wayland).
+# Do NOT use a system-wide systemd service — that causes MIT-MAGIC-COOKIE errors.
 #
 # Prerequisites:
 #   - Raspberry Pi OS with desktop + auto-login for your user
@@ -17,6 +18,7 @@
 set -e
 
 SERVICE_NAME="robot-arm-kiosk.service"
+AUTOSTART_NAME="robot-arm-kiosk.desktop"
 KIOSK_PORT="3080"
 KIOSK_SCREENS="${ROBOT_ARM_KIOSK_SCREENS:-1}"
 INSTALL_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -53,6 +55,7 @@ fi
 
 SERVICE_UID="$(id -u "$SERVICE_USER")"
 SERVICE_HOME="$(eval echo "~$SERVICE_USER")"
+AUTOSTART_DIR="$SERVICE_HOME/.config/autostart"
 USER_UNIT_DIR="$SERVICE_HOME/.config/systemd/user"
 
 if ! command -v python3 >/dev/null; then
@@ -96,6 +99,9 @@ echo "  Done."
 echo ""
 
 echo "Step 2: Remove old system-wide kiosk service (causes MIT-MAGIC-COOKIE errors)"
+if [ -f "/etc/systemd/system/$SERVICE_NAME" ]; then
+    echo "  WARNING: found old system service — removing it."
+fi
 systemctl stop "$SERVICE_NAME" 2>/dev/null || true
 systemctl disable "$SERVICE_NAME" 2>/dev/null || true
 rm -f "/etc/systemd/system/$SERVICE_NAME"
@@ -103,39 +109,56 @@ systemctl daemon-reload
 echo "  Done."
 echo ""
 
-echo "Step 3: Install user systemd service (starts with desktop login)"
-mkdir -p "$USER_UNIT_DIR"
-TEMP_SERVICE="/tmp/$SERVICE_NAME"
-sed -e "s|INSTALL_DIR|$INSTALL_DIR|g" \
-    -e "s|KIOSK_PORT|$KIOSK_PORT|g" \
-    -e "s|KIOSK_SCREENS|$KIOSK_SCREENS|g" \
-    "$INSTALL_DIR/robot-arm-kiosk-user.service" > "$TEMP_SERVICE"
-cp "$TEMP_SERVICE" "$USER_UNIT_DIR/$SERVICE_NAME"
-rm -f "$TEMP_SERVICE"
-chown -R "$SERVICE_USER:$SERVICE_USER" "$SERVICE_HOME/.config"
-echo "  Installed $USER_UNIT_DIR/$SERVICE_NAME"
+echo "Step 3: Remove user systemd kiosk (avoid duplicate browsers)"
+if [ -f "$USER_UNIT_DIR/$SERVICE_NAME" ]; then
+    run_as_user systemctl --user stop "$SERVICE_NAME" 2>/dev/null || true
+    run_as_user systemctl --user disable "$SERVICE_NAME" 2>/dev/null || true
+    rm -f "$USER_UNIT_DIR/$SERVICE_NAME"
+    run_as_user systemctl --user daemon-reload 2>/dev/null || true
+    echo "  Removed $USER_UNIT_DIR/$SERVICE_NAME"
+else
+    echo "  No user systemd unit found."
+fi
 echo ""
 
-echo "Step 4: Enable user service"
-run_as_user systemctl --user daemon-reload
-run_as_user systemctl --user enable "$SERVICE_NAME"
-if run_as_user systemctl --user start "$SERVICE_NAME" 2>/dev/null; then
-    echo "  Started (you are logged into the desktop)."
-else
-    echo "  Enabled — will start on next desktop login / reboot."
-fi
+echo "Step 4: Install desktop autostart (starts after graphical login)"
+mkdir -p "$AUTOSTART_DIR"
+TEMP_DESKTOP="/tmp/$AUTOSTART_NAME"
+sed -e "s|INSTALL_DIR|$INSTALL_DIR|g" \
+    "$INSTALL_DIR/robot-arm-kiosk.desktop" > "$TEMP_DESKTOP"
+cp "$TEMP_DESKTOP" "$AUTOSTART_DIR/$AUTOSTART_NAME"
+rm -f "$TEMP_DESKTOP"
+chown -R "$SERVICE_USER:$SERVICE_USER" "$SERVICE_HOME/.config"
+echo "  Installed $AUTOSTART_DIR/$AUTOSTART_NAME"
+echo ""
+
+echo "Step 5: Write kiosk environment file"
+KIOSK_ENV="$SERVICE_HOME/.config/robot-arm-kiosk.env"
+cat > "$KIOSK_ENV" <<EOF
+ROBOT_ARM_KIOSK_PORT=$KIOSK_PORT
+ROBOT_ARM_KIOSK_SCREENS=$KIOSK_SCREENS
+EOF
+chown "$SERVICE_USER:$SERVICE_USER" "$KIOSK_ENV"
+echo "  Installed $KIOSK_ENV"
 echo ""
 
 echo "=========================================="
 echo "Installation complete"
 echo "=========================================="
 echo ""
-echo "Status (run as $SERVICE_USER, not sudo):"
-echo "  systemctl --user status $SERVICE_NAME"
-echo "  journalctl --user -u $SERVICE_NAME -n 40 --no-pager"
+echo "IMPORTANT:"
+echo "  1. Enable desktop AUTO-LOGIN for $SERVICE_USER"
+echo "     (raspi-config -> Boot -> Desktop Autologin)"
+echo "  2. Reboot: sudo reboot"
 echo ""
-echo "Reboot after install if the browser did not start:"
-echo "  sudo reboot"
+echo "After reboot, Chromium should open fullscreen automatically."
 echo ""
-
-run_as_user systemctl --user --no-pager status "$SERVICE_NAME" 2>/dev/null || true
+echo "Test while logged into the desktop (as $SERVICE_USER):"
+echo "  $INSTALL_DIR/start-kiosk.sh"
+echo ""
+echo "If it fails, read the log:"
+echo "  tail -50 $SERVICE_HOME/.robot-arm-kiosk/kiosk.log"
+echo ""
+echo "Do NOT use: sudo systemctl status robot-arm-kiosk"
+echo "That checks the old broken system service."
+echo ""
