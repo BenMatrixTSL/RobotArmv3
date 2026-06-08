@@ -20,8 +20,83 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Robot Arm Control - Pendant & G-Code</title>
     <link rel="stylesheet" href="styles.css">
+    <script>
+    // Kiosk mode on the Pi: show a loading screen and reload until the UI is really loaded.
+    (function () {
+        if (window.location.search.indexOf('kiosk=1') < 0) {
+            return;
+        }
+
+        var reloadKey = 'kioskReloadAttempts';
+        var attempts = parseInt(sessionStorage.getItem(reloadKey) || '0', 10);
+        var maxAttempts = 40;
+
+        function setStatus(message) {
+            var status = document.getElementById('kiosk-loading-status');
+            if (status) {
+                status.textContent = message;
+            }
+        }
+
+        function hideLoadingScreen() {
+            var screen = document.getElementById('kiosk-loading-screen');
+            if (screen) {
+                screen.style.display = 'none';
+            }
+            sessionStorage.removeItem(reloadKey);
+        }
+
+        function pageLooksReady() {
+            var title = document.querySelector('header h1');
+            if (!title) {
+                return false;
+            }
+            return title.textContent.indexOf('Robot Arm') >= 0;
+        }
+
+        function reloadSoon(reason) {
+            if (attempts >= maxAttempts) {
+                setStatus('Still loading. Check ~/.robot-arm-kiosk/kiosk.log on the Pi.');
+                return;
+            }
+            attempts = attempts + 1;
+            sessionStorage.setItem(reloadKey, String(attempts));
+            setStatus(reason + ' — retry ' + attempts + ' of ' + maxAttempts);
+            setTimeout(function () {
+                window.location.reload();
+            }, 2000);
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            var screen = document.getElementById('kiosk-loading-screen');
+            if (screen) {
+                screen.style.display = 'flex';
+            }
+        });
+
+        window.addEventListener('load', function () {
+            if (pageLooksReady()) {
+                hideLoadingScreen();
+                return;
+            }
+            reloadSoon('Waiting for web server');
+        });
+
+        // Blank white screen — server may not have been ready yet
+        setTimeout(function () {
+            if (!pageLooksReady()) {
+                reloadSoon('Page not ready yet');
+            }
+        }, 4000);
+    })();
+    </script>
 </head>
 <body>
+    <div id="kiosk-loading-screen" class="kiosk-loading-screen" style="display: none;">
+        <p class="kiosk-loading-title">Loading robot arm UI...</p>
+        <p id="kiosk-loading-status" class="kiosk-loading-status">Starting</p>
+    </div>
+
     <!-- Main Application Container -->
     <div class="container">
         <!-- Application Header: Shows logo, title, and connection status -->

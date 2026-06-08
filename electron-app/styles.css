@@ -2189,6 +2189,35 @@ header h1 {
     flex-wrap: wrap;
 }
 
+/* Kiosk loading screen (shown until index.html is fully loaded) */
+.kiosk-loading-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 999999;
+    background-color: #ede9f0;
+    color: #2c3e50;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    text-align: center;
+    padding: 20px;
+}
+
+.kiosk-loading-title {
+    font-size: 1.4rem;
+    margin-bottom: 10px;
+}
+
+.kiosk-loading-status {
+    font-size: 1rem;
+    color: #5c6370;
+}
+
 /* Chromium kiosk mode on the Pi (?kiosk=1 in the URL) */
 body.kiosk-mode .app-footer {
     display: none;

@@ -179,6 +179,49 @@ free_port_if_busy() {
     fi
 }
 
+http_page_is_ready() {
+    local url="http://127.0.0.1:${PORT}/index.html"
+
+    if command -v curl >/dev/null 2>&1; then
+        curl -sf --max-time 3 "$url" 2>/dev/null | grep -q "Robot Arm Control"
+        return $?
+    fi
+
+    python3 - "$url" <<'PY'
+import sys
+import urllib.request
+
+url = sys.argv[1]
+try:
+    with urllib.request.urlopen(url, timeout=3) as response:
+        body = response.read().decode("utf-8", errors="replace")
+        if response.status == 200 and "Robot Arm Control" in body:
+            sys.exit(0)
+except Exception:
+    pass
+sys.exit(1)
+PY
+}
+
+wait_for_http_server() {
+    local attempt=0
+    local max_attempts=45
+
+    echo "Kiosk: waiting for HTTP server on port $PORT ..."
+
+    while [ "$attempt" -lt "$max_attempts" ]; do
+        if http_page_is_ready; then
+            echo "Kiosk: HTTP server ready (index.html loads OK)"
+            return 0
+        fi
+        attempt=$((attempt + 1))
+        sleep 1
+    done
+
+    echo "Kiosk: HTTP server did not become ready in ${max_attempts}s" >&2
+    return 1
+}
+
 start_http_server() {
     cd "$SCRIPT_DIR"
 
@@ -191,7 +234,10 @@ start_http_server() {
     fi
     HTTP_PID=$!
     echo "Kiosk: HTTP server pid $HTTP_PID on port $PORT"
-    sleep 2
+
+    if ! wait_for_http_server; then
+        echo "Kiosk: warning — starting Chromium anyway (page may reload until ready)" >&2
+    fi
 }
 
 stop_http_server() {
