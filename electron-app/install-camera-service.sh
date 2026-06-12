@@ -3,7 +3,7 @@
 # Install USB camera MJPEG stream as a systemd service (port 8082).
 #
 # Prerequisites on the Pi:
-#   sudo apt install -y ffmpeg v4l-utils
+#   sudo apt install -y python3-opencv ffmpeg v4l-utils
 #   USB camera plugged in
 #
 # Usage:
@@ -52,8 +52,13 @@ if [ "$EUID" -ne 0 ]; then
     exit 1
 fi
 
-if [ ! -f "$INSTALL_DIR/camera-stream.py" ] || [ ! -f "$INSTALL_DIR/start-camera-stream.sh" ]; then
+if [ ! -f "$INSTALL_DIR/start-camera-stream.sh" ]; then
     echo "Error: missing camera files in $INSTALL_DIR"
+    exit 1
+fi
+
+if [ ! -f "$INSTALL_DIR/camera-stream.py" ] && [ ! -f "$INSTALL_DIR/camera-vision.py" ]; then
+    echo "Error: missing camera-stream.py or camera-vision.py in $INSTALL_DIR"
     exit 1
 fi
 
@@ -85,6 +90,12 @@ if ! command -v v4l2-ctl >/dev/null; then
     apt-get install -y v4l-utils
 fi
 
+if ! python3 -c "import cv2; import cv2.aruco" 2>/dev/null; then
+    echo "Installing python3-opencv (for ArUco and coloured block detection)..."
+    apt-get update
+    apt-get install -y python3-opencv
+fi
+
 CAMERA_DEVICE="$(find_capture_device)"
 
 echo "Install folder:  $INSTALL_DIR"
@@ -98,6 +109,7 @@ usermod -aG video "$SERVICE_USER" 2>/dev/null || true
 
 chmod +x "$INSTALL_DIR/start-camera-stream.sh"
 chmod +x "$INSTALL_DIR/camera-stream.py" 2>/dev/null || true
+chmod +x "$INSTALL_DIR/camera-vision.py" 2>/dev/null || true
 
 TEMP_SERVICE="/tmp/$SERVICE_NAME"
 sed -e "s|INSTALL_DIR|$INSTALL_DIR|g" \
@@ -122,6 +134,7 @@ echo "List cameras:  v4l2-ctl --list-devices"
 echo "Status:        sudo systemctl status $SERVICE_NAME"
 echo "Logs:          sudo journalctl -u robot-arm-camera.service -n 30 --no-pager"
 echo "Test snapshot: curl -s -o /tmp/cam-test.jpg -w 'HTTP %{http_code}\\n' --max-time 15 http://127.0.0.1:${CAMERA_PORT}/snapshot"
+echo "Test vision:   curl -s http://127.0.0.1:${CAMERA_PORT}/vision"
 echo "Test stream:   curl -s -o /dev/null -w 'HTTP %{http_code}\\n' --max-time 5 http://127.0.0.1:${CAMERA_PORT}/stream"
 echo ""
 echo "List capture devices:"

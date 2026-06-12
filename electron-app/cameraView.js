@@ -10,6 +10,7 @@ var cameraSnapshotTimer = null;
 var cameraFailCount = 0;
 var cameraUrlIndex = 0;
 var cameraUrlList = [];
+var cameraVisionPollCount = 0;
 
 function buildCameraSnapshotUrlList() {
     var urls = [];
@@ -29,6 +30,64 @@ function buildCameraSnapshotUrlList() {
     urls.push('http://' + host + ':8082/snapshot');
 
     return urls;
+}
+
+function buildCameraVisionUrl() {
+    var host = '127.0.0.1';
+
+    if (window.location.search.indexOf('kiosk=1') < 0) {
+        var addrInput = document.getElementById('piAddress');
+        if (addrInput && addrInput.value) {
+            host = addrInput.value.trim();
+        }
+    }
+
+    if (window.location.protocol === 'http:' || window.location.protocol === 'https:') {
+        return window.location.origin + '/camera/vision';
+    }
+
+    return 'http://' + host + ':8082/vision';
+}
+
+function updateCameraStatusFromVision() {
+    if (!cameraStreamActive) {
+        return;
+    }
+
+    var visionUrl = buildCameraVisionUrl();
+
+    fetch(visionUrl)
+        .then(function (response) {
+            if (!response.ok) {
+                return null;
+            }
+            return response.json();
+        })
+        .then(function (data) {
+            if (!cameraStreamActive || !data) {
+                return;
+            }
+
+            var parts = [];
+            var markerCount = data.markers ? data.markers.length : 0;
+            var blockCount = data.blocks ? data.blocks.length : 0;
+
+            if (markerCount > 0) {
+                parts.push(markerCount + ' ArUco marker' + (markerCount === 1 ? '' : 's'));
+            }
+            if (blockCount > 0) {
+                parts.push(blockCount + ' coloured block' + (blockCount === 1 ? '' : 's'));
+            }
+
+            if (parts.length > 0) {
+                setCameraStatus('Camera live — ' + parts.join(', '), '#27ae60');
+            } else {
+                setCameraStatus('Camera live — no markers or blocks detected', '#27ae60');
+            }
+        })
+        .catch(function () {
+            // Vision endpoint may be unavailable on older ffmpeg-only installs.
+        });
 }
 
 function setCameraStatus(message, color) {
@@ -130,6 +189,11 @@ function pollCameraSnapshot() {
         setCameraStatus('Camera live', '#27ae60');
         updateCameraButtons(true);
 
+        cameraVisionPollCount = cameraVisionPollCount + 1;
+        if (cameraVisionPollCount % 4 === 0) {
+            updateCameraStatusFromVision();
+        }
+
         cameraSnapshotTimer = setTimeout(pollCameraSnapshot, 150);
     };
 
@@ -168,6 +232,7 @@ function startCameraView() {
     cameraStreamActive = true;
     cameraFailCount = 0;
     cameraUrlIndex = 0;
+    cameraVisionPollCount = 0;
     cameraUrlList = buildCameraSnapshotUrlList();
 
     setCameraStatus('Connecting to camera...', '#5c6370');

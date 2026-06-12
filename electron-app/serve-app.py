@@ -4,6 +4,7 @@ Serve the robot arm web UI and proxy the camera MJPEG stream on the same port.
 
 Static files:  http://<pi>/index.html
 Camera proxy:  http://<pi>/camera/snapshot  ->  http://127.0.0.1:8082/snapshot
+              http://<pi>/camera/vision     ->  http://127.0.0.1:8082/vision
               http://<pi>/camera/stream     ->  http://127.0.0.1:8082/stream
 
 The camera service (robot-arm-camera.service) must still run on port 8082.
@@ -30,12 +31,19 @@ class AppHandler(SimpleHTTPRequestHandler):
         return self.path.split("?", 1)[0]
 
     def _is_camera_path(self):
-        return self._camera_path() in ("/camera/stream", "/camera", "/camera/snapshot")
+        return self._camera_path() in (
+            "/camera/stream",
+            "/camera",
+            "/camera/snapshot",
+            "/camera/vision",
+        )
 
     def _camera_backend_url(self):
         path = self._camera_path()
         if path == "/camera/snapshot":
             return CAMERA_BACKEND.replace("/stream", "/snapshot")
+        if path == "/camera/vision":
+            return CAMERA_BACKEND.replace("/stream", "/vision")
         return CAMERA_BACKEND
 
     def _proxy_camera(self, method):

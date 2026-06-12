@@ -911,7 +911,8 @@
         <div id="camera-tab" class="tab-content">
             <h2>USB Camera</h2>
             <p class="info-text">
-                Live view from the USB camera on the Raspberry Pi. The Pi must run the camera stream service on port 8082.
+                Live view from the USB camera on the Raspberry Pi. Vision runs at 1280×720 and shows ArUco markers
+                and coloured blocks on the 640×480 stream.
             </p>
             <div class="camera-panel">
                 <div class="camera-toolbar">
@@ -926,7 +927,8 @@
                 </div>
                 <p class="info-text camera-help-text">
                     On the Pi: <code>sudo ./install-camera-service.sh /opt/RobotArm/electron-app</code>
-                    (needs <code>ffmpeg</code> and <code>/dev/video0</code>).
+                    (installs <code>python3-opencv</code> for ArUco and coloured block detection).
+                    Print ArUco markers from the <code>DICT_4X4_50</code> dictionary.
                 </p>
             </div>
         </div>
@@ -1312,7 +1314,7 @@
     <script src="blocklyRobotArm.js"></script>
     <!-- Positions Manager: Manages stored preset positions (0-99) -->
     <script src="positionsManager.js"></script>
-    <script src="cameraView.js?v=20260613"></script>
+    <script src="cameraView.js?v=20260614"></script>
     <!-- Main Application: UI logic and event handlers -->
     <script src="app.js?v=20260603f"></script>
     
