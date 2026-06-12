@@ -184,6 +184,7 @@
                 <button class="tab-button" data-tab="kinematics">Kinematics</button>
                 <button class="tab-button" data-tab="positions">Stored Positions</button>
                 <button class="tab-button" data-tab="deadzones">Dead Zones</button>
+                <button class="tab-button" data-tab="camera">Camera</button>
                 <button class="tab-button" data-tab="settings">Settings</button>
             </div>
 
@@ -906,6 +907,29 @@
         </div>
 
         <!-- Settings Tab -->
+        <!-- Camera Tab -->
+        <div id="camera-tab" class="tab-content">
+            <h2>USB Camera</h2>
+            <p class="info-text">
+                Live view from the USB camera on the Raspberry Pi. The Pi must run the camera stream service on port 8082.
+            </p>
+            <div class="camera-panel">
+                <div class="camera-toolbar">
+                    <button type="button" id="cameraStartButton" class="btn btn-primary">Start camera</button>
+                    <button type="button" id="cameraStopButton" class="btn btn-secondary">Stop</button>
+                    <button type="button" id="cameraRefreshButton" class="btn btn-secondary">Refresh</button>
+                </div>
+                <p id="cameraStreamStatus" class="camera-stream-status">Open this tab to start the camera.</p>
+                <div class="camera-stream-frame">
+                    <img id="cameraStreamImage" alt="USB camera stream" class="camera-stream-image">
+                </div>
+                <p class="info-text camera-help-text">
+                    On the Pi: <code>sudo ./install-camera-service.sh /opt/RobotArm/electron-app</code>
+                    (needs <code>ffmpeg</code> and <code>/dev/video0</code>).
+                </p>
+            </div>
+        </div>
+
         <div id="settings-tab" class="tab-content">
             <h2>Settings</h2>
             
@@ -1287,6 +1311,7 @@
     <script src="blocklyRobotArm.js"></script>
     <!-- Positions Manager: Manages stored preset positions (0-99) -->
     <script src="positionsManager.js"></script>
+    <script src="cameraView.js"></script>
     <!-- Main Application: UI logic and event handlers -->
     <script src="app.js?v=20260603f"></script>
     

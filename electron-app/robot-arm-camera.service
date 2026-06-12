@@ -1,0 +1,23 @@
+# Systemd unit: USB camera MJPEG stream for the Camera tab.
+# install-camera-service.sh copies this to /etc/systemd/system/
+
+[Unit]
+Description=Robot Arm USB camera MJPEG stream
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=SERVICE_USER
+Group=SERVICE_USER
+WorkingDirectory=INSTALL_DIR
+Environment=ROBOT_ARM_CAMERA_PORT=CAMERA_PORT
+Environment=ROBOT_ARM_CAMERA_DEVICE=CAMERA_DEVICE
+ExecStart=INSTALL_DIR/start-camera-stream.sh
+StandardOutput=journal
+StandardError=journal
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

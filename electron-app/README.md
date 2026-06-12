@@ -71,6 +71,18 @@ sudo ./install-web-server-service.sh
 
 The kiosk uses this port **80** service when installed (`install-web-server-service.sh`).
 
+### USB camera (Camera tab)
+
+Stream a USB camera attached to the Pi (MJPEG on port **8082**):
+
+```bash
+sudo apt install -y ffmpeg
+chmod +x install-camera-service.sh start-camera-stream.sh
+sudo ./install-camera-service.sh /opt/RobotArm/electron-app
+```
+
+Open the **Camera** tab in the app (kiosk or browser). Test: `curl -I http://127.0.0.1:8082/stream`
+
 ## Offline Operation
 
 The application is designed to work **completely offline** after initial setup. See [OFFLINE_SETUP.md](./OFFLINE_SETUP.md) for detailed information.

@@ -2218,6 +2218,62 @@ header h1 {
     color: #5c6370;
 }
 
+/* USB camera tab */
+.camera-panel {
+    background-color: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+}
+
+.camera-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.camera-stream-status {
+    font-size: 14px;
+    margin-bottom: 10px;
+}
+
+.camera-stream-frame {
+    background-color: #1a1a1a;
+    border-radius: 8px;
+    padding: 4px;
+    min-height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.camera-stream-image {
+    max-width: 100%;
+    max-height: 70vh;
+    width: auto;
+    height: auto;
+    display: block;
+}
+
+.camera-stream-image:not([src]),
+.camera-stream-image[src=""] {
+    display: none;
+}
+
+.camera-help-text {
+    margin-top: 12px;
+    font-size: 12px;
+}
+
+body.kiosk-mode .camera-stream-image {
+    max-height: calc(100vh - 180px);
+}
+
+body.kiosk-mode .camera-toolbar .btn {
+    padding: 8px 12px;
+    font-size: 12px;
+}
+
 /* Chromium kiosk mode on the Pi (?kiosk=1 in the URL) */
 body.kiosk-mode .app-footer {
     display: none;

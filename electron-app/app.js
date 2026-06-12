@@ -607,6 +607,9 @@ document.addEventListener('DOMContentLoaded', function() {
     initializePositions();
     initializeGCodeEditor();
     initializeDeadZones();
+    if (typeof initializeCameraTab === 'function') {
+        initializeCameraTab();
+    }
     initializeKinematicsTab();
     
     // Load saved settings
@@ -753,6 +756,17 @@ function initializeTabs() {
                 }, 100);
             }
             
+            // Camera tab — start or stop MJPEG stream
+            if (targetTab === 'camera') {
+                if (typeof startCameraView === 'function') {
+                    setTimeout(startCameraView, 100);
+                }
+            } else {
+                if (typeof stopCameraView === 'function') {
+                    stopCameraView();
+                }
+            }
+
             // If Positions tab is opened, ensure it's initialized
             if (targetTab === 'positions') {
                 setTimeout(() => {
