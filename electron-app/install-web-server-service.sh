@@ -77,6 +77,7 @@ while [ "$REPO_DIR" != "/" ]; do
 done
 chown -R "$SERVICE_USER:$SERVICE_USER" "$INSTALL_DIR"
 chmod +x "$INSTALL_DIR/start-web-server.sh"
+chmod +x "$INSTALL_DIR/serve-app.py" 2>/dev/null || true
 echo "  Done."
 echo ""
 

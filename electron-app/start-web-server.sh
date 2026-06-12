@@ -24,9 +24,16 @@ echo "Web server: folder $SCRIPT_DIR"
 echo "Web server: http://${BIND}:${PORT}/"
 echo "Web server: press Ctrl+C to stop"
 
+export ROBOT_ARM_WEB_PORT="$PORT"
+export ROBOT_ARM_WEB_BIND="$BIND"
+
 cd "$SCRIPT_DIR"
 
-# Use cd for the served files; older Python on the Pi may not support --directory
+# serve-app.py serves static files and proxies /camera/stream to port 8082
+if [ -f "$SCRIPT_DIR/serve-app.py" ]; then
+    exec python3 "$SCRIPT_DIR/serve-app.py"
+fi
+
 if python3 -m http.server --help 2>&1 | grep -q -- '--bind'; then
     exec python3 -m http.server "$PORT" --bind "$BIND"
 else

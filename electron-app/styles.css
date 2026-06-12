@@ -2245,6 +2245,19 @@ header h1 {
     display: flex;
     align-items: center;
     justify-content: center;
+    position: relative;
+}
+
+.camera-stream-placeholder {
+    color: #aaa;
+    font-size: 14px;
+    text-align: center;
+    padding: 20px;
+    margin: 0;
+}
+
+.camera-stream-frame.camera-stream-active .camera-stream-placeholder {
+    display: none;
 }
 
 .camera-stream-image {
@@ -2252,12 +2265,11 @@ header h1 {
     max-height: 70vh;
     width: auto;
     height: auto;
-    display: block;
+    display: none;
 }
 
-.camera-stream-image:not([src]),
-.camera-stream-image[src=""] {
-    display: none;
+.camera-stream-frame.camera-stream-active .camera-stream-image {
+    display: block;
 }
 
 .camera-help-text {

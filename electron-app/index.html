@@ -920,8 +920,9 @@
                     <button type="button" id="cameraRefreshButton" class="btn btn-secondary">Refresh</button>
                 </div>
                 <p id="cameraStreamStatus" class="camera-stream-status">Open this tab to start the camera.</p>
-                <div class="camera-stream-frame">
+                <div id="cameraStreamFrame" class="camera-stream-frame">
                     <img id="cameraStreamImage" alt="USB camera stream" class="camera-stream-image">
+                    <p class="camera-stream-placeholder">Press Start camera to view the USB camera.</p>
                 </div>
                 <p class="info-text camera-help-text">
                     On the Pi: <code>sudo ./install-camera-service.sh /opt/RobotArm/electron-app</code>
@@ -1311,7 +1312,7 @@
     <script src="blocklyRobotArm.js"></script>
     <!-- Positions Manager: Manages stored preset positions (0-99) -->
     <script src="positionsManager.js"></script>
-    <script src="cameraView.js"></script>
+    <script src="cameraView.js?v=20260612"></script>
     <!-- Main Application: UI logic and event handlers -->
     <script src="app.js?v=20260603f"></script>
     
