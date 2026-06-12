@@ -2286,6 +2286,11 @@ body.kiosk-mode .camera-toolbar .btn {
     font-size: 12px;
 }
 
+.camera-toolbar .btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
 /* Chromium kiosk mode on the Pi (?kiosk=1 in the URL) */
 body.kiosk-mode .app-footer {
     display: none;

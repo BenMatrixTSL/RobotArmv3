@@ -3,6 +3,7 @@
 Serve a USB camera (V4L2) as an MJPEG stream for the robot arm web UI.
 
 Open in a browser:  http://<pi-ip>:8082/stream
+Single frames:      http://<pi-ip>:8082/snapshot
 
 Needs ffmpeg on the Pi:  sudo apt install -y ffmpeg
 
@@ -14,11 +15,32 @@ Environment:
 import os
 import subprocess
 import sys
+import threading
+import time
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 PORT = int(os.environ.get("ROBOT_ARM_CAMERA_PORT", "8082"))
 DEVICE = os.environ.get("ROBOT_ARM_CAMERA_DEVICE", "/dev/video0")
 BOUNDARY = b"--jpgboundary"
+
+
+class LatestFrame:
+    """Keeps the most recent JPEG from the background capture thread."""
+
+    def __init__(self):
+        self.lock = threading.Lock()
+        self.data = None
+
+    def set(self, data):
+        with self.lock:
+            self.data = data
+
+    def get(self):
+        with self.lock:
+            return self.data
+
+
+latest_frame = LatestFrame()
 
 
 def build_ffmpeg_commands():
@@ -79,16 +101,64 @@ def iter_jpeg_frames(proc):
             yield frame
 
 
+def capture_worker():
+    """Always keep one ffmpeg process running and store the latest frame."""
+    while True:
+        proc = None
+        try:
+            proc = start_ffmpeg()
+            if proc is None:
+                time.sleep(2)
+                continue
+            for frame in iter_jpeg_frames(proc):
+                latest_frame.set(frame)
+        except Exception as exc:
+            print(f"Camera capture error: {exc}", file=sys.stderr)
+        finally:
+            if proc is not None:
+                proc.kill()
+                try:
+                    proc.wait(timeout=2)
+                except Exception:
+                    pass
+        time.sleep(1)
+
+
 class CameraHandler(BaseHTTPRequestHandler):
     def log_message(self, fmt, *args):
         pass
 
-    def _path_ok(self):
-        path = self.path.split("?", 1)[0]
-        return path in ("/", "/stream")
+    def _path(self):
+        return self.path.split("?", 1)[0]
+
+    def _send_snapshot(self):
+        frame = latest_frame.get()
+        if not frame:
+            self.send_error(503, "No camera frame yet")
+            return
+        self.send_response(200)
+        self.send_header("Cache-Control", "no-cache, private")
+        self.send_header("Pragma", "no-cache")
+        self.send_header("Content-Type", "image/jpeg")
+        self.send_header("Content-Length", str(len(frame)))
+        self.end_headers()
+        self.wfile.write(frame)
 
     def do_HEAD(self):
-        if not self._path_ok():
+        path = self._path()
+        if path == "/snapshot":
+            frame = latest_frame.get()
+            if not frame:
+                self.send_error(503, "No camera frame yet")
+                return
+            self.send_response(200)
+            self.send_header("Cache-Control", "no-cache, private")
+            self.send_header("Pragma", "no-cache")
+            self.send_header("Content-Type", "image/jpeg")
+            self.send_header("Content-Length", str(len(frame)))
+            self.end_headers()
+            return
+        if path not in ("/", "/stream"):
             self.send_error(404)
             return
         self.send_response(200)
@@ -98,7 +168,11 @@ class CameraHandler(BaseHTTPRequestHandler):
         self.end_headers()
 
     def do_GET(self):
-        if not self._path_ok():
+        path = self._path()
+        if path == "/snapshot":
+            self._send_snapshot()
+            return
+        if path not in ("/", "/stream"):
             self.send_error(404)
             return
 
@@ -143,7 +217,11 @@ def main():
         print("List devices: ls -l /dev/video*", file=sys.stderr)
         sys.exit(1)
 
+    worker = threading.Thread(target=capture_worker, daemon=True)
+    worker.start()
+
     print(f"Camera MJPEG stream: http://0.0.0.0:{PORT}/stream")
+    print(f"Camera snapshots:    http://0.0.0.0:{PORT}/snapshot")
     print(f"Device: {DEVICE}")
     HTTPServer(("0.0.0.0", PORT), CameraHandler).serve_forever()
 

@@ -1,20 +1,17 @@
 /**
  * USB camera view for the robot arm app.
  *
- * On the Pi, camera-stream.py runs on port 8082.
- * The web server (serve-app.py) proxies /camera/stream on port 80 (same origin).
+ * Uses repeated JPEG snapshots (works reliably in Chromium on the Pi).
+ * serve-app.py proxies /camera/snapshot on port 80.
  */
 
 var cameraStreamActive = false;
-var cameraRetryTimer = null;
-var cameraRetryCount = 0;
+var cameraSnapshotTimer = null;
+var cameraFailCount = 0;
 var cameraUrlIndex = 0;
 var cameraUrlList = [];
 
-/**
- * Build list of stream URLs to try (same-origin proxy first, then port 8082).
- */
-function buildCameraStreamUrlList() {
+function buildCameraSnapshotUrlList() {
     var urls = [];
     var host = '127.0.0.1';
 
@@ -25,13 +22,11 @@ function buildCameraStreamUrlList() {
         }
     }
 
-    // Same port as the web page (proxied by serve-app.py on the Pi)
     if (window.location.protocol === 'http:' || window.location.protocol === 'https:') {
-        urls.push(window.location.origin + '/camera/stream');
+        urls.push(window.location.origin + '/camera/snapshot');
     }
 
-    // Direct to camera service
-    urls.push('http://' + host + ':8082/stream');
+    urls.push('http://' + host + ':8082/snapshot');
 
     return urls;
 }
@@ -44,104 +39,155 @@ function setCameraStatus(message, color) {
     }
 }
 
-/**
- * Start showing the camera stream.
- */
-function startCameraView() {
-    var img = document.getElementById('cameraStreamImage');
-    var frame = document.getElementById('cameraStreamFrame');
+function updateCameraButtons(running) {
+    var startBtn = document.getElementById('cameraStartButton');
+    var stopBtn = document.getElementById('cameraStopButton');
 
-    if (!img) {
-        return;
+    if (startBtn) {
+        startBtn.disabled = running;
+        if (running) {
+            startBtn.classList.remove('btn-primary');
+            startBtn.classList.add('btn-secondary');
+        } else {
+            startBtn.classList.add('btn-primary');
+            startBtn.classList.remove('btn-secondary');
+        }
     }
 
-    cameraStreamActive = true;
-    cameraRetryCount = 0;
-    cameraUrlIndex = 0;
-    cameraUrlList = buildCameraStreamUrlList();
+    if (stopBtn) {
+        stopBtn.disabled = !running;
+    }
+}
+
+function showCameraFrame() {
+    var img = document.getElementById('cameraStreamImage');
+    var frame = document.getElementById('cameraStreamFrame');
 
     if (frame) {
         frame.classList.add('camera-stream-active');
     }
 
-    tryNextCameraUrl();
+    if (img) {
+        img.style.display = 'block';
+    }
 }
 
-function tryNextCameraUrl() {
-    var img = document.getElementById('cameraStreamImage');
-
-    if (!cameraStreamActive || !img) {
-        return;
-    }
-
-    if (cameraUrlIndex >= cameraUrlList.length) {
-        cameraRetryCount = cameraRetryCount + 1;
-        if (cameraRetryCount <= 8) {
-            cameraUrlIndex = 0;
-            setCameraStatus('Waiting for camera... retry ' + cameraRetryCount + ' of 8', '#5c6370');
-            cameraRetryTimer = setTimeout(tryNextCameraUrl, 2000);
-            return;
-        }
-        setCameraStatus('Camera not available. Check: sudo systemctl status robot-arm-camera.service', '#e74c3c');
-        return;
-    }
-
-    var url = cameraUrlList[cameraUrlIndex];
-    var bust = url + (url.indexOf('?') >= 0 ? '&' : '?') + 't=' + String(Date.now());
-
-    setCameraStatus('Connecting to ' + url + ' ...', '#5c6370');
-
-    img.onload = function () {
-        setCameraStatus('Camera live', '#27ae60');
-    };
-
-    img.onerror = function () {
-        if (!cameraStreamActive) {
-            return;
-        }
-        cameraUrlIndex = cameraUrlIndex + 1;
-        cameraRetryTimer = setTimeout(tryNextCameraUrl, 500);
-    };
-
-    // MJPEG streams may not fire onload — show live after a short wait if no error
-    if (cameraRetryTimer) {
-        clearTimeout(cameraRetryTimer);
-    }
-    cameraRetryTimer = setTimeout(function () {
-        if (cameraStreamActive && img.src) {
-            setCameraStatus('Camera live', '#27ae60');
-        }
-    }, 3000);
-
-    img.src = bust;
-}
-
-/**
- * Stop the camera stream.
- */
-function stopCameraView() {
+function hideCameraFrame() {
     var img = document.getElementById('cameraStreamImage');
     var frame = document.getElementById('cameraStreamFrame');
 
-    cameraStreamActive = false;
-    cameraUrlIndex = 0;
-    cameraUrlList = [];
-
-    if (cameraRetryTimer) {
-        clearTimeout(cameraRetryTimer);
-        cameraRetryTimer = null;
+    if (frame) {
+        frame.classList.remove('camera-stream-active');
     }
 
     if (img) {
         img.onload = null;
         img.onerror = null;
         img.removeAttribute('src');
+        img.style.display = '';
+    }
+}
+
+function getCurrentSnapshotBaseUrl() {
+    if (cameraUrlList.length === 0) {
+        cameraUrlList = buildCameraSnapshotUrlList();
+    }
+    if (cameraUrlIndex >= cameraUrlList.length) {
+        return null;
+    }
+    return cameraUrlList[cameraUrlIndex];
+}
+
+function tryNextSnapshotUrl() {
+    cameraUrlIndex = cameraUrlIndex + 1;
+    cameraFailCount = 0;
+    if (cameraUrlIndex >= cameraUrlList.length) {
+        setCameraStatus('Camera not available. Check: sudo systemctl status robot-arm-camera.service', '#e74c3c');
+        updateCameraButtons(false);
+        hideCameraFrame();
+        return;
+    }
+    pollCameraSnapshot();
+}
+
+function pollCameraSnapshot() {
+    var img = document.getElementById('cameraStreamImage');
+    var baseUrl = getCurrentSnapshotBaseUrl();
+
+    if (!cameraStreamActive || !img || !baseUrl) {
+        return;
     }
 
-    if (frame) {
-        frame.classList.remove('camera-stream-active');
+    var url = baseUrl + '?t=' + String(Date.now());
+
+    img.onload = function () {
+        if (!cameraStreamActive) {
+            return;
+        }
+
+        cameraFailCount = 0;
+        showCameraFrame();
+        setCameraStatus('Camera live', '#27ae60');
+        updateCameraButtons(true);
+
+        cameraSnapshotTimer = setTimeout(pollCameraSnapshot, 150);
+    };
+
+    img.onerror = function () {
+        if (!cameraStreamActive) {
+            return;
+        }
+
+        cameraFailCount = cameraFailCount + 1;
+
+        if (cameraFailCount >= 8) {
+            setCameraStatus('Trying another camera URL...', '#5c6370');
+            tryNextSnapshotUrl();
+            return;
+        }
+
+        setCameraStatus('Waiting for camera... (' + cameraFailCount + ' of 8)', '#5c6370');
+        cameraSnapshotTimer = setTimeout(pollCameraSnapshot, 500);
+    };
+
+    img.src = url;
+}
+
+function startCameraView() {
+    var img = document.getElementById('cameraStreamImage');
+
+    if (!img) {
+        return;
     }
 
+    if (cameraSnapshotTimer) {
+        clearTimeout(cameraSnapshotTimer);
+        cameraSnapshotTimer = null;
+    }
+
+    cameraStreamActive = true;
+    cameraFailCount = 0;
+    cameraUrlIndex = 0;
+    cameraUrlList = buildCameraSnapshotUrlList();
+
+    setCameraStatus('Connecting to camera...', '#5c6370');
+    updateCameraButtons(true);
+    pollCameraSnapshot();
+}
+
+function stopCameraView() {
+    cameraStreamActive = false;
+    cameraFailCount = 0;
+    cameraUrlIndex = 0;
+    cameraUrlList = [];
+
+    if (cameraSnapshotTimer) {
+        clearTimeout(cameraSnapshotTimer);
+        cameraSnapshotTimer = null;
+    }
+
+    hideCameraFrame();
+    updateCameraButtons(false);
     setCameraStatus('Stopped', '#5c6370');
 }
 
@@ -164,4 +210,6 @@ function initializeCameraTab() {
     if (refreshBtn) {
         refreshBtn.addEventListener('click', refreshCameraView);
     }
+
+    updateCameraButtons(false);
 }

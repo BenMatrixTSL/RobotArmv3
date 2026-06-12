@@ -3,7 +3,8 @@
 Serve the robot arm web UI and proxy the camera MJPEG stream on the same port.
 
 Static files:  http://<pi>/index.html
-Camera proxy:  http://<pi>/camera/stream  ->  http://127.0.0.1:8082/stream
+Camera proxy:  http://<pi>/camera/snapshot  ->  http://127.0.0.1:8082/snapshot
+              http://<pi>/camera/stream     ->  http://127.0.0.1:8082/stream
 
 The camera service (robot-arm-camera.service) must still run on port 8082.
 """
@@ -25,13 +26,22 @@ class AppHandler(SimpleHTTPRequestHandler):
     def log_message(self, fmt, *args):
         pass
 
+    def _camera_path(self):
+        return self.path.split("?", 1)[0]
+
     def _is_camera_path(self):
-        path = self.path.split("?", 1)[0]
-        return path in ("/camera/stream", "/camera")
+        return self._camera_path() in ("/camera/stream", "/camera", "/camera/snapshot")
+
+    def _camera_backend_url(self):
+        path = self._camera_path()
+        if path == "/camera/snapshot":
+            return CAMERA_BACKEND.replace("/stream", "/snapshot")
+        return CAMERA_BACKEND
 
     def _proxy_camera(self, method):
         try:
-            req = urllib.request.Request(CAMERA_BACKEND, method=method)
+            backend = self._camera_backend_url()
+            req = urllib.request.Request(backend, method=method)
             with urllib.request.urlopen(req, timeout=15) as upstream:
                 self.send_response(upstream.status)
                 for key in ("Content-Type", "Cache-Control", "Pragma"):
@@ -68,11 +78,12 @@ class AppHandler(SimpleHTTPRequestHandler):
 
 
 def main():
-  os.chdir(os.path.dirname(os.path.abspath(__file__)))
-  print(f"Web UI: http://{BIND}:{PORT}/")
-  print(f"Camera proxy: http://{BIND}:{PORT}/camera/stream -> {CAMERA_BACKEND}")
-  HTTPServer((BIND, PORT), AppHandler).serve_forever()
+    os.chdir(os.path.dirname(os.path.abspath(__file__)))
+    snapshot_backend = CAMERA_BACKEND.replace("/stream", "/snapshot")
+    print(f"Web UI: http://{BIND}:{PORT}/")
+    print(f"Camera proxy: http://{BIND}:{PORT}/camera/snapshot -> {snapshot_backend}")
+    HTTPServer((BIND, PORT), AppHandler).serve_forever()
 
 
 if __name__ == "__main__":
-  main()
+    main()
