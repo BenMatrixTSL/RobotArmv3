@@ -61,8 +61,8 @@ function startCameraView() {
         }
     };
 
-    // Cache-bust so reopening the tab gets a fresh stream
-    img.src = url + '?t=' + Date.now();
+    // Cache-bust so reopening the tab gets a fresh stream (? is OK — server ignores query)
+    img.src = url + '?t=' + String(Date.now());
 }
 
 /**

@@ -83,8 +83,22 @@ class CameraHandler(BaseHTTPRequestHandler):
     def log_message(self, fmt, *args):
         pass
 
+    def _path_ok(self):
+        path = self.path.split("?", 1)[0]
+        return path in ("/", "/stream")
+
+    def do_HEAD(self):
+        if not self._path_ok():
+            self.send_error(404)
+            return
+        self.send_response(200)
+        self.send_header("Cache-Control", "no-cache, private")
+        self.send_header("Pragma", "no-cache")
+        self.send_header("Content-Type", "multipart/x-mixed-replace; boundary=jpgboundary")
+        self.end_headers()
+
     def do_GET(self):
-        if self.path not in ("/", "/stream"):
+        if not self._path_ok():
             self.send_error(404)
             return
 
@@ -99,8 +113,10 @@ class CameraHandler(BaseHTTPRequestHandler):
         self.send_header("Content-Type", "multipart/x-mixed-replace; boundary=jpgboundary")
         self.end_headers()
 
+        sent_frame = False
         try:
             for frame in iter_jpeg_frames(proc):
+                sent_frame = True
                 try:
                     self.wfile.write(BOUNDARY + b"\r\n")
                     self.wfile.write(b"Content-Type: image/jpeg\r\n")
@@ -110,6 +126,10 @@ class CameraHandler(BaseHTTPRequestHandler):
                 except (BrokenPipeError, ConnectionResetError):
                     break
         finally:
+            if not sent_frame and proc.stderr:
+                err = proc.stderr.read().decode("utf-8", errors="replace").strip()
+                if err:
+                    print(f"ffmpeg error on {DEVICE}: {err}", file=sys.stderr)
             proc.kill()
             try:
                 proc.wait(timeout=2)

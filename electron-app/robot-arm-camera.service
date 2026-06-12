@@ -9,10 +9,10 @@ Wants=network-online.target
 [Service]
 Type=simple
 User=SERVICE_USER
-Group=SERVICE_USER
+Group=video
 WorkingDirectory=INSTALL_DIR
-Environment=ROBOT_ARM_CAMERA_PORT=CAMERA_PORT
-Environment=ROBOT_ARM_CAMERA_DEVICE=CAMERA_DEVICE
+Environment=ROBOT_ARM_CAMERA_PORT=__CAMERA_PORT__
+Environment=ROBOT_ARM_CAMERA_DEVICE=__CAMERA_DEVICE__
 ExecStart=INSTALL_DIR/start-camera-stream.sh
 StandardOutput=journal
 StandardError=journal
