@@ -20,7 +20,8 @@ import time
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 PORT = int(os.environ.get("ROBOT_ARM_CAMERA_PORT", "8082"))
-DEVICE = os.environ.get("ROBOT_ARM_CAMERA_DEVICE", "/dev/video0")
+CONFIGURED_DEVICE = os.environ.get("ROBOT_ARM_CAMERA_DEVICE", "/dev/video0")
+active_device = CONFIGURED_DEVICE
 BOUNDARY = b"--jpgboundary"
 SNAPSHOT_WAIT_SECONDS = 8
 
@@ -55,13 +56,73 @@ last_good_command = None
 last_capture_error = ""
 
 
-def build_ffmpeg_commands():
+def device_has_capture_formats(device_path):
+    """True when v4l2-ctl lists real pixel formats (not a metadata-only node)."""
+    try:
+        result = subprocess.run(
+            ["v4l2-ctl", "-d", device_path, "--list-formats-ext"],
+            capture_output=True,
+            timeout=5,
+        )
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        return False
+    if result.returncode != 0:
+        return False
+    text = result.stdout.decode("utf-8", errors="replace")
+    for line in text.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("[") and "]:" in stripped:
+            return True
+    return False
+
+
+def find_capture_devices():
+    devices = []
+    try:
+        names = sorted(os.listdir("/dev"))
+    except OSError:
+        return devices
+    for name in names:
+        if not name.startswith("video"):
+            continue
+        path = os.path.join("/dev", name)
+        if os.path.exists(path) and device_has_capture_formats(path):
+            devices.append(path)
+    return devices
+
+
+def pick_active_device():
+    """Use configured device, or auto-pick the first real capture node."""
+    global active_device
+
+    if os.path.exists(CONFIGURED_DEVICE) and device_has_capture_formats(CONFIGURED_DEVICE):
+        active_device = CONFIGURED_DEVICE
+        return active_device
+
+    found = find_capture_devices()
+    if found:
+        active_device = found[0]
+        if CONFIGURED_DEVICE != active_device:
+            print(
+                f"Camera: {CONFIGURED_DEVICE} is not a capture device. "
+                f"Using {active_device} instead.",
+                file=sys.stderr,
+            )
+        return active_device
+
+    active_device = CONFIGURED_DEVICE
+    return active_device
+
+
+def build_ffmpeg_commands(device=None):
     """Try several capture modes. Many USB cameras need YUYV, not MJPEG."""
+    if device is None:
+        device = active_device
     return [
         [
             "ffmpeg", "-hide_banner", "-loglevel", "error",
             "-f", "v4l2", "-framerate", "10", "-video_size", "640x480",
-            "-i", DEVICE,
+            "-i", device,
             "-vf", "fps=10,scale=640:-1",
             "-f", "image2pipe", "-vcodec", "mjpeg", "-q:v", "8",
             "pipe:1",
@@ -70,20 +131,20 @@ def build_ffmpeg_commands():
             "ffmpeg", "-hide_banner", "-loglevel", "error",
             "-f", "v4l2", "-input_format", "mjpeg",
             "-video_size", "640x480", "-framerate", "10",
-            "-i", DEVICE,
+            "-i", device,
             "-c", "copy", "-f", "image2pipe", "pipe:1",
         ],
         [
             "ffmpeg", "-hide_banner", "-loglevel", "error",
             "-f", "v4l2", "-framerate", "5", "-video_size", "320x240",
-            "-i", DEVICE,
+            "-i", device,
             "-vf", "fps=5",
             "-f", "image2pipe", "-vcodec", "mjpeg", "-q:v", "10",
             "pipe:1",
         ],
         [
             "ffmpeg", "-hide_banner", "-loglevel", "error",
-            "-f", "v4l2", "-i", DEVICE,
+            "-f", "v4l2", "-i", device,
             "-vf", "fps=5,scale=640:-1",
             "-f", "image2pipe", "-vcodec", "mjpeg", "-q:v", "10",
             "pipe:1",
@@ -133,6 +194,29 @@ def iter_jpeg_frames(proc):
             yield frame
 
 
+def try_next_capture_device():
+    """Switch to another V4L2 node when the current one cannot capture."""
+    global active_device, last_good_command
+
+    options = find_capture_devices()
+    if not options:
+        return False
+
+    try:
+        index = options.index(active_device)
+        next_index = index + 1
+    except ValueError:
+        next_index = 0
+
+    if next_index >= len(options):
+        return False
+
+    active_device = options[next_index]
+    last_good_command = None
+    print(f"Camera: trying next device {active_device}", file=sys.stderr)
+    return True
+
+
 def capture_worker():
     """Keep one ffmpeg process running and store the latest frame."""
     global last_good_command, last_capture_error
@@ -172,14 +256,17 @@ def capture_worker():
 
                 if frame_count == 0:
                     err = ffmpeg_error_text(proc, stderr_bucket)
-                    last_capture_error = err or f"No frames from ffmpeg on {DEVICE}"
-                    print(f"Camera try failed on {DEVICE}: {last_capture_error}", file=sys.stderr)
+                    last_capture_error = err or f"No frames from ffmpeg on {active_device}"
+                    print(f"Camera try failed on {active_device}: {last_capture_error}", file=sys.stderr)
                 else:
-                    print(f"Camera capture stopped on {DEVICE} after {frame_count} frames", file=sys.stderr)
+                    print(
+                        f"Camera capture stopped on {active_device} after {frame_count} frames",
+                        file=sys.stderr,
+                    )
 
             except Exception as exc:
                 last_capture_error = str(exc)
-                print(f"Camera capture error on {DEVICE}: {exc}", file=sys.stderr)
+                print(f"Camera capture error on {active_device}: {exc}", file=sys.stderr)
             finally:
                 if proc is not None:
                     proc.kill()
@@ -193,12 +280,13 @@ def capture_worker():
 
         if not got_frames:
             last_good_command = None
-            print(
-                f"No camera frames from {DEVICE}. "
-                "Check: v4l2-ctl --list-devices "
-                "and try ROBOT_ARM_CAMERA_DEVICE=/dev/video1",
-                file=sys.stderr,
-            )
+            if not try_next_capture_device():
+                print(
+                    f"No camera frames from {active_device}. "
+                    "Run: v4l2-ctl --list-devices "
+                    "and: v4l2-ctl -d /dev/video0 --list-formats-ext",
+                    file=sys.stderr,
+                )
             time.sleep(3)
         else:
             time.sleep(1)
@@ -298,7 +386,7 @@ class CameraHandler(BaseHTTPRequestHandler):
                     stderr_thread.join(timeout=2)
                 err = ffmpeg_error_text(proc, stderr_bucket)
                 if err:
-                    print(f"ffmpeg stream try failed on {DEVICE}: {err}", file=sys.stderr)
+                    print(f"ffmpeg stream try failed on {active_device}: {err}", file=sys.stderr)
             finally:
                 if proc is not None:
                     proc.kill()
@@ -308,13 +396,28 @@ class CameraHandler(BaseHTTPRequestHandler):
                         pass
 
         if not sent_frame:
-            self.send_error(500, f"Could not capture from {DEVICE}")
+            self.send_error(500, f"Could not capture from {active_device}")
 
 
 def main():
-    if not os.path.exists(DEVICE):
-        print(f"Error: camera device not found: {DEVICE}", file=sys.stderr)
+    pick_active_device()
+
+    if not os.path.exists(active_device):
+        print(f"Error: camera device not found: {active_device}", file=sys.stderr)
         print("List devices: v4l2-ctl --list-devices", file=sys.stderr)
+        sys.exit(1)
+
+    if not device_has_capture_formats(active_device):
+        print(
+            f"Error: {active_device} is not a video capture device "
+            '(try /dev/video0 — "Inappropriate ioctl" means wrong node).',
+            file=sys.stderr,
+        )
+        print("Check formats: v4l2-ctl -d /dev/video0 --list-formats-ext", file=sys.stderr)
+        found = find_capture_devices()
+        if not found:
+            sys.exit(1)
+        print(f"Available capture devices: {', '.join(found)}", file=sys.stderr)
         sys.exit(1)
 
     worker = threading.Thread(target=capture_worker, daemon=True)
@@ -322,7 +425,7 @@ def main():
 
     print(f"Camera MJPEG stream: http://0.0.0.0:{PORT}/stream")
     print(f"Camera snapshots:    http://0.0.0.0:{PORT}/snapshot")
-    print(f"Device: {DEVICE}")
+    print(f"Device: {active_device}")
     HTTPServer(("0.0.0.0", PORT), CameraHandler).serve_forever()
 
 

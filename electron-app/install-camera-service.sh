@@ -28,19 +28,15 @@ find_capture_device() {
     return 0
   fi
 
+  # Only nodes that list pixel formats are real capture devices.
+  # /dev/video1 is often metadata-only ("Inappropriate ioctl for device").
   if command -v v4l2-ctl >/dev/null 2>&1; then
     for dev in /dev/video*; do
-      if [ -e "$dev" ] && v4l2-ctl -d "$dev" --all 2>/dev/null | grep -q "Video Capture"; then
+      if [ -e "$dev" ] && v4l2-ctl -d "$dev" --list-formats-ext 2>/dev/null | grep -qE '^[[:space:]]*\[[0-9]+\]:'; then
         echo "$dev"
         return 0
       fi
     done
-  fi
-
-  # Many USB cameras use video0 for metadata and video1 for capture
-  if [ -e /dev/video1 ]; then
-    echo "/dev/video1"
-    return 0
   fi
 
   echo "/dev/video0"
@@ -128,8 +124,10 @@ echo "Logs:          sudo journalctl -u robot-arm-camera.service -n 30 --no-page
 echo "Test snapshot: curl -s -o /tmp/cam-test.jpg -w 'HTTP %{http_code}\\n' --max-time 15 http://127.0.0.1:${CAMERA_PORT}/snapshot"
 echo "Test stream:   curl -s -o /dev/null -w 'HTTP %{http_code}\\n' --max-time 5 http://127.0.0.1:${CAMERA_PORT}/stream"
 echo ""
-echo "If no picture, try another device:"
-echo "  sudo ROBOT_ARM_CAMERA_DEVICE=/dev/video1 ./install-camera-service.sh $INSTALL_DIR"
+echo "List capture devices:"
+echo "  for d in /dev/video*; do echo \"=== \$d ===\"; v4l2-ctl -d \"\$d\" --list-formats-ext 2>/dev/null | head -5; done"
+echo "Reinstall with a specific device:"
+echo "  sudo ROBOT_ARM_CAMERA_DEVICE=/dev/video0 ./install-camera-service.sh $INSTALL_DIR"
 echo ""
 
 systemctl --no-pager status "$SERVICE_NAME" || true
