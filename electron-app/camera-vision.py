@@ -205,12 +205,20 @@ def get_aruco_dictionary(dict_name):
         return cv2.aruco.Dictionary_get(dict_id)
 
 
+def get_aruco_dictionary_list():
+    """Use one dictionary by default (faster on the Pi). Set ROBOT_ARM_ARUCO_TRY_ALL=1 for more."""
+    try_all = os.environ.get("ROBOT_ARM_ARUCO_TRY_ALL", "").strip().lower()
+    if try_all in ("1", "true", "yes"):
+        return ARUCO_DICTIONARIES
+    return [("DICT_4X4_50", "DICT_4X4_50")]
+
+
 def create_aruco_detectors():
     """Build one detector per dictionary (old and new OpenCV APIs)."""
     parameters = create_aruco_parameters()
     detectors = []
 
-    for label, dict_name in ARUCO_DICTIONARIES:
+    for label, dict_name in get_aruco_dictionary_list():
         try:
             dictionary = get_aruco_dictionary(dict_name)
         except AttributeError:
@@ -221,9 +229,6 @@ def create_aruco_detectors():
             detectors.append((label, ("new", detector)))
         except AttributeError:
             detectors.append((label, ("old", (dictionary, parameters))))
-
-    if not detectors:
-        raise RuntimeError("OpenCV ArUco is not available")
 
     return detectors
 
@@ -354,22 +359,54 @@ def find_color_blocks(frame):
 
 
 def open_camera(device_path):
-    camera = cv2.VideoCapture(device_path, cv2.CAP_V4L2)
-    if not camera.isOpened():
-        raise RuntimeError(f"Could not open camera: {device_path}")
+    """Open the camera, trying common resolutions until frames work."""
+    if device_path.startswith("/dev/video"):
+        sources = [device_path, int(device_path.replace("/dev/video", ""))]
+    else:
+        sources = [device_path]
 
-    camera.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*"MJPG"))
-    camera.set(cv2.CAP_PROP_FRAME_WIDTH, CAPTURE_WIDTH)
-    camera.set(cv2.CAP_PROP_FRAME_HEIGHT, CAPTURE_HEIGHT)
-    camera.set(cv2.CAP_PROP_FPS, 15)
+    capture_modes = [
+        (CAPTURE_WIDTH, CAPTURE_HEIGHT),
+        (640, 480),
+        (800, 600),
+        (1280, 720),
+    ]
 
-    actual_width = int(camera.get(cv2.CAP_PROP_FRAME_WIDTH))
-    actual_height = int(camera.get(cv2.CAP_PROP_FRAME_HEIGHT))
-    print(
-        f"Camera opened: {device_path} at {actual_width}x{actual_height}",
-        file=sys.stderr,
-    )
-    return camera
+    last_error = "unknown error"
+
+    for width, height in capture_modes:
+        for source in sources:
+            camera = None
+            try:
+                camera = cv2.VideoCapture(source, cv2.CAP_V4L2)
+                if not camera.isOpened():
+                    last_error = f"could not open {source}"
+                    continue
+
+                camera.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*"MJPG"))
+                camera.set(cv2.CAP_PROP_FRAME_WIDTH, width)
+                camera.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
+                camera.set(cv2.CAP_PROP_FPS, 15)
+
+                ok, test_frame = camera.read()
+                if not ok or test_frame is None or test_frame.size == 0:
+                    last_error = f"no frames at {width}x{height} on {source}"
+                    camera.release()
+                    continue
+
+                actual_width = int(camera.get(cv2.CAP_PROP_FRAME_WIDTH))
+                actual_height = int(camera.get(cv2.CAP_PROP_FRAME_HEIGHT))
+                print(
+                    f"Camera opened: {source} at {actual_width}x{actual_height}",
+                    file=sys.stderr,
+                )
+                return camera
+            except Exception as exc:
+                last_error = str(exc)
+                if camera is not None:
+                    camera.release()
+
+    raise RuntimeError(f"Could not open camera {device_path}: {last_error}")
 
 
 def prepare_gray_for_aruco(frame):
@@ -385,15 +422,23 @@ def prepare_gray_for_aruco(frame):
 
 def process_frame(frame, detectors):
     annotated = frame.copy()
-    gray = prepare_gray_for_aruco(annotated)
     frame_height, frame_width = annotated.shape[:2]
+    dictionary_name = None
+    corners, ids = None, None
+    markers = []
+    blocks = []
 
-    corners, ids, dictionary_name = find_aruco_markers(gray, detectors)
-    if ids is not None and len(ids) > 0:
-        draw_aruco_overlays(annotated, corners, ids)
-
-    markers = marker_centers(corners, ids, frame_width, frame_height)
-    blocks = find_color_blocks(annotated)
+    try:
+        gray = prepare_gray_for_aruco(annotated)
+        if detectors:
+            corners, ids, dictionary_name = find_aruco_markers(gray, detectors)
+            if ids is not None and len(ids) > 0:
+                draw_aruco_overlays(annotated, corners, ids)
+        markers = marker_centers(corners, ids, frame_width, frame_height)
+        blocks = find_color_blocks(annotated)
+    except Exception as exc:
+        print(f"Vision processing error: {exc}", file=sys.stderr)
+        annotated = frame.copy()
 
     stream_frame = cv2.resize(
         annotated, (STREAM_WIDTH, STREAM_HEIGHT), interpolation=cv2.INTER_AREA
@@ -402,7 +447,9 @@ def process_frame(frame, detectors):
         ".jpg", stream_frame, [int(cv2.IMWRITE_JPEG_QUALITY), JPEG_QUALITY]
     )
     if not ok:
-        return None, None
+        ok, jpeg = cv2.imencode(".jpg", frame, [int(cv2.IMWRITE_JPEG_QUALITY), JPEG_QUALITY])
+        if not ok:
+            return None, None
 
     vision_data = {
         "markers": markers,
@@ -417,8 +464,15 @@ def process_frame(frame, detectors):
 
 
 def capture_loop():
-    detectors = create_aruco_detectors()
-    print(f"OpenCV {cv2.__version__} — ArUco dictionaries: {len(detectors)}", file=sys.stderr)
+    try:
+        detectors = create_aruco_detectors()
+        print(
+            f"OpenCV {cv2.__version__} — ArUco dictionaries: {len(detectors)}",
+            file=sys.stderr,
+        )
+    except Exception as exc:
+        detectors = []
+        print(f"ArUco disabled ({exc}) — streaming video only", file=sys.stderr)
 
     while True:
         camera = None
