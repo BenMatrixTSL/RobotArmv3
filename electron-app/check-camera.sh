@@ -50,6 +50,8 @@ journalctl -u robot-arm-camera.service -n 15 --no-pager 2>/dev/null || true
 echo ""
 
 echo "=========================================="
+echo "If step 4 shows 'Exec format error' in logs, run:"
+echo "  sudo sed -i 's/\\r$//' /opt/RobotArm/electron-app/*.sh"
 echo "If step 4 fails: sudo systemctl restart robot-arm-camera.service"
 echo "If step 5 fails: sudo bash electron-app/install-web-server-service.sh /opt/RobotArm/electron-app"
 echo "Device fix:       sudo ROBOT_ARM_CAMERA_DEVICE=/dev/video0 bash electron-app/install-camera-service.sh /opt/RobotArm/electron-app"

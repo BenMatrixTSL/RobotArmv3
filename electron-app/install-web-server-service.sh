@@ -21,6 +21,15 @@ if [ -n "$1" ]; then
     INSTALL_DIR="$(cd "$1" && pwd)"
 fi
 
+fix_windows_line_endings() {
+  echo "Fixing script line endings (CRLF -> LF)..."
+  for f in "$INSTALL_DIR"/*.sh "$INSTALL_DIR"/*.py; do
+    if [ -f "$f" ]; then
+      sed -i 's/\r$//' "$f"
+    fi
+  done
+}
+
 echo "=========================================="
 echo "Robot Arm UI — install web server (port 80)"
 echo "=========================================="
@@ -76,6 +85,7 @@ while [ "$REPO_DIR" != "/" ]; do
     REPO_DIR="$(dirname "$REPO_DIR")"
 done
 chown -R "$SERVICE_USER:$SERVICE_USER" "$INSTALL_DIR"
+fix_windows_line_endings
 chmod +x "$INSTALL_DIR/start-web-server.sh"
 chmod +x "$INSTALL_DIR/serve-app.py" 2>/dev/null || true
 echo "  Done."

@@ -42,6 +42,16 @@ find_capture_device() {
   echo "/dev/video0"
 }
 
+# Windows checkouts sometimes save CRLF line endings; Linux cannot run those scripts.
+fix_windows_line_endings() {
+  echo "Fixing script line endings (CRLF -> LF)..."
+  for f in "$INSTALL_DIR"/*.sh "$INSTALL_DIR"/*.py; do
+    if [ -f "$f" ]; then
+      sed -i 's/\r$//' "$f"
+    fi
+  done
+}
+
 echo "=========================================="
 echo "Robot Arm — install USB camera stream"
 echo "=========================================="
@@ -106,6 +116,8 @@ echo ""
 
 # Service user must be in video group to open /dev/video*
 usermod -aG video "$SERVICE_USER" 2>/dev/null || true
+
+fix_windows_line_endings
 
 chmod +x "$INSTALL_DIR/start-camera-stream.sh"
 chmod +x "$INSTALL_DIR/camera-stream.py" 2>/dev/null || true
