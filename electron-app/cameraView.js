@@ -81,6 +81,8 @@ function updateCameraStatusFromVision() {
 
             if (parts.length > 0) {
                 setCameraStatus('Camera live — ' + parts.join(', '), '#27ae60');
+            } else if (data.dictionary) {
+                setCameraStatus('Camera live — vision on, no markers in view', '#27ae60');
             } else {
                 setCameraStatus('Camera live — no markers or blocks detected', '#27ae60');
             }

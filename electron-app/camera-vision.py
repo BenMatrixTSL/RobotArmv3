@@ -43,6 +43,18 @@ JPEG_QUALITY = 80
 MIN_BLOCK_AREA = 2500
 BOUNDARY = b"--jpgboundary"
 
+# Try these dictionaries in order (most common first).
+# Markers must match one of these — see chev.me/arucogen or generate-aruco-markers.py
+ARUCO_DICTIONARIES = [
+    ("DICT_4X4_50", "DICT_4X4_50"),
+    ("DICT_4X4_100", "DICT_4X4_100"),
+    ("DICT_4X4_250", "DICT_4X4_250"),
+    ("DICT_5X5_50", "DICT_5X5_50"),
+    ("DICT_5X5_100", "DICT_5X5_100"),
+    ("DICT_6X6_50", "DICT_6X6_50"),
+    ("DICT_6X6_250", "DICT_6X6_250"),
+]
+
 # HSV colour ranges for simple block detection (tune under your lighting).
 COLOR_RANGES = {
     "red": [
@@ -160,17 +172,60 @@ def pick_active_device():
     return active_device
 
 
-def create_aruco_detector():
-    """Support both newer and older OpenCV ArUco APIs."""
+def create_aruco_parameters():
+    """Detector settings tuned for USB webcams (more sensitive than OpenCV defaults)."""
     try:
-        dictionary = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
         parameters = cv2.aruco.DetectorParameters()
-        detector = cv2.aruco.ArucoDetector(dictionary, parameters)
-        return ("new", detector)
     except AttributeError:
-        dictionary = cv2.aruco.Dictionary_get(cv2.aruco.DICT_4X4_50)
         parameters = cv2.aruco.DetectorParameters_create()
-        return ("old", (dictionary, parameters))
+
+    parameters.adaptiveThreshWinSizeMin = 3
+    parameters.adaptiveThreshWinSizeMax = 23
+    parameters.adaptiveThreshConstant = 7
+    parameters.minMarkerPerimeterRate = 0.02
+    parameters.maxMarkerPerimeterRate = 4.0
+    parameters.polygonalApproxAccuracyRate = 0.05
+    parameters.minCornerDistanceRate = 0.03
+    parameters.minDistanceToBorder = 1
+    parameters.minMarkerDistanceRate = 0.03
+
+    try:
+        parameters.cornerRefinementMethod = cv2.aruco.CORNER_REFINE_SUBPIX
+    except AttributeError:
+        pass
+
+    return parameters
+
+
+def get_aruco_dictionary(dict_name):
+    dict_id = getattr(cv2.aruco, dict_name)
+    try:
+        return cv2.aruco.getPredefinedDictionary(dict_id)
+    except AttributeError:
+        return cv2.aruco.Dictionary_get(dict_id)
+
+
+def create_aruco_detectors():
+    """Build one detector per dictionary (old and new OpenCV APIs)."""
+    parameters = create_aruco_parameters()
+    detectors = []
+
+    for label, dict_name in ARUCO_DICTIONARIES:
+        try:
+            dictionary = get_aruco_dictionary(dict_name)
+        except AttributeError:
+            continue
+
+        try:
+            detector = cv2.aruco.ArucoDetector(dictionary, parameters)
+            detectors.append((label, ("new", detector)))
+        except AttributeError:
+            detectors.append((label, ("old", (dictionary, parameters))))
+
+    if not detectors:
+        raise RuntimeError("OpenCV ArUco is not available")
+
+    return detectors
 
 
 def detect_aruco_markers(gray, detector_info):
@@ -183,6 +238,43 @@ def detect_aruco_markers(gray, detector_info):
             gray, dictionary, parameters=parameters
         )
     return corners, ids
+
+
+def find_aruco_markers(gray, detectors):
+    """Try each ArUco dictionary until markers are found."""
+    for label, detector_info in detectors:
+        corners, ids = detect_aruco_markers(gray, detector_info)
+        if ids is not None and len(ids) > 0:
+            return corners, ids, label
+    return None, None, None
+
+
+def draw_aruco_overlays(frame, corners, ids):
+    """Draw thick green boxes so markers stay visible after downscaling."""
+    if ids is None or corners is None:
+        return
+
+    try:
+        cv2.aruco.drawDetectedMarkers(frame, corners, ids, borderColor=(0, 255, 0))
+    except Exception:
+        pass
+
+    for index, marker_id in enumerate(ids.flatten()):
+        points = corners[index][0].astype(int)
+        cv2.polylines(frame, [points], True, (0, 255, 0), 4)
+
+        center_x = int(np.mean(points[:, 0]))
+        center_y = int(np.mean(points[:, 1]))
+        label = "id " + str(int(marker_id))
+        cv2.putText(
+            frame,
+            label,
+            (center_x + 8, center_y - 8),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.8,
+            (0, 255, 0),
+            3,
+        )
 
 
 def marker_centers(corners, ids, frame_width, frame_height):
@@ -280,27 +372,25 @@ def open_camera(device_path):
     return camera
 
 
-def process_frame(frame, detector_info):
+def prepare_gray_for_aruco(frame):
+    """Improve contrast so printed markers are easier to detect."""
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    try:
+        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+        gray = clahe.apply(gray)
+    except Exception:
+        pass
+    return gray
+
+
+def process_frame(frame, detectors):
     annotated = frame.copy()
-    gray = cv2.cvtColor(annotated, cv2.COLOR_BGR2GRAY)
+    gray = prepare_gray_for_aruco(annotated)
     frame_height, frame_width = annotated.shape[:2]
 
-    corners, ids = detect_aruco_markers(gray, detector_info)
+    corners, ids, dictionary_name = find_aruco_markers(gray, detectors)
     if ids is not None and len(ids) > 0:
-        cv2.aruco.drawDetectedMarkers(annotated, corners, ids)
-        for marker in marker_centers(corners, ids, frame_width, frame_height):
-            px = int(marker["pixel_x"])
-            py = int(marker["pixel_y"])
-            label = "id " + str(marker["id"])
-            cv2.putText(
-                annotated,
-                label,
-                (px + 5, py - 5),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                0.6,
-                (0, 255, 0),
-                2,
-            )
+        draw_aruco_overlays(annotated, corners, ids)
 
     markers = marker_centers(corners, ids, frame_width, frame_height)
     blocks = find_color_blocks(annotated)
@@ -317,6 +407,7 @@ def process_frame(frame, detector_info):
     vision_data = {
         "markers": markers,
         "blocks": blocks,
+        "dictionary": dictionary_name,
         "capture_width": frame_width,
         "capture_height": frame_height,
         "stream_width": STREAM_WIDTH,
@@ -326,7 +417,8 @@ def process_frame(frame, detector_info):
 
 
 def capture_loop():
-    detector_info = create_aruco_detector()
+    detectors = create_aruco_detectors()
+    print(f"OpenCV {cv2.__version__} — ArUco dictionaries: {len(detectors)}", file=sys.stderr)
 
     while True:
         camera = None
@@ -338,7 +430,7 @@ def capture_loop():
                     print("Camera read failed, reopening...", file=sys.stderr)
                     break
 
-                result = process_frame(frame, detector_info)
+                result = process_frame(frame, detectors)
                 if result[0] is not None:
                     state.set_frame(result[0], result[1])
 

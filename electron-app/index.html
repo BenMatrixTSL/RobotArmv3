@@ -928,7 +928,8 @@
                 <p class="info-text camera-help-text">
                     On the Pi: <code>sudo ./install-camera-service.sh /opt/RobotArm/electron-app</code>
                     (installs <code>python3-opencv</code> for ArUco and coloured block detection).
-                    Print ArUco markers from the <code>DICT_4X4_50</code> dictionary.
+                    Print ArUco markers from the <code>DICT_4X4_50</code> dictionary
+                    (<code>python3 generate-aruco-markers.py</code> in <code>electron-app/</code>).
                 </p>
             </div>
         </div>
@@ -1314,7 +1315,7 @@
     <script src="blocklyRobotArm.js"></script>
     <!-- Positions Manager: Manages stored preset positions (0-99) -->
     <script src="positionsManager.js"></script>
-    <script src="cameraView.js?v=20260614"></script>
+    <script src="cameraView.js?v=20260615"></script>
     <!-- Main Application: UI logic and event handlers -->
     <script src="app.js?v=20260603f"></script>
     
