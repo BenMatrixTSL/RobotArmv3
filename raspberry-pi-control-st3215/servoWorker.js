@@ -46,6 +46,13 @@ const RESCAN_MIN_INTERVAL_MS    = 10000;
 const SERVO_BACKOFF_FAIL_THRESHOLD = 3;
 const SERVO_BACKOFF_DURATION_MS    = 2000;
 
+// ST3215 bus watchdog: self-disables torque ~1 s after the last *write* command.
+// Status-poll reads do not reset it.  A single broadcast WRITE TORQUE_ENABLE=1
+// (ID=0xFE) resets all servos at once with no ack responses, so no bus contention.
+// The check runs between each poll joint so that slow/failing reads cannot delay
+// the heartbeat past the watchdog threshold.
+const TORQUE_WATCHDOG_HEARTBEAT_MS = 700;
+
 const PRIORITY_BUS_COMMANDS = { moveJoint: true, stopJoint: true, stopAll: true, stopAllJoints: true, setTorqueAll: true };
 
 // ===== State =====
@@ -71,6 +78,7 @@ let isWriting           = false;
 
 const servoConsecFails    = new Array(JOINT_COUNT).fill(0);
 const servoBackoffUntilMs = new Array(JOINT_COUNT).fill(0);
+let lastTorqueHeartbeatAt = 0;
 // Local torque state — set by explicit commands, not by polled status reads.
 // Polled reads are unreliable (stale/timed-out) and would cause spurious
 // startServo() calls before every move if used for this check.
@@ -108,6 +116,25 @@ function formatCommandError(error) {
     let msg = error.message || String(error);
     if (error.isOverload) msg += ' Reduce speed, check for a mechanical limit, or relieve load on the joint.';
     return msg;
+}
+
+// ===== Watchdog Heartbeat =====
+
+/**
+ * Send a single broadcast WRITE TORQUE_ENABLE=1 packet (ID=0xFE).
+ * Broadcast packets generate no ack responses from any servo, so there is
+ * zero bus contention risk.  All servos receive the write and reset their
+ * internal bus watchdog timers, preventing self-disable.
+ */
+async function sendHeartbeatBroadcast() {
+    // STS_TORQUE_ENABLE = 0x28, value = 1, INST_WRITE = 0x03, broadcast ID = 0xFE
+    const buf = Buffer.from([0xFF, 0xFF, 0xFE, 0x04, 0x03, 0x28, 0x01, 0x00]);
+    let sum = 0;
+    for (let i = 2; i < buf.length - 1; i++) sum += buf[i];
+    buf[buf.length - 1] = (~sum) & 0xFF;
+    await sharedSerialPort._writeQueue(() => new Promise((resolve, reject) => {
+        sharedSerialPort.write(buf, err => err ? reject(err) : resolve());
+    }));
 }
 
 // ===== Serial Write Queue =====
@@ -205,11 +232,76 @@ function postStatusToMain() {
 }
 
 // ===== Servo Polling =====
+
+/**
+ * Poll all active (non-backed-off) joints in a single SYNC_READ bus transaction.
+ * One broadcast request → one response per servo in ID order → all cached at once.
+ * Much faster than sequential reads and eliminates inter-read timing jitter.
+ */
+async function refreshAllJointStatusSyncRead() {
+    const now = Date.now();
+    const activeControllers = [];
+    const activeIndices     = [];
+
+    for (let i = 0; i < servos.length; i++) {
+        if (servos[i] !== null && servoBackoffUntilMs[i] <= now) {
+            activeControllers.push(servos[i]);
+            activeIndices.push(i);
+        }
+    }
+    if (activeControllers.length === 0) return;
+
+    const startAddr = 40;  // STS_TORQUE_ENABLE
+    const blockLen  = 27;  // (STS_MOVING - STS_TORQUE_ENABLE) + 1
+
+    let results;
+    try {
+        results = await RobotArm.syncReadAll(sharedSerialPort, activeControllers, startAddr, blockLen);
+    } catch (err) {
+        log('[BUS] syncReadAll transport error: ' + err.message, true);
+        return;
+    }
+
+    activeIndices.forEach((jointIndex, i) => {
+        const jointNum = jointIndex + 1;
+        const result   = results[i];
+        const previous = jointStatusCache[jointIndex] || defaultJointStatus(jointNum);
+
+        if (result.status === 'fulfilled') {
+            servoConsecFails[jointIndex] = 0;
+            const status = servos[jointIndex].quickStatusFromBuffer(result.value);
+            if (!status.torqueEnabled && servoTorqueEnabled[jointIndex]) {
+                log(`[TORQUE] Joint ${jointNum}: servo self-disabled torque (fault/overload) — will re-enable on next move`);
+                servoTorqueEnabled[jointIndex] = false;
+            }
+            vlog(`[POLL] joint=${jointNum} pos=${status.position} angle=${status.angleDegrees.toFixed(1)} torque=${status.torqueEnabled} moving=${status.isMoving}`);
+            jointStatusCache[jointIndex] = {
+                joint: jointNum, available: true,
+                ...status,
+                stepPosition: status.position, readStale: false, lastGoodAt: Date.now()
+            };
+        } else {
+            servoConsecFails[jointIndex]++;
+            if (servoConsecFails[jointIndex] >= SERVO_BACKOFF_FAIL_THRESHOLD) {
+                servoBackoffUntilMs[jointIndex] = Date.now() + SERVO_BACKOFF_DURATION_MS;
+                servoConsecFails[jointIndex] = 0;
+                log(`[BUS] Joint ${jointNum}: entering ${SERVO_BACKOFF_DURATION_MS}ms backoff after ${SERVO_BACKOFF_FAIL_THRESHOLD} consecutive failures`);
+            }
+            if (previous.lastGoodAt) {
+                jointStatusCache[jointIndex] = { ...previous, available: true, readStale: true, pollError: result.reason.message };
+            } else {
+                jointStatusCache[jointIndex] = { ...defaultJointStatus(jointNum), readStale: true, pollError: result.reason.message };
+            }
+            log(`[BUS] Joint ${jointNum}: sync read failed (${result.reason.message}) consec=${servoConsecFails[jointIndex]}`);
+        }
+    });
+}
+
 async function readServoQuickStatusWithRetry(servo) {
     try {
         return await servo.readQuickStatus();
     } catch (firstError) {
-        await new Promise(r => setTimeout(r, 10));
+        await new Promise(r => setTimeout(r, 5));
         return await servo.readQuickStatus();
     }
 }
@@ -234,7 +326,7 @@ async function refreshSingleJointStatusFromBus(jointIndex) {
         // If the servo has self-disabled torque (overload/fault), sync local tracking
         // so the next moveJoint will re-enable it.
         if (!status.torqueEnabled && servoTorqueEnabled[jointIndex]) {
-            log(`[TORQUE] Joint ${jointNum}: servo self-disabled torque (fault/overload) — will re-enable on next move`);
+            log(`[TORQUE] Joint ${jointNum}: servo self-disabled torque — will re-enable on next move. pos=${status.position} angle=${status.angleDegrees.toFixed(1)}`);
             servoTorqueEnabled[jointIndex] = false;
         }
         vlog(`[POLL] joint=${jointNum} pos=${status.position} angle=${status.angleDegrees.toFixed(1)} torque=${status.torqueEnabled} moving=${status.isMoving}`);
@@ -296,14 +388,17 @@ async function runBusTick() {
         }
 
         const pollStart = Date.now();
-        const jointsToPoll = Math.min(JOINTS_PER_POLL_TICK, JOINT_COUNT);
-        for (let p = 0; p < jointsToPoll; p++) {
-            await refreshSingleJointStatusFromBus(statusPollJointIndex);
-            statusPollJointIndex = (statusPollJointIndex + 1) % JOINT_COUNT;
-            if (p < jointsToPoll - 1) await new Promise(r => setTimeout(r, 4));
+        // Heartbeat before the sync read so a slow/failing read can't delay it.
+        const nowHb = Date.now();
+        if (nowHb - lastTorqueHeartbeatAt >= TORQUE_WATCHDOG_HEARTBEAT_MS) {
+            lastTorqueHeartbeatAt = nowHb;
+            if (servoTorqueEnabled.some(Boolean)) {
+                try { await sendHeartbeatBroadcast(); } catch (_) {}
+            }
         }
-        diag.statusPollJointIndex = statusPollJointIndex;
-        await new Promise(r => setTimeout(r, 1));
+        // One SYNC_READ broadcast reads all active joints in a single round trip
+        // (~50 ms) instead of sequential per-joint reads (~330 ms for 6 joints).
+        await refreshAllJointStatusSyncRead();
 
         postStatusToMain();
         diag.statusPollsCompleted++;
@@ -664,9 +759,11 @@ async function handleBusCommand(clientId, data) {
             try {
                 if (!servoTorqueEnabled[jointIndex]) {
                     log(`[TORQUE] joint=${data.joint}: re-enabling torque before move`);
-                    const ok = await servo.startServo();
+                    // startServo() catches internally and returns bool — never throws.
+                    // Ack loss is treated as "assumed received"; poll will correct if not.
+                    const torqueOk = await servo.startServo();
+                    log(`[TORQUE] joint=${data.joint}: startServo ${torqueOk ? 'OK' : 'ack lost — assuming received'}`);
                     servoTorqueEnabled[jointIndex] = true;
-                    log(`[TORQUE] joint=${data.joint}: startServo result=${ok}`);
                 }
                 await servo.moveToAngle(angle, moveSpeed);
                 diag.busMovesCompleted++;

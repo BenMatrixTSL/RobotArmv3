@@ -2198,16 +2198,26 @@ async function homeAllJoints() {
 
     try {
         for (let i = 1; i <= numJoints; i++) {
-            try {
-                await robotArmClient.moveJoint(i, 0, speedStepsPerSecond);
+            let success = false;
+            let lastError = null;
+            for (let attempt = 0; attempt < 3 && !success; attempt++) {
+                try {
+                    await robotArmClient.moveJoint(i, 0, speedStepsPerSecond);
+                    success = true;
+                } catch (error) {
+                    lastError = error;
+                    if (attempt < 2) await new Promise(r => setTimeout(r, 200));
+                }
+            }
+            if (success) {
                 homedCount++;
-            } catch (error) {
-                const msg = error && error.message ? error.message : String(error);
+            } else {
+                const msg = lastError && lastError.message ? lastError.message : String(lastError);
                 if (msg.indexOf('not available') >= 0) {
                     skippedJoints.push(i);
                 } else {
                     faultedJoints.push('J' + i + ': ' + msg);
-                    console.warn('Home failed on joint ' + i + ':', msg);
+                    console.warn('Home failed on joint ' + i + ' after 3 attempts:', msg);
                 }
             }
         }
