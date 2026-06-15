@@ -388,17 +388,23 @@ async function runBusTick() {
         }
 
         const pollStart = Date.now();
-        // Heartbeat before the sync read so a slow/failing read can't delay it.
-        const nowHb = Date.now();
-        if (nowHb - lastTorqueHeartbeatAt >= TORQUE_WATCHDOG_HEARTBEAT_MS) {
-            lastTorqueHeartbeatAt = nowHb;
-            if (servoTorqueEnabled.some(Boolean)) {
-                try { await sendHeartbeatBroadcast(); } catch (_) {}
+        const jointsToPoll = Math.min(JOINTS_PER_POLL_TICK, JOINT_COUNT);
+        for (let p = 0; p < jointsToPoll; p++) {
+            // Check heartbeat before each joint poll so that slow/failing reads
+            // cannot delay it past the ~1 s watchdog threshold.
+            const nowHb = Date.now();
+            if (nowHb - lastTorqueHeartbeatAt >= TORQUE_WATCHDOG_HEARTBEAT_MS) {
+                lastTorqueHeartbeatAt = nowHb;
+                if (servoTorqueEnabled.some(Boolean)) {
+                    try { await sendHeartbeatBroadcast(); } catch (_) {}
+                }
             }
+            await refreshSingleJointStatusFromBus(statusPollJointIndex);
+            statusPollJointIndex = (statusPollJointIndex + 1) % JOINT_COUNT;
+            if (p < jointsToPoll - 1) await new Promise(r => setTimeout(r, 4));
         }
-        // One SYNC_READ broadcast reads all active joints in a single round trip
-        // (~50 ms) instead of sequential per-joint reads (~330 ms for 6 joints).
-        await refreshAllJointStatusSyncRead();
+        diag.statusPollJointIndex = statusPollJointIndex;
+        await new Promise(r => setTimeout(r, 1));
 
         postStatusToMain();
         diag.statusPollsCompleted++;
