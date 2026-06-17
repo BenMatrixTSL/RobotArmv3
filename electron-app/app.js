@@ -6545,6 +6545,55 @@ async function autoDetectRaspberryPi() {
  * @param {number} timeout - Timeout in milliseconds
  * @returns {Promise<boolean>} True if connection successful
  */
+// ===== End Tool Servo Controls =====
+
+function updateEndToolServoLabel(value) {
+    const label = document.getElementById('endToolServoAngleLabel');
+    if (label) label.textContent = value + '°';
+}
+
+function moveEndToolServoTo(angle) {
+    const slider = document.getElementById('endToolServoSlider');
+    if (slider) { slider.value = angle; updateEndToolServoLabel(angle); }
+    moveEndToolServo(angle);
+}
+
+function moveEndToolServo(angle) {
+    if (!robotArmClient.isConnected) { showAppMessage('Not connected'); return; }
+    const a = Math.round(Number(angle));
+    robotArmClient.sendCommand('toolSetServoEnabledAndAngle', { angle: a })
+        .then(() => {
+            const stateEl = document.getElementById('endToolServoStateText');
+            if (stateEl) stateEl.textContent = 'Enabled — ' + a + '°';
+        })
+        .catch(err => showAppMessage('End tool servo: ' + err.message));
+}
+
+function setEndToolServoEnabled(enabled) {
+    if (!robotArmClient.isConnected) { showAppMessage('Not connected'); return; }
+    robotArmClient.sendCommand('toolSetServoEnabled', { enabled })
+        .then(() => {
+            const stateEl = document.getElementById('endToolServoStateText');
+            if (stateEl) stateEl.textContent = enabled ? 'Enabled' : 'Disabled';
+        })
+        .catch(err => showAppMessage('End tool servo enable: ' + err.message));
+}
+
+function readEndToolServoState() {
+    if (!robotArmClient.isConnected) { showAppMessage('Not connected'); return; }
+    robotArmClient.sendCommand('toolGetServoState', {})
+        .then(resp => {
+            const stateEl = document.getElementById('endToolServoStateText');
+            if (stateEl) stateEl.textContent = (resp.enabled ? 'Enabled' : 'Disabled') + ' — ' + (resp.currentAngle || 0) + '°';
+            const slider = document.getElementById('endToolServoSlider');
+            if (slider && resp.currentAngle !== undefined) {
+                slider.value = resp.currentAngle;
+                updateEndToolServoLabel(resp.currentAngle);
+            }
+        })
+        .catch(err => showAppMessage('Could not read servo state: ' + err.message));
+}
+
 function testConnection(address, port, timeout) {
     return new Promise((resolve) => {
         const ws = new WebSocket(`ws://${address}:${port}`);

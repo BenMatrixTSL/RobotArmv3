@@ -75,6 +75,11 @@ const MAX_ANGLE = 180;   // Maximum angle in degrees
 
 // ESP32 end-tool constants (ST3215-compatible node on same bus)
 const END_TOOL_ID = 64;
+// End tool writes need more retries with longer delays because Joint 1 bus noise
+// can corrupt the ACK response. The servo does NOT need to be re-enabled between
+// retries; the ESP32 sends its ACK before applying the servo, so retrying is safe.
+const BUS_WRITE_MAX_ATTEMPTS_END_TOOL = 5;
+const BUS_WRITE_RETRY_DELAY_END_TOOL_MS = 150;
 
 // At 1 Mbps the full UART round-trip for a 27-byte read is ~400 µs.
 // Response wire time is <1 ms; 50 ms gives ample jitter margin while keeping
@@ -753,8 +758,11 @@ class ServoController {
 
         let settled = false;
         let attempt = 0;
+        const isEndTool = this.servoIdNumber === END_TOOL_ID;
+        const maxAttempts = isEndTool ? BUS_WRITE_MAX_ATTEMPTS_END_TOOL : BUS_WRITE_MAX_ATTEMPTS;
+        const retryDelayMs = isEndTool ? BUS_WRITE_RETRY_DELAY_END_TOOL_MS : BUS_WRITE_RETRY_DELAY_MS;
 
-        while (attempt < BUS_WRITE_MAX_ATTEMPTS) {
+        while (attempt < maxAttempts) {
             attempt = attempt + 1;
             settled = false;
             this.clearPendingBusTransaction();
@@ -791,7 +799,7 @@ class ServoController {
                     }
                 };
 
-                const writeTimeoutMs = this.servoIdNumber === END_TOOL_ID ? 1000 : BUS_WRITE_TIMEOUT_MS;
+                const writeTimeoutMs = isEndTool ? 1000 : BUS_WRITE_TIMEOUT_MS;
                 this.responseTimeout = setTimeout(() => {
                     this.rxDrainUntilMs = Date.now() + 10;
                     if (DEBUG) {
@@ -804,7 +812,7 @@ class ServoController {
             try {
                 await this.sendPacket(INST_WRITE, parameters);
 
-                if (this.servoIdNumber === END_TOOL_ID) {
+                if (isEndTool) {
                     await new Promise(resolve => setTimeout(resolve, 20));
                 }
 
@@ -814,14 +822,14 @@ class ServoController {
                 this.clearPendingBusTransaction();
 
                 const canRetry = allowRetry
-                    && attempt < BUS_WRITE_MAX_ATTEMPTS
+                    && attempt < maxAttempts
                     && isRetryableBusError(writeError);
 
                 if (canRetry) {
                     console.warn(
-                        `Servo ${this.servoId}: Bus write failed (${writeError.message}), retrying...`
+                        `Servo ${this.servoId}: Bus write failed (${writeError.message}), retrying (${attempt}/${maxAttempts})...`
                     );
-                    await new Promise(resolve => setTimeout(resolve, BUS_WRITE_RETRY_DELAY_MS));
+                    await new Promise(resolve => setTimeout(resolve, retryDelayMs));
                     continue;
                 }
 
@@ -1504,6 +1512,24 @@ class EndToolController extends ServoController {
      */
     async setHobbyServoEnabled(enabled) {
         await this.writeData(SERVO_ENABLE, [enabled ? 1 : 0]);
+    }
+
+    /**
+     * Enable the hobby servo and move to angle in a single bus write.
+     * Writes SERVO_ENABLE=1, SERVO_POSITION_8BIT=0, SERVO_ANGLE_DEG=angle to
+     * registers 0x30–0x32 in one packet, halving bus traffic compared to two
+     * separate writes. The firmware applies the angle from register 0x32 because
+     * the last write address is 0x30 (the "enable" branch maps stored angle).
+     * @param {number} angle - Angle 0–180 degrees
+     */
+    async setHobbyServoEnabledAndAngle(angle) {
+        let degrees = angle;
+        if (degrees < 0) degrees = 0;
+        if (degrees > 180) degrees = 180;
+        // Write [enable=1, position=0, angle] starting at SERVO_ENABLE (0x30).
+        // FCV_LASTADDRESS=0x30 triggers the "else" path in FCM_ApplyPendingHobbyServo
+        // which reads FCV_REGSERVOANGLEDEG (register 0x32 = degrees we just wrote).
+        await this.writeData(SERVO_ENABLE, [1, 0, degrees & 0xFF]);
     }
 
     /**

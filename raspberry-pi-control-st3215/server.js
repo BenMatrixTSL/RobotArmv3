@@ -52,6 +52,7 @@ const BUS_WRITE_COMMANDS = {
     setTorqueAll: true, setAcceleration: true, rescanServos: true,
     toolPing: true, toolSetPwm: true, toolSetServoEnabled: true,
     toolSetServoPosition: true, toolSetServoAngle: true,
+    toolSetServoEnabledAndAngle: true,
     toolSetWatchdog: true, toolClearFaults: true, toolReset: true
 };
 

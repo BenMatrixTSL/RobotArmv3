@@ -968,6 +968,14 @@ async function handleBusCommand(clientId, data) {
             } catch (e) { reply({ type: 'error', message: 'Failed to set tool servo angle: ' + e.message }); }
             break;
         }
+        case 'toolSetServoEnabledAndAngle': {
+            try {
+                const angle = Number.isFinite(data.angle) ? data.angle : 0;
+                await requireEndTool().setHobbyServoEnabledAndAngle(angle);
+                reply({ type: 'success', message: `Tool hobby servo enabled and set to ${angle}°` });
+            } catch (e) { reply({ type: 'error', message: 'Failed to set tool servo enabled+angle: ' + e.message }); }
+            break;
+        }
         case 'toolGetServoState': {
             try { reply({ type: 'toolServoState', ...await requireEndTool().getHobbyServoState() }); }
             catch (e) { reply({ type: 'error', message: 'Failed to read tool servo state: ' + e.message }); }

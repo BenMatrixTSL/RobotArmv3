@@ -317,6 +317,34 @@
                     </div>
                 </div>
             </div>
+
+            <!-- End Tool Hobby Servo -->
+            <div class="control-panel" id="endToolServoPanel">
+                <h3>End Tool Servo</h3>
+                <div class="end-tool-servo-controls">
+                    <div class="servo-enable-row">
+                        <label class="servo-enable-label">Servo Enabled:</label>
+                        <button class="btn btn-secondary" id="endToolServoEnableBtn" onclick="setEndToolServoEnabled(true)">Enable</button>
+                        <button class="btn btn-secondary" id="endToolServoDisableBtn" onclick="setEndToolServoEnabled(false)">Disable</button>
+                        <span class="servo-state-text" id="endToolServoStateText">--</span>
+                    </div>
+                    <div class="servo-angle-row">
+                        <label>Angle (0–180°):</label>
+                        <input type="range" id="endToolServoSlider" min="0" max="180" value="90" oninput="updateEndToolServoLabel(this.value)" onchange="moveEndToolServo(this.value)">
+                        <span id="endToolServoAngleLabel">90°</span>
+                    </div>
+                    <div class="servo-angle-row">
+                        <button class="btn btn-small" onclick="moveEndToolServoTo(0)">0°</button>
+                        <button class="btn btn-small" onclick="moveEndToolServoTo(45)">45°</button>
+                        <button class="btn btn-small" onclick="moveEndToolServoTo(90)">90°</button>
+                        <button class="btn btn-small" onclick="moveEndToolServoTo(135)">135°</button>
+                        <button class="btn btn-small" onclick="moveEndToolServoTo(180)">180°</button>
+                    </div>
+                    <div class="servo-angle-row">
+                        <button class="btn btn-secondary" onclick="readEndToolServoState()">Read State</button>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Touchscreen Pendant Tab -->
