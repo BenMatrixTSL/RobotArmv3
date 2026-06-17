@@ -603,7 +603,12 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeConnection();
     initializeFileInput();
     initializeStatusUpdates();
-    initialize3DVisualization();
+    // Skip eager 3D init in kiosk mode — the tab click handler initialises it
+    // lazily when the user first opens the visualization tab, by which point
+    // the container has real dimensions and the retry loop doesn't spin.
+    if (window.location.search.indexOf('kiosk=1') < 0) {
+        initialize3DVisualization();
+    }
     initializePositions();
     initializeGCodeEditor();
     initializeDeadZones();
@@ -643,7 +648,8 @@ document.addEventListener('DOMContentLoaded', function() {
             'pendant': 'Joints',
             'pendant-ui': 'Pendant',
             'positions': 'Positions',
-            'camera': 'Camera'
+            'camera': 'Camera',
+            'visualization': '3D View'
         };
         document.querySelectorAll('.tab-button[data-tab]').forEach(function (btn) {
             const label = kioskLabels[btn.getAttribute('data-tab')];
@@ -661,6 +667,25 @@ document.addEventListener('DOMContentLoaded', function() {
                 useLocalPiConnectionSettings();
             }
         }, 1500);
+
+        // Touch scrolling: add .touch-scrolling while finger is on screen so
+        // dragging scrolls rather than selects text. Mouse events leave
+        // pointerType === 'mouse' so they never trigger this.
+        document.addEventListener('pointerdown', function(e) {
+            if (e.pointerType === 'touch') {
+                document.body.classList.add('touch-scrolling');
+            }
+        });
+        document.addEventListener('pointerup', function(e) {
+            if (e.pointerType === 'touch') {
+                document.body.classList.remove('touch-scrolling');
+            }
+        });
+        document.addEventListener('pointercancel', function(e) {
+            if (e.pointerType === 'touch') {
+                document.body.classList.remove('touch-scrolling');
+            }
+        });
     }
 
     // Local Raspberry Pi panel (only shown on the Pi)

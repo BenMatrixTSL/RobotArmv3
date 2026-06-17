@@ -41,6 +41,8 @@ class RobotArm3D {
         this.movementTraceEndEffectorGroup = null; // Group for end effector movement trace
         this.movementTraceJointsGroup = null;      // Group for joint movement traces
         
+        this._initRetries = 0; // Retry counter for init()
+
         // Initialize Three.js
         this.init();
     }
@@ -57,17 +59,18 @@ class RobotArm3D {
         // Check container size
         const width = this.container.clientWidth;
         const height = this.container.clientHeight;
-        
+
         if (width === 0 || height === 0) {
-            // Only log warning once to avoid console spam
-            if (!this.hasLoggedSizeWarning) {
-                this.hasLoggedSizeWarning = true;
-                // Don't log - this is expected when tab is not visible
+            this._initRetries = (this._initRetries || 0) + 1;
+            if (this._initRetries > 60) {
+                // Give up after ~6 s — container never became visible
+                console.warn('3D visualization: container never became visible, giving up');
+                return;
             }
-            // Retry after a short delay
             setTimeout(() => this.init(), 100);
             return;
         }
+        this._initRetries = 0;
         
         // Reset warning flag once container is visible
         this.hasLoggedSizeWarning = false;

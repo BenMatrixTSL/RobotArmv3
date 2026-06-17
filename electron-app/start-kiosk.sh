@@ -108,9 +108,12 @@ build_chromium_flags() {
         --disable-features=TranslateUI,PasswordCheck,AutofillServerCommunication,MediaRouter,OptimizationHints
     )
     if [ "$CHROMIUM_USE_WAYLAND" = "1" ]; then
-        CHROMIUM_FLAGS+=(--ozone-platform=wayland --enable-features=UseOzonePlatform --disable-gpu)
+        CHROMIUM_FLAGS+=(--ozone-platform=wayland --enable-features=UseOzonePlatform --disable-gpu --enable-unsafe-swiftshader)
     else
-        CHROMIUM_FLAGS+=(--disable-gpu)
+        # --disable-gpu disables hardware rasterisation but we still want WebGL
+        # (Three.js 3D view). --enable-unsafe-swiftshader provides CPU-based
+        # WebGL via SwiftShader so the visualization tab works without a GPU driver.
+        CHROMIUM_FLAGS+=(--disable-gpu --enable-unsafe-swiftshader)
     fi
 }
 

@@ -2401,15 +2401,39 @@ body.kiosk-mode .tabs {
     overflow-y: auto;
 }
 
-/* Show only 5 useful tabs on the Pi screen */
+/* Show only 6 useful tabs on the Pi screen */
 body.kiosk-mode .tab-button[data-tab="gcode"],
 body.kiosk-mode .tab-button[data-tab="rapid"],
 body.kiosk-mode .tab-button[data-tab="blockly"],
-body.kiosk-mode .tab-button[data-tab="visualization"],
 body.kiosk-mode .tab-button[data-tab="kinematics"],
 body.kiosk-mode .tab-button[data-tab="deadzones"],
 body.kiosk-mode .tab-button[data-tab="settings"] {
     display: none;
+}
+
+/* Touch scrolling: disable text selection while the finger is moving so
+   dragging scrolls the page instead of highlighting text.
+   The .touch-scrolling class is added/removed by JS pointer events so a
+   plugged-in mouse still gets normal selection behaviour. */
+body.kiosk-mode.touch-scrolling,
+body.kiosk-mode.touch-scrolling * {
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+/* Allow text entry inside inputs/textareas even during touch */
+body.kiosk-mode.touch-scrolling input,
+body.kiosk-mode.touch-scrolling textarea,
+body.kiosk-mode.touch-scrolling [contenteditable] {
+    user-select: text;
+    -webkit-user-select: text;
+}
+
+/* Hint to the browser that vertical panning is the primary touch gesture
+   on the main scrollable areas, preventing the 300 ms selection delay */
+body.kiosk-mode .tab-content-container,
+body.kiosk-mode .tab-content {
+    touch-action: pan-y;
 }
 
 body.kiosk-mode .tab-button {
