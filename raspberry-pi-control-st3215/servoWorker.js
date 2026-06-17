@@ -535,6 +535,17 @@ async function runImmediateCommand(msg, moreMovesQueued) {
 
     if (busTickTimer) { clearTimeout(busTickTimer); busTickTimer = null; }
 
+    // Send a heartbeat broadcast NOW, before pausing the bus tick loop.
+    // The ST3215 watchdog self-disables all torques ~1 s after the last write.
+    // The bus tick (which normally fires the heartbeat every 700 ms) is stopped
+    // for the duration of this command; if the heartbeat was already overdue when
+    // the command arrived (e.g. a slow failing joint held up the tick), the
+    // watchdog could fire during the command and disable all servo torques.
+    // Resetting it here gives a full fresh 1-second window.
+    if (servoTorqueEnabled.some(Boolean)) {
+        try { await sendHeartbeatBroadcast(); lastTorqueHeartbeatAt = Date.now(); } catch (_) {}
+    }
+
     const isRapidJog = moreMovesQueued === true;
     const quietBefore = isRapidJog ? BUS_QUIET_JOG_MS : BUS_QUIET_BEFORE_MOVE_MS;
     const quietAfter  = isRapidJog ? BUS_QUIET_JOG_MS : BUS_QUIET_AFTER_MOVE_MS;
