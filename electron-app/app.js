@@ -6560,6 +6560,7 @@ function moveEndToolServoTo(angle) {
 
 function moveEndToolServo(angle) {
     if (!robotArmClient.isConnected) { showAppMessage('Not connected'); return; }
+    if (!robotArmClient.hasArmControl) { showAppMessage('Read-only — use Take control on the Connection tab first'); return; }
     const a = Math.round(Number(angle));
     robotArmClient.sendCommand('toolSetServoEnabledAndAngle', { angle: a })
         .then(() => {
@@ -6571,6 +6572,7 @@ function moveEndToolServo(angle) {
 
 function setEndToolServoEnabled(enabled) {
     if (!robotArmClient.isConnected) { showAppMessage('Not connected'); return; }
+    if (!robotArmClient.hasArmControl) { showAppMessage('Read-only — use Take control on the Connection tab first'); return; }
     robotArmClient.sendCommand('toolSetServoEnabled', { enabled })
         .then(() => {
             const stateEl = document.getElementById('endToolServoStateText');
