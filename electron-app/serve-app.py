@@ -72,6 +72,13 @@ class AppHandler(SimpleHTTPRequestHandler):
             print(f"Camera proxy error: {exc}", file=sys.stderr)
             self.send_error(502, f"Camera service not available ({exc})")
 
+    def end_headers(self):
+        path = self._camera_path() if hasattr(self, '_camera_path') else self.path.split('?', 1)[0]
+        if not self._is_camera_path():
+            self.send_header('Cache-Control', 'no-cache, no-store, must-revalidate')
+            self.send_header('Pragma', 'no-cache')
+        super().end_headers()
+
     def do_HEAD(self):
         if self._is_camera_path():
             self._proxy_camera("HEAD")

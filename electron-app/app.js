@@ -1690,6 +1690,7 @@ function updateArmControlDisplay(controlInfo) {
             releaseButton.style.display = 'inline-block';
         }
         updateTakeControlButtonState();
+        updateEndToolServoButtonsState();
         return;
     }
 
@@ -1700,6 +1701,7 @@ function updateArmControlDisplay(controlInfo) {
             releaseButton.style.display = 'none';
         }
         updateTakeControlButtonState();
+        updateEndToolServoButtonsState();
         return;
     }
 
@@ -1715,6 +1717,7 @@ function updateArmControlDisplay(controlInfo) {
     }
 
     updateTakeControlButtonState();
+    updateEndToolServoButtonsState();
 }
 
 /**
@@ -6546,6 +6549,21 @@ async function autoDetectRaspberryPi() {
  * @returns {Promise<boolean>} True if connection successful
  */
 // ===== End Tool Servo Controls =====
+
+function updateEndToolServoButtonsState() {
+    const canControl = robotArmClient.isConnected && robotArmClient.hasArmControl;
+    const ids = [
+        'endToolServoEnableBtn', 'endToolServoDisableBtn',
+        'endToolServoSlider'
+    ];
+    ids.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.disabled = !canControl;
+    });
+    document.querySelectorAll('#endToolServoPanel .btn-small').forEach(btn => {
+        btn.disabled = !canControl;
+    });
+}
 
 function updateEndToolServoLabel(value) {
     const label = document.getElementById('endToolServoAngleLabel');
