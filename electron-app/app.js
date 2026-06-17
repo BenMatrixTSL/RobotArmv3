@@ -2481,6 +2481,14 @@ async function moveToStoredPositionFromPendant() {
  * @param {number} jointNumber - Joint number
  * @param {number} direction - 1 for positive, -1 for negative
  */
+function setStepSize(degrees) {
+    const input = document.getElementById('stepSize');
+    if (input) input.value = degrees;
+    document.querySelectorAll('.step-preset-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.textContent === degrees + '°');
+    });
+}
+
 function quickMove(jointNumber, direction) {
     if (!robotArmClient.isConnected) {
         showAppMessage('Not connected to Raspberry Pi');

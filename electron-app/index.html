@@ -247,73 +247,22 @@
                 </div>
             </div>
 
-            <!-- XYZ Position Control (hidden in kiosk — use Pendant Control tab instead) -->
-            <div class="control-panel" id="jointControlXyzPanel">
-                <h3>XYZ Position Control</h3>
-                <div class="xyz-status">
-                    <div class="xyz-status-display">
-                        <h4>Current End Effector Position</h4>
-                        <div class="xyz-values">
-                            <div class="xyz-value">
-                                <label>X:</label>
-                                <span id="currentX">-</span> mm
-                            </div>
-                            <div class="xyz-value">
-                                <label>Y:</label>
-                                <span id="currentY">-</span> mm
-                            </div>
-                            <div class="xyz-value">
-                                <label>Z:</label>
-                                <span id="currentZ">-</span> mm
-                            </div>
-                        </div>
-                        <p class="info-text">Position calculated from current joint angles using forward kinematics.</p>
-                    </div>
-                </div>
-                
-                <div class="xyz-controls">
-                    <h4>Move to XYZ Position</h4>
-                    <div class="xyz-inputs">
-                        <div class="xyz-input-group">
-                            <label>X (mm):</label>
-                            <input type="text" id="targetX" value="0">
-                            <button class="btn btn-small" onclick="quickMoveXYZ('X', -1)">-</button>
-                            <button class="btn btn-small" onclick="quickMoveXYZ('X', 1)">+</button>
-                        </div>
-                        <div class="xyz-input-group">
-                            <label>Y (mm):</label>
-                            <input type="text" id="targetY" value="0">
-                            <button class="btn btn-small" onclick="quickMoveXYZ('Y', -1)">-</button>
-                            <button class="btn btn-small" onclick="quickMoveXYZ('Y', 1)">+</button>
-                        </div>
-                        <div class="xyz-input-group">
-                            <label>Z (mm):</label>
-                            <input type="text" id="targetZ" value="0">
-                            <button class="btn btn-small" onclick="quickMoveXYZ('Z', -1)">-</button>
-                            <button class="btn btn-small" onclick="quickMoveXYZ('Z', 1)">+</button>
-                        </div>
-                    </div>
-                    <div class="xyz-buttons">
-                        <button class="btn btn-primary" onclick="moveToXYZ()">Move to Position</button>
-                        <button class="btn btn-secondary" onclick="copyCurrentXYZ()">Copy Current Position</button>
-                        <div class="xyz-step-size">
-                            <label>Step Size (mm):</label>
-                            <input type="text" id="xyzStepSize" value="5">
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Joystick Controls (Optional - can be added later) -->
+            <!-- Quick Joint Movement Controls -->
             <div class="joystick-area">
-                <h3>Quick Joint Movement Controls</h3>
+                <h3>Quick Joint Movement</h3>
                 <div class="joystick-controls">
                     <div class="direction-grid" id="quickMovementButtons">
                         <!-- Quick movement buttons will be generated dynamically -->
                     </div>
                     <div class="step-size">
-                        <label>Step Size (degrees):</label>
-                        <input type="text" id="stepSize" value="1">
+                        <label>Step Size:</label>
+                        <div class="step-size-presets">
+                            <button class="step-preset-btn active" onclick="setStepSize(1)">1°</button>
+                            <button class="step-preset-btn" onclick="setStepSize(5)">5°</button>
+                            <button class="step-preset-btn" onclick="setStepSize(10)">10°</button>
+                            <button class="step-preset-btn" onclick="setStepSize(45)">45°</button>
+                        </div>
+                        <input type="hidden" id="stepSize" value="1">
                     </div>
                 </div>
             </div>

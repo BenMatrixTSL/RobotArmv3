@@ -886,13 +886,36 @@ header h1 {
     display: flex;
     align-items: center;
     gap: 10px;
+    flex-wrap: wrap;
 }
 
-.step-size input {
-    padding: 6px;
-    border: 1px solid #ddd;
+.step-size-presets {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.step-preset-btn {
+    padding: 8px 16px;
+    border: 2px solid #bdc3c7;
     border-radius: 4px;
-    width: 100px;
+    background-color: white;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    min-width: 52px;
+}
+
+.step-preset-btn:hover {
+    border-color: #3498db;
+    color: #3498db;
+}
+
+.step-preset-btn.active {
+    background-color: #3498db;
+    border-color: #3498db;
+    color: white;
 }
 
 /* File Panel */
@@ -2447,10 +2470,18 @@ body.kiosk-mode .control-buttons .btn {
     font-size: 12px;
 }
 
-/* XYZ + quick jog duplicate Pendant Control — hide on kiosk */
-body.kiosk-mode #jointControlXyzPanel,
-body.kiosk-mode #pendant-tab .joystick-area {
-    display: none;
+/* Kiosk: touch-friendly quick joint movement */
+body.kiosk-mode #pendant-tab .direction-btn {
+    padding: 18px 10px;
+    font-size: 15px;
+    min-height: 56px;
+}
+
+body.kiosk-mode #pendant-tab .step-preset-btn {
+    padding: 14px 20px;
+    font-size: 16px;
+    min-width: 64px;
+    min-height: 52px;
 }
 
 /* Pendant Control — tighter touchscreen layout */
