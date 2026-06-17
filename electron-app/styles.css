@@ -2345,60 +2345,82 @@ body.kiosk-mode .camera-toolbar .btn {
     cursor: not-allowed;
 }
 
-/* Chromium kiosk mode on the Pi (?kiosk=1 in the URL) */
+/* ================================================================
+   Chromium kiosk mode on the Pi (?kiosk=1 in the URL)
+   Target screen: 800×480 touchscreen
+   ================================================================ */
+
+/* Base font override — undo small-display 12px, use readable 14px */
+body.kiosk-mode {
+    font-size: 14px;
+}
+
 body.kiosk-mode .app-footer {
     display: none;
 }
 
 body.kiosk-mode .container {
     max-width: none;
-    padding: 6px;
+    padding: 4px 6px;
 }
 
 body.kiosk-mode header {
-    padding: 6px 10px;
-    margin-bottom: 6px;
+    padding: 5px 10px;
+    margin-bottom: 4px;
 }
 
 body.kiosk-mode .header-logo {
-    height: 40px;
-    max-width: 140px;
+    height: 36px;
+    max-width: 130px;
 }
 
 body.kiosk-mode header h1 {
-    font-size: 1rem;
+    font-size: 0.95rem;
 }
 
-/* Sidebar tabs (left) — compact for small Pi touchscreen */
+/* ---- Sidebar tabs ---- */
 body.kiosk-mode .main-layout {
     flex-direction: row;
     align-items: flex-start;
-    gap: 8px;
-    margin-top: 6px;
+    gap: 6px;
+    margin-top: 4px;
 }
 
 body.kiosk-mode .tabs {
     flex-direction: column;
     flex-wrap: nowrap;
-    min-width: 120px;
-    max-width: 140px;
+    min-width: 100px;
+    max-width: 110px;
     width: auto;
     border-right: 2px solid #ddd;
     border-bottom: none;
-    padding-right: 6px;
+    padding-right: 5px;
     padding-bottom: 0;
-    gap: 4px;
-    max-height: calc(100vh - 80px);
+    gap: 3px;
+    max-height: calc(100vh - 70px);
     overflow-y: auto;
 }
 
+/* Show only 5 useful tabs on the Pi screen */
+body.kiosk-mode .tab-button[data-tab="gcode"],
+body.kiosk-mode .tab-button[data-tab="rapid"],
+body.kiosk-mode .tab-button[data-tab="blockly"],
+body.kiosk-mode .tab-button[data-tab="visualization"],
+body.kiosk-mode .tab-button[data-tab="kinematics"],
+body.kiosk-mode .tab-button[data-tab="deadzones"],
+body.kiosk-mode .tab-button[data-tab="settings"] {
+    display: none;
+}
+
 body.kiosk-mode .tab-button {
-    padding: 8px 10px;
-    font-size: 11px;
+    padding: 11px 8px;
+    font-size: 13px;
+    font-weight: 500;
     border-right: 3px solid transparent;
     border-bottom: none;
     white-space: normal;
     line-height: 1.2;
+    min-height: 44px;
 }
 
 body.kiosk-mode .tab-button.active {
@@ -2409,22 +2431,30 @@ body.kiosk-mode .tab-button.active {
 body.kiosk-mode .tab-content-container {
     flex: 1;
     min-width: 0;
+    overflow-y: auto;
+    max-height: calc(100vh - 70px);
 }
 
 body.kiosk-mode .tab-content {
-    padding: 8px;
+    padding: 6px 8px;
 }
 
 body.kiosk-mode .tab-content > h2 {
-    font-size: 14px;
+    font-size: 16px;
     margin-bottom: 6px;
 }
 
-/* Joint Control — compact 3×2 grid for six joints */
+body.kiosk-mode .tab-content > h2 ~ p.info-text {
+    display: none;
+}
+
+/* ---- Joint Control tab ---- */
+
+/* Status grid: 3×2, bigger values */
 body.kiosk-mode .joint-status-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 6px;
-    margin-bottom: 8px;
+    gap: 5px;
+    margin-bottom: 6px;
 }
 
 body.kiosk-mode .joint-status-card {
@@ -2432,31 +2462,29 @@ body.kiosk-mode .joint-status-card {
 }
 
 body.kiosk-mode .joint-card-title {
-    font-size: 12px;
+    font-size: 13px;
 }
 
 body.kiosk-mode .joint-angle-value {
-    font-size: 15px;
+    font-size: 18px;
+    font-weight: 600;
 }
 
 body.kiosk-mode .status-value.compact {
-    font-size: 10px;
-}
-
-body.kiosk-mode .joint-control-compact input {
-    padding: 3px 5px;
     font-size: 11px;
 }
 
-body.kiosk-mode .joint-control-compact .joint-field-group.compact label {
-    font-size: 9px;
+/* Hide per-joint angle/speed/Go controls — Quick Movement replaces them */
+body.kiosk-mode #jointControlsContainer {
+    display: none;
 }
 
 body.kiosk-mode .control-panel {
     padding: 8px;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
 }
 
+/* E-Stop / Home / Torque row */
 body.kiosk-mode .control-buttons {
     display: flex;
     flex-wrap: wrap;
@@ -2465,29 +2493,49 @@ body.kiosk-mode .control-buttons {
 
 body.kiosk-mode .control-buttons .btn {
     flex: 1 1 auto;
-    min-width: 120px;
-    padding: 8px 10px;
-    font-size: 12px;
+    min-width: 110px;
+    padding: 12px 10px;
+    font-size: 13px;
 }
 
-/* Kiosk: touch-friendly quick joint movement */
+/* Quick Joint Movement */
+body.kiosk-mode .joystick-area {
+    padding: 10px;
+}
+
+body.kiosk-mode .joystick-area h3 {
+    font-size: 14px;
+    margin-bottom: 8px;
+}
+
 body.kiosk-mode #pendant-tab .direction-btn {
-    padding: 18px 10px;
-    font-size: 15px;
-    min-height: 56px;
-}
-
-body.kiosk-mode #pendant-tab .step-preset-btn {
-    padding: 14px 20px;
-    font-size: 16px;
-    min-width: 64px;
+    padding: 16px 8px;
+    font-size: 14px;
     min-height: 52px;
 }
 
-/* Pendant Control — tighter touchscreen layout */
+body.kiosk-mode #pendant-tab .step-preset-btn {
+    padding: 12px 18px;
+    font-size: 15px;
+    min-width: 60px;
+    min-height: 48px;
+}
+
+/* End Tool Servo */
+body.kiosk-mode .end-tool-servo-controls {
+    gap: 8px;
+}
+
+body.kiosk-mode .servo-enable-row .btn,
+body.kiosk-mode .servo-angle-row .btn-small {
+    padding: 10px 14px;
+    font-size: 13px;
+}
+
+/* ---- Pendant Control tab ---- */
 body.kiosk-mode .pendant-layout {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
+    gap: 6px;
     margin-top: 0;
 }
 
@@ -2496,13 +2544,13 @@ body.kiosk-mode .pendant-panel {
 }
 
 body.kiosk-mode .pendant-panel h3 {
-    font-size: 12px;
+    font-size: 14px;
     margin-bottom: 6px;
 }
 
 body.kiosk-mode .pendant-position {
     padding: 6px 10px;
-    font-size: 13px;
+    font-size: 14px;
 }
 
 body.kiosk-mode .pendant-xy-wheel {
@@ -2512,17 +2560,45 @@ body.kiosk-mode .pendant-xy-wheel {
 
 body.kiosk-mode .pendant-xy-btn {
     min-width: 48px;
-    padding: 8px 10px;
-    font-size: 13px;
+    padding: 10px;
+    font-size: 14px;
 }
 
 body.kiosk-mode .pendant-btn,
 body.kiosk-mode .pendant-wide-btn {
-    font-size: 13px;
-    padding: 10px 12px;
+    font-size: 14px;
+    padding: 11px 12px;
 }
 
-/* Very narrow Pi displays (e.g. 800×480) */
+/* ---- Camera tab ---- */
+body.kiosk-mode .camera-stream-image {
+    max-height: calc(100vh - 140px);
+}
+
+body.kiosk-mode .camera-toolbar .btn {
+    padding: 10px 14px;
+    font-size: 13px;
+}
+
+/* ---- Stored Positions tab ---- */
+body.kiosk-mode #positions-tab .btn {
+    padding: 11px 14px;
+    font-size: 13px;
+}
+
+body.kiosk-mode #positions-tab input[type="text"],
+body.kiosk-mode #positions-tab input[type="number"] {
+    font-size: 14px;
+    padding: 8px;
+}
+
+/* ---- Connection tab ---- */
+body.kiosk-mode #connection-tab .btn {
+    padding: 11px 14px;
+    font-size: 13px;
+}
+
+/* Very narrow Pi displays — 2-col joint grid, single-col pendant */
 @media (max-width: 900px) {
     body.kiosk-mode .joint-status-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));

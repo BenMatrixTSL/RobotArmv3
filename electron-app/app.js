@@ -637,12 +637,23 @@ document.addEventListener('DOMContentLoaded', function() {
             addrInput.value = '127.0.0.1';
         }
 
-        // Open the pendant screen automatically in kiosk mode
+        // Shorten tab labels to fit the narrower kiosk sidebar
+        const kioskLabels = {
+            'connection': 'Connect',
+            'pendant': 'Joints',
+            'pendant-ui': 'Pendant',
+            'positions': 'Positions',
+            'camera': 'Camera'
+        };
+        document.querySelectorAll('.tab-button[data-tab]').forEach(function (btn) {
+            const label = kioskLabels[btn.getAttribute('data-tab')];
+            if (label) btn.textContent = label;
+        });
+
+        // Open Joint Control automatically in kiosk mode
         setTimeout(function () {
-            const pendantTabButton = document.querySelector('.tab-button[data-tab="pendant-ui"]');
-            if (pendantTabButton) {
-                pendantTabButton.click();
-            }
+            const btn = document.querySelector('.tab-button[data-tab="pendant"]');
+            if (btn) btn.click();
         }, 300);
 
         setTimeout(function () {
