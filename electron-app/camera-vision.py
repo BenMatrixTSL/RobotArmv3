@@ -325,19 +325,22 @@ def marker_centers(corners, ids, frame_width, frame_height):
 
 def get_homography_from_markers(markers):
     """
-    Compute a perspective transform (3×3 H matrix) from normalised image
-    coordinates (0–1) to world coordinates (mm) using 4 ArUco corner markers.
+    Compute a transform matrix from normalised image coordinates (0–1) to
+    world coordinates (mm) using 3 or 4 ArUco corner markers.
 
-    The 4 markers are classified as TL/TR/BL/BR by their position relative
-    to their centroid, then mapped to the corners of a MARKER_SQUARE_SIZE_MM
-    square with the origin at the top-left marker:
+    With 4 markers: full perspective transform (cv2.getPerspectiveTransform).
+    With 3 markers: affine transform (cv2.getAffineTransform) promoted to 3×3
+      so transform_to_world works unchanged via cv2.perspectiveTransform.
 
-        TL → (0, 0)          TR → (size, 0)
-        BL → (0, size)       BR → (size, size)
+    Markers are classified as TL/TR/BL/BR relative to their centroid, then
+    mapped to the corners of a MARKER_SQUARE_SIZE_MM square:
+        TL → (0, 0)   TR → (size, 0)
+        BL → (0, size) BR → (size, size)
 
-    Returns the 3×3 H matrix, or None if the markers are degenerate.
+    Returns a 3×3 float32 matrix, or None if markers are insufficient/degenerate.
     """
-    if len(markers) != 4:
+    n = len(markers)
+    if n < 3:
         return None
 
     pts = np.array([[m["center_x"], m["center_y"]] for m in markers], dtype=np.float32)
@@ -350,28 +353,40 @@ def get_homography_from_markers(markers):
             "left" if pt[0] < centroid[0] else "right",
         )
         if key in corner_map:
-            return None  # two markers in the same quadrant — can't form a square
+            return None  # two markers in the same quadrant — degenerate
         corner_map[key] = pt
 
-    if len(corner_map) != 4:
-        return None
-
     s = MARKER_SQUARE_SIZE_MM
-    src = np.array(
-        [
-            corner_map[("top", "left")],
-            corner_map[("top", "right")],
-            corner_map[("bottom", "right")],
-            corner_map[("bottom", "left")],
-        ],
-        dtype=np.float32,
-    )
-    dst = np.array([[0, 0], [s, 0], [s, s], [0, s]], dtype=np.float32)
+    world_pos = {
+        ("top", "left"):     [0, 0],
+        ("top", "right"):    [s, 0],
+        ("bottom", "right"): [s, s],
+        ("bottom", "left"):  [0, s],
+    }
 
-    try:
-        return cv2.getPerspectiveTransform(src, dst)
-    except cv2.error:
-        return None
+    if n == 4:
+        if len(corner_map) != 4:
+            return None
+        order = [("top", "left"), ("top", "right"), ("bottom", "right"), ("bottom", "left")]
+        src = np.array([corner_map[k] for k in order], dtype=np.float32)
+        dst = np.array([world_pos[k] for k in order], dtype=np.float32)
+        try:
+            return cv2.getPerspectiveTransform(src, dst)
+        except cv2.error:
+            return None
+
+    else:  # n == 3
+        if len(corner_map) != 3:
+            return None
+        keys = list(corner_map.keys())
+        src = np.array([corner_map[k] for k in keys], dtype=np.float32)
+        dst = np.array([world_pos[k] for k in keys], dtype=np.float32)
+        try:
+            M = cv2.getAffineTransform(src, dst)
+            # Promote 2×3 affine to 3×3 so perspectiveTransform works unchanged.
+            return np.vstack([M, [0.0, 0.0, 1.0]]).astype(np.float32)
+        except cv2.error:
+            return None
 
 
 def transform_to_world(H, nx, ny):
@@ -383,7 +398,8 @@ def transform_to_world(H, nx, ny):
 
 def draw_coordinate_frame(frame, markers, frame_width, frame_height):
     """
-    Draw the mapped square boundary and X/Y axes on the high-res annotated frame.
+    Draw the mapped workspace boundary and X/Y axes on the high-res annotated frame.
+    Works with 3 or 4 visible markers; draws an open polyline when one is missing.
     The origin (0,0) is at the top-left marker; X points right, Y points down.
     """
     pts_norm = np.array(
@@ -399,32 +415,42 @@ def draw_coordinate_frame(frame, markers, frame_width, frame_height):
         )
         corner_map[key] = pt
 
-    if len(corner_map) != 4:
+    n_found = len(corner_map)
+    if n_found < 3:
         return
 
-    order = [("top", "left"), ("top", "right"), ("bottom", "right"), ("bottom", "left")]
-    pixel_corners = np.array(
-        [[int(corner_map[k][0] * frame_width), int(corner_map[k][1] * frame_height)]
-         for k in order],
-        dtype=np.int32,
-    )
-
-    # Cyan boundary polygon
-    cv2.polylines(frame, [pixel_corners], True, (255, 255, 0), 2)
-
-    # X axis (red) and Y axis (green) at the origin (TL corner)
-    origin = pixel_corners[0]
-    tr = pixel_corners[1]
-    bl = pixel_corners[3]
+    def to_px(pt):
+        return (int(pt[0] * frame_width), int(pt[1] * frame_height))
 
     def lerp_pt(a, b, t):
         return (int(a[0] + (b[0] - a[0]) * t), int(a[1] + (b[1] - a[1]) * t))
 
-    cv2.arrowedLine(frame, tuple(origin), lerp_pt(origin, tr, 0.25), (0, 0, 255), 3, tipLength=0.3)
-    cv2.arrowedLine(frame, tuple(origin), lerp_pt(origin, bl, 0.25), (0, 200, 0), 3, tipLength=0.3)
-    cv2.putText(frame, "X", lerp_pt(origin, tr, 0.28), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
-    cv2.putText(frame, "Y", lerp_pt(origin, bl, 0.28), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 200, 0), 2)
-    cv2.putText(frame, "0,0", (origin[0] + 8, origin[1] - 8), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 0), 2)
+    order = [("top", "left"), ("top", "right"), ("bottom", "right"), ("bottom", "left")]
+    visible_px = [to_px(corner_map[k]) for k in order if k in corner_map]
+    pixel_corners = np.array(visible_px, dtype=np.int32)
+
+    # Closed polygon if all 4 present, open polyline if only 3
+    cv2.polylines(frame, [pixel_corners], n_found == 4, (255, 255, 0), 2)
+
+    # X axis (red) from TL→TR, Y axis (green) from TL→BL — only when TL is visible
+    tl = corner_map.get(("top", "left"))
+    tr = corner_map.get(("top", "right"))
+    bl = corner_map.get(("bottom", "left"))
+    if tl is not None:
+        origin_px = to_px(tl)
+        if tr is not None:
+            tr_px = to_px(tr)
+            cv2.arrowedLine(frame, origin_px, lerp_pt(origin_px, tr_px, 0.25), (0, 0, 255), 3, tipLength=0.3)
+            cv2.putText(frame, "X", lerp_pt(origin_px, tr_px, 0.28), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+        if bl is not None:
+            bl_px = to_px(bl)
+            cv2.arrowedLine(frame, origin_px, lerp_pt(origin_px, bl_px, 0.25), (0, 200, 0), 3, tipLength=0.3)
+            cv2.putText(frame, "Y", lerp_pt(origin_px, bl_px, 0.28), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 200, 0), 2)
+        cv2.putText(frame, "0,0", (origin_px[0] + 8, origin_px[1] - 8), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 0), 2)
+
+    if n_found == 3:
+        cv2.putText(frame, "3/4 markers (affine)", (10, frame_height - 10),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.55, (0, 200, 255), 2)
 
 
 def detect_color_blocks(frame):
@@ -581,9 +607,9 @@ def process_frame(frame, detectors):
         print(f"ArUco processing error: {exc}", file=sys.stderr)
         annotated = frame.copy()
 
-    # If we have exactly 4 markers, compute homography image→world (mm) and
-    # draw the coordinate frame (boundary square + X/Y axes) on the high-res frame.
-    if len(markers) == 4:
+    # With 3 or 4 markers, compute image→world transform and draw the coordinate
+    # frame. 4 markers = full perspective; 3 markers = affine fallback.
+    if len(markers) >= 3:
         homography = get_homography_from_markers(markers)
         if homography is not None:
             draw_coordinate_frame(annotated, markers, frame_width, frame_height)
