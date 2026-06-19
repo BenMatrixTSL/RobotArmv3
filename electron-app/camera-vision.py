@@ -52,6 +52,9 @@ DETECTION_FPS = max(1, int(os.environ.get("ROBOT_ARM_DETECTION_FPS", "5")))
 # keeping CPU manageable regardless of capture resolution.
 # Set ROBOT_ARM_COLOR_DETECTION=0 to disable entirely if not needed.
 COLOR_DETECTION_ENABLED = os.environ.get("ROBOT_ARM_COLOR_DETECTION", "1").strip() not in ("0", "false", "no")
+# Side length of the square formed by the 4 corner ArUco markers, in mm.
+# Used to compute world (mm) positions of detected colour blocks.
+MARKER_SQUARE_SIZE_MM = float(os.environ.get("ROBOT_ARM_MARKER_SQUARE_MM", "80"))
 JPEG_QUALITY = 80
 MIN_BLOCK_AREA = 2500
 BOUNDARY = b"--jpgboundary"
@@ -320,6 +323,110 @@ def marker_centers(corners, ids, frame_width, frame_height):
     return markers
 
 
+def get_homography_from_markers(markers):
+    """
+    Compute a perspective transform (3×3 H matrix) from normalised image
+    coordinates (0–1) to world coordinates (mm) using 4 ArUco corner markers.
+
+    The 4 markers are classified as TL/TR/BL/BR by their position relative
+    to their centroid, then mapped to the corners of a MARKER_SQUARE_SIZE_MM
+    square with the origin at the top-left marker:
+
+        TL → (0, 0)          TR → (size, 0)
+        BL → (0, size)       BR → (size, size)
+
+    Returns the 3×3 H matrix, or None if the markers are degenerate.
+    """
+    if len(markers) != 4:
+        return None
+
+    pts = np.array([[m["center_x"], m["center_y"]] for m in markers], dtype=np.float32)
+    centroid = pts.mean(axis=0)
+
+    corner_map = {}
+    for pt in pts:
+        key = (
+            "top" if pt[1] < centroid[1] else "bottom",
+            "left" if pt[0] < centroid[0] else "right",
+        )
+        if key in corner_map:
+            return None  # two markers in the same quadrant — can't form a square
+        corner_map[key] = pt
+
+    if len(corner_map) != 4:
+        return None
+
+    s = MARKER_SQUARE_SIZE_MM
+    src = np.array(
+        [
+            corner_map[("top", "left")],
+            corner_map[("top", "right")],
+            corner_map[("bottom", "right")],
+            corner_map[("bottom", "left")],
+        ],
+        dtype=np.float32,
+    )
+    dst = np.array([[0, 0], [s, 0], [s, s], [0, s]], dtype=np.float32)
+
+    try:
+        return cv2.getPerspectiveTransform(src, dst)
+    except cv2.error:
+        return None
+
+
+def transform_to_world(H, nx, ny):
+    """Apply homography H to a normalised image point, returning (x_mm, y_mm)."""
+    pt = np.array([[[nx, ny]]], dtype=np.float32)
+    world = cv2.perspectiveTransform(pt, H)
+    return float(world[0][0][0]), float(world[0][0][1])
+
+
+def draw_coordinate_frame(frame, markers, frame_width, frame_height):
+    """
+    Draw the mapped square boundary and X/Y axes on the high-res annotated frame.
+    The origin (0,0) is at the top-left marker; X points right, Y points down.
+    """
+    pts_norm = np.array(
+        [[m["center_x"], m["center_y"]] for m in markers], dtype=np.float32
+    )
+    centroid = pts_norm.mean(axis=0)
+
+    corner_map = {}
+    for pt in pts_norm:
+        key = (
+            "top" if pt[1] < centroid[1] else "bottom",
+            "left" if pt[0] < centroid[0] else "right",
+        )
+        corner_map[key] = pt
+
+    if len(corner_map) != 4:
+        return
+
+    order = [("top", "left"), ("top", "right"), ("bottom", "right"), ("bottom", "left")]
+    pixel_corners = np.array(
+        [[int(corner_map[k][0] * frame_width), int(corner_map[k][1] * frame_height)]
+         for k in order],
+        dtype=np.int32,
+    )
+
+    # Cyan boundary polygon
+    cv2.polylines(frame, [pixel_corners], True, (255, 255, 0), 2)
+
+    # X axis (red) and Y axis (green) at the origin (TL corner)
+    origin = pixel_corners[0]
+    tr = pixel_corners[1]
+    bl = pixel_corners[3]
+
+    def lerp_pt(a, b, t):
+        return (int(a[0] + (b[0] - a[0]) * t), int(a[1] + (b[1] - a[1]) * t))
+
+    cv2.arrowedLine(frame, tuple(origin), lerp_pt(origin, tr, 0.25), (0, 0, 255), 3, tipLength=0.3)
+    cv2.arrowedLine(frame, tuple(origin), lerp_pt(origin, bl, 0.25), (0, 200, 0), 3, tipLength=0.3)
+    cv2.putText(frame, "X", lerp_pt(origin, tr, 0.28), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+    cv2.putText(frame, "Y", lerp_pt(origin, bl, 0.28), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 200, 0), 2)
+    cv2.putText(frame, "0,0", (origin[0] + 8, origin[1] - 8), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 0), 2)
+
+
 def detect_color_blocks(frame):
     """Detect coloured blocks using HSV thresholds. Returns list of block dicts.
     Does NOT draw on the frame — call draw_color_blocks() separately."""
@@ -360,7 +467,7 @@ def detect_color_blocks(frame):
 
 
 def draw_color_blocks(frame, blocks):
-    """Draw bounding boxes onto frame for a list of block dicts."""
+    """Draw bounding boxes and world-position labels onto frame for a list of block dicts."""
     fh, fw = frame.shape[:2]
     for block in blocks:
         x = int((block["center_x"] - block["width"] / 2) * fw)
@@ -377,6 +484,17 @@ def draw_color_blocks(frame, blocks):
             (0, 255, 255),
             2,
         )
+        if "world_x_mm" in block:
+            pos_label = f"X:{block['world_x_mm']:.1f}  Y:{block['world_y_mm']:.1f} mm"
+            cv2.putText(
+                frame,
+                pos_label,
+                (x, min(y + h + 22, fh - 4)),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.6,
+                (255, 220, 0),
+                2,
+            )
 
 
 def open_camera(device_path):
@@ -449,8 +567,9 @@ def process_frame(frame, detectors):
     corners, ids = None, None
     markers = []
     blocks = []
+    homography = None
 
-    # ArUco detection on the full capture resolution for accurate corner positions.
+    # ArUco detection at full capture resolution for accurate corner positions.
     try:
         gray = prepare_gray_for_aruco(annotated)
         if detectors:
@@ -462,19 +581,32 @@ def process_frame(frame, detectors):
         print(f"ArUco processing error: {exc}", file=sys.stderr)
         annotated = frame.copy()
 
-    # Downscale the annotated frame to the stream resolution for output.
+    # If we have exactly 4 markers, compute homography image→world (mm) and
+    # draw the coordinate frame (boundary square + X/Y axes) on the high-res frame.
+    if len(markers) == 4:
+        homography = get_homography_from_markers(markers)
+        if homography is not None:
+            draw_coordinate_frame(annotated, markers, frame_width, frame_height)
+
+    # Downscale annotated frame to stream resolution for output.
     stream_frame = cv2.resize(
         annotated, (STREAM_WIDTH, STREAM_HEIGHT), interpolation=cv2.INTER_AREA
     )
 
-    # Colour detection runs on the ORIGINAL frame downscaled (no ArUco overlays).
-    # This prevents the green ArUco border lines from being detected as green blocks.
+    # Colour detection on a clean downscale of the ORIGINAL frame so ArUco
+    # overlay lines are never visible to the colour detector.
     if COLOR_DETECTION_ENABLED:
         try:
             clean_small = cv2.resize(
                 frame, (STREAM_WIDTH, STREAM_HEIGHT), interpolation=cv2.INTER_AREA
             )
             blocks = detect_color_blocks(clean_small)
+            # Annotate each block with its world position if homography is ready.
+            if homography is not None:
+                for block in blocks:
+                    wx, wy = transform_to_world(homography, block["center_x"], block["center_y"])
+                    block["world_x_mm"] = round(wx, 1)
+                    block["world_y_mm"] = round(wy, 1)
             draw_color_blocks(stream_frame, blocks)
         except Exception as exc:
             print(f"Colour detection error: {exc}", file=sys.stderr)
