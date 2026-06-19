@@ -522,7 +522,7 @@ async function handleCommand(ws, data) {
 
         case 'kinematicsRefineOrientationWithAccuracy': {
             try {
-                sendResponse({ type: 'kinematicsRefineOrientationResult', result: robotKinematics.refineOrientationWithAccuracy(data.targetPose, data.baseAngles, data.desiredOrientation) });
+                sendResponse({ type: 'kinematicsRefineOrientationResult', result: robotKinematics.refineOrientationWithAccuracy(data.targetPose, data.baseAngles, data.desiredOrientation, data.referenceAngles) });
             } catch (error) {
                 sendResponse({ type: 'error', message: `Refine orientation failed: ${error.message}` });
             }

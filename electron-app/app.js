@@ -2769,6 +2769,15 @@ async function moveToXYZ() {
         // Seed IK with previous waypoint angles to keep motion consistent.
         let lastAccuracy = null;
         let previousRefinedAngles = null;
+
+        // Capture current arm angles as reference for joint-travel penalty (avoids flips).
+        let moveToXyzInitialAngles = null;
+        if (Array.isArray(lastGoodJointStatus) && lastGoodJointStatus.length > 0) {
+            moveToXyzInitialAngles = lastGoodJointStatus.map(j =>
+                (j && typeof j.angleDegrees === 'number' && !isNaN(j.angleDegrees)) ? j.angleDegrees : 0
+            );
+        }
+
         for (let w = 0; w < waypoints.length; w++) {
             const wp = waypoints[w];
             let baseAngles = null;
@@ -2787,7 +2796,8 @@ async function moveToXYZ() {
                 refined = await robotArmClient.refineOrientationWithAccuracy(
                     { x: wp.x, y: wp.y, z: wp.z },
                     baseAngles,
-                    currentToolOrientation
+                    currentToolOrientation,
+                    previousRefinedAngles || moveToXyzInitialAngles
                 );
             }
 
@@ -3433,7 +3443,8 @@ async function moveJointsToAnglesWithDeadZones(targetAngles, speedDegreesPerSeco
                 refined = await robotArmClient.refineOrientationWithAccuracy(
                     { x: wp.x, y: wp.y, z: wp.z },
                     baseAngles,
-                    currentToolOrientation
+                    currentToolOrientation,
+                    initialAngles
                 );
             }
 
@@ -3458,7 +3469,8 @@ async function moveJointsToAnglesWithDeadZones(targetAngles, speedDegreesPerSeco
                         finalRefined = await robotArmClient.refineOrientationWithAccuracy(
                             { x: finalWp.x, y: finalWp.y, z: finalWp.z },
                             finalBaseAngles,
-                            currentToolOrientation
+                            currentToolOrientation,
+                            initialAngles
                         );
                     }
 
@@ -3933,7 +3945,8 @@ async function executeGCodeCommand(command) {
                     const refined = await robotArmClient.refineOrientationWithAccuracy(
                         { x: wp.x, y: wp.y, z: wp.z },
                         baseAngles,
-                        currentToolOrientation
+                        currentToolOrientation,
+                        initialAngles
                     );
                     jointAngles = refined && Array.isArray(refined.angles) ? refined.angles : null;
                 }
@@ -4503,7 +4516,8 @@ async function runRapidProgram() {
                     const refined = await robotArmClient.refineOrientationWithAccuracy(
                         { x: wp.x, y: wp.y, z: wp.z },
                         baseAngles,
-                        currentToolOrientation
+                        currentToolOrientation,
+                        initialAngles
                     );
                     jointAngles = refined && Array.isArray(refined.angles) ? refined.angles : null;
                 }
@@ -4598,7 +4612,8 @@ async function runRapidProgram() {
                     const refined2 = await robotArmClient.refineOrientationWithAccuracy(
                         { x: wp.x, y: wp.y, z: wp.z },
                         baseAngles2,
-                        currentToolOrientation
+                        currentToolOrientation,
+                        initialAngles2
                     );
                     jointAngles2 = refined2 && Array.isArray(refined2.angles) ? refined2.angles : null;
                 }
@@ -5756,15 +5771,19 @@ async function testInverseKinematics() {
             return;
         }
 
+        const ikTestInitialAngles = (Array.isArray(lastGoodJointStatus) && lastGoodJointStatus.length > 0)
+            ? lastGoodJointStatus.map(j => (j && typeof j.angleDegrees === 'number' && !isNaN(j.angleDegrees)) ? j.angleDegrees : 0)
+            : null;
+
         const baseAngles = await robotArmClient.inverseKinematics({
             x: x,
             y: y,
             z: z,
             orientation: currentToolOrientation
-        });
+        }, ikTestInitialAngles);
 
         const refined = baseAngles
-            ? await robotArmClient.refineOrientationWithAccuracy({ x: x, y: y, z: z }, baseAngles, currentToolOrientation)
+            ? await robotArmClient.refineOrientationWithAccuracy({ x: x, y: y, z: z }, baseAngles, currentToolOrientation, ikTestInitialAngles)
             : null;
         const angles = refined ? refined.angles : null;
 

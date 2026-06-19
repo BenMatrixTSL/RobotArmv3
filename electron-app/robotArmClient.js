@@ -717,11 +717,12 @@ class RobotArmClient {
      * @param {{ x:number, y:number, z:number }} desiredOrientation
      * @returns {Promise<{angles:Array<number>, positionErrorMm:number, orientationErrorDeg:number, achievedPosition:Object|null}>}
      */
-    async refineOrientationWithAccuracy(targetPose, baseAngles, desiredOrientation) {
+    async refineOrientationWithAccuracy(targetPose, baseAngles, desiredOrientation, referenceAngles) {
         const response = await this.sendRequest('kinematicsRefineOrientationWithAccuracy', {
             targetPose: targetPose,
             baseAngles: baseAngles,
-            desiredOrientation: desiredOrientation
+            desiredOrientation: desiredOrientation,
+            referenceAngles: referenceAngles || null
         }, 20000);
         if (response.type === 'error') {
             throw new Error(response.message || 'Refine orientation failed');

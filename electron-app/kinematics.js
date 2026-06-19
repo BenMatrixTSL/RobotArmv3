@@ -745,7 +745,7 @@ class RobotKinematics {
      * @param {{ x:number, y:number, z:number }} desiredOrientation - desired tool Z-axis direction
      * @returns {{ angles: Array<number>, positionErrorMm: number, orientationErrorDeg: number, achievedPosition: {x,y,z}|null }}
      */
-    refineOrientationWithAccuracy(targetPose, baseAngles, desiredOrientation) {
+    refineOrientationWithAccuracy(targetPose, baseAngles, desiredOrientation, referenceAngles) {
         if (!this.isConfigured() || !baseAngles || !Array.isArray(baseAngles) || !desiredOrientation) {
             return {
                 angles: baseAngles || [],
@@ -759,6 +759,12 @@ class RobotKinematics {
         if (numJoints < 3) {
             return { angles: baseAngles.slice(), positionErrorMm: Infinity, orientationErrorDeg: Infinity, achievedPosition: null };
         }
+
+        // referenceAngles = arm's current position before the move.
+        // Used to penalise large joint travel and avoid unnecessary flips.
+        const refAngles = (Array.isArray(referenceAngles) && referenceAngles.length === numJoints)
+            ? referenceAngles : null;
+        const jointTravelWeight = 0.02;
 
         const desiredZ = normalizeVector(desiredOrientation);
         const clampToLimits = (angleDeg, joint) => {
@@ -786,7 +792,14 @@ class RobotKinematics {
                 const dot = desiredZ.x * toolZ.x + desiredZ.y * toolZ.y + desiredZ.z * toolZ.z;
                 const clampedDot = Math.max(-1, Math.min(1, dot));
                 const orientationErrorDeg = (Math.acos(clampedDot) * 180) / Math.PI;
-                const score = positionErrorMm + orientationWeightForScore * orientationErrorDeg;
+                let travelPenalty = 0;
+                if (refAngles) {
+                    for (let i = 0; i < numJoints; i++) {
+                        travelPenalty += Math.abs(angles[i] - refAngles[i]);
+                    }
+                    travelPenalty *= jointTravelWeight;
+                }
+                const score = positionErrorMm + orientationWeightForScore * orientationErrorDeg + travelPenalty;
                 return {
                     score,
                     positionErrorMm,
