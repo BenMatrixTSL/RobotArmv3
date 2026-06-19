@@ -35,10 +35,14 @@ import numpy as np
 
 PORT = int(os.environ.get("ROBOT_ARM_CAMERA_PORT", "8082"))
 CONFIGURED_DEVICE = os.environ.get("ROBOT_ARM_CAMERA_DEVICE", "/dev/video0")
-CAPTURE_WIDTH = int(os.environ.get("ROBOT_ARM_CAPTURE_WIDTH", "1280"))
-CAPTURE_HEIGHT = int(os.environ.get("ROBOT_ARM_CAPTURE_HEIGHT", "720"))
+CAPTURE_WIDTH = int(os.environ.get("ROBOT_ARM_CAPTURE_WIDTH", "640"))
+CAPTURE_HEIGHT = int(os.environ.get("ROBOT_ARM_CAPTURE_HEIGHT", "480"))
 STREAM_WIDTH = int(os.environ.get("ROBOT_ARM_STREAM_WIDTH", "640"))
 STREAM_HEIGHT = int(os.environ.get("ROBOT_ARM_STREAM_HEIGHT", "480"))
+# Target frames-per-second for vision processing. The web UI polls at ~7 fps
+# (every 150 ms) so processing faster than 8 fps wastes CPU with no benefit.
+# Use ROBOT_ARM_DETECTION_FPS=15 if you need smoother video.
+DETECTION_FPS = max(1, int(os.environ.get("ROBOT_ARM_DETECTION_FPS", "8")))
 JPEG_QUALITY = 80
 MIN_BLOCK_AREA = 2500
 BOUNDARY = b"--jpgboundary"
@@ -488,7 +492,7 @@ def capture_loop():
                 if result[0] is not None:
                     state.set_frame(result[0], result[1])
 
-                time.sleep(0.03)
+                time.sleep(1.0 / DETECTION_FPS)
         except Exception as exc:
             print(f"Vision capture error: {exc}", file=sys.stderr)
         finally:

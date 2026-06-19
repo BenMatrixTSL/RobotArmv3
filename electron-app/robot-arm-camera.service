@@ -18,6 +18,8 @@ StandardOutput=journal
 StandardError=journal
 Restart=on-failure
 RestartSec=5
+# Lower scheduling priority so vision processing yields to servo control and kiosk
+Nice=10
 
 [Install]
 WantedBy=multi-user.target
