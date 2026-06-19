@@ -409,11 +409,12 @@ class RobotKinematics {
         }
 
         // Settings for the solver
-        const maxIterations = 400;
-        const positionToleranceMm = 1.0; // stop main loop when we are within 1mm
-        const finiteDifferenceDeg = 1.0; // small angle change when estimating Jacobian
-        const baseStepSize = 0.03;       // baseline strength for the Jacobian transpose update
-        const orientationWeight = 10.0;  // how strongly to try to match orientation (reduced for stability)
+        const maxIterations = 500;
+        const positionToleranceMm = 0.3; // stop main loop when we are within 0.3mm
+        const finiteDifferenceDeg = 0.25; // finer step → more accurate Jacobian
+        const baseStepSize = 0.025;       // baseline strength for the Jacobian transpose update
+        const orientationWeight = 8.0;    // how strongly to try to match orientation
+        const maxDeltaPerIterDeg = 4.0;   // cap per-joint step to prevent singularity blow-up
 
         // We temporarily disable verbose FK logging while we iterate
         const previousLogging = this.enableDebugLogging;
@@ -445,13 +446,10 @@ class RobotKinematics {
                     orientationErrorLength = Math.sqrt(oriErrX * oriErrX + oriErrY * oriErrY + oriErrZ * oriErrZ);
                 }
 
-                // If position is close enough, and either we don't care about orientation
-                // or the orientation error is already small enough, stop iterating.
-                if (positionErrorLength < positionToleranceMm) {
-                    if (!hasOrientationTarget || orientationErrorLength < 0.1) {
-                        break;
-                    }
-                }
+                // Combined convergence: both position AND orientation must be within tolerance
+                const posConverged = positionErrorLength < positionToleranceMm;
+                const oriConverged = !hasOrientationTarget || orientationErrorLength < 0.05;
+                if (posConverged && oriConverged) break;
 
                 // Build numeric Jacobian for position (3 x numJoints): how XYZ changes per degree
                 const Jpos = [];
@@ -491,12 +489,8 @@ class RobotKinematics {
                     }
                 }
 
-                // Use Jacobian transpose to compute angle updates
-                // We scale the step by the error length so that:
-                // - when we are far away, the step is gentle
-                // - when we get close, the step can be a bit stronger
-                const stepSize = baseStepSize / (1 + positionErrorLength / 50);
-                // deltaTheta_j = stepSize * (Jpos^T * positionError + orientation term)
+                // Adaptive step: smaller when close (fine tuning), larger when far (fast approach)
+                const stepSize = baseStepSize / (1 + positionErrorLength / 60);
                 for (let j = 0; j < numJoints; j++) {
                     let grad =
                         Jpos[0][j] * errX +
@@ -511,8 +505,9 @@ class RobotKinematics {
                         );
                     }
 
-                    const deltaAngle = stepSize * grad;
-                    angles[j] += deltaAngle;
+                    // Cap per-iteration delta to prevent divergence near singularities
+                    const delta = stepSize * grad;
+                    angles[j] += Math.max(-maxDeltaPerIterDeg, Math.min(maxDeltaPerIterDeg, delta));
 
                     // Clamp to joint limits if provided (in degrees)
                     const joint = this.joints[j];

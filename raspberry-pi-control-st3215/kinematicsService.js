@@ -420,11 +420,12 @@ class RobotKinematics {
             }
         }
 
-        const maxIterations = 400;
-        const positionToleranceMm = 1.0;
-        const finiteDifferenceDeg = 1.0;
-        const baseStepSize = 0.03;
-        const orientationWeight = 10.0;
+        const maxIterations = 500;
+        const positionToleranceMm = 0.3;
+        const finiteDifferenceDeg = 0.25;   // finer Jacobian → better accuracy
+        const baseStepSize = 0.025;
+        const orientationWeight = 8.0;
+        const maxDeltaPerIterDeg = 4.0;     // cap per-joint step to prevent singularity blow-up
 
         for (let iter = 0; iter < maxIterations; iter++) {
             const fkResult = this.forwardKinematics(angles);
@@ -447,11 +448,10 @@ class RobotKinematics {
                 orientationErrorLength = Math.sqrt(oriErrX * oriErrX + oriErrY * oriErrY + oriErrZ * oriErrZ);
             }
 
-            if (positionErrorLength < positionToleranceMm) {
-                if (!hasOrientationTarget || orientationErrorLength < 0.1) {
-                    break;
-                }
-            }
+            // Combined convergence: both position AND orientation must be within tolerance
+            const posConverged = positionErrorLength < positionToleranceMm;
+            const oriConverged = !hasOrientationTarget || orientationErrorLength < 0.05;
+            if (posConverged && oriConverged) break;
 
             const Jpos = [
                 new Array(numJoints).fill(0),
@@ -482,13 +482,16 @@ class RobotKinematics {
                 }
             }
 
-            const stepSize = baseStepSize / (1 + positionErrorLength / 50);
+            // Adaptive step: smaller when close (fine tuning), larger when far (fast approach)
+            const stepSize = baseStepSize / (1 + positionErrorLength / 60);
             for (let j = 0; j < numJoints; j++) {
                 let grad = Jpos[0][j] * errX + Jpos[1][j] * errY + Jpos[2][j] * errZ;
                 if (hasOrientationTarget && Jori) {
                     grad += orientationWeight * (Jori[0][j] * oriErrX + Jori[1][j] * oriErrY + Jori[2][j] * oriErrZ);
                 }
-                angles[j] += stepSize * grad;
+                // Cap per-iteration delta to prevent divergence near singularities
+                const delta = stepSize * grad;
+                angles[j] += Math.max(-maxDeltaPerIterDeg, Math.min(maxDeltaPerIterDeg, delta));
 
                 const joint = this.joints[j];
                 if (joint && joint.limits) {
@@ -511,7 +514,7 @@ class RobotKinematics {
         const dy = finalFk.position.y - targetPose.y;
         const dz = finalFk.position.z - targetPose.z;
         const finalError = Math.sqrt(dx * dx + dy * dy + dz * dz);
-        if (finalError > 10.0) return null;
+        if (finalError > 8.0) return null;
 
         return angles;
     }
@@ -584,8 +587,22 @@ class RobotKinematics {
             }
         };
 
-        const runOnePass = (currentBase, maxPositionErrorMm, baseYawOffs, shoulderOffs, elbowOffs, wristRollOffs, wristPitchOffs) => {
+        // Early exit: skip expensive refinement if base IK is already accurate
+        const baseEval = evaluateCandidate(baseAngles);
+        if (baseEval && baseEval.positionErrorMm < 1.5 && baseEval.orientationErrorDeg < 3.0) {
+            return {
+                angles: baseAngles.slice(),
+                positionErrorMm: baseEval.positionErrorMm,
+                orientationErrorDeg: baseEval.orientationErrorDeg,
+                achievedPosition: baseEval.achievedPosition
+            };
+        }
+
+        // runOnePass: search a grid of offsets for joints 0-5 (all 6 joints).
+        // wristRoll2Offs controls joint 5 (J6, the final wrist roll).
+        const runOnePass = (currentBase, maxPositionErrorMm, baseYawOffs, shoulderOffs, elbowOffs, wristRollOffs, wristPitchOffs, wristRoll2Offs) => {
             const baseOffs = Array.isArray(baseYawOffs) && baseYawOffs.length > 0 ? baseYawOffs : [0];
+            const wr2Offs = Array.isArray(wristRoll2Offs) && wristRoll2Offs.length > 0 ? wristRoll2Offs : [0];
             let bestAngles = currentBase.slice();
             let bestEval = evaluateCandidate(bestAngles);
 
@@ -603,20 +620,23 @@ class RobotKinematics {
                     for (let e = 0; e < elbowOffs.length; e++) {
                         for (let r = 0; r < wristRollOffs.length; r++) {
                             for (let p = 0; p < wristPitchOffs.length; p++) {
-                                const candidateAngles = currentBase.slice();
+                                for (let r2 = 0; r2 < wr2Offs.length; r2++) {
+                                    const candidateAngles = currentBase.slice();
 
-                                if (numJoints > 0) candidateAngles[0] = clampToLimits(currentBase[0] + baseOffs[b], this.joints[0]);
-                                if (numJoints > 1) candidateAngles[1] = clampToLimits(currentBase[1] + shoulderOffs[s], this.joints[1]);
-                                if (numJoints > 2) candidateAngles[2] = clampToLimits(currentBase[2] + elbowOffs[e], this.joints[2]);
-                                if (numJoints > 3) candidateAngles[3] = clampToLimits(currentBase[3] + wristRollOffs[r], this.joints[3]);
-                                if (numJoints > 4) candidateAngles[4] = clampToLimits(currentBase[4] + wristPitchOffs[p], this.joints[4]);
+                                    if (numJoints > 0) candidateAngles[0] = clampToLimits(currentBase[0] + baseOffs[b], this.joints[0]);
+                                    if (numJoints > 1) candidateAngles[1] = clampToLimits(currentBase[1] + shoulderOffs[s], this.joints[1]);
+                                    if (numJoints > 2) candidateAngles[2] = clampToLimits(currentBase[2] + elbowOffs[e], this.joints[2]);
+                                    if (numJoints > 3) candidateAngles[3] = clampToLimits(currentBase[3] + wristRollOffs[r], this.joints[3]);
+                                    if (numJoints > 4) candidateAngles[4] = clampToLimits(currentBase[4] + wristPitchOffs[p], this.joints[4]);
+                                    if (numJoints > 5) candidateAngles[5] = clampToLimits(currentBase[5] + wr2Offs[r2], this.joints[5]);
 
-                                const evalResult = evaluateCandidate(candidateAngles);
-                                if (!evalResult || evalResult.positionErrorMm > maxPositionErrorMm) continue;
+                                    const evalResult = evaluateCandidate(candidateAngles);
+                                    if (!evalResult || evalResult.positionErrorMm > maxPositionErrorMm) continue;
 
-                                if (evalResult.score < bestEval.score) {
-                                    bestEval = evalResult;
-                                    bestAngles = candidateAngles.slice();
+                                    if (evalResult.score < bestEval.score) {
+                                        bestEval = evalResult;
+                                        bestAngles = candidateAngles.slice();
+                                    }
                                 }
                             }
                         }
@@ -634,6 +654,8 @@ class RobotKinematics {
 
         const wristRollFull = [0, -30, 30, -60, 60, -90, 90, -120, 120, -150, 150, 180];
         const wristPitchFull = [0, -15, 15, -30, 30, -45, 45, -60, 60, -75, 75, -90, 90];
+        // J6 full sweep — 30° steps cover full 360°
+        const wristRoll2Full = [0, -30, 30, -60, 60, -90, 90, -120, 120, -150, 150, 180];
 
         const wristRollFine = [];
         for (let d = -180; d <= 180; d += 15) wristRollFine.push(d);
@@ -650,19 +672,20 @@ class RobotKinematics {
             [0, -10, 10, -20, 20, -30, 30],
             [0, -10, 10, -20, 20, -30, 30],
             wristRollFull,
-            wristPitchFull
+            wristPitchFull,
+            wristRoll2Full
         );
 
-        const pass0b = runOnePass(pass0.angles, 25, [0], [0], [0], wristRollFine, wristPitchFine);
+        const pass0b = runOnePass(pass0.angles, 25, [0], [0], [0], wristRollFine, wristPitchFine, wristRoll2Full);
 
         orientationWeightForScore = 1.0;
 
-        const pass1 = runOnePass(pass0b.angles, 20, [0], [0, -10, 10, -20, 20, -30, 30], [0, -10, 10, -20, 20, -30, 30], wristRollFull, wristPitchFull);
-        const pass2 = runOnePass(pass1.angles, 12, [0], [0, -8, 8, -15, 15], [0, -8, 8, -15, 15], [0, -15, 15, -30, 30, -45, 45], [0, -15, 15, -30, 30, -45, 45]);
-        const pass3 = runOnePass(pass2.angles, 6, [0], [0, -5, 5, -10, 10], [0, -5, 5, -10, 10], [0, -10, 10, -20, 20, -30, 30], [0, -10, 10, -20, 20, -30, 30]);
-        const pass4 = runOnePass(pass3.angles, 2, [0], [0, -2, 2, -5, 5], [0, -2, 2, -5, 5], [0, -5, 5, -10, 10], [0, -5, 5, -10, 10]);
-        const pass5 = runOnePass(pass4.angles, 12, [0, -5, 5], [0, -3, 3, -6, 6, -10, 10], [0, -3, 3, -6, 6, -10, 10], [0, -3, 3, -6, 6, -10, 10], [0, -3, 3, -6, 6, -10, 10]);
-        const pass6 = runOnePass(pass5.angles, 15, [0, -1, 1, -2, 2], [0, -0.5, 0.5, -1, 1, -1.5, 1.5, -2, 2], [0, -0.5, 0.5, -1, 1, -1.5, 1.5, -2, 2], [0, -0.5, 0.5, -1, 1, -1.5, 1.5, -2, 2], [0, -0.5, 0.5, -1, 1, -1.5, 1.5, -2, 2]);
+        const pass1 = runOnePass(pass0b.angles, 20, [0], [0, -10, 10, -20, 20, -30, 30], [0, -10, 10, -20, 20, -30, 30], wristRollFull, wristPitchFull, wristRoll2Full);
+        const pass2 = runOnePass(pass1.angles, 12, [0], [0, -8, 8, -15, 15], [0, -8, 8, -15, 15], [0, -15, 15, -30, 30, -45, 45], [0, -15, 15, -30, 30, -45, 45], [0, -15, 15, -30, 30, -45, 45]);
+        const pass3 = runOnePass(pass2.angles, 6, [0], [0, -5, 5, -10, 10], [0, -5, 5, -10, 10], [0, -10, 10, -20, 20, -30, 30], [0, -10, 10, -20, 20, -30, 30], [0, -10, 10, -20, 20]);
+        const pass4 = runOnePass(pass3.angles, 3, [0], [0, -2, 2, -5, 5], [0, -2, 2, -5, 5], [0, -5, 5, -10, 10], [0, -5, 5, -10, 10], [0, -5, 5, -10, 10]);
+        const pass5 = runOnePass(pass4.angles, 12, [0, -5, 5], [0, -3, 3, -6, 6, -10, 10], [0, -3, 3, -6, 6, -10, 10], [0, -3, 3, -6, 6, -10, 10], [0, -3, 3, -6, 6, -10, 10], [0, -3, 3, -6, 6]);
+        const pass6 = runOnePass(pass5.angles, 15, [0, -1, 1, -2, 2], [0, -0.5, 0.5, -1, 1, -1.5, 1.5, -2, 2], [0, -0.5, 0.5, -1, 1, -1.5, 1.5, -2, 2], [0, -0.5, 0.5, -1, 1, -1.5, 1.5, -2, 2], [0, -0.5, 0.5, -1, 1, -1.5, 1.5, -2, 2], [0, -0.5, 0.5, -1, 1, -1.5, 1.5, -2, 2]);
 
         return {
             angles: pass6.angles,
