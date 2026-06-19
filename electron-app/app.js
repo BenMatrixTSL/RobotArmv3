@@ -4170,6 +4170,32 @@ async function executeGCodeCommand(command) {
                 }
             }
             
+        } else if (command.code === 'M10') {
+            // M10 = Gripper open (servo to 0°)
+            gcodeProcessor.log('M10: Gripper open');
+            if (robotArmClient.isConnected) {
+                await robotArmClient.sendCommand('toolSetServoEnabledAndAngle', { angle: 0 });
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+        } else if (command.code === 'M11') {
+            // M11 = Gripper close (servo to 90°)
+            gcodeProcessor.log('M11: Gripper close');
+            if (robotArmClient.isConnected) {
+                await robotArmClient.sendCommand('toolSetServoEnabledAndAngle', { angle: 90 });
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+        } else if (command.code === 'M62') {
+            // M62 = Vacuum pump on
+            gcodeProcessor.log('M62: Pump on');
+            if (robotArmClient.isConnected) {
+                await robotArmClient.sendCommand('toolSetPwm', { pwm1Duty: 255, enable1: true });
+            }
+        } else if (command.code === 'M63') {
+            // M63 = Vacuum pump off
+            gcodeProcessor.log('M63: Pump off');
+            if (robotArmClient.isConnected) {
+                await robotArmClient.sendCommand('toolSetPwm', { pwm1Duty: 0, enable1: false });
+            }
         } else if (command.code === 'M30' || command.code === 'M2') {
             // Program end
             gcodeProcessor.log(`M-code: ${command.code} (program end)`);
@@ -4644,8 +4670,30 @@ async function runRapidProgram() {
             await new Promise(function (resolve) {
                 setTimeout(resolve, 1000);
             });
+        } else if (/^GripperOpen\b/i.test(line)) {
+            console.log('RAPID: GripperOpen on line', i + 1);
+            if (robotArmClient && robotArmClient.isConnected) {
+                await robotArmClient.sendCommand('toolSetServoEnabledAndAngle', { angle: 0 });
+                await new Promise(function (resolve) { setTimeout(resolve, 500); });
+            }
+        } else if (/^GripperClose\b/i.test(line)) {
+            console.log('RAPID: GripperClose on line', i + 1);
+            if (robotArmClient && robotArmClient.isConnected) {
+                await robotArmClient.sendCommand('toolSetServoEnabledAndAngle', { angle: 90 });
+                await new Promise(function (resolve) { setTimeout(resolve, 500); });
+            }
+        } else if (/^PumpOn\b/i.test(line)) {
+            console.log('RAPID: PumpOn on line', i + 1);
+            if (robotArmClient && robotArmClient.isConnected) {
+                await robotArmClient.sendCommand('toolSetPwm', { pwm1Duty: 255, enable1: true });
+            }
+        } else if (/^PumpOff\b/i.test(line)) {
+            console.log('RAPID: PumpOff on line', i + 1);
+            if (robotArmClient && robotArmClient.isConnected) {
+                await robotArmClient.sendCommand('toolSetPwm', { pwm1Duty: 0, enable1: false });
+            }
         } else {
-            console.warn('RAPID: Unsupported line (only MoveJ/MoveAbsJ/MoveJOffs/MoveLXYZ/MoveLOffs/WaitTime/SetDO/Home are implemented):', line);
+            console.warn('RAPID: Unsupported line (MoveJ/MoveAbsJ/MoveJOffs/MoveLXYZ/MoveLOffs/WaitTime/SetDO/Home/GripperOpen/GripperClose/PumpOn/PumpOff):', line);
         }
     }
 
@@ -6640,6 +6688,16 @@ function setEndToolServoEnabled(enabled) {
             if (stateEl) stateEl.textContent = enabled ? 'Enabled' : 'Disabled';
         })
         .catch(err => showAppMessage('End tool servo enable: ' + err.message));
+}
+
+function setToolPump(on) {
+    if (!robotArmClient || !robotArmClient.isConnected) {
+        showAppMessage('Connect to the robot arm controller first');
+        return;
+    }
+    const duty = on ? 255 : 0;
+    robotArmClient.sendCommand('toolSetPwm', { pwm1Duty: duty, enable1: on })
+        .catch(err => console.warn('setToolPump failed:', err));
 }
 
 function readEndToolServoState() {

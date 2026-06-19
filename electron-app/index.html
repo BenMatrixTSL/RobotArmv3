@@ -471,6 +471,22 @@
                             </td>
                         </tr>
                         <tr>
+                            <td><strong>M10</strong>, <strong>M11</strong></td>
+                            <td>
+                                Gripper control.<br>
+                                <code>M10</code> → open gripper (servo to 0°).<br>
+                                <code>M11</code> → close gripper (servo to 90°).
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>M62</strong>, <strong>M63</strong></td>
+                            <td>
+                                Vacuum pump control.<br>
+                                <code>M62</code> → pump on.<br>
+                                <code>M63</code> → pump off.
+                            </td>
+                        </tr>
+                        <tr>
                             <td><strong>M30</strong>, <strong>M2</strong></td>
                             <td>
                                 Program end marker. Execution stops when these are reached.<br>
@@ -580,6 +596,22 @@
                             <td>
                                 Convenience command that moves all joints back to 0°.<br>
                                 <code>Home;</code>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>GripperOpen</strong><br><strong>GripperClose</strong></td>
+                            <td>
+                                Gripper control.<br>
+                                <code>GripperOpen;</code> → open gripper (servo to 0°).<br>
+                                <code>GripperClose;</code> → close gripper (servo to 90°).
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>PumpOn</strong><br><strong>PumpOff</strong></td>
+                            <td>
+                                Vacuum pump control.<br>
+                                <code>PumpOn;</code> → turn vacuum pump on.<br>
+                                <code>PumpOff;</code> → turn vacuum pump off.
                             </td>
                         </tr>
                     </tbody>

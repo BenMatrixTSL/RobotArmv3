@@ -282,6 +282,17 @@ function getBlocklyToolbox() {
             },
             {
                 kind: 'category',
+                name: 'Tool',
+                colour: '#A5745B',
+                contents: [
+                    { kind: 'block', type: 'gripper_open' },
+                    { kind: 'block', type: 'gripper_close' },
+                    { kind: 'block', type: 'pump_on' },
+                    { kind: 'block', type: 'pump_off' }
+                ]
+            },
+            {
+                kind: 'category',
                 name: 'Wait',
                 colour: '#5BA55B',
                 contents: [
@@ -638,6 +649,54 @@ function defineCustomBlocks() {
             this.setNextStatement(true, null);
             this.setColour(230);
             this.setTooltip('Set the acceleration for a specific joint. Range: 0-254 (unit: 100 step/s²). Higher values = faster acceleration.');
+        }
+    };
+
+    // Tool: Gripper open
+    Blockly.Blocks['gripper_open'] = {
+        init: function() {
+            this.appendDummyInput()
+                .appendField('Open Gripper');
+            this.setPreviousStatement(true, null);
+            this.setNextStatement(true, null);
+            this.setColour(165);
+            this.setTooltip('Open the gripper (moves end-tool servo to 0°)');
+        }
+    };
+
+    // Tool: Gripper close
+    Blockly.Blocks['gripper_close'] = {
+        init: function() {
+            this.appendDummyInput()
+                .appendField('Close Gripper');
+            this.setPreviousStatement(true, null);
+            this.setNextStatement(true, null);
+            this.setColour(165);
+            this.setTooltip('Close the gripper (moves end-tool servo to 90°)');
+        }
+    };
+
+    // Tool: Pump on
+    Blockly.Blocks['pump_on'] = {
+        init: function() {
+            this.appendDummyInput()
+                .appendField('Pump On');
+            this.setPreviousStatement(true, null);
+            this.setNextStatement(true, null);
+            this.setColour(165);
+            this.setTooltip('Turn the vacuum pump on (full power)');
+        }
+    };
+
+    // Tool: Pump off
+    Blockly.Blocks['pump_off'] = {
+        init: function() {
+            this.appendDummyInput()
+                .appendField('Pump Off');
+            this.setPreviousStatement(true, null);
+            this.setNextStatement(true, null);
+            this.setColour(165);
+            this.setTooltip('Turn the vacuum pump off');
         }
     };
 }
@@ -1736,6 +1795,48 @@ function registerBlocklyGenerators() {
         `;
     };
 
+    Blockly.JavaScript['gripper_open'] = function(block) {
+        const blockId = block.id;
+        return `
+        highlightBlocklyBlock('${blockId}');
+        await checkBlocklyPauseStop();
+        appendBlocklyOutput('Opening gripper');
+        moveEndToolServo(0);
+        await new Promise(resolve => setTimeout(resolve, 500));
+        `;
+    };
+
+    Blockly.JavaScript['gripper_close'] = function(block) {
+        const blockId = block.id;
+        return `
+        highlightBlocklyBlock('${blockId}');
+        await checkBlocklyPauseStop();
+        appendBlocklyOutput('Closing gripper');
+        moveEndToolServo(90);
+        await new Promise(resolve => setTimeout(resolve, 500));
+        `;
+    };
+
+    Blockly.JavaScript['pump_on'] = function(block) {
+        const blockId = block.id;
+        return `
+        highlightBlocklyBlock('${blockId}');
+        await checkBlocklyPauseStop();
+        appendBlocklyOutput('Pump on');
+        setToolPump(true);
+        `;
+    };
+
+    Blockly.JavaScript['pump_off'] = function(block) {
+        const blockId = block.id;
+        return `
+        highlightBlocklyBlock('${blockId}');
+        await checkBlocklyPauseStop();
+        appendBlocklyOutput('Pump off');
+        setToolPump(false);
+        `;
+    };
+
     console.log('Blockly code generators registered successfully');
 }
 
@@ -1829,7 +1930,31 @@ function convertBlocklyToGCode(blocklyCode) {
             const joint = setServoMatch[1];
             const angle = setServoMatch[2];
             gcode += `; Set servo on Joint ${joint} to ${angle}°\n`;
-            gcode += `M0 P100\n`; // Pause to allow servo to move
+            gcode += `M0 P100\n`;
+            continue;
+        }
+
+        // Convert gripper_open: moveEndToolServo(0)
+        if (line.includes('moveEndToolServo(0)')) {
+            gcode += 'M10\n';
+            continue;
+        }
+
+        // Convert gripper_close: moveEndToolServo(90)
+        if (line.includes('moveEndToolServo(90)')) {
+            gcode += 'M11\n';
+            continue;
+        }
+
+        // Convert pump_on: setToolPump(true)
+        if (line.includes('setToolPump(true)')) {
+            gcode += 'M62\n';
+            continue;
+        }
+
+        // Convert pump_off: setToolPump(false)
+        if (line.includes('setToolPump(false)')) {
+            gcode += 'M63\n';
             continue;
         }
 
@@ -1945,6 +2070,30 @@ function convertBlocklyToRapid(blocklyCode) {
         if (setServoMatch) {
             rapid += `! Set servo on Joint ${setServoMatch[1]} to ${setServoMatch[2]}°\n`;
             rapid += `WaitTime 0.1;\n`;
+            continue;
+        }
+
+        // Convert gripper_open: moveEndToolServo(0)
+        if (line.includes('moveEndToolServo(0)')) {
+            rapid += 'GripperOpen;\n';
+            continue;
+        }
+
+        // Convert gripper_close: moveEndToolServo(90)
+        if (line.includes('moveEndToolServo(90)')) {
+            rapid += 'GripperClose;\n';
+            continue;
+        }
+
+        // Convert pump_on: setToolPump(true)
+        if (line.includes('setToolPump(true)')) {
+            rapid += 'PumpOn;\n';
+            continue;
+        }
+
+        // Convert pump_off: setToolPump(false)
+        if (line.includes('setToolPump(false)')) {
+            rapid += 'PumpOff;\n';
             continue;
         }
 
