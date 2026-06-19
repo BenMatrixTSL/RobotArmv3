@@ -2,8 +2,11 @@
 """
 USB camera vision service for the robot arm.
 
-Captures at high resolution (1280x720), runs OpenCV detection, then serves a
-lower-resolution annotated image (640x480) to the web UI.
+Captures at high resolution for accurate ArUco detection, then serves a
+lower-resolution annotated image to the web UI.
+
+Detection is intentionally slow (5 fps default) to keep CPU load low on the Pi.
+Colour block detection is off by default — enable it only if needed.
 
 Endpoints:
   /snapshot  - latest JPEG with overlays (for the Camera tab)
@@ -16,12 +19,12 @@ Install on the Pi:
 Environment:
   ROBOT_ARM_CAMERA_PORT          default 8082
   ROBOT_ARM_CAMERA_DEVICE        default /dev/video0
-  ROBOT_ARM_CAPTURE_WIDTH        default 1280
+  ROBOT_ARM_CAPTURE_WIDTH        default 1280  (ArUco detection resolution)
   ROBOT_ARM_CAPTURE_HEIGHT       default 720
-  ROBOT_ARM_STREAM_WIDTH         default 640
+  ROBOT_ARM_STREAM_WIDTH         default 640   (web display resolution)
   ROBOT_ARM_STREAM_HEIGHT        default 480
-  ROBOT_ARM_DETECTION_FPS        default 8  (camera + processing rate)
-  ROBOT_ARM_COLOR_DETECTION      default 1  (set 0 to disable colour blocks, saves CPU)
+  ROBOT_ARM_DETECTION_FPS        default 5     (camera + processing rate)
+  ROBOT_ARM_COLOR_DETECTION      default 0     (set 1 to enable colour block detection)
 """
 
 import json
@@ -37,16 +40,17 @@ import numpy as np
 
 PORT = int(os.environ.get("ROBOT_ARM_CAMERA_PORT", "8082"))
 CONFIGURED_DEVICE = os.environ.get("ROBOT_ARM_CAMERA_DEVICE", "/dev/video0")
-CAPTURE_WIDTH = int(os.environ.get("ROBOT_ARM_CAPTURE_WIDTH", "640"))
-CAPTURE_HEIGHT = int(os.environ.get("ROBOT_ARM_CAPTURE_HEIGHT", "480"))
+CAPTURE_WIDTH = int(os.environ.get("ROBOT_ARM_CAPTURE_WIDTH", "1280"))
+CAPTURE_HEIGHT = int(os.environ.get("ROBOT_ARM_CAPTURE_HEIGHT", "720"))
 STREAM_WIDTH = int(os.environ.get("ROBOT_ARM_STREAM_WIDTH", "640"))
 STREAM_HEIGHT = int(os.environ.get("ROBOT_ARM_STREAM_HEIGHT", "480"))
-# Target frames-per-second for vision processing. The web UI polls at ~7 fps
-# (every 150 ms) so processing faster than 8 fps wastes CPU with no benefit.
-# Use ROBOT_ARM_DETECTION_FPS=15 if you need smoother video.
-DETECTION_FPS = max(1, int(os.environ.get("ROBOT_ARM_DETECTION_FPS", "8")))
-# Set to 0 to disable colour block detection (saves CPU; ArUco still runs).
-COLOR_DETECTION_ENABLED = os.environ.get("ROBOT_ARM_COLOR_DETECTION", "1").strip() not in ("0", "false", "no")
+# ArUco detection runs on the full CAPTURE resolution for accuracy.
+# The served snapshot is downscaled to STREAM resolution for the web UI.
+# 5 fps is sufficient for coordinate-mapping use; raise with ROBOT_ARM_DETECTION_FPS.
+DETECTION_FPS = max(1, int(os.environ.get("ROBOT_ARM_DETECTION_FPS", "5")))
+# Colour block detection is disabled by default — it is expensive at 1280×720
+# and not needed for ArUco-only coordinate mapping.  Set to 1 to enable.
+COLOR_DETECTION_ENABLED = os.environ.get("ROBOT_ARM_COLOR_DETECTION", "0").strip() not in ("0", "false", "no")
 JPEG_QUALITY = 80
 MIN_BLOCK_AREA = 2500
 BOUNDARY = b"--jpgboundary"
