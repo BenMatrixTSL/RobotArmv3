@@ -91,7 +91,7 @@
 
         function reloadSoon(reason) {
             if (attempts >= maxAttempts) {
-                setStatus('Still loading. Check ~/.robot-arm-kiosk/kiosk.log on the Pi.');
+                setStatus('Still loading. Please refresh the page or restart the application.');
                 return;
             }
             attempts = attempts + 1;
@@ -196,15 +196,15 @@
             <h2>Connection</h2>
             <div class="connection-panel">
                 <p class="info-text">
-                    Connect to the Raspberry Pi server on port 8080.
+                    Connect to the robot arm control server on port 8080.
                 </p>
                 <div class="connection-form">
                     <label>
-                        Raspberry Pi Address:
+                        Controller Address:
                         <input type="text" id="piAddress" value="192.168.1.160" placeholder="192.168.1.160">
                     </label>
                     <button id="connectButton" class="btn btn-primary">Connect</button>
-                    <button id="autoDetectButton" class="btn btn-secondary">Auto-Detect Pi</button>
+                    <button id="autoDetectButton" class="btn btn-secondary">Auto-Detect</button>
                     <button id="disconnectButton" class="btn btn-secondary" disabled>Disconnect</button>
                     <div id="autoDetectStatus" class="auto-detect-status"></div>
                 </div>
@@ -896,8 +896,7 @@
         <div id="camera-tab" class="tab-content">
             <h2>USB Camera</h2>
             <p class="info-text">
-                Live view from the USB camera on the Raspberry Pi. Vision runs at 1280×720 and shows ArUco markers
-                and coloured blocks on the 640×480 stream.
+                Live camera view with vision processing. ArUco markers and coloured blocks are detected automatically.
             </p>
             <div class="camera-panel">
                 <div class="camera-toolbar">
@@ -911,10 +910,9 @@
                     <p class="camera-stream-placeholder">Press Start camera to view the USB camera.</p>
                 </div>
                 <p class="info-text camera-help-text">
-                    On the Pi: <code>sudo ./install-camera-service.sh /opt/RobotArm/electron-app</code>
-                    (installs <code>python3-opencv</code> for ArUco and coloured block detection).
-                    Print ArUco markers from the <code>DICT_4X4_50</code> dictionary
-                    (<code>python3 generate-aruco-markers.py</code> in <code>electron-app/</code>).
+                    Point the camera at the workspace. ArUco markers will be detected automatically
+                    and coloured blocks will be highlighted. Marker IDs 0–3 define the workspace
+                    coordinate frame for position estimation.
                 </p>
             </div>
         </div>
@@ -1013,12 +1011,11 @@
                 <div id="calibrationProgress" class="calibration-progress"></div>
             </div>
 
-            <!-- Local Raspberry Pi Panel (only shown when running on the Pi) -->
+            <!-- Local Controller Panel (only shown when running on the controller) -->
             <div class="settings-panel" id="localPiSettingsPanel" style="display: none;">
-                <h3>Local Raspberry Pi (ST3215)</h3>
+                <h3>Local Controller</h3>
                 <p class="info-text">
-                    This section only appears when the app is running on a Raspberry Pi.
-                    It helps when the ST3215 control server is running on the same Pi.
+                    This section appears when the app is running directly on the robot arm controller.
                 </p>
                 <div class="settings-grid">
                     <div class="setting-item" style="grid-column: 1 / -1;">
@@ -1051,8 +1048,7 @@
                 <div style="margin-top: 15px; border-top: 1px solid #ddd; padding-top: 10px;">
                     <h4>Update from GitHub</h4>
                     <p class="info-text">
-                        These buttons run <code>git pull --ff-only</code> on the Raspberry Pi.
-                        Make sure both folders are git clones with a configured <code>origin</code> remote.
+                        Update the software on the robot arm controller to the latest version.
                     </p>
                     <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px;">
                         <button class="btn btn-small btn-secondary" onclick="updateElectronAppFromGit()">Update Electron App</button>
@@ -1064,9 +1060,9 @@
                 </div>
 
                 <div style="margin-top: 15px; border-top: 1px solid #ddd; padding-top: 10px;">
-                    <h4>Ethernet Settings (Local Pi)</h4>
+                    <h4>Ethernet Settings</h4>
                     <p class="info-text">
-                        Configure Ethernet using NetworkManager on this Raspberry Pi.
+                        Configure the network connection for the robot arm controller.
                         Choose DHCP or Static IP and click Apply.
                     </p>
                     <div class="settings-grid">

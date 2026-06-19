@@ -11,6 +11,7 @@ var cameraFailCount = 0;
 var cameraUrlIndex = 0;
 var cameraUrlList = [];
 var cameraVisionPollCount = 0;
+var cameraVisionStatus = null;
 
 function buildCameraSnapshotUrlList() {
     var urls = [];
@@ -79,13 +80,16 @@ function updateCameraStatusFromVision() {
                 parts.push(blockCount + ' coloured block' + (blockCount === 1 ? '' : 's'));
             }
 
+            var msg;
             if (parts.length > 0) {
-                setCameraStatus('Camera live — ' + parts.join(', '), '#27ae60');
+                msg = 'Camera live — ' + parts.join(', ');
             } else if (data.dictionary) {
-                setCameraStatus('Camera live — vision on, no markers in view', '#27ae60');
+                msg = 'Camera live — vision on, no markers in view';
             } else {
-                setCameraStatus('Camera live — no markers or blocks detected', '#27ae60');
+                msg = 'Camera live — no markers or blocks detected';
             }
+            cameraVisionStatus = msg;
+            setCameraStatus(msg, '#27ae60');
         })
         .catch(function () {
             // Vision endpoint may be unavailable on older ffmpeg-only installs.
@@ -163,7 +167,7 @@ function tryNextSnapshotUrl() {
     cameraUrlIndex = cameraUrlIndex + 1;
     cameraFailCount = 0;
     if (cameraUrlIndex >= cameraUrlList.length) {
-        setCameraStatus('Camera not available. Check: sudo systemctl status robot-arm-camera.service', '#e74c3c');
+        setCameraStatus('Camera not available. Check that the camera service is running.', '#e74c3c');
         updateCameraButtons(false);
         hideCameraFrame();
         return;
@@ -188,7 +192,7 @@ function pollCameraSnapshot() {
 
         cameraFailCount = 0;
         showCameraFrame();
-        setCameraStatus('Camera live', '#27ae60');
+        setCameraStatus(cameraVisionStatus || 'Camera live', '#27ae60');
         updateCameraButtons(true);
 
         cameraVisionPollCount = cameraVisionPollCount + 1;
@@ -247,6 +251,7 @@ function stopCameraView() {
     cameraFailCount = 0;
     cameraUrlIndex = 0;
     cameraUrlList = [];
+    cameraVisionStatus = null;
 
     if (cameraSnapshotTimer) {
         clearTimeout(cameraSnapshotTimer);

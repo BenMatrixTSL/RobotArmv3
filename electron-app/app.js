@@ -1308,21 +1308,21 @@ function initializeConnection() {
         autoDetectButton.addEventListener('click', async function() {
             autoDetectButton.disabled = true;
             const statusDiv = document.getElementById('autoDetectStatus');
-            statusDiv.textContent = 'Searching for Raspberry Pi...';
+            statusDiv.textContent = 'Searching for robot arm controller...';
             statusDiv.style.display = 'block';
-            
+
             try {
                 const foundAddress = await autoDetectRaspberryPi();
                 if (foundAddress) {
                     document.getElementById('piAddress').value = foundAddress;
-                    statusDiv.textContent = `Found Raspberry Pi at ${foundAddress}`;
+                    statusDiv.textContent = `Found controller at ${foundAddress}`;
                     statusDiv.style.color = '#27ae60';
                     // Optionally auto-connect
                     setTimeout(() => {
                         connectButton.click();
                     }, 500);
                 } else {
-                    statusDiv.textContent = 'Raspberry Pi not found. Make sure it is on the same network.';
+                    statusDiv.textContent = 'Controller not found. Make sure it is on the same network.';
                     statusDiv.style.color = '#e74c3c';
                 }
             } catch (error) {
@@ -1346,7 +1346,7 @@ function initializeConnection() {
             console.log('Connection parameters:', { address, port });
         
         if (!address) {
-            showAppMessage('Please enter Raspberry Pi address');
+            showAppMessage('Please enter controller address');
             return;
         }
         
@@ -1356,7 +1356,6 @@ function initializeConnection() {
         
         try {
                 console.log(`Attempting to connect to ${address}:${port}`);
-            // Connect to Raspberry Pi
             await robotArmClient.connect(address, port);
             
             // Set up status update callback
@@ -1568,7 +1567,7 @@ function formatServerDiagnosticsText(diag) {
         (diag.busWritesFailed || 0) + ' / ' +
         (diag.busWritesRejected || 0));
     lines.push('Instant WS commands (cache, kinematics): ' + (diag.instantCommands || 0));
-    lines.push('WebSocket clients: ' + (diag.wsClients != null ? diag.wsClients : 0));
+    lines.push('Connected clients: ' + (diag.wsClients != null ? diag.wsClients : 0));
     lines.push('Server uptime: ' + Math.round((diag.uptimeMs || 0) / 1000) + ' s');
     return lines.join('\n');
 }
@@ -1778,7 +1777,7 @@ function updateTakeControlButtonState() {
  */
 async function requestArmControl() {
     if (!robotArmClient.isConnected) {
-        showAppMessage('Connect to the Raspberry Pi first');
+        showAppMessage('Connect to the robot arm controller first');
         return;
     }
 
@@ -1846,7 +1845,7 @@ function stopControlStatusUpdates() {
  */
 async function releaseArmControl() {
     if (!robotArmClient.isConnected) {
-        showAppMessage('Not connected to Raspberry Pi');
+        showAppMessage('Not connected to robot arm controller');
         return;
     }
 
@@ -2073,7 +2072,7 @@ function moveJointOnEnter(event, jointNumber) {
  */
 function moveJoint(jointNumber) {
     if (!robotArmClient.isConnected) {
-        showAppMessage('Not connected to Raspberry Pi');
+        showAppMessage('Not connected to robot arm controller');
         return;
     }
 
@@ -2188,7 +2187,7 @@ function moveJoint(jointNumber) {
  */
 function stopAllJoints() {
     if (!robotArmClient.isConnected) {
-        showAppMessage('Not connected to Raspberry Pi');
+        showAppMessage('Not connected to robot arm controller');
         return;
     }
     
@@ -2202,7 +2201,7 @@ let homingInProgress = false;
  */
 async function homeAllJoints() {
     if (!robotArmClient.isConnected) {
-        showAppMessage('Not connected to Raspberry Pi');
+        showAppMessage('Not connected to robot arm controller');
         return;
     }
 
@@ -2432,7 +2431,7 @@ function updateTorqueButtons() {
 
 function toggleTorqueAll() {
     if (!robotArmClient.isConnected) {
-        showAppMessage('Not connected to Raspberry Pi');
+        showAppMessage('Not connected to robot arm controller');
         return;
     }
     
@@ -2480,7 +2479,7 @@ async function moveToStoredPositionFromPendant() {
     }
 
     if (!robotArmClient.isConnected) {
-        showAppMessage('Not connected to Raspberry Pi');
+        showAppMessage('Not connected to robot arm controller');
         return;
     }
 
@@ -2527,7 +2526,7 @@ function setStepSize(degrees) {
 
 function quickMove(jointNumber, direction) {
     if (!robotArmClient.isConnected) {
-        showAppMessage('Not connected to Raspberry Pi');
+        showAppMessage('Not connected to robot arm controller');
         return;
     }
 
@@ -2728,7 +2727,7 @@ async function updateXYZPosition(jointAngles) {
  */
 async function moveToXYZ() {
     if (!robotArmClient.isConnected) {
-        showAppMessage('Not connected to Raspberry Pi');
+        showAppMessage('Not connected to robot arm controller');
         return;
     }
     
@@ -2776,7 +2775,7 @@ async function moveToXYZ() {
             let refined = null;
 
             if (!robotArmClient || !robotArmClient.isConnected || typeof robotArmClient.inverseKinematics !== 'function' || typeof robotArmClient.refineOrientationWithAccuracy !== 'function') {
-                showAppMessage('Server kinematics is not available. Connect to Raspberry Pi and reload URDF.');
+                showAppMessage('Server kinematics is not available. Connect to the robot arm controller and reload URDF.');
                 return;
             }
 
@@ -2830,7 +2829,7 @@ async function moveToXYZ() {
  */
 async function quickMoveXYZ(axis, direction) {
     if (!robotArmClient.isConnected) {
-        showAppMessage('Not connected to Raspberry Pi');
+        showAppMessage('Not connected to robot arm controller');
         return;
     }
     
@@ -3298,7 +3297,7 @@ async function jointPathIntersectsDeadZone(currentAngles, targetAngles, zones, s
  */
 async function moveJointsToAnglesWithDeadZones(targetAngles, speedDegreesPerSecond) {
     if (!robotArmClient || !robotArmClient.isConnected) {
-        showAppMessage('Not connected to Raspberry Pi');
+        showAppMessage('Not connected to robot arm controller');
         return;
     }
 
@@ -3363,7 +3362,7 @@ async function moveJointsToAnglesWithDeadZones(targetAngles, speedDegreesPerSeco
     // Joint path would go through a dead zone: convert to a Cartesian safe path
     try {
         if (!robotArmClient || !robotArmClient.isConnected || typeof robotArmClient.forwardKinematics !== 'function') {
-            showAppMessage('Server kinematics is not available. Connect to Raspberry Pi and reload URDF.');
+            showAppMessage('Server kinematics is not available. Connect to the robot arm controller and reload URDF.');
             return;
         }
         const startFk = await robotArmClient.forwardKinematics(currentAngles);
@@ -3422,7 +3421,7 @@ async function moveJointsToAnglesWithDeadZones(targetAngles, speedDegreesPerSeco
             let refined = null;
 
             if (!robotArmClient || !robotArmClient.isConnected || typeof robotArmClient.inverseKinematics !== 'function' || typeof robotArmClient.refineOrientationWithAccuracy !== 'function') {
-                showAppMessage('Server kinematics is not available. Connect to Raspberry Pi and reload URDF.');
+                showAppMessage('Server kinematics is not available. Connect to the robot arm controller and reload URDF.');
                 return;
             }
 
@@ -3447,7 +3446,7 @@ async function moveJointsToAnglesWithDeadZones(targetAngles, speedDegreesPerSeco
                     let finalRefined = null;
 
                     if (!robotArmClient || !robotArmClient.isConnected || typeof robotArmClient.inverseKinematics !== 'function' || typeof robotArmClient.refineOrientationWithAccuracy !== 'function') {
-                        showAppMessage('Server kinematics is not available. Connect to Raspberry Pi and reload URDF.');
+                        showAppMessage('Server kinematics is not available. Connect to the robot arm controller and reload URDF.');
                         return;
                     }
 
@@ -3625,7 +3624,7 @@ function initializeFileInput() {
  */
 async function startGcode() {
     if (!robotArmClient.isConnected) {
-        showAppMessage('Not connected to Raspberry Pi');
+        showAppMessage('Not connected to robot arm controller');
         return;
     }
     
@@ -3923,7 +3922,7 @@ async function executeGCodeCommand(command) {
                 let jointAngles = null;
 
                 if (!robotArmClient || !robotArmClient.isConnected || typeof robotArmClient.inverseKinematics !== 'function' || typeof robotArmClient.refineOrientationWithAccuracy !== 'function') {
-                    gcodeProcessor.log('Error: Server kinematics is not available. Connect to Raspberry Pi and reload URDF.');
+                    gcodeProcessor.log('Error: Server kinematics is not available. Connect to the robot arm controller and reload URDF.');
                     return;
                 }
                 baseAngles = await robotArmClient.inverseKinematics(
@@ -4315,7 +4314,7 @@ function parseRapidXYZ(line, keyword) {
  */
 async function runRapidProgram() {
     if (!robotArmClient || !robotArmClient.isConnected) {
-        showAppMessage('Not connected to Raspberry Pi');
+        showAppMessage('Not connected to robot arm controller');
         return;
     }
 
@@ -4988,7 +4987,7 @@ async function applyLocalPiEthernetSettings() {
 async function updateElectronAppFromGit() {
     const statusSpan = document.getElementById('localPiUpdateStatus');
     if (statusSpan) {
-        statusSpan.textContent = 'Updating Electron app from git...';
+        statusSpan.textContent = 'Updating app software...';
         statusSpan.style.color = '#e67e22';
     }
 
@@ -5014,14 +5013,14 @@ async function updateElectronAppFromGit() {
 async function updateSt3215FromGit() {
     const statusSpan = document.getElementById('localPiUpdateStatus');
     if (statusSpan) {
-        statusSpan.textContent = 'Updating ST3215 server from git...';
+        statusSpan.textContent = 'Updating controller software...';
         statusSpan.style.color = '#e67e22';
     }
 
     try {
         if (!robotArmClient || typeof robotArmClient.sendRawCommand !== 'function') {
             if (statusSpan) {
-                statusSpan.textContent = 'ST3215 client does not support raw commands in this version.';
+                statusSpan.textContent = 'Controller software update is not available in this version.';
                 statusSpan.style.color = '#e74c3c';
             }
             return;
@@ -5180,7 +5179,7 @@ function onJointConfigsLoaded(configs) {
  */
 function loadJointConfigs() {
     if (!robotArmClient.isConnected) {
-        showAppMessage('Not connected to Raspberry Pi');
+        showAppMessage('Not connected to robot arm controller');
         return;
     }
     
@@ -5623,7 +5622,7 @@ function applyKinematicsConfig() {
  */
 async function saveJointKinematics(jointNumber) {
     if (!robotArmClient.isConnected) {
-        showAppMessage('Not connected to Raspberry Pi');
+        showAppMessage('Not connected to robot arm controller');
         return;
     }
     
@@ -5705,7 +5704,7 @@ async function testInverseKinematics() {
     
     try {
         if (!robotArmClient || !robotArmClient.isConnected || typeof robotArmClient.inverseKinematics !== 'function' || typeof robotArmClient.refineOrientationWithAccuracy !== 'function') {
-            document.getElementById('ikResult').innerHTML = '<span class="error-text">Server kinematics is not available. Connect to Raspberry Pi and reload URDF.</span>';
+            document.getElementById('ikResult').innerHTML = '<span class="error-text">Server kinematics is not available. Connect to the robot arm controller and reload URDF.</span>';
             return;
         }
 
@@ -6262,7 +6261,7 @@ function stopCalibration() {
  */
 async function startCalibration() {
     if (!robotArmClient.isConnected) {
-        showAppMessage('Not connected to Raspberry Pi');
+        showAppMessage('Not connected to robot arm controller');
         return;
     }
     
