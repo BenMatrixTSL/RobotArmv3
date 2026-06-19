@@ -20,6 +20,8 @@ Environment:
   ROBOT_ARM_CAPTURE_HEIGHT       default 720
   ROBOT_ARM_STREAM_WIDTH         default 640
   ROBOT_ARM_STREAM_HEIGHT        default 480
+  ROBOT_ARM_DETECTION_FPS        default 8  (camera + processing rate)
+  ROBOT_ARM_COLOR_DETECTION      default 1  (set 0 to disable colour blocks, saves CPU)
 """
 
 import json
@@ -43,6 +45,8 @@ STREAM_HEIGHT = int(os.environ.get("ROBOT_ARM_STREAM_HEIGHT", "480"))
 # (every 150 ms) so processing faster than 8 fps wastes CPU with no benefit.
 # Use ROBOT_ARM_DETECTION_FPS=15 if you need smoother video.
 DETECTION_FPS = max(1, int(os.environ.get("ROBOT_ARM_DETECTION_FPS", "8")))
+# Set to 0 to disable colour block detection (saves CPU; ArUco still runs).
+COLOR_DETECTION_ENABLED = os.environ.get("ROBOT_ARM_COLOR_DETECTION", "1").strip() not in ("0", "false", "no")
 JPEG_QUALITY = 80
 MIN_BLOCK_AREA = 2500
 BOUNDARY = b"--jpgboundary"
@@ -390,7 +394,8 @@ def open_camera(device_path):
                 camera.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*"MJPG"))
                 camera.set(cv2.CAP_PROP_FRAME_WIDTH, width)
                 camera.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
-                camera.set(cv2.CAP_PROP_FPS, 15)
+                camera.set(cv2.CAP_PROP_FPS, DETECTION_FPS)
+                camera.set(cv2.CAP_PROP_BUFFERSIZE, 1)
 
                 ok, test_frame = camera.read()
                 if not ok or test_frame is None or test_frame.size == 0:
@@ -439,7 +444,7 @@ def process_frame(frame, detectors):
             if ids is not None and len(ids) > 0:
                 draw_aruco_overlays(annotated, corners, ids)
         markers = marker_centers(corners, ids, frame_width, frame_height)
-        blocks = find_color_blocks(annotated)
+        blocks = find_color_blocks(annotated) if COLOR_DETECTION_ENABLED else []
     except Exception as exc:
         print(f"Vision processing error: {exc}", file=sys.stderr)
         annotated = frame.copy()
