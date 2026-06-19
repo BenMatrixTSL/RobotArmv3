@@ -230,42 +230,50 @@
         <!-- Joint Control Tab -->
         <div id="pendant-tab" class="tab-content">
             <h2>Joint Control</h2>
-            
-            <!-- Joint Status Display -->
-            <div class="joint-status-grid" id="jointStatusGrid">
-                <!-- Joint status cards will be generated dynamically -->
-            </div>
 
-            <!-- Arm actions -->
-            <div class="control-panel">
-                <div class="joint-controls" id="jointControlsContainer"></div>
-
-                <div class="control-buttons">
-                    <button class="btn btn-danger" onclick="stopAllJoints()">Emergency Stop</button>
-                    <button class="btn btn-secondary" onclick="homeAllJoints()">Home All Joints</button>
-                    <button class="btn btn-warning torque-toggle-button" id="torqueToggleButton" onclick="toggleTorqueAll()">Torque: On</button>
-                </div>
-            </div>
-
-            <!-- Quick Joint Movement Controls -->
-            <div class="joystick-area">
-                <h3>Quick Joint Movement</h3>
-                <div class="joystick-controls">
-                    <div class="direction-grid" id="quickMovementButtons">
-                        <!-- Quick movement buttons will be generated dynamically -->
+            <!-- kiosk-joints-row: two-column layout in kiosk mode (status+controls | movement buttons).
+                 In normal desktop mode these divs are transparent block containers. -->
+            <div class="kiosk-joints-row">
+                <div class="kiosk-joints-left">
+                    <!-- Joint Status Display -->
+                    <div class="joint-status-grid" id="jointStatusGrid">
+                        <!-- Joint status cards will be generated dynamically -->
                     </div>
-                    <div class="step-size">
-                        <label>Step Size:</label>
-                        <div class="step-size-presets">
-                            <button class="step-preset-btn active" onclick="setStepSize(1)">1°</button>
-                            <button class="step-preset-btn" onclick="setStepSize(5)">5°</button>
-                            <button class="step-preset-btn" onclick="setStepSize(10)">10°</button>
-                            <button class="step-preset-btn" onclick="setStepSize(45)">45°</button>
+
+                    <!-- Arm actions -->
+                    <div class="control-panel">
+                        <div class="joint-controls" id="jointControlsContainer"></div>
+
+                        <div class="control-buttons">
+                            <button class="btn btn-danger" onclick="stopAllJoints()">Emergency Stop</button>
+                            <button class="btn btn-secondary" onclick="homeAllJoints()">Home All Joints</button>
+                            <button class="btn btn-warning torque-toggle-button" id="torqueToggleButton" onclick="toggleTorqueAll()">Torque: On</button>
                         </div>
-                        <input type="hidden" id="stepSize" value="1">
                     </div>
-                </div>
-            </div>
+                </div><!-- .kiosk-joints-left -->
+
+                <div class="kiosk-joints-right">
+                    <!-- Quick Joint Movement Controls -->
+                    <div class="joystick-area">
+                        <h3>Quick Joint Movement</h3>
+                        <div class="joystick-controls">
+                            <div class="direction-grid" id="quickMovementButtons">
+                                <!-- Quick movement buttons will be generated dynamically -->
+                            </div>
+                            <div class="step-size">
+                                <label>Step Size:</label>
+                                <div class="step-size-presets">
+                                    <button class="step-preset-btn active" onclick="setStepSize(1)">1°</button>
+                                    <button class="step-preset-btn" onclick="setStepSize(5)">5°</button>
+                                    <button class="step-preset-btn" onclick="setStepSize(10)">10°</button>
+                                    <button class="step-preset-btn" onclick="setStepSize(45)">45°</button>
+                                </div>
+                                <input type="hidden" id="stepSize" value="1">
+                            </div>
+                        </div>
+                    </div>
+                </div><!-- .kiosk-joints-right -->
+            </div><!-- .kiosk-joints-row -->
 
             <!-- End Tool Hobby Servo -->
             <div class="control-panel" id="endToolServoPanel">

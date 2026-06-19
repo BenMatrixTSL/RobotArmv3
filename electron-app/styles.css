@@ -2361,43 +2361,54 @@ body.kiosk-mode .app-footer {
 
 body.kiosk-mode .container {
     max-width: none;
-    padding: 4px 6px;
+    padding: 3px 5px;
 }
 
+/* Compact header — hide the long title text to save ~16 px of vertical space */
 body.kiosk-mode header {
-    padding: 5px 10px;
-    margin-bottom: 4px;
+    padding: 3px 8px;
+    margin-bottom: 3px;
 }
 
 body.kiosk-mode .header-logo {
-    height: 36px;
-    max-width: 130px;
+    height: 28px;
+    max-width: 110px;
 }
 
 body.kiosk-mode header h1 {
-    font-size: 0.95rem;
+    display: none;
+}
+
+body.kiosk-mode .header-status {
+    gap: 8px;
+    align-items: center;
+}
+
+body.kiosk-mode #statusText,
+body.kiosk-mode #controlText {
+    font-size: 13px;
 }
 
 /* ---- Sidebar tabs ---- */
 body.kiosk-mode .main-layout {
     flex-direction: row;
     align-items: flex-start;
-    gap: 6px;
-    margin-top: 4px;
+    gap: 5px;
+    margin-top: 3px;
 }
 
 body.kiosk-mode .tabs {
     flex-direction: column;
     flex-wrap: nowrap;
-    min-width: 100px;
-    max-width: 110px;
+    min-width: 90px;
+    max-width: 100px;
     width: auto;
     border-right: 2px solid #ddd;
     border-bottom: none;
-    padding-right: 5px;
+    padding-right: 4px;
     padding-bottom: 0;
     gap: 3px;
-    max-height: calc(100vh - 70px);
+    max-height: calc(100vh - 55px);
     overflow-y: auto;
 }
 
@@ -2437,14 +2448,15 @@ body.kiosk-mode .tab-content {
 }
 
 body.kiosk-mode .tab-button {
-    padding: 11px 8px;
-    font-size: 13px;
-    font-weight: 500;
+    padding: 9px 5px;
+    font-size: 12px;
+    font-weight: 600;
     border-right: 3px solid transparent;
     border-bottom: none;
     white-space: normal;
     line-height: 1.2;
     min-height: 44px;
+    text-align: center;
 }
 
 body.kiosk-mode .tab-button.active {
@@ -2456,16 +2468,16 @@ body.kiosk-mode .tab-content-container {
     flex: 1;
     min-width: 0;
     overflow-y: auto;
-    max-height: calc(100vh - 70px);
+    max-height: calc(100vh - 55px);
 }
 
 body.kiosk-mode .tab-content {
-    padding: 6px 8px;
+    padding: 4px 6px;
 }
 
 body.kiosk-mode .tab-content > h2 {
-    font-size: 16px;
-    margin-bottom: 6px;
+    font-size: 15px;
+    margin-bottom: 5px;
 }
 
 body.kiosk-mode .tab-content > h2 ~ p.info-text {
@@ -2474,85 +2486,151 @@ body.kiosk-mode .tab-content > h2 ~ p.info-text {
 
 /* ---- Joint Control tab ---- */
 
-/* Status grid: 3×2, bigger values */
+/* The h2 "Joint Control" is redundant with the sidebar label — hide it */
+body.kiosk-mode #pendant-tab > h2 {
+    display: none;
+}
+
+/* Two-column layout: left = status grid + arm action buttons,
+   right = quick movement buttons + step size presets.
+   In non-kiosk mode these divs are plain block containers and are invisible
+   to the layout. */
+body.kiosk-mode .kiosk-joints-row {
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
+    align-items: flex-start;
+}
+
+body.kiosk-mode .kiosk-joints-left {
+    flex: 0 0 43%;
+    width: 43%;
+}
+
+body.kiosk-mode .kiosk-joints-right {
+    flex: 1;
+    min-width: 0;
+}
+
+/* Status grid: 3 columns across the left column */
 body.kiosk-mode .joint-status-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 5px;
-    margin-bottom: 6px;
+    gap: 4px;
+    margin-bottom: 5px;
 }
 
 body.kiosk-mode .joint-status-card {
-    padding: 6px 8px;
+    padding: 5px 6px;
+}
+
+body.kiosk-mode .joint-card-header {
+    margin-bottom: 2px;
 }
 
 body.kiosk-mode .joint-card-title {
-    font-size: 13px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+/* Shrink the expand toggle — it still works but takes minimal space */
+body.kiosk-mode .joint-details-toggle {
+    font-size: 11px;
+    padding: 1px 4px;
+    min-width: 0;
+    min-height: 0;
+    line-height: 1.2;
+}
+
+body.kiosk-mode .joint-angle-line {
+    line-height: 1;
+    margin-bottom: 2px;
 }
 
 body.kiosk-mode .joint-angle-value {
-    font-size: 18px;
-    font-weight: 600;
+    font-size: 17px;
+    font-weight: 700;
 }
 
 body.kiosk-mode .status-value.compact {
-    font-size: 11px;
+    font-size: 10px;
+    line-height: 1.3;
+    margin-bottom: 0;
 }
 
-/* Hide per-joint angle/speed/Go controls — Quick Movement replaces them */
+/* Hide the per-card angle input + Go button — Quick Movement replaces them */
+body.kiosk-mode .joint-control-fields {
+    display: none;
+}
+
+/* Hide per-joint angle/speed/Go controls container */
 body.kiosk-mode #jointControlsContainer {
     display: none;
 }
 
 body.kiosk-mode .control-panel {
-    padding: 8px;
-    margin-bottom: 6px;
+    padding: 6px 8px;
+    margin-bottom: 5px;
 }
 
-/* E-Stop / Home / Torque row */
-body.kiosk-mode .control-buttons {
+/* E-Stop / Home / Torque — stacked vertically in the left column */
+body.kiosk-mode .kiosk-joints-left .control-buttons {
     display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
+    flex-direction: column;
+    gap: 5px;
 }
 
-body.kiosk-mode .control-buttons .btn {
-    flex: 1 1 auto;
-    min-width: 110px;
-    padding: 12px 10px;
+body.kiosk-mode .kiosk-joints-left .control-buttons .btn {
+    width: 100%;
+    padding: 10px 6px;
     font-size: 13px;
+    min-height: 44px;
 }
 
-/* Quick Joint Movement */
-body.kiosk-mode .joystick-area {
-    padding: 10px;
+/* Quick Joint Movement area (right column) — flush, no card background */
+body.kiosk-mode .kiosk-joints-right .joystick-area {
+    padding: 0;
+    background: none;
+    border-radius: 0;
+    box-shadow: none;
 }
 
-body.kiosk-mode .joystick-area h3 {
-    font-size: 14px;
-    margin-bottom: 8px;
+body.kiosk-mode .kiosk-joints-right .joystick-area h3 {
+    font-size: 13px;
+    margin-bottom: 5px;
+    font-weight: 600;
+}
+
+body.kiosk-mode .direction-grid {
+    gap: 4px;
 }
 
 body.kiosk-mode #pendant-tab .direction-btn {
-    padding: 16px 8px;
-    font-size: 14px;
-    min-height: 52px;
+    padding: 11px 4px;
+    font-size: 13px;
+    font-weight: 600;
+    min-height: 46px;
+    line-height: 1.2;
+}
+
+body.kiosk-mode #pendant-tab .step-size {
+    margin-top: 5px;
 }
 
 body.kiosk-mode #pendant-tab .step-preset-btn {
-    padding: 12px 18px;
-    font-size: 15px;
-    min-width: 60px;
-    min-height: 48px;
+    padding: 9px 12px;
+    font-size: 14px;
+    min-width: 50px;
+    min-height: 44px;
 }
 
 /* End Tool Servo */
 body.kiosk-mode .end-tool-servo-controls {
-    gap: 8px;
+    gap: 6px;
 }
 
 body.kiosk-mode .servo-enable-row .btn,
 body.kiosk-mode .servo-angle-row .btn-small {
-    padding: 10px 14px;
+    padding: 9px 12px;
     font-size: 13px;
 }
 
@@ -2564,17 +2642,17 @@ body.kiosk-mode .pendant-layout {
 }
 
 body.kiosk-mode .pendant-panel {
-    padding: 8px;
+    padding: 7px;
 }
 
 body.kiosk-mode .pendant-panel h3 {
-    font-size: 14px;
-    margin-bottom: 6px;
+    font-size: 13px;
+    margin-bottom: 5px;
 }
 
 body.kiosk-mode .pendant-position {
-    padding: 6px 10px;
-    font-size: 14px;
+    padding: 5px 8px;
+    font-size: 13px;
 }
 
 body.kiosk-mode .pendant-xy-wheel {
@@ -2583,43 +2661,50 @@ body.kiosk-mode .pendant-xy-wheel {
 }
 
 body.kiosk-mode .pendant-xy-btn {
-    min-width: 48px;
-    padding: 10px;
-    font-size: 14px;
+    min-width: 44px;
+    padding: 9px;
+    font-size: 13px;
 }
 
 body.kiosk-mode .pendant-btn,
 body.kiosk-mode .pendant-wide-btn {
-    font-size: 14px;
-    padding: 11px 12px;
+    font-size: 13px;
+    padding: 10px 10px;
 }
 
 /* ---- Camera tab ---- */
 body.kiosk-mode .camera-stream-image {
-    max-height: calc(100vh - 140px);
+    max-height: calc(100vh - 130px);
 }
 
 body.kiosk-mode .camera-toolbar .btn {
-    padding: 10px 14px;
+    padding: 9px 12px;
     font-size: 13px;
 }
 
 /* ---- Stored Positions tab ---- */
 body.kiosk-mode #positions-tab .btn {
-    padding: 11px 14px;
+    padding: 10px 12px;
     font-size: 13px;
 }
 
 body.kiosk-mode #positions-tab input[type="text"],
 body.kiosk-mode #positions-tab input[type="number"] {
     font-size: 14px;
-    padding: 8px;
+    padding: 7px;
 }
 
 /* ---- Connection tab ---- */
 body.kiosk-mode #connection-tab .btn {
-    padding: 11px 14px;
-    font-size: 13px;
+    padding: 12px 14px;
+    font-size: 14px;
+    min-height: 48px;
+}
+
+body.kiosk-mode #connection-tab input[type="text"] {
+    font-size: 16px;
+    padding: 10px;
+    width: 100%;
 }
 
 /* Very narrow Pi displays — 2-col joint grid, single-col pendant */
