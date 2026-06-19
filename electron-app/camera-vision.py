@@ -24,7 +24,7 @@ Environment:
   ROBOT_ARM_STREAM_WIDTH         default 640   (web display resolution)
   ROBOT_ARM_STREAM_HEIGHT        default 480
   ROBOT_ARM_DETECTION_FPS        default 5     (camera + processing rate)
-  ROBOT_ARM_COLOR_DETECTION      default 0     (set 1 to enable colour block detection)
+  ROBOT_ARM_COLOR_DETECTION      default 1     (set 0 to disable colour block detection)
 """
 
 import json
@@ -48,9 +48,10 @@ STREAM_HEIGHT = int(os.environ.get("ROBOT_ARM_STREAM_HEIGHT", "480"))
 # The served snapshot is downscaled to STREAM resolution for the web UI.
 # 5 fps is sufficient for coordinate-mapping use; raise with ROBOT_ARM_DETECTION_FPS.
 DETECTION_FPS = max(1, int(os.environ.get("ROBOT_ARM_DETECTION_FPS", "5")))
-# Colour block detection is disabled by default — it is expensive at 1280×720
-# and not needed for ArUco-only coordinate mapping.  Set to 1 to enable.
-COLOR_DETECTION_ENABLED = os.environ.get("ROBOT_ARM_COLOR_DETECTION", "0").strip() not in ("0", "false", "no")
+# Colour block detection runs on a 640x480 downscale of the original frame,
+# keeping CPU manageable regardless of capture resolution.
+# Set ROBOT_ARM_COLOR_DETECTION=0 to disable entirely if not needed.
+COLOR_DETECTION_ENABLED = os.environ.get("ROBOT_ARM_COLOR_DETECTION", "1").strip() not in ("0", "false", "no")
 JPEG_QUALITY = 80
 MIN_BLOCK_AREA = 2500
 BOUNDARY = b"--jpgboundary"
@@ -68,6 +69,7 @@ ARUCO_DICTIONARIES = [
 ]
 
 # HSV colour ranges for simple block detection (tune under your lighting).
+# OpenCV hue is 0-179 (half of the 0-360° standard scale).
 COLOR_RANGES = {
     "red": [
         ((0, 120, 70), (10, 255, 255)),
@@ -77,10 +79,13 @@ COLOR_RANGES = {
         ((40, 60, 60), (85, 255, 255)),
     ],
     "blue": [
-        ((95, 80, 60), (130, 255, 255)),
+        ((95, 80, 60), (125, 255, 255)),
     ],
     "yellow": [
         ((20, 100, 100), (35, 255, 255)),
+    ],
+    "purple": [
+        ((125, 50, 40), (160, 255, 255)),
     ],
 }
 
@@ -315,8 +320,9 @@ def marker_centers(corners, ids, frame_width, frame_height):
     return markers
 
 
-def find_color_blocks(frame):
-    """Find coloured blocks using simple HSV thresholds."""
+def detect_color_blocks(frame):
+    """Detect coloured blocks using HSV thresholds. Returns list of block dicts.
+    Does NOT draw on the frame — call draw_color_blocks() separately."""
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
     frame_height, frame_width = frame.shape[:2]
     blocks = []
@@ -325,24 +331,19 @@ def find_color_blocks(frame):
         mask = None
         for low, high in ranges:
             part = cv2.inRange(hsv, np.array(low), np.array(high))
-            if mask is None:
-                mask = part
-            else:
-                mask = cv2.bitwise_or(mask, part)
+            mask = part if mask is None else cv2.bitwise_or(mask, part)
 
         mask = cv2.erode(mask, None, iterations=1)
         mask = cv2.dilate(mask, None, iterations=2)
 
         contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         for contour in contours:
-            area = cv2.contourArea(contour)
-            if area < MIN_BLOCK_AREA:
+            if cv2.contourArea(contour) < MIN_BLOCK_AREA:
                 continue
 
             x, y, w, h = cv2.boundingRect(contour)
             center_x = x + (w / 2.0)
             center_y = y + (h / 2.0)
-
             blocks.append(
                 {
                     "color": color_name,
@@ -355,19 +356,27 @@ def find_color_blocks(frame):
                 }
             )
 
-            cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 255), 2)
-            label = color_name + " block"
-            cv2.putText(
-                frame,
-                label,
-                (x, max(y - 8, 20)),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                0.6,
-                (0, 255, 255),
-                2,
-            )
-
     return blocks
+
+
+def draw_color_blocks(frame, blocks):
+    """Draw bounding boxes onto frame for a list of block dicts."""
+    fh, fw = frame.shape[:2]
+    for block in blocks:
+        x = int((block["center_x"] - block["width"] / 2) * fw)
+        y = int((block["center_y"] - block["height"] / 2) * fh)
+        w = int(block["width"] * fw)
+        h = int(block["height"] * fh)
+        cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 255), 2)
+        cv2.putText(
+            frame,
+            block["color"] + " block",
+            (x, max(y - 8, 20)),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.6,
+            (0, 255, 255),
+            2,
+        )
 
 
 def open_camera(device_path):
@@ -441,6 +450,7 @@ def process_frame(frame, detectors):
     markers = []
     blocks = []
 
+    # ArUco detection on the full capture resolution for accurate corner positions.
     try:
         gray = prepare_gray_for_aruco(annotated)
         if detectors:
@@ -448,14 +458,27 @@ def process_frame(frame, detectors):
             if ids is not None and len(ids) > 0:
                 draw_aruco_overlays(annotated, corners, ids)
         markers = marker_centers(corners, ids, frame_width, frame_height)
-        blocks = find_color_blocks(annotated) if COLOR_DETECTION_ENABLED else []
     except Exception as exc:
-        print(f"Vision processing error: {exc}", file=sys.stderr)
+        print(f"ArUco processing error: {exc}", file=sys.stderr)
         annotated = frame.copy()
 
+    # Downscale the annotated frame to the stream resolution for output.
     stream_frame = cv2.resize(
         annotated, (STREAM_WIDTH, STREAM_HEIGHT), interpolation=cv2.INTER_AREA
     )
+
+    # Colour detection runs on the ORIGINAL frame downscaled (no ArUco overlays).
+    # This prevents the green ArUco border lines from being detected as green blocks.
+    if COLOR_DETECTION_ENABLED:
+        try:
+            clean_small = cv2.resize(
+                frame, (STREAM_WIDTH, STREAM_HEIGHT), interpolation=cv2.INTER_AREA
+            )
+            blocks = detect_color_blocks(clean_small)
+            draw_color_blocks(stream_frame, blocks)
+        except Exception as exc:
+            print(f"Colour detection error: {exc}", file=sys.stderr)
+
     ok, jpeg = cv2.imencode(
         ".jpg", stream_frame, [int(cv2.IMWRITE_JPEG_QUALITY), JPEG_QUALITY]
     )
