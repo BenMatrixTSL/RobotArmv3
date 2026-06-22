@@ -131,9 +131,9 @@ let nextDeadZoneId = 1;
 let safeZHeight = 300; // Default safe Z height in mm for routing over dead zones
 
 // Tool orientation (direction vector for the tool's local Z-axis)
-// We keep this simple: a single global direction that all Cartesian moves try to follow.
-// Default: point straight down along negative Z in the world frame.
-let currentToolOrientation = { x: 0, y: 0, z: -1 };
+// FK at home (all joints 0°) gives tool Z = {0,0,1} (pointing up in world frame).
+// Default matches home so jogs from home don't immediately try to flip the wrist.
+let currentToolOrientation = { x: 0, y: 0, z: 1 };
 
 /**
  * Updates stored position markers in 3D view if visualization and kinematics are ready.
@@ -2755,8 +2755,9 @@ function getCurrentDisplayXYZ() {
  * When called with no arguments the target is read from the #targetX/Y/Z inputs.
  * Pass explicit x, y, z numbers to bypass the DOM reads (used by quickMoveXYZ).
  * orientationOverride: optional {x,y,z} unit vector — if provided, overrides currentToolOrientation for this move only.
+ * skipRefinement: if true, skip refineOrientationWithAccuracy and use IK base result directly (better for jogging).
  */
-async function moveToXYZ(xArg, yArg, zArg, orientationOverride) {
+async function moveToXYZ(xArg, yArg, zArg, orientationOverride, skipRefinement) {
     if (!robotArmClient.isConnected) {
         showAppMessage('Not connected to robot arm controller');
         return;
@@ -2851,7 +2852,7 @@ async function moveToXYZ(xArg, yArg, zArg, orientationOverride) {
                 { x: wp.x, y: wp.y, z: wp.z, orientation: effectiveOrientation },
                 previousRefinedAngles
             );
-            if (baseAngles) {
+            if (baseAngles && !skipRefinement) {
                 refined = robotKinematics.refineOrientationWithAccuracy(
                     { x: wp.x, y: wp.y, z: wp.z },
                     baseAngles,
@@ -2946,8 +2947,9 @@ async function quickMoveXYZ(axis, direction) {
         } catch (e) { /* fall through to null — moveToXYZ will use currentToolOrientation */ }
     }
 
-    // Move directly — no DOM input elements needed.
-    await moveToXYZ(newX, newY, newZ, jogOrientation);
+    // Move directly. Skip orientation refinement — IK base gives stable small jogs;
+    // refineOrientationWithAccuracy tends to find large-movement local minima for jogs.
+    await moveToXYZ(newX, newY, newZ, jogOrientation, true);
 }
 
 /**
@@ -2975,14 +2977,14 @@ function pendantSetOrientation(mode) {
         } else {
             showAppMessage('Kinematics not configured or no joint status yet');
         }
+    } else if (mode === 'up') {
+        currentToolOrientation = { x: 0, y: 0, z: 1 };
+        if (display) display.textContent = 'Locked: tool up / home direction (0, 0, +1)';
+        showAppMessage('Tool orientation set to up (home direction)');
     } else if (mode === 'down') {
         currentToolOrientation = { x: 0, y: 0, z: -1 };
         if (display) display.textContent = 'Locked: tool down (0, 0, -1)';
         showAppMessage('Tool orientation set to down');
-    } else if (mode === 'forward') {
-        currentToolOrientation = { x: 1, y: 0, z: 0 };
-        if (display) display.textContent = 'Locked: tool forward (1, 0, 0)';
-        showAppMessage('Tool orientation set to forward');
     }
 }
 
