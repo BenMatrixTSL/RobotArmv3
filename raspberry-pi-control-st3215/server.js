@@ -96,6 +96,17 @@ process.on('uncaughtException', (error) => {
 });
 process.on('exit', (code) => { debugLog('Process exit, code=' + code); });
 
+// ===== URDF: load at startup so kinematics are ready before any client connects =====
+const URDF_PATH = path.join(__dirname, 'kinematics.urdf');
+let serverUrdfText = null;
+try {
+    serverUrdfText = fs.readFileSync(URDF_PATH, 'utf8');
+    const info = robotKinematics.loadURDF(serverUrdfText);
+    debugLog('Loaded URDF from ' + URDF_PATH + ' — ' + info.jointCount + ' joints, maxReach=' + (info.maxReachMm || '?') + ' mm');
+} catch (e) {
+    debugLog('WARNING: Could not load URDF from ' + URDF_PATH + ': ' + e.message + ' — kinematics will be unavailable until a client uploads one', true);
+}
+
 // ===== Shared State =====
 let wss                   = null;
 let servoWorker           = null;
@@ -519,6 +530,7 @@ async function handleCommand(ws, data) {
                 const urdfXml = data.urdfXml;
                 if (typeof urdfXml !== 'string' || !urdfXml.trim()) throw new Error('URDF text is empty');
                 const info = robotKinematics.loadURDF(urdfXml);
+                serverUrdfText = urdfXml; // update in-memory copy so future connects get this
                 sendResponse({ type: 'kinematicsLoaded', configured: info.configured, jointCount: info.jointCount, joints: info.joints, urdfData: info.urdfData, maxReachMm: info.maxReachMm });
             } catch (error) {
                 sendResponse({ type: 'error', message: `Failed to load URDF: ${error.message}` });
@@ -689,6 +701,10 @@ function startServer() {
         ws.send(JSON.stringify({ type: 'status', joints: lastKnownStatusJoints, cacheAgeMs: lastKnownCacheAgeMs, pushed: true }));
         ws.send(JSON.stringify({ type: 'jointConfigs', count: lastKnownJointConfigs.count, total: lastKnownJointConfigs.total, joints: lastKnownJointConfigs.joints }));
         ws.send(JSON.stringify(getControlStatusPayload(ws)));
+        // Push URDF so client can configure its local kinematics without uploading a file
+        if (serverUrdfText) {
+            ws.send(JSON.stringify({ type: 'urdfConfig', urdfText: serverUrdfText }));
+        }
 
         ws.on('message', async function incoming(message) {
             try {

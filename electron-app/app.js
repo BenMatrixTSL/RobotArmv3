@@ -1384,12 +1384,6 @@ function initializeConnection() {
             robotArmClient.onControlUpdate = updateArmControlDisplay;
 
             robotArmClient.onReconnected = async function() {
-                // Re-push URDF so the server IK solver is ready after reconnect.
-                if (cachedUrdfText && typeof robotArmClient.loadKinematicsURDF === 'function') {
-                    robotArmClient.loadKinematicsURDF(cachedUrdfText).catch(function(e) {
-                        console.warn('Could not reload URDF on server after reconnect:', e.message);
-                    });
-                }
                 const isKioskView = window.location.search.indexOf('kiosk=1') >= 0;
                 if (isKioskView) {
                     await refreshArmControlStatus();
@@ -1440,14 +1434,6 @@ function initializeConnection() {
                 robotArmClient.requestJointConfigs();
             }
 
-            // Push the URDF to the server so its IK solver is ready.
-            // loadDemoConfig() runs before the WebSocket is open, so we re-send here.
-            if (cachedUrdfText && typeof robotArmClient.loadKinematicsURDF === 'function') {
-                robotArmClient.loadKinematicsURDF(cachedUrdfText).catch(function(e) {
-                    console.warn('Could not load URDF on server after connect:', e.message);
-                });
-            }
-            
         } catch (error) {
                 console.error('Connection error:', error);
             showAppMessage('Failed to connect: ' + error.message);

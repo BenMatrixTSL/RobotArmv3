@@ -327,6 +327,16 @@ class RobotArmClient {
             console.log('Joint configurations loaded:', this.jointConfigs);
         }
 
+        if (data.type === 'urdfConfig') {
+            // Server is pushing its authoritative URDF — apply it locally
+            if (data.urdfText && typeof applyLoadedUrdf === 'function') {
+                applyLoadedUrdf(data.urdfText, 'server').catch(function(e) {
+                    console.warn('Failed to apply server URDF:', e.message);
+                });
+            }
+            return;
+        }
+
         if (data.type === 'servoThermalFault') {
             console.warn('Servo thermal fault:', data.message);
             if (typeof showAppMessage === 'function') {
