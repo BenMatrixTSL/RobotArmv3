@@ -113,3 +113,31 @@ for (let step = 1; step <= 5; step++) {
     pos = { x: pos.x, y: pos.y + 10, z: pos.z };
     curAngles = testJog(`Y+10 step ${step}`, pos, curAngles, null) || curAngles;
 }
+
+// ---- Test 7: Tool-down from multiple seeds — find a viable config ----
+const D2R = Math.PI / 180;
+const seeds = [
+    { label: 'home seed [0,0,0,0,0,0]', angles: [0, 0, 0, 0, 0, 0] },
+    { label: 'J5=+90 seed', angles: [0, 0, 0, 0, 90*D2R, 0] },
+    { label: 'J5=-90 seed', angles: [0, 0, 0, 0, -90*D2R, 0] },
+    { label: 'J2=+45,J3=-90,J5=+45 seed', angles: [0, 45*D2R, -90*D2R, 0, 45*D2R, 0] },
+    { label: 'J2=-45,J3=+90,J5=-45 seed', angles: [0, -45*D2R, 90*D2R, 0, -45*D2R, 0] },
+    { label: 'J2=+90,J3=-90 seed', angles: [0, 90*D2R, -90*D2R, 0, 0, 0] },
+    { label: 'J2=-90,J5=+90 seed', angles: [0, -90*D2R, 0, 0, 90*D2R, 0] },
+];
+console.log('\n=== Tool-down feasibility: trying multiple IK seeds for home XYZ ===');
+for (const seed of seeds) {
+    const result = robotKinematics.inverseKinematics(
+        { x: homePos.x, y: homePos.y, z: homePos.z, orientation: { x: 0, y: 0, z: -1 } },
+        seed.angles
+    );
+    if (!result) { console.log(`  ${seed.label}: NO SOLUTION`); continue; }
+    const fk = robotKinematics.forwardKinematics(result);
+    const tz = toolZAxis(fk.rotation);
+    const dot = tz.z; // dot with {0,0,-1} = -tz.z for Z component
+    const oriErr = Math.acos(Math.max(-1, Math.min(1, -(tz.x*0 + tz.y*0 + tz.z*(-1))))) * 180 / Math.PI;
+    const posErr = Math.sqrt((fk.position.x-homePos.x)**2+(fk.position.y-homePos.y)**2+(fk.position.z-homePos.z)**2);
+    console.log(`  ${seed.label}:`);
+    console.log(`    angles: ${result.map((a,i)=>`J${i+1}:${(a*180/Math.PI).toFixed(1)}°`).join('  ')}`);
+    console.log(`    pos err: ${posErr.toFixed(2)}mm  ori err: ${oriErr.toFixed(1)}°  tool Z: x=${tz.x.toFixed(3)} y=${tz.y.toFixed(3)} z=${tz.z.toFixed(3)}`);
+}
