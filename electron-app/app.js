@@ -613,12 +613,9 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeConnection();
     initializeFileInput();
     initializeStatusUpdates();
-    // Skip eager 3D init in kiosk mode — the tab click handler initialises it
-    // lazily when the user first opens the visualization tab, by which point
-    // the container has real dimensions and the retry loop doesn't spin.
-    if (window.location.search.indexOf('kiosk=1') < 0) {
-        initialize3DVisualization();
-    }
+    // 3D visualization is initialised lazily when the user first opens the
+    // visualization tab — by then the container has real dimensions and the
+    // Three.js renderer can size itself correctly.
     initializePositions();
     initializeGCodeEditor();
     initializeDeadZones();
@@ -779,8 +776,11 @@ function initializeTabs() {
             if (targetTab === 'visualization') {
                 // Wait a bit for tab to be visible, then check/update visualization
                 setTimeout(() => {
-                    if (!robotArm3D) {
+                    // robotArm3D may exist but have a null scene if init gave up (container
+                    // was 0×0 for > 6 s before the tab was ever opened). Reset and retry.
+                    if (!robotArm3D || !robotArm3D.scene) {
                         console.log('Initializing 3D visualization (tab opened)');
+                        robotArm3D = null;
                         initialize3DVisualization();
                     } else {
                         // Tab is now visible, update visualization if configs are loaded
