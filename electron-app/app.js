@@ -135,6 +135,11 @@ let safeZHeight = 300; // Default safe Z height in mm for routing over dead zone
 // Default matches home so jogs from home don't immediately try to flip the wrist.
 let currentToolOrientation = { x: 0, y: 0, z: 1 };
 
+// Exact commanded XYZ for jog moves — updated with precise step sizes so errors
+// do not accumulate across sequential jogs. Reset to null after any non-jog move
+// so the next jog sequence re-initialises from the actual arm position.
+let jogCommandedPose = null;
+
 /**
  * Updates stored position markers in 3D view if visualization and kinematics are ready.
  */
@@ -2226,6 +2231,7 @@ async function homeAllJoints() {
         return;
     }
     homingInProgress = true;
+    jogCommandedPose = null; // arm is moving to a known position; next jog re-initialises
 
     // Convert default speed from degrees/s to steps/s
     const defaultSpeedDegreesPerSecond = 45;
@@ -2797,6 +2803,10 @@ async function moveToXYZ(xArg, yArg, zArg, orientationOverride, skipRefinement) 
             return;
         }
         
+        // A deliberate move-to-target resets the jog sequence so the next jog
+        // re-initialises from the actual arm position after this move completes.
+        if (!skipRefinement) jogCommandedPose = null;
+
         // Capture current arm angles (used for both modes as starting reference).
         let moveToXyzInitialAngles = null;
         if (Array.isArray(lastGoodJointStatus) && lastGoodJointStatus.length > 0) {
@@ -2849,7 +2859,12 @@ async function moveToXYZ(xArg, yArg, zArg, orientationOverride, skipRefinement) 
             }
 
             baseAngles = robotKinematics.inverseKinematics(
-                { x: wp.x, y: wp.y, z: wp.z, orientation: effectiveOrientation },
+                // For jog moves (skipRefinement) omit orientation so the IK focuses
+                // purely on position accuracy — orientation is preserved by warm-starting
+                // from the current joint angles, not by the gradient.
+                skipRefinement
+                    ? { x: wp.x, y: wp.y, z: wp.z }
+                    : { x: wp.x, y: wp.y, z: wp.z, orientation: effectiveOrientation },
                 previousRefinedAngles
             );
             if (baseAngles && !skipRefinement) {
@@ -2918,21 +2933,27 @@ async function quickMoveXYZ(axis, direction) {
         return;
     }
     
-    // Read current position — works from any tab (kinematics or pendant).
-    const { x: currentX, y: currentY, z: currentZ } = getCurrentDisplayXYZ();
-
-    if (!isFinite(currentX) || !isFinite(currentY) || !isFinite(currentZ)) {
-        showAppMessage('Current position not available. Please wait for status update.');
-        return;
+    // Initialise the exact commanded pose from the actual arm position on the first
+    // jog of a sequence, then step it precisely so errors never accumulate.
+    if (!jogCommandedPose) {
+        const { x: currentX, y: currentY, z: currentZ } = getCurrentDisplayXYZ();
+        if (!isFinite(currentX) || !isFinite(currentY) || !isFinite(currentZ)) {
+            showAppMessage('Current position not available. Please wait for status update.');
+            return;
+        }
+        jogCommandedPose = { x: currentX, y: currentY, z: currentZ };
     }
 
     const stepSizeInput = document.getElementById('xyzStepSize');
     const stepSize = parseFloat(stepSizeInput?.value || '5');
 
-    // Calculate new position
-    const newX = currentX + (axis === 'X' ? direction * stepSize : 0);
-    const newY = currentY + (axis === 'Y' ? direction * stepSize : 0);
-    const newZ = currentZ + (axis === 'Z' ? direction * stepSize : 0);
+    // Step the commanded pose exactly — no readback drift.
+    jogCommandedPose = {
+        x: jogCommandedPose.x + (axis === 'X' ? direction * stepSize : 0),
+        y: jogCommandedPose.y + (axis === 'Y' ? direction * stepSize : 0),
+        z: jogCommandedPose.z + (axis === 'Z' ? direction * stepSize : 0)
+    };
+    const { x: newX, y: newY, z: newZ } = jogCommandedPose;
 
     // Derive current tool orientation from FK so the jog maintains the arm's
     // existing pose instead of fighting to achieve the global target orientation.
