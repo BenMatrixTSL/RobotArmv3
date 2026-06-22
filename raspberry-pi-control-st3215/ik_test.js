@@ -81,14 +81,15 @@ function testJog(label, targetPos, initialAngles, desiredOrientation) {
     return base;
 }
 
-// ---- Test 1: Z+10 jog (position-only IK, no orientation) ----
-let angles = testJog('Z+10mm JOG (position-only)', { x: homePos.x, y: homePos.y, z: homePos.z + 10 }, homeAngles, null);
+// ---- Test 1: Z+10 jog WITH orientation constraint (tool-down) ----
+const toolDown = { x: 0, y: 0, z: -1 };
+let angles = testJog('Z+10mm JOG (tool-down orientation)', { x: homePos.x, y: homePos.y, z: homePos.z + 10 }, homeAngles, toolDown);
 
-// ---- Test 2: X+10 jog (position-only IK) ----
-angles = testJog('X+10mm JOG (position-only)', { x: homePos.x + 10, y: homePos.y, z: homePos.z }, homeAngles, null);
+// ---- Test 2: X+10 jog WITH orientation constraint ----
+angles = testJog('X+10mm JOG (tool-down orientation)', { x: homePos.x + 10, y: homePos.y, z: homePos.z }, homeAngles, toolDown);
 
-// ---- Test 3: Y+10 jog (position-only IK) ----
-angles = testJog('Y+10mm JOG (position-only)', { x: homePos.x, y: homePos.y + 10, z: homePos.z }, homeAngles, null);
+// ---- Test 3: Y+10 jog WITH orientation constraint ----
+angles = testJog('Y+10mm JOG (tool-down orientation)', { x: homePos.x, y: homePos.y + 10, z: homePos.z }, homeAngles, toolDown);
 
 // ---- Test 4: Move to XYZ with tool-down orientation (IK with orientation) ----
 angles = testJog(
@@ -107,12 +108,12 @@ angles = testJog(
 );
 
 // ---- Test 6: Chained Y jogs (position-only, simulating quickMoveXYZ) ----
-console.log('=== Chained Y+ jogs x5 (position-only IK, simulating quickMoveXYZ) ===');
+console.log('=== Chained Y+ jogs x5 (orientation-constrained IK, simulating quickMoveXYZ) ===');
 let pos = { x: homePos.x, y: homePos.y, z: homePos.z };
 let curAngles = homeAngles.slice();
 for (let step = 1; step <= 5; step++) {
     pos = { x: pos.x, y: pos.y + 10, z: pos.z };
-    curAngles = testJog(`Y+10 step ${step}`, pos, curAngles, null) || curAngles;
+    curAngles = testJog(`Y+10 step ${step}`, pos, curAngles, toolDown) || curAngles;
 }
 
 // ---- Test 7: Tool-down from multiple seeds — find a viable config ----

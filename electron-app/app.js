@@ -2846,7 +2846,9 @@ async function moveToXYZ(xArg, yArg, zArg, orientationOverride, skipRefinement) 
         // For each waypoint, run IK on the Pi server and move the joints.
         // Seed IK with previous waypoint angles to keep motion consistent.
         let lastAccuracy = null;
-        let previousRefinedAngles = null;
+        // Seed IK from actual current joint angles, not from zero.
+        // This keeps the solution near the current arm pose on every move.
+        let previousRefinedAngles = moveToXyzInitialAngles ? moveToXyzInitialAngles.slice() : null;
 
         for (let w = 0; w < waypoints.length; w++) {
             const wp = waypoints[w];
@@ -2948,22 +2950,9 @@ async function quickMoveXYZ(axis, direction) {
     };
     const { x: newX, y: newY, z: newZ } = jogCommandedPose;
 
-    // Derive current tool orientation from FK so the jog maintains the arm's
-    // existing pose instead of fighting to achieve the global target orientation.
-    let jogOrientation = null;
-    if (robotKinematics.isConfigured() && Array.isArray(lastGoodJointStatus) && lastGoodJointStatus.length > 0) {
-        try {
-            const currentAngles = lastGoodJointStatus.map(j =>
-                (j && typeof j.angleDegrees === 'number' && !isNaN(j.angleDegrees)) ? j.angleDegrees : 0
-            );
-            const fk = robotKinematics.forwardKinematics(currentAngles);
-            jogOrientation = toolZAxisFromMatrix(fk.rotation);
-        } catch (e) { /* fall through to null — moveToXYZ will use currentToolOrientation */ }
-    }
-
-    // Move directly. Skip orientation refinement — IK base gives stable small jogs;
-    // refineOrientationWithAccuracy tends to find large-movement local minima for jogs.
-    await moveToXYZ(newX, newY, newZ, jogOrientation, true);
+    // Use the user's selected tool orientation as the IK constraint so J5/J6
+    // actively maintain that orientation while J1-J4 handle XYZ positioning.
+    await moveToXYZ(newX, newY, newZ, currentToolOrientation, false);
 }
 
 /**
