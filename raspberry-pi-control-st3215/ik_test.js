@@ -47,67 +47,69 @@ function testJog(label, targetPos, initialAngles, desiredOrientation) {
     console.log(`  Target: X=${targetPos.x.toFixed(1)}  Y=${targetPos.y.toFixed(1)}  Z=${targetPos.z.toFixed(1)}`);
     console.log(`  Desired tool Z: x=${desiredOrientation.x.toFixed(3)} y=${desiredOrientation.y.toFixed(3)} z=${desiredOrientation.z.toFixed(3)}`);
 
-    const base = robotKinematics.inverseKinematics(
-        { x: targetPos.x, y: targetPos.y, z: targetPos.z, orientation: desiredOrientation },
-        initialAngles
-    );
+    const base = desiredOrientation
+        ? robotKinematics.inverseKinematics(
+            { x: targetPos.x, y: targetPos.y, z: targetPos.z, orientation: desiredOrientation },
+            initialAngles)
+        : robotKinematics.inverseKinematics(
+            { x: targetPos.x, y: targetPos.y, z: targetPos.z },
+            initialAngles);
     if (!base) { console.log('  IK: NO SOLUTION\n'); return; }
-    console.log(`  IK base  : ${base.map((a,i) => `J${i+1}:${a.toFixed(1)}°`).join('  ')}`);
-
-    const refined = robotKinematics.refineOrientationWithAccuracy(
-        targetPos, base, desiredOrientation, refAngles
-    );
-    console.log(`  Refined  : ${refined.angles.map((a,i) => `J${i+1}:${a.toFixed(1)}°`).join('  ')}`);
-    console.log(`  Pos err  : ${refined.positionErrorMm.toFixed(2)} mm`);
-    console.log(`  Ori err  : ${refined.orientationErrorDeg.toFixed(1)}°`);
+    console.log(`  IK result: ${base.map((a,i) => `J${i+1}:${a.toFixed(1)}°`).join('  ')}`);
 
     // Verify with FK
-    const checkFk = robotKinematics.forwardKinematics(refined.angles);
+    const checkFk = robotKinematics.forwardKinematics(base);
     const checkPos = checkFk.position;
     const checkToolZ = toolZAxis(checkFk.rotation);
     console.log(`  FK check : X=${checkPos.x.toFixed(2)}  Y=${checkPos.y.toFixed(2)}  Z=${checkPos.z.toFixed(2)}`);
     console.log(`  FK tool Z: x=${checkToolZ.x.toFixed(3)}  y=${checkToolZ.y.toFixed(3)}  z=${checkToolZ.z.toFixed(3)}`);
+    if (desiredOrientation) {
+        const dot = desiredOrientation.x*checkToolZ.x + desiredOrientation.y*checkToolZ.y + desiredOrientation.z*checkToolZ.z;
+        const oriErr = Math.acos(Math.max(-1, Math.min(1, dot))) * 180 / Math.PI;
+        console.log(`  Ori err  : ${oriErr.toFixed(1)}°`);
+    }
+    const posErr = Math.sqrt((checkPos.x-targetPos.x)**2+(checkPos.y-targetPos.y)**2+(checkPos.z-targetPos.z)**2);
+    console.log(`  Pos err  : ${posErr.toFixed(2)} mm`);
 
     // Report any big joint jumps
-    refined.angles.forEach((a, i) => {
+    base.forEach((a, i) => {
         const delta = Math.abs(a - initialAngles[i]);
         if (delta > 10) console.log(`  !! J${i+1} moved ${delta.toFixed(1)}° from ${initialAngles[i].toFixed(1)}° to ${a.toFixed(1)}°`);
     });
     console.log();
-    return refined.angles;
+    return base;
 }
 
-// ---- Test 1: Z+10 from home, maintaining home tool orientation ----
-let angles = testJog(
-    'Z+10mm from home, maintain home orientation',
-    { x: homePos.x, y: homePos.y, z: homePos.z + 10 },
-    homeAngles,
-    homeToolZ
-);
+// ---- Test 1: Z+10 jog (position-only IK, no orientation) ----
+let angles = testJog('Z+10mm JOG (position-only)', { x: homePos.x, y: homePos.y, z: homePos.z + 10 }, homeAngles, null);
 
-// ---- Test 2: Z+10 from home, forcing tool-down ----
+// ---- Test 2: X+10 jog (position-only IK) ----
+angles = testJog('X+10mm JOG (position-only)', { x: homePos.x + 10, y: homePos.y, z: homePos.z }, homeAngles, null);
+
+// ---- Test 3: Y+10 jog (position-only IK) ----
+angles = testJog('Y+10mm JOG (position-only)', { x: homePos.x, y: homePos.y + 10, z: homePos.z }, homeAngles, null);
+
+// ---- Test 4: Move to XYZ with tool-down orientation (IK with orientation) ----
 angles = testJog(
-    'Z+10mm from home, forced tool-down {0,0,-1}',
+    'Move to home+Z10, tool-down {0,0,-1} (IK with orientation)',
     { x: homePos.x, y: homePos.y, z: homePos.z + 10 },
     homeAngles,
     { x: 0, y: 0, z: -1 }
 );
 
-// ---- Test 3: X+10 from home, maintain home orientation ----
+// ---- Test 5: Move to XYZ with tool-up (home) orientation ----
 angles = testJog(
-    'X+10mm from home, maintain home orientation',
+    'Move to home+X10, tool-up {0,0,1} (IK with orientation)',
     { x: homePos.x + 10, y: homePos.y, z: homePos.z },
     homeAngles,
-    homeToolZ
+    { x: 0, y: 0, z: 1 }
 );
 
-// ---- Test 4: chain — Z+10 then Z+10 again ----
-console.log('=== Chained jog: Z+10 twice (each time maintain prev orientation) ===');
+// ---- Test 6: Chained Y jogs (position-only, simulating quickMoveXYZ) ----
+console.log('=== Chained Y+ jogs x5 (position-only IK, simulating quickMoveXYZ) ===');
 let pos = { x: homePos.x, y: homePos.y, z: homePos.z };
 let curAngles = homeAngles.slice();
-for (let step = 1; step <= 3; step++) {
-    pos = { x: pos.x, y: pos.y, z: pos.z + 10 };
-    const fk0 = robotKinematics.forwardKinematics(curAngles);
-    const ori = toolZAxis(fk0.rotation);
-    curAngles = testJog(`Step ${step}: Z+10`, pos, curAngles, ori) || curAngles;
+for (let step = 1; step <= 5; step++) {
+    pos = { x: pos.x, y: pos.y + 10, z: pos.z };
+    curAngles = testJog(`Y+10 step ${step}`, pos, curAngles, null) || curAngles;
 }

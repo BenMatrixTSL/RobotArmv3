@@ -2859,24 +2859,17 @@ async function moveToXYZ(xArg, yArg, zArg, orientationOverride, skipRefinement) 
             }
 
             baseAngles = robotKinematics.inverseKinematics(
-                // For jog moves (skipRefinement) omit orientation so the IK focuses
-                // purely on position accuracy — orientation is preserved by warm-starting
-                // from the current joint angles, not by the gradient.
+                // Jog moves: position-only (orientation preserved by warm-start from current angles).
+                // Deliberate moves: pass orientation so the IK gradient converges on both.
+                // refineOrientationWithAccuracy is NOT called — diagnostic showed it consistently
+                // produces worse results by forcing J5 to its limit.
                 skipRefinement
                     ? { x: wp.x, y: wp.y, z: wp.z }
                     : { x: wp.x, y: wp.y, z: wp.z, orientation: effectiveOrientation },
                 previousRefinedAngles
             );
-            if (baseAngles && !skipRefinement) {
-                refined = robotKinematics.refineOrientationWithAccuracy(
-                    { x: wp.x, y: wp.y, z: wp.z },
-                    baseAngles,
-                    effectiveOrientation,
-                    previousRefinedAngles || moveToXyzInitialAngles
-                );
-            }
 
-            const jointAngles = refined && Array.isArray(refined.angles) ? refined.angles : baseAngles;
+            const jointAngles = baseAngles;
 
             if (!jointAngles) {
                 showAppMessage(`Target position (${wp.x}, ${wp.y}, ${wp.z}) is unreachable. Please choose a different position.`);
