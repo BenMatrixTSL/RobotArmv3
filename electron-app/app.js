@@ -2754,8 +2754,9 @@ function getCurrentDisplayXYZ() {
  * Moves the end effector to the specified XYZ position.
  * When called with no arguments the target is read from the #targetX/Y/Z inputs.
  * Pass explicit x, y, z numbers to bypass the DOM reads (used by quickMoveXYZ).
+ * orientationOverride: optional {x,y,z} unit vector — if provided, overrides currentToolOrientation for this move only.
  */
-async function moveToXYZ(xArg, yArg, zArg) {
+async function moveToXYZ(xArg, yArg, zArg, orientationOverride) {
     if (!robotArmClient.isConnected) {
         showAppMessage('Not connected to robot arm controller');
         return;
@@ -2803,6 +2804,11 @@ async function moveToXYZ(xArg, yArg, zArg) {
             );
         }
 
+        // Resolve which tool orientation to aim for this move.
+        // orientationOverride lets callers (e.g. quickMoveXYZ) pass the FK-derived
+        // current orientation so jog moves maintain the arm's existing pose.
+        const effectiveOrientation = orientationOverride || currentToolOrientation;
+
         // ── Linear Cartesian mode ──────────────────────────────────────────────
         if (movementMode === 'linear' && moveToXyzInitialAngles) {
             if (!robotArmClient.hasArmControl) {
@@ -2842,14 +2848,14 @@ async function moveToXYZ(xArg, yArg, zArg) {
             }
 
             baseAngles = robotKinematics.inverseKinematics(
-                { x: wp.x, y: wp.y, z: wp.z, orientation: currentToolOrientation },
+                { x: wp.x, y: wp.y, z: wp.z, orientation: effectiveOrientation },
                 previousRefinedAngles
             );
             if (baseAngles) {
                 refined = robotKinematics.refineOrientationWithAccuracy(
                     { x: wp.x, y: wp.y, z: wp.z },
                     baseAngles,
-                    currentToolOrientation,
+                    effectiveOrientation,
                     previousRefinedAngles || moveToXyzInitialAngles
                 );
             }
@@ -2927,8 +2933,57 @@ async function quickMoveXYZ(axis, direction) {
     const newY = currentY + (axis === 'Y' ? direction * stepSize : 0);
     const newZ = currentZ + (axis === 'Z' ? direction * stepSize : 0);
 
+    // Derive current tool orientation from FK so the jog maintains the arm's
+    // existing pose instead of fighting to achieve the global target orientation.
+    let jogOrientation = null;
+    if (robotKinematics.isConfigured() && Array.isArray(lastGoodJointStatus) && lastGoodJointStatus.length > 0) {
+        try {
+            const currentAngles = lastGoodJointStatus.map(j =>
+                (j && typeof j.angleDegrees === 'number' && !isNaN(j.angleDegrees)) ? j.angleDegrees : 0
+            );
+            const fk = robotKinematics.forwardKinematics(currentAngles);
+            jogOrientation = toolZAxisFromMatrix(fk.rotation);
+        } catch (e) { /* fall through to null — moveToXYZ will use currentToolOrientation */ }
+    }
+
     // Move directly — no DOM input elements needed.
-    await moveToXYZ(newX, newY, newZ);
+    await moveToXYZ(newX, newY, newZ, jogOrientation);
+}
+
+/**
+ * Set tool orientation from the pendant UI.
+ * 'current' → read FK from live joint angles and lock to that direction.
+ * 'down'    → {0,0,-1} world Z-down.
+ * 'forward' → {1,0,0} world X-forward.
+ */
+function pendantSetOrientation(mode) {
+    const display = document.getElementById('pendantOrientationDisplay');
+    if (mode === 'current') {
+        if (robotKinematics.isConfigured() && Array.isArray(lastGoodJointStatus) && lastGoodJointStatus.length > 0) {
+            try {
+                const angles = lastGoodJointStatus.map(j =>
+                    (j && typeof j.angleDegrees === 'number' && !isNaN(j.angleDegrees)) ? j.angleDegrees : 0
+                );
+                const fk = robotKinematics.forwardKinematics(angles);
+                const t = toolZAxisFromMatrix(fk.rotation);
+                currentToolOrientation = { x: t.x, y: t.y, z: t.z };
+                if (display) display.textContent = `Locked: X:${t.x.toFixed(2)} Y:${t.y.toFixed(2)} Z:${t.z.toFixed(2)}`;
+                showAppMessage('Tool orientation locked to current pose');
+            } catch (e) {
+                showAppMessage('Could not read current pose: ' + e.message);
+            }
+        } else {
+            showAppMessage('Kinematics not configured or no joint status yet');
+        }
+    } else if (mode === 'down') {
+        currentToolOrientation = { x: 0, y: 0, z: -1 };
+        if (display) display.textContent = 'Locked: tool down (0, 0, -1)';
+        showAppMessage('Tool orientation set to down');
+    } else if (mode === 'forward') {
+        currentToolOrientation = { x: 1, y: 0, z: 0 };
+        if (display) display.textContent = 'Locked: tool forward (1, 0, 0)';
+        showAppMessage('Tool orientation set to forward');
+    }
 }
 
 /**

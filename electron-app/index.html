@@ -357,6 +357,17 @@
                 </div>
 
                 <div class="pendant-panel">
+                    <h3>Tool Orientation</h3>
+                    <p class="info-text" style="margin-bottom:8px">Direction the tool tip points during XYZ moves.</p>
+                    <div class="pendant-actions">
+                        <button class="btn btn-secondary pendant-wide-btn" onclick="pendantSetOrientation('current')">Use Current Pose</button>
+                        <button class="btn btn-secondary pendant-wide-btn" onclick="pendantSetOrientation('down')">Tool Down</button>
+                        <button class="btn btn-secondary pendant-wide-btn" onclick="pendantSetOrientation('forward')">Tool Forward</button>
+                    </div>
+                    <div style="margin-top:6px;font-size:0.85em;color:#666" id="pendantOrientationDisplay">Current: auto (jog maintains pose)</div>
+                </div>
+
+                <div class="pendant-panel">
                     <h3>Move to Stored Position</h3>
                     <div class="pendant-stored-pos">
                         <label for="pendantPositionSelect">Stored Position:</label>
