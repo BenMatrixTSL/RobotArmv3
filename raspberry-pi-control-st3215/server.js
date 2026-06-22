@@ -264,19 +264,57 @@ function handleWorkerMessage(msg) {
         debugLog('Servo worker failed to initialize: ' + msg.message, true);
         process.exit(1);
     }
+
+    if (msg.type === 'servoThermalFault') {
+        const warning = JSON.stringify({ type: 'servoThermalFault', joint: msg.joint, message: msg.message });
+        connectedClients.forEach((ws) => { if (ws.readyState === WebSocket.OPEN) ws.send(warning); });
+        debugLog('[THERMAL] ' + msg.message, true);
+        return;
+    }
+
+    if (msg.type === 'workerFault') {
+        debugLog('[WORKER FAULT] ' + msg.message, true);
+        return;
+    }
 }
 
 // ===== Child Process Setup =====
+
+// Exponential-backoff restart counter for the servo worker.
+let workerRestartCount   = 0;
+let workerLastStartedAt  = 0;
+
 function startServoWorker() {
+    workerLastStartedAt = Date.now();
     servoWorker = fork(path.join(__dirname, 'servoWorker.js'));
     servoWorker.on('message', handleWorkerMessage);
     servoWorker.on('error', (err) => {
         debugLog('Servo worker error: ' + (err.message || err), true);
     });
     servoWorker.on('exit', (code) => {
-        if (!serverShuttingDown) {
-            debugLog('Servo worker exited unexpectedly with code ' + code, true);
-        }
+        if (serverShuttingDown) return;
+
+        debugLog(`Servo worker exited unexpectedly with code ${code} — scheduling restart`, true);
+
+        // Broadcast a warning so any connected UI can display it.
+        const crashMsg = JSON.stringify({ type: 'servoWorkerCrashed', code: code });
+        connectedClients.forEach((ws) => { if (ws.readyState === WebSocket.OPEN) ws.send(crashMsg); });
+
+        // Exponential backoff: 2s → 4s → 8s … capped at 30s.
+        // Reset the counter if the worker ran for > 30s (a healthy-ish run).
+        const uptime = Date.now() - workerLastStartedAt;
+        if (uptime > 30000) workerRestartCount = 0;
+
+        const delayMs = Math.min(2000 * Math.pow(2, workerRestartCount), 30000);
+        workerRestartCount++;
+        debugLog(`Restarting servo worker in ${delayMs} ms (attempt ${workerRestartCount})`, true);
+
+        setTimeout(() => {
+            if (!serverShuttingDown) {
+                debugLog('Restarting servo worker now…', true);
+                startServoWorker();
+            }
+        }, delayMs);
     });
 }
 

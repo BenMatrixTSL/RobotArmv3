@@ -327,6 +327,22 @@ class RobotArmClient {
             console.log('Joint configurations loaded:', this.jointConfigs);
         }
 
+        if (data.type === 'servoThermalFault') {
+            console.warn('Servo thermal fault:', data.message);
+            if (typeof showAppMessage === 'function') {
+                showAppMessage('⚠️ ' + (data.message || 'A servo overheated — waiting for cool-down'));
+            }
+            return;
+        }
+
+        if (data.type === 'servoWorkerCrashed') {
+            console.error('Servo worker crashed (code ' + data.code + ') — server is restarting it');
+            if (typeof showAppMessage === 'function') {
+                showAppMessage('⚠️ Servo controller crashed — reconnecting automatically');
+            }
+            return;
+        }
+
         if (data.type === 'error') {
             console.error('Server error:', data.message);
             if (typeof showAppMessage === 'function') {

@@ -22,6 +22,19 @@
 const { SerialPort } = require('serialport');
 const RobotArm = require('./robotArmST3215');
 
+// Catch-all safety net: log the error and exit so the parent can restart us.
+// A silent crash (unhandled rejection with no output) is the hardest to debug.
+process.on('uncaughtException', (err) => {
+    try { process.send({ type: 'workerFault', message: 'uncaughtException: ' + (err.stack || err) }); } catch (_) {}
+    console.error('[servoWorker] uncaughtException:', err.stack || err);
+    process.exit(1);
+});
+process.on('unhandledRejection', (reason) => {
+    try { process.send({ type: 'workerFault', message: 'unhandledRejection: ' + (reason && reason.stack ? reason.stack : String(reason)) }); } catch (_) {}
+    console.error('[servoWorker] unhandledRejection:', reason);
+    // Do NOT exit — an unhandled rejection in a poll tick shouldn't kill the worker.
+});
+
 // ===== Configuration (mirrors server.js constants) =====
 const SERIAL_PORT = process.env.SERIAL_PORT || '/dev/serial0';
 const SERIAL_BAUDRATE = 1000000;
@@ -43,8 +56,9 @@ const BUS_QUIET_AFTER_MOVE_MS   = 10;
 const BUS_QUIET_JOG_MS          = 4;
 const RESCAN_MIN_INTERVAL_MS    = 10000;
 
-const SERVO_BACKOFF_FAIL_THRESHOLD = 3;
-const SERVO_BACKOFF_DURATION_MS    = 2000;
+const SERVO_BACKOFF_FAIL_THRESHOLD   = 3;
+const SERVO_BACKOFF_DURATION_MS      = 2000;
+const SERVO_THERMAL_BACKOFF_DURATION_MS = 30000; // 30 s cool-down after temperature fault
 
 // ST3215 bus watchdog: self-disables torque ~1 s after the last *write* command.
 // Status-poll reads do not reset it.  A single broadcast WRITE TORQUE_ENABLE=1
@@ -281,18 +295,25 @@ async function refreshAllJointStatusSyncRead() {
                 stepPosition: status.position, readStale: false, lastGoodAt: Date.now()
             };
         } else {
+            const errMsg = result.reason && result.reason.message ? result.reason.message : String(result.reason);
+            const isThermal = errMsg.toLowerCase().includes('temperature');
             servoConsecFails[jointIndex]++;
-            if (servoConsecFails[jointIndex] >= SERVO_BACKOFF_FAIL_THRESHOLD) {
+            if (isThermal) {
+                servoBackoffUntilMs[jointIndex] = Date.now() + SERVO_THERMAL_BACKOFF_DURATION_MS;
+                servoConsecFails[jointIndex] = 0;
+                log(`[BUS] Joint ${jointNum}: TEMPERATURE FAULT — entering ${SERVO_THERMAL_BACKOFF_DURATION_MS}ms thermal cool-down`, true);
+                try { process.send({ type: 'servoThermalFault', joint: jointNum, message: `Joint ${jointNum} temperature fault — cooling down for ${SERVO_THERMAL_BACKOFF_DURATION_MS / 1000}s` }); } catch (_) {}
+            } else if (servoConsecFails[jointIndex] >= SERVO_BACKOFF_FAIL_THRESHOLD) {
                 servoBackoffUntilMs[jointIndex] = Date.now() + SERVO_BACKOFF_DURATION_MS;
                 servoConsecFails[jointIndex] = 0;
                 log(`[BUS] Joint ${jointNum}: entering ${SERVO_BACKOFF_DURATION_MS}ms backoff after ${SERVO_BACKOFF_FAIL_THRESHOLD} consecutive failures`);
             }
             if (previous.lastGoodAt) {
-                jointStatusCache[jointIndex] = { ...previous, available: true, readStale: true, pollError: result.reason.message };
+                jointStatusCache[jointIndex] = { ...previous, available: true, readStale: true, pollError: errMsg };
             } else {
-                jointStatusCache[jointIndex] = { ...defaultJointStatus(jointNum), readStale: true, pollError: result.reason.message };
+                jointStatusCache[jointIndex] = { ...defaultJointStatus(jointNum), readStale: true, pollError: errMsg };
             }
-            log(`[BUS] Joint ${jointNum}: sync read failed (${result.reason.message}) consec=${servoConsecFails[jointIndex]}`);
+            log(`[BUS] Joint ${jointNum}: sync read failed (${errMsg}) consec=${servoConsecFails[jointIndex]}`);
         }
     });
 }
@@ -332,8 +353,15 @@ async function refreshSingleJointStatusFromBus(jointIndex) {
         vlog(`[POLL] joint=${jointNum} pos=${status.position} angle=${status.angleDegrees.toFixed(1)} torque=${status.torqueEnabled} moving=${status.isMoving}`);
         jointStatusCache[jointIndex] = { joint: jointNum, available: true, ...status, stepPosition: status.position, readStale: false, lastGoodAt: Date.now() };
     } catch (error) {
+        const isThermal = error.message && error.message.toLowerCase().includes('temperature');
         servoConsecFails[jointIndex]++;
-        if (servoConsecFails[jointIndex] >= SERVO_BACKOFF_FAIL_THRESHOLD) {
+        if (isThermal) {
+            // Temperature protection: apply long cool-down backoff immediately and notify parent.
+            servoBackoffUntilMs[jointIndex] = Date.now() + SERVO_THERMAL_BACKOFF_DURATION_MS;
+            servoConsecFails[jointIndex] = 0;
+            log(`[BUS] Joint ${jointNum}: TEMPERATURE FAULT — entering ${SERVO_THERMAL_BACKOFF_DURATION_MS}ms thermal cool-down`, true);
+            try { process.send({ type: 'servoThermalFault', joint: jointNum, message: `Joint ${jointNum} temperature fault — cooling down for ${SERVO_THERMAL_BACKOFF_DURATION_MS / 1000}s` }); } catch (_) {}
+        } else if (servoConsecFails[jointIndex] >= SERVO_BACKOFF_FAIL_THRESHOLD) {
             servoBackoffUntilMs[jointIndex] = Date.now() + SERVO_BACKOFF_DURATION_MS;
             servoConsecFails[jointIndex] = 0;
             log(`[BUS] Joint ${jointNum}: entering ${SERVO_BACKOFF_DURATION_MS}ms backoff after ${SERVO_BACKOFF_FAIL_THRESHOLD} consecutive failures`);
