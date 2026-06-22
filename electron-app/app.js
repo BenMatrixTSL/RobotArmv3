@@ -2808,6 +2808,7 @@ async function moveToXYZ() {
                 return;
             }
 
+            const refAngles = previousRefinedAngles || moveToXyzInitialAngles || jointAngles.map(() => 0);
             previousRefinedAngles = jointAngles.slice();
             lastAccuracy = refined || { positionErrorMm: 0, orientationErrorDeg: 0 };
 
@@ -2815,10 +2816,19 @@ async function moveToXYZ() {
             console.log(`Joint angles: ${jointAngles.map((a, i) => `J${i+1}:${a.toFixed(2)}°`).join(', ')}`);
             console.log(`Accuracy: position ${lastAccuracy.positionErrorMm.toFixed(2)} mm, orientation ${lastAccuracy.orientationErrorDeg.toFixed(1)}°`);
 
+            // Dispatch all joints simultaneously with proportional speeds so they arrive together.
+            const defaultStepsPerSec = typeof degreesPerSecondToStepsPerSecond === 'function'
+                ? degreesPerSecondToStepsPerSecond(45) : 1500;
+            const coordSpeeds = computeCoordinatedSpeeds(refAngles, jointAngles, defaultStepsPerSec);
             for (let i = 0; i < jointAngles.length; i++) {
-                robotArmClient.moveJoint(i + 1, jointAngles[i]);
-                await new Promise(resolve => setTimeout(resolve, 50));
+                robotArmClient.moveJoint(i + 1, jointAngles[i], coordSpeeds[i] || defaultStepsPerSec);
             }
+            // Wait for the arm to physically complete the move before sending the next waypoint.
+            // Estimate: max travel at base speed + 300ms buffer.
+            const maxTravelDeg = Math.max(...jointAngles.map((a, i) => Math.abs(a - (refAngles[i] || 0))));
+            const baseDegPerSec = 45;
+            const estimatedMs = Math.ceil((maxTravelDeg / baseDegPerSec) * 1000) + 300;
+            await new Promise(resolve => setTimeout(resolve, Math.max(estimatedMs, 400)));
         }
 
         if (lastAccuracy) {
@@ -3297,6 +3307,28 @@ async function jointPathIntersectsDeadZone(currentAngles, targetAngles, zones, s
 }
 
 /**
+ * Returns an array of per-joint speeds (steps/s) scaled so all joints arrive
+ * at their targets simultaneously. The joint with the most travel runs at
+ * baseStepsPerSecond; all others are proportionally reduced.
+ * A minimum of 50 steps/s is enforced so no servo gets a zero-speed command.
+ */
+function computeCoordinatedSpeeds(currentAngles, targetAngles, baseStepsPerSecond) {
+    if (!Array.isArray(currentAngles) || !Array.isArray(targetAngles) || currentAngles.length === 0) {
+        return [];
+    }
+    const n = Math.min(currentAngles.length, targetAngles.length);
+    const travels = [];
+    for (let i = 0; i < n; i++) {
+        travels.push(Math.abs((targetAngles[i] || 0) - (currentAngles[i] || 0)));
+    }
+    const maxTravel = Math.max(...travels);
+    if (maxTravel < 0.01) {
+        return travels.map(() => Math.max(baseStepsPerSecond, 50));
+    }
+    return travels.map(t => Math.max(Math.round(baseStepsPerSecond * t / maxTravel), 50));
+}
+
+/**
  * Moves all joints to the specified target angles, respecting dead zones.
  * If the joint-space path does not intersect any dead zone, this will move
  * directly in joint space. If it does, the move is converted into a
@@ -3333,8 +3365,12 @@ async function moveJointsToAnglesWithDeadZones(targetAngles, speedDegreesPerSeco
 
     // If we have no kinematics or no dead zones, move directly in joint space
     if (!robotKinematics || !robotKinematics.isConfigured() || !deadZones || deadZones.length === 0) {
+        const directCurrent = Array.isArray(lastGoodJointStatus) && lastGoodJointStatus.length > 0
+            ? lastGoodJointStatus.map(j => (j && typeof j.angleDegrees === 'number') ? j.angleDegrees : 0)
+            : tgt.map(() => 0);
+        const directSpeeds = computeCoordinatedSpeeds(directCurrent, tgt, speedStepsPerSecond);
         for (let i = 0; i < numJoints; i++) {
-            await robotArmClient.moveJoint(i + 1, tgt[i], speedStepsPerSecond);
+            robotArmClient.moveJoint(i + 1, tgt[i], directSpeeds[i] || speedStepsPerSecond);
         }
         return;
     }
@@ -3352,8 +3388,12 @@ async function moveJointsToAnglesWithDeadZones(targetAngles, speedDegreesPerSeco
         }
     } catch (e) {
         console.warn('moveJointsToAnglesWithDeadZones: failed to read current status; moving directly.', e);
+        const fallbackCurrent = Array.isArray(lastGoodJointStatus) && lastGoodJointStatus.length > 0
+            ? lastGoodJointStatus.map(j => (j && typeof j.angleDegrees === 'number') ? j.angleDegrees : 0)
+            : tgt.map(() => 0);
+        const fallbackSpeeds = computeCoordinatedSpeeds(fallbackCurrent, tgt, speedStepsPerSecond);
         for (let i = 0; i < numJoints; i++) {
-            await robotArmClient.moveJoint(i + 1, tgt[i], speedStepsPerSecond);
+            robotArmClient.moveJoint(i + 1, tgt[i], fallbackSpeeds[i] || speedStepsPerSecond);
         }
         return;
     }
@@ -3362,9 +3402,10 @@ async function moveJointsToAnglesWithDeadZones(targetAngles, speedDegreesPerSeco
     const intersects = await jointPathIntersectsDeadZone(currentAngles, tgt, deadZones, 40);
 
     if (!intersects) {
-        // Straight joint-space move is safe
+        // Straight joint-space move is safe — scale speeds so all joints arrive together
+        const safeSpeeds = computeCoordinatedSpeeds(currentAngles, tgt, speedStepsPerSecond);
         for (let i = 0; i < numJoints; i++) {
-            await robotArmClient.moveJoint(i + 1, tgt[i], speedStepsPerSecond);
+            robotArmClient.moveJoint(i + 1, tgt[i], safeSpeeds[i] || speedStepsPerSecond);
         }
         return;
     }
@@ -3476,8 +3517,9 @@ async function moveJointsToAnglesWithDeadZones(targetAngles, speedDegreesPerSeco
 
                     const finalIk = finalRefined && Array.isArray(finalRefined.angles) ? finalRefined.angles : finalBaseAngles;
                     if (finalIk) {
+                        const finalSpeeds = computeCoordinatedSpeeds(initialAngles, finalIk, speedStepsPerSecond);
                         for (let i = 0; i < numJoints && i < finalIk.length; i++) {
-                            await robotArmClient.moveJoint(i + 1, finalIk[i], speedStepsPerSecond);
+                            robotArmClient.moveJoint(i + 1, finalIk[i], finalSpeeds[i] || speedStepsPerSecond);
                         }
                         return;
                     }
@@ -3486,8 +3528,9 @@ async function moveJointsToAnglesWithDeadZones(targetAngles, speedDegreesPerSeco
                 return;
             }
 
+            const waypointSpeeds = computeCoordinatedSpeeds(initialAngles, ikAngles, speedStepsPerSecond);
             for (let i = 0; i < numJoints && i < ikAngles.length; i++) {
-                await robotArmClient.moveJoint(i + 1, ikAngles[i], speedStepsPerSecond);
+                robotArmClient.moveJoint(i + 1, ikAngles[i], waypointSpeeds[i] || speedStepsPerSecond);
             }
 
             initialAngles = ikAngles.slice();
@@ -3497,8 +3540,12 @@ async function moveJointsToAnglesWithDeadZones(targetAngles, speedDegreesPerSeco
         }
     } catch (e) {
         console.warn('moveJointsToAnglesWithDeadZones: error during safe path execution; falling back to direct move.', e);
+        const catchCurrent = Array.isArray(lastGoodJointStatus) && lastGoodJointStatus.length > 0
+            ? lastGoodJointStatus.map(j => (j && typeof j.angleDegrees === 'number') ? j.angleDegrees : 0)
+            : tgt.map(() => 0);
+        const catchSpeeds = computeCoordinatedSpeeds(catchCurrent, tgt, speedStepsPerSecond);
         for (let i = 0; i < numJoints; i++) {
-            await robotArmClient.moveJoint(i + 1, tgt[i], speedStepsPerSecond);
+            robotArmClient.moveJoint(i + 1, tgt[i], catchSpeeds[i] || speedStepsPerSecond);
         }
     }
 }
@@ -3961,14 +4008,16 @@ async function executeGCodeCommand(command) {
                 gcodeProcessor.log(`Moving to waypoint ${w + 1}/${waypoints.length}: X${wp.x} Y${wp.y} Z${wp.z} at speed ${speedDegreesPerSecond} degrees/s`);
                 gcodeProcessor.log(`Joint angles: ${jointAngles.map((a, i) => `J${i+1}:${a.toFixed(2)}°`).join(', ')}`);
 
-                // Move each joint with the specified speed
-                for (let i = 0; i < jointAngles.length; i++) {
-                    if (robotArmClient.isConnected) {
-                        robotArmClient.moveJoint(i + 1, jointAngles[i], speed);
+                // Dispatch all joints simultaneously with speeds scaled for coordinated arrival.
+                if (robotArmClient.isConnected) {
+                    const gcodeSpeeds = computeCoordinatedSpeeds(initialAngles || jointAngles.map(() => 0), jointAngles, speed);
+                    for (let i = 0; i < jointAngles.length; i++) {
+                        robotArmClient.moveJoint(i + 1, jointAngles[i], gcodeSpeeds[i] || speed);
                     }
-                    // Small delay between joint commands
-                    await new Promise(resolve => setTimeout(resolve, 50));
                 }
+
+                // Update initial angles for next waypoint's speed calculation
+                initialAngles = jointAngles.slice();
 
                 // Brief pause between waypoints
                 await new Promise(resolve => setTimeout(resolve, 500));
@@ -4527,14 +4576,15 @@ async function runRapidProgram() {
                     break;
                 }
 
-                // `jointAngles` now contains the final IK solution
-
+                // `jointAngles` now contains the final IK solution — dispatch with coordinated speeds.
+                const rapidSpeeds = computeCoordinatedSpeeds(initialAngles || jointAngles.map(() => 0), jointAngles, speedStepsPerSecond);
                 for (let j = 0; j < numJoints; j++) {
                     const targetAngle = jointAngles[j];
                     if (typeof targetAngle === 'number' && !isNaN(targetAngle)) {
-                        robotArmClient.moveJoint(j + 1, targetAngle, speedStepsPerSecond);
+                        robotArmClient.moveJoint(j + 1, targetAngle, rapidSpeeds[j] || speedStepsPerSecond);
                     }
                 }
+                initialAngles = jointAngles.slice();
 
                 await new Promise(function (resolve) {
                     setTimeout(resolve, 800);
@@ -4623,14 +4673,15 @@ async function runRapidProgram() {
                     break;
                 }
 
-                // `jointAngles2` now contains the final IK solution
-
+                // `jointAngles2` now contains the final IK solution — dispatch with coordinated speeds.
+                const rapidOffsSpeeds = computeCoordinatedSpeeds(initialAngles2 || jointAngles2.map(() => 0), jointAngles2, speedStepsPerSecond);
                 for (let j = 0; j < numJoints; j++) {
                     const targetAngle = jointAngles2[j];
                     if (typeof targetAngle === 'number' && !isNaN(targetAngle)) {
-                        robotArmClient.moveJoint(j + 1, targetAngle, speedStepsPerSecond);
+                        robotArmClient.moveJoint(j + 1, targetAngle, rapidOffsSpeeds[j] || speedStepsPerSecond);
                     }
                 }
+                initialAngles2 = jointAngles2.slice();
 
                 await new Promise(function (resolve) {
                     setTimeout(resolve, 800);
