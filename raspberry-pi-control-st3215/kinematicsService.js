@@ -555,9 +555,10 @@ class RobotKinematics {
             ? referenceAngles : null;
 
         // Weight for joint-travel penalty in mm-equivalent per degree of total travel.
-        // Small enough not to prevent reaching the target, large enough to prefer
-        // nearby solutions over equivalent-accuracy solutions that flip a joint.
-        const jointTravelWeight = 0.02;
+        // 0.1 per degree: a 180° wrist flip costs 18 mm equivalent, preventing
+        // unnecessary configuration flips on small jog moves while still allowing
+        // large configuration changes when genuinely needed for reach.
+        const jointTravelWeight = 0.1;
 
         const desiredZ = normalizeVector(desiredOrientation);
         const clampToLimits = (angleDeg, joint) => {

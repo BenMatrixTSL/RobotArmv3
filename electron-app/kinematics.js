@@ -764,7 +764,10 @@ class RobotKinematics {
         // Used to penalise large joint travel and avoid unnecessary flips.
         const refAngles = (Array.isArray(referenceAngles) && referenceAngles.length === numJoints)
             ? referenceAngles : null;
-        const jointTravelWeight = 0.02;
+        // 0.1 per degree: a 180° wrist flip costs 18 mm equivalent, preventing
+        // unnecessary configuration flips on small jog moves while still allowing
+        // large configuration changes when genuinely needed for reach.
+        const jointTravelWeight = 0.1;
 
         const desiredZ = normalizeVector(desiredOrientation);
         const clampToLimits = (angleDeg, joint) => {
