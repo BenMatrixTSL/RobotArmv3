@@ -62,6 +62,10 @@ let movementMode         = 'ptp';
 let linearSpeedMmPerSec  = 50;
 let linearStepMm         = 2.0;
 
+// Cached raw URDF text — stored when loaded locally so it can be sent to the
+// server after a WebSocket connection is established (the server needs it too).
+let cachedUrdfText = null;
+
 // If the preload bridge did not run, we provide a simple fallback here
 // so that window.electronAPI is still available when nodeIntegration is enabled.
 try {
@@ -1380,6 +1384,12 @@ function initializeConnection() {
             robotArmClient.onControlUpdate = updateArmControlDisplay;
 
             robotArmClient.onReconnected = async function() {
+                // Re-push URDF so the server IK solver is ready after reconnect.
+                if (cachedUrdfText && typeof robotArmClient.loadKinematicsURDF === 'function') {
+                    robotArmClient.loadKinematicsURDF(cachedUrdfText).catch(function(e) {
+                        console.warn('Could not reload URDF on server after reconnect:', e.message);
+                    });
+                }
                 const isKioskView = window.location.search.indexOf('kiosk=1') >= 0;
                 if (isKioskView) {
                     await refreshArmControlStatus();
@@ -1428,6 +1438,14 @@ function initializeConnection() {
             // Joint configs are sent on connect; request again if needed
             if (!robotArmClient.jointConfigs || robotArmClient.jointConfigs.length === 0) {
                 robotArmClient.requestJointConfigs();
+            }
+
+            // Push the URDF to the server so its IK solver is ready.
+            // loadDemoConfig() runs before the WebSocket is open, so we re-send here.
+            if (cachedUrdfText && typeof robotArmClient.loadKinematicsURDF === 'function') {
+                robotArmClient.loadKinematicsURDF(cachedUrdfText).catch(function(e) {
+                    console.warn('Could not load URDF on server after connect:', e.message);
+                });
             }
             
         } catch (error) {
@@ -5530,6 +5548,8 @@ async function applyLoadedUrdf(urdfText, source) {
     if (source !== 'DEFAULT_URDF') {
         console.log('Loaded URDF from', source, '(zero_offset in file:', zeroOffsetValue, ')');
     }
+    // Cache raw text so it can be sent to the server when we connect.
+    cachedUrdfText = urdfText;
     // Load locally first so the UI has joint limits immediately.
     robotKinematics.loadURDF(urdfText);
 
