@@ -45,7 +45,7 @@ function testJog(label, targetPos, initialAngles, desiredOrientation) {
     const refAngles = initialAngles;
     console.log(`--- ${label} ---`);
     console.log(`  Target: X=${targetPos.x.toFixed(1)}  Y=${targetPos.y.toFixed(1)}  Z=${targetPos.z.toFixed(1)}`);
-    console.log(`  Desired tool Z: x=${desiredOrientation.x.toFixed(3)} y=${desiredOrientation.y.toFixed(3)} z=${desiredOrientation.z.toFixed(3)}`);
+    if (desiredOrientation) console.log(`  Desired tool Z: x=${desiredOrientation.x.toFixed(3)} y=${desiredOrientation.y.toFixed(3)} z=${desiredOrientation.z.toFixed(3)}`);
 
     const base = desiredOrientation
         ? robotKinematics.inverseKinematics(
