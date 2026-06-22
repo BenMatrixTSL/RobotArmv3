@@ -2732,32 +2732,51 @@ async function updateXYZPosition(jointAngles) {
 /**
  * Moves the end effector to the specified XYZ position
  */
-async function moveToXYZ() {
+// Helper: read the current displayed XYZ position from whichever elements exist.
+function getCurrentDisplayXYZ() {
+    const tryRead = (id) => {
+        const el = document.getElementById(id);
+        return el ? parseFloat(el.textContent) : NaN;
+    };
+    const pick = (a, b) => isFinite(a) ? a : b;
+    return {
+        x: pick(tryRead('currentX'), tryRead('pendantX')),
+        y: pick(tryRead('currentY'), tryRead('pendantY')),
+        z: pick(tryRead('currentZ'), tryRead('pendantZ'))
+    };
+}
+
+/**
+ * Moves the end effector to the specified XYZ position.
+ * When called with no arguments the target is read from the #targetX/Y/Z inputs.
+ * Pass explicit x, y, z numbers to bypass the DOM reads (used by quickMoveXYZ).
+ */
+async function moveToXYZ(xArg, yArg, zArg) {
     if (!robotArmClient.isConnected) {
         showAppMessage('Not connected to robot arm controller');
         return;
     }
-    
+
     if (!robotKinematics.isConfigured()) {
         showAppMessage('Kinematics not configured. Please load joint configurations from the Settings tab first.');
         return;
     }
-    
-    // Get target position from input fields
-    const x = parseFloat(document.getElementById('targetX').value);
-    const y = parseFloat(document.getElementById('targetY').value);
-    const z = parseFloat(document.getElementById('targetZ').value);
-    
+
+    // Accept direct coordinates or fall back to DOM input fields
+    const domVal = (id) => { const el = document.getElementById(id); return el ? parseFloat(el.value) : NaN; };
+    let x = (typeof xArg === 'number' && !isNaN(xArg)) ? xArg : domVal('targetX');
+    let y = (typeof yArg === 'number' && !isNaN(yArg)) ? yArg : domVal('targetY');
+    let z = (typeof zArg === 'number' && !isNaN(zArg)) ? zArg : domVal('targetZ');
+
     if (isNaN(x) || isNaN(y) || isNaN(z)) {
         showAppMessage('Please enter valid X, Y, Z coordinates');
         return;
     }
-    
+
     try {
-        // Determine current position from XYZ display (used to plan around dead zones)
-        let currentX = parseFloat(document.getElementById('currentX').textContent);
-        let currentY = parseFloat(document.getElementById('currentY').textContent);
-        let currentZ = parseFloat(document.getElementById('currentZ').textContent);
+        // Determine current position for dead-zone path planning.
+        // Try the kinematics-tab elements first, then the pendant elements.
+        let { x: currentX, y: currentY, z: currentZ } = getCurrentDisplayXYZ();
         if (!isFinite(currentX)) currentX = x;
         if (!isFinite(currentY)) currentY = y;
         if (!isFinite(currentZ)) currentZ = z;
@@ -2888,58 +2907,41 @@ async function quickMoveXYZ(axis, direction) {
         return;
     }
     
-    // Get current position
-    const currentX = parseFloat(document.getElementById('currentX').textContent);
-    const currentY = parseFloat(document.getElementById('currentY').textContent);
-    const currentZ = parseFloat(document.getElementById('currentZ').textContent);
-    
-    if (isNaN(currentX) || isNaN(currentY) || isNaN(currentZ)) {
+    // Read current position — works from any tab (kinematics or pendant).
+    const { x: currentX, y: currentY, z: currentZ } = getCurrentDisplayXYZ();
+
+    if (!isFinite(currentX) || !isFinite(currentY) || !isFinite(currentZ)) {
         showAppMessage('Current position not available. Please wait for status update.');
         return;
     }
-    
-    // Get step size
+
     const stepSizeInput = document.getElementById('xyzStepSize');
     const stepSize = parseFloat(stepSizeInput?.value || '5');
-    
+
     // Calculate new position
-    let newX = currentX;
-    let newY = currentY;
-    let newZ = currentZ;
-    
-    if (axis === 'X') {
-        newX = currentX + (direction * stepSize);
-    } else if (axis === 'Y') {
-        newY = currentY + (direction * stepSize);
-    } else if (axis === 'Z') {
-        newZ = currentZ + (direction * stepSize);
-    }
-    
-    // Update target inputs
-    document.getElementById('targetX').value = newX.toFixed(1);
-    document.getElementById('targetY').value = newY.toFixed(1);
-    document.getElementById('targetZ').value = newZ.toFixed(1);
-    
-    // Move to new position
-    await moveToXYZ();
+    const newX = currentX + (axis === 'X' ? direction * stepSize : 0);
+    const newY = currentY + (axis === 'Y' ? direction * stepSize : 0);
+    const newZ = currentZ + (axis === 'Z' ? direction * stepSize : 0);
+
+    // Move directly — no DOM input elements needed.
+    await moveToXYZ(newX, newY, newZ);
 }
 
 /**
  * Copies current XYZ position to target inputs
  */
 function copyCurrentXYZ() {
-    const currentX = document.getElementById('currentX').textContent;
-    const currentY = document.getElementById('currentY').textContent;
-    const currentZ = document.getElementById('currentZ').textContent;
-    
-    if (currentX === '-' || currentY === '-' || currentZ === '-') {
+    const { x, y, z } = getCurrentDisplayXYZ();
+
+    if (!isFinite(x) || !isFinite(y) || !isFinite(z)) {
         showAppMessage('Current position not available. Please wait for status update.');
         return;
     }
-    
-    document.getElementById('targetX').value = currentX;
-    document.getElementById('targetY').value = currentY;
-    document.getElementById('targetZ').value = currentZ;
+
+    const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.value = v.toFixed(1); };
+    setVal('targetX', x);
+    setVal('targetY', y);
+    setVal('targetZ', z);
 }
 
 // ===== Dead Zone Path Planning =====
