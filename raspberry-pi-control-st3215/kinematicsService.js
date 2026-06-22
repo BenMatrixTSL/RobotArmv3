@@ -186,7 +186,9 @@ function positionFromMatrix(T) {
 }
 
 function toolZAxisFromMatrix(T) {
-    return { x: T[0][0], y: T[1][0], z: T[2][0] };
+    // Tool mounts along -Z of the J6 frame (xyz="0 0 -0.035" in URDF tool_mount).
+    // At home (identity rotation) this gives {0,0,-1} = tool pointing down, matching physical reality.
+    return { x: -T[0][2], y: -T[1][2], z: -T[2][2] };
 }
 
 function normalizeVector(v) {

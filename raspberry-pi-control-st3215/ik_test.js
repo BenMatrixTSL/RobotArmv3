@@ -10,8 +10,9 @@ const { robotKinematics } = require('./kinematicsService');
 
 // ---- helper copied from kinematics.js (toolZAxisFromMatrix) ----
 function toolZAxis(T) {
-    // Third column of the 3x3 rotation block (= Z axis of tool frame in world)
-    return { x: T[0][2], y: T[1][2], z: T[2][2] };
+    // Tool mounts along -Z of the J6 frame (xyz="0 0 -0.035"). Negative Z column.
+    // At home (identity rotation) gives {0,0,-1} = tool pointing down = physical reality.
+    return { x: -T[0][2], y: -T[1][2], z: -T[2][2] };
 }
 
 // ---- load URDF ----

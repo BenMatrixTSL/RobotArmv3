@@ -131,9 +131,9 @@ let nextDeadZoneId = 1;
 let safeZHeight = 300; // Default safe Z height in mm for routing over dead zones
 
 // Tool orientation (direction vector for the tool's local Z-axis)
-// FK at home (all joints 0°) gives tool Z = {0,0,1} (pointing up in world frame).
-// Default matches home so jogs from home don't immediately try to flip the wrist.
-let currentToolOrientation = { x: 0, y: 0, z: 1 };
+// Physical home (all joints 0°) has the tool pointing DOWN = {0,0,-1} in world frame.
+// toolZAxisFromMatrix returns the negative Z column, matching this physical convention.
+let currentToolOrientation = { x: 0, y: 0, z: -1 };
 
 // Exact commanded XYZ for jog moves — updated with precise step sizes so errors
 // do not accumulate across sequential jogs. Reset to null after any non-jog move
@@ -2993,12 +2993,12 @@ function pendantSetOrientation(mode) {
         }
     } else if (mode === 'up') {
         currentToolOrientation = { x: 0, y: 0, z: 1 };
-        if (display) display.textContent = 'Locked: tool up / home direction (0, 0, +1)';
-        showAppMessage('Tool orientation set to up (home direction)');
+        if (display) display.textContent = 'Locked: tool up (0, 0, +1)';
+        showAppMessage('Tool orientation set to tool up');
     } else if (mode === 'down') {
         currentToolOrientation = { x: 0, y: 0, z: -1 };
-        if (display) display.textContent = 'Locked: tool down (0, 0, -1)';
-        showAppMessage('Tool orientation set to down');
+        if (display) display.textContent = 'Locked: tool down / home direction (0, 0, -1)';
+        showAppMessage('Tool orientation set to tool down (home direction)');
     }
 }
 
