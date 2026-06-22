@@ -29,6 +29,10 @@ class RobotArmClient {
         this.onControlUpdate = null;
         this.onReconnected = null;
         this.onPushModeReady = null;
+        // Linear path state
+        this._linearResolve = null;
+        this._linearReject  = null;
+        this._linearTimeout = null;
     }
 
     /**
@@ -277,6 +281,18 @@ class RobotArmClient {
             if (this.onControlUpdate) {
                 this.onControlUpdate(data);
             }
+        }
+
+        // Handle linear path completion events (unsolicited, no requestId)
+        if (data.type === 'linearPathComplete') {
+            if (this._linearTimeout) { clearTimeout(this._linearTimeout); this._linearTimeout = null; }
+            if (this._linearResolve) { this._linearResolve({ type: 'linearPathComplete' }); this._linearResolve = null; this._linearReject = null; }
+            return;
+        }
+        if (data.type === 'linearPathError') {
+            if (this._linearTimeout) { clearTimeout(this._linearTimeout); this._linearTimeout = null; }
+            if (this._linearReject) { this._linearReject(new Error(data.message || 'Linear path error')); this._linearResolve = null; this._linearReject = null; }
+            return;
         }
 
         // Handle joint configuration updates
@@ -728,6 +744,68 @@ class RobotArmClient {
             throw new Error(response.message || 'Refine orientation failed');
         }
         return response.result;
+    }
+
+    /**
+     * Execute a Cartesian-linear move on the server.
+     * The server computes the interpolated path and drives all joints simultaneously.
+     * Resolves when the move completes (linearPathComplete event received).
+     *
+     * @param {Array<number>} startAngles        - Current joint angles in degrees
+     * @param {{ x, y, z }} targetPose           - Target position in mm
+     * @param {{ x, y, z }|null} desiredOrientation - Tool Z-axis direction (null = ignore)
+     * @param {number} stepMm                    - Cartesian step size in mm (default 2)
+     * @param {number} speedMmPerSec             - Tool speed in mm/s (default 50)
+     * @returns {Promise<{ type: 'linearPathComplete' }>}
+     */
+    async executeLinearMove(startAngles, targetPose, desiredOrientation, stepMm, speedMmPerSec) {
+        return new Promise(async (resolve, reject) => {
+            this._linearResolve = resolve;
+            this._linearReject  = reject;
+
+            // Safety timeout: 60 s max for a single linear move
+            this._linearTimeout = setTimeout(() => {
+                this._linearResolve = null;
+                this._linearReject  = null;
+                this._linearTimeout = null;
+                reject(new Error('Linear move timeout after 60 s'));
+            }, 60000);
+
+            try {
+                const response = await this.sendRequest('executeLinearMove', {
+                    startAngles,
+                    targetPose,
+                    desiredOrientation: desiredOrientation || null,
+                    stepMm:       stepMm       || 2.0,
+                    speedMmPerSec: speedMmPerSec || 50
+                }, 30000); // 30 s for path computation
+
+                if (response.type === 'error') {
+                    clearTimeout(this._linearTimeout);
+                    this._linearResolve = null;
+                    this._linearReject  = null;
+                    this._linearTimeout = null;
+                    reject(new Error(response.message || 'Linear move failed'));
+                }
+                // type === 'linearPathStarted' — now wait for unsolicited linearPathComplete
+            } catch (e) {
+                clearTimeout(this._linearTimeout);
+                this._linearResolve = null;
+                this._linearReject  = null;
+                this._linearTimeout = null;
+                reject(e);
+            }
+        });
+    }
+
+    /**
+     * Abort an in-progress linear path and stop all joints.
+     */
+    abortLinearPath() {
+        if (this._linearTimeout) { clearTimeout(this._linearTimeout); this._linearTimeout = null; }
+        if (this._linearResolve) { this._linearResolve({ type: 'linearPathAborted' }); this._linearResolve = null; this._linearReject = null; }
+        this.sendCommand('abortLinearPath', {});
+        this.sendCommand('stopAll', {});
     }
 
     /**

@@ -42,7 +42,9 @@ const INSTANT_SERVER_COMMANDS = {
     kinematicsForwardKinematicsBatch: true,
     kinematicsInverseKinematics: true,
     kinematicsRefineOrientationWithAccuracy: true,
-    kinematicsGetInfo: true
+    kinematicsGetInfo: true,
+    executeLinearMove: true,
+    abortLinearPath: true
 };
 
 // Bus commands that require an active control session.
@@ -63,6 +65,10 @@ const IMMEDIATE_BUS_COMMANDS = {
 
 const CONTROL_IDLE_TIMEOUT_MS       = 5 * 60 * 1000;
 const CONTROL_IDLE_CHECK_INTERVAL_MS = 30 * 1000;
+
+// Linear path execution state — only one path runs at a time.
+let linearPathRunning = false;
+let linearPathClientWs = null;
 
 // ===== Logging =====
 function debugLog(message, isError) {
@@ -539,6 +545,86 @@ async function handleCommand(ws, data) {
             break;
         }
 
+        case 'executeLinearMove': {
+            // Compute a Cartesian-linear path on the server and execute it with precise timing.
+            // Requires the caller to hold the control session.
+            if (!controlSession || controlSession.ws !== ws) {
+                sendResponse({ type: 'error', message: 'Control session required for linear move. Call takeControl first.' });
+                break;
+            }
+            if (linearPathRunning) {
+                sendResponse({ type: 'error', message: 'A linear path is already running. Abort it first.' });
+                break;
+            }
+            try {
+                const { startAngles, targetPose, desiredOrientation, stepMm, speedMmPerSec } = data;
+                const pathResult = robotKinematics.computeLinearPath(startAngles, targetPose, desiredOrientation || null, stepMm || 2.0);
+                const { steps, totalDistanceMm } = pathResult;
+
+                if (!steps || steps.length === 0) {
+                    sendResponse({ type: 'error', message: 'Linear path computation produced no waypoints' });
+                    break;
+                }
+
+                const speed     = (typeof speedMmPerSec === 'number' && speedMmPerSec > 0) ? speedMmPerSec : 50;
+                const stepDist  = (typeof stepMm === 'number' && stepMm > 0) ? stepMm : 2.0;
+                const intervalMs = Math.max(20, Math.round((stepDist / speed) * 1000));
+
+                linearPathRunning  = true;
+                linearPathClientWs = ws;
+
+                // Acknowledge immediately — client can display progress
+                sendResponse({ type: 'linearPathStarted', totalSteps: steps.length, totalDistanceMm, intervalMs, requestId });
+
+                // Execute asynchronously so stop commands can be processed between steps
+                (async () => {
+                    let prevAngles = startAngles;
+                    const stepsPerDeg = 11.37; // ST3215 steps per degree
+
+                    for (let i = 0; i < steps.length; i++) {
+                        if (!linearPathRunning) break;
+
+                        const angles = steps[i];
+                        for (let j = 0; j < angles.length; j++) {
+                            const travel = Math.abs(angles[j] - (prevAngles[j] || 0));
+                            const spd = Math.max(50, Math.round(travel * stepsPerDeg / (intervalMs / 1000)));
+                            if (servoWorker) {
+                                servoWorker.send({
+                                    type: 'immediateBusCommand',
+                                    command: 'moveJoint',
+                                    joint: j + 1,
+                                    angle: angles[j],
+                                    speed: spd,
+                                    clientId: ws.clientId
+                                });
+                            }
+                        }
+                        prevAngles = angles;
+                        await new Promise(resolve => setTimeout(resolve, intervalMs));
+                    }
+
+                    linearPathRunning  = false;
+                    linearPathClientWs = null;
+                    if (ws.readyState === 1 /* OPEN */) {
+                        ws.send(JSON.stringify({ type: 'linearPathComplete' }));
+                    }
+                })();
+
+            } catch (error) {
+                linearPathRunning  = false;
+                linearPathClientWs = null;
+                sendResponse({ type: 'error', message: `Linear move failed: ${error.message}` });
+            }
+            break;
+        }
+
+        case 'abortLinearPath': {
+            linearPathRunning  = false;
+            linearPathClientWs = null;
+            sendResponse({ type: 'success', message: 'Linear path aborted' });
+            break;
+        }
+
         default:
             ws.send(JSON.stringify({ type: 'error', message: `Unknown command: ${command}` }));
     }
@@ -596,6 +682,12 @@ function startServer() {
                     if (data.requestId !== undefined) errPayload.requestId = data.requestId;
                     ws.send(JSON.stringify(errPayload));
                     return;
+                }
+
+                // A stop command also aborts any in-progress linear path.
+                if (data.command === 'stopAll' || data.command === 'stopAllJoints') {
+                    linearPathRunning  = false;
+                    linearPathClientWs = null;
                 }
 
                 // Moves and stops bypass the bus write queue.

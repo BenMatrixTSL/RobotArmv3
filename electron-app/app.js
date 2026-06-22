@@ -56,6 +56,12 @@ let useSimulatedAngles = false; // Whether to use simulated angles instead of re
 let simulatedAngles = [0, 0, 0, 0]; // Simulated joint angles
 const PI_SERVER_PORT = 8080; // ST3215 server port is fixed
 
+// Movement mode — 'ptp' (point-to-point, all joints simultaneously) or
+// 'linear' (Cartesian straight-line interpolation computed on the server).
+let movementMode         = 'ptp';
+let linearSpeedMmPerSec  = 50;
+let linearStepMm         = 2.0;
+
 // If the preload bridge did not run, we provide a simple fallback here
 // so that window.electronAPI is still available when nodeIntegration is enabled.
 try {
@@ -619,7 +625,8 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Load saved settings
     loadSettings();
-    
+    loadMovementSettings();
+
     // Initialize joint UI based on settings
     updateJointUI();
     
@@ -2765,18 +2772,41 @@ async function moveToXYZ() {
             return;
         }
         
-        // For each waypoint, run IK on the Pi server and move the joints.
-        // Seed IK with previous waypoint angles to keep motion consistent.
-        let lastAccuracy = null;
-        let previousRefinedAngles = null;
-
-        // Capture current arm angles as reference for joint-travel penalty (avoids flips).
+        // Capture current arm angles (used for both modes as starting reference).
         let moveToXyzInitialAngles = null;
         if (Array.isArray(lastGoodJointStatus) && lastGoodJointStatus.length > 0) {
             moveToXyzInitialAngles = lastGoodJointStatus.map(j =>
                 (j && typeof j.angleDegrees === 'number' && !isNaN(j.angleDegrees)) ? j.angleDegrees : 0
             );
         }
+
+        // ── Linear Cartesian mode ──────────────────────────────────────────────
+        if (movementMode === 'linear' && moveToXyzInitialAngles) {
+            if (!robotArmClient.hasArmControl) {
+                showAppMessage('Linear move requires control session. Taking control...');
+                try { await robotArmClient.takeControl(); } catch (e) { showAppMessage('Could not take control: ' + e.message); return; }
+            }
+            let prevAngles = moveToXyzInitialAngles;
+            for (let w = 0; w < waypoints.length; w++) {
+                const wp = waypoints[w];
+                showAppMessage(`Linear move to waypoint ${w + 1}/${waypoints.length}...`);
+                const ok = await executeLinearMoveToXYZ(wp, prevAngles);
+                if (!ok) return;
+                // Update prevAngles from status for accurate next-segment start
+                try {
+                    const st = await robotArmClient.getStatus();
+                    prevAngles = st.map(j => (j && typeof j.angleDegrees === 'number') ? j.angleDegrees : 0);
+                } catch (e) { /* keep previous */ }
+            }
+            showAppMessage(`Linear move complete.`);
+            return;
+        }
+
+        // ── PTP mode ──────────────────────────────────────────────────────────
+        // For each waypoint, run IK on the Pi server and move the joints.
+        // Seed IK with previous waypoint angles to keep motion consistent.
+        let lastAccuracy = null;
+        let previousRefinedAngles = null;
 
         for (let w = 0; w < waypoints.length; w++) {
             const wp = waypoints[w];
@@ -3312,6 +3342,72 @@ async function jointPathIntersectsDeadZone(currentAngles, targetAngles, zones, s
  * baseStepsPerSecond; all others are proportionally reduced.
  * A minimum of 50 steps/s is enforced so no servo gets a zero-speed command.
  */
+// ===== Movement Mode =====
+
+function setMovementMode(mode) {
+    movementMode = mode;
+    try { localStorage.setItem('movementMode', mode); } catch (e) {}
+    updateMovementModeUI();
+}
+
+function saveLinearSettings() {
+    const sp = parseFloat(document.getElementById('linearSpeedMmPerSec') && document.getElementById('linearSpeedMmPerSec').value);
+    const st = parseFloat(document.getElementById('linearStepMm') && document.getElementById('linearStepMm').value);
+    if (!isNaN(sp) && sp > 0) { linearSpeedMmPerSec = sp; try { localStorage.setItem('linearSpeedMmPerSec', sp); } catch (e) {} }
+    if (!isNaN(st) && st > 0) { linearStepMm = st; try { localStorage.setItem('linearStepMm', st); } catch (e) {} }
+}
+
+function updateMovementModeUI() {
+    const ptpBtn    = document.getElementById('movementModePtp');
+    const linBtn    = document.getElementById('movementModeLinear');
+    const linPanel  = document.getElementById('linearMoveSettings');
+    if (ptpBtn)   ptpBtn.classList.toggle('active', movementMode === 'ptp');
+    if (linBtn)   linBtn.classList.toggle('active', movementMode === 'linear');
+    if (linPanel) linPanel.style.display = movementMode === 'linear' ? '' : 'none';
+}
+
+function loadMovementSettings() {
+    try {
+        movementMode        = localStorage.getItem('movementMode')        || 'ptp';
+        linearSpeedMmPerSec = parseFloat(localStorage.getItem('linearSpeedMmPerSec')) || 50;
+        linearStepMm        = parseFloat(localStorage.getItem('linearStepMm'))        || 2.0;
+    } catch (e) {}
+    const spEl = document.getElementById('linearSpeedMmPerSec');
+    const stEl = document.getElementById('linearStepMm');
+    if (spEl) spEl.value = linearSpeedMmPerSec;
+    if (stEl) stEl.value = linearStepMm;
+    updateMovementModeUI();
+}
+
+/**
+ * Perform a single Cartesian-linear move to targetPose using the server-side path planner.
+ * Requires control session; returns true on success.
+ */
+async function executeLinearMoveToXYZ(targetPose, startAngles) {
+    if (!robotArmClient || !robotArmClient.isConnected) {
+        showAppMessage('Not connected to robot arm controller');
+        return false;
+    }
+    if (!Array.isArray(startAngles) || startAngles.length === 0) {
+        showAppMessage('Cannot start linear move: current joint angles unknown');
+        return false;
+    }
+    try {
+        await robotArmClient.executeLinearMove(
+            startAngles,
+            targetPose,
+            currentToolOrientation,
+            linearStepMm,
+            linearSpeedMmPerSec
+        );
+        return true;
+    } catch (e) {
+        console.warn('Linear move error:', e);
+        showAppMessage('Linear move error: ' + e.message);
+        return false;
+    }
+}
+
 function computeCoordinatedSpeeds(currentAngles, targetAngles, baseStepsPerSecond) {
     if (!Array.isArray(currentAngles) || !Array.isArray(targetAngles) || currentAngles.length === 0) {
         return [];
@@ -3952,7 +4048,22 @@ async function executeGCodeCommand(command) {
                 return;
             }
 
-            // For each waypoint, run IK and move joints
+            // G1 = linear move; G0 = rapid (PTP). Use linear mode for G1 when enabled.
+            const useLinearForGCode = (command.code === 'G1') && (movementMode === 'linear');
+            if (useLinearForGCode && robotArmClient.hasArmControl) {
+                let prevAngles = initialAngles;
+                for (let w = 0; w < waypoints.length; w++) {
+                    const wp = waypoints[w];
+                    gcodeProcessor.log(`G1 linear move waypoint ${w + 1}/${waypoints.length}: X${wp.x} Y${wp.y} Z${wp.z}`);
+                    const ok = await executeLinearMoveToXYZ(wp, prevAngles || []);
+                    if (!ok) { gcodeProcessor.log('G1 linear move failed'); return; }
+                    try { const st = await robotArmClient.getStatus(); prevAngles = st.map(j => (j && typeof j.angleDegrees === 'number') ? j.angleDegrees : 0); } catch (e) {}
+                    initialAngles = prevAngles;
+                }
+                return;
+            }
+
+            // For each waypoint, run IK and move joints (PTP)
             for (let w = 0; w < waypoints.length; w++) {
                 const wp = waypoints[w];
 
@@ -4527,6 +4638,23 @@ async function runRapidProgram() {
             if (!waypointsRapid) {
                 console.warn('RAPID: MoveLXYZ target lies inside a dead zone. Move cancelled.');
                 continue;
+            }
+
+            // MoveLXYZ — linear Cartesian if mode is 'linear' and we have control
+            if (movementMode === 'linear' && robotArmClient.hasArmControl) {
+                let prevRapidAngles = null;
+                try {
+                    const st0 = await robotArmClient.getStatus();
+                    prevRapidAngles = st0.map(j => (j && typeof j.angleDegrees === 'number') ? j.angleDegrees : 0);
+                } catch (e) { prevRapidAngles = null; }
+                for (let w = 0; w < waypointsRapid.length; w++) {
+                    const wp = waypointsRapid[w];
+                    if (!prevRapidAngles) break;
+                    const ok = await executeLinearMoveToXYZ(wp, prevRapidAngles);
+                    if (!ok) break;
+                    try { const st = await robotArmClient.getStatus(); prevRapidAngles = st.map(j => (j && typeof j.angleDegrees === 'number') ? j.angleDegrees : 0); } catch (e) {}
+                }
+                continue; // next RAPID line
             }
 
             for (let w = 0; w < waypointsRapid.length; w++) {

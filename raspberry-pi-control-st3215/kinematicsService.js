@@ -715,6 +715,134 @@ class RobotKinematics {
             achievedPosition: pass6.achievedPosition
         };
     }
+
+    /**
+     * Compute a set of joint-angle waypoints that trace a straight Cartesian line
+     * from the arm's current position (derived via FK from startAngles) to targetPose.
+     *
+     * Intermediate points use a fast 50-iteration Jacobian transpose solver with
+     * warm-starting (each step seeds from the previous solution). The final step
+     * uses the full inverseKinematics() call for accuracy.
+     *
+     * @param {Array<number>} startAngles  - Current joint angles (degrees)
+     * @param {{ x, y, z }} targetPose     - Target XYZ in mm
+     * @param {{ x, y, z }|null} desiredOrientation - Tool Z-axis direction (null = ignore)
+     * @param {number} stepMm              - Distance between waypoints in mm (default 2)
+     * @returns {{ steps: Array<Array<number>>, totalDistanceMm: number, stepMm: number }}
+     */
+    computeLinearPath(startAngles, targetPose, desiredOrientation, stepMm) {
+        if (!this.isConfigured()) throw new Error('URDF not loaded');
+
+        const numJoints = this.joints.length;
+        const effectiveStep = (typeof stepMm === 'number' && stepMm > 0) ? stepMm : 2.0;
+
+        // FK to find starting Cartesian position
+        const startFk = this.forwardKinematics(startAngles);
+        const { x: x0, y: y0, z: z0 } = startFk.position;
+
+        const dx = targetPose.x - x0;
+        const dy = targetPose.y - y0;
+        const dz = targetPose.z - z0;
+        const totalDist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+
+        // If already within one step of the target just run the final IK
+        if (totalDist < effectiveStep) {
+            const finalIk = this.inverseKinematics(
+                desiredOrientation ? { x: targetPose.x, y: targetPose.y, z: targetPose.z, orientation: desiredOrientation } : targetPose,
+                startAngles
+            );
+            return { steps: finalIk ? [finalIk] : [], totalDistanceMm: totalDist, stepMm: effectiveStep };
+        }
+
+        const N = Math.ceil(totalDist / effectiveStep);
+        const steps = [];
+        let prevAngles = startAngles.slice();
+
+        // Fast solver constants — relaxed for throughput, warm-started each step
+        const fastMaxIter    = 60;
+        const fastTolerance  = 1.0;   // mm — relaxed; final step uses full solver
+        const fdDeg          = 0.25;
+        const baseStepSize   = 0.025;
+        const oriWeight      = 8.0;
+        const maxDeltaDeg    = 4.0;
+        const hasOri         = !!(desiredOrientation);
+        const desiredZ       = hasOri ? normalizeVector(desiredOrientation) : null;
+
+        const clampJoint = (angle, j) => {
+            const lim = this.joints[j] && this.joints[j].limits;
+            if (!lim) return angle;
+            if (typeof lim.lowerDegrees === 'number' && angle < lim.lowerDegrees) return lim.lowerDegrees;
+            if (typeof lim.upperDegrees === 'number' && angle > lim.upperDegrees) return lim.upperDegrees;
+            return angle;
+        };
+
+        for (let s = 1; s <= N; s++) {
+            const t = s / N;
+            const wp = { x: x0 + dx * t, y: y0 + dy * t, z: z0 + dz * t };
+
+            // Final waypoint: use full accurate solver
+            if (s === N) {
+                const fullAngles = this.inverseKinematics(
+                    hasOri ? { x: wp.x, y: wp.y, z: wp.z, orientation: desiredOrientation } : wp,
+                    prevAngles
+                );
+                steps.push(fullAngles ? fullAngles.slice() : prevAngles.slice());
+                break;
+            }
+
+            // Intermediate: fast Jacobian transpose with warm start
+            const angles = prevAngles.slice();
+            for (let iter = 0; iter < fastMaxIter; iter++) {
+                const fk = this.forwardKinematics(angles);
+                const pos = fk.position;
+                const errX = wp.x - pos.x, errY = wp.y - pos.y, errZ = wp.z - pos.z;
+                const posErr = Math.sqrt(errX * errX + errY * errY + errZ * errZ);
+                if (posErr < fastTolerance) break;
+
+                const currentToolZ = hasOri ? toolZAxisFromMatrix(fk.rotation) : null;
+                const Jp = [[], [], []];
+                const Jo = hasOri ? [[], [], []] : null;
+
+                for (let j = 0; j < numJoints; j++) {
+                    const orig = angles[j];
+                    angles[j] = orig + fdDeg;
+                    const fkp = this.forwardKinematics(angles);
+                    angles[j] = orig;
+
+                    Jp[0][j] = (fkp.position.x - pos.x) / fdDeg;
+                    Jp[1][j] = (fkp.position.y - pos.y) / fdDeg;
+                    Jp[2][j] = (fkp.position.z - pos.z) / fdDeg;
+
+                    if (hasOri && Jo) {
+                        const tzp = toolZAxisFromMatrix(fkp.rotation);
+                        Jo[0][j] = (tzp.x - currentToolZ.x) / fdDeg;
+                        Jo[1][j] = (tzp.y - currentToolZ.y) / fdDeg;
+                        Jo[2][j] = (tzp.z - currentToolZ.z) / fdDeg;
+                    }
+                }
+
+                let oErrX = 0, oErrY = 0, oErrZ = 0;
+                if (hasOri && currentToolZ && desiredZ) {
+                    oErrX = desiredZ.x - currentToolZ.x;
+                    oErrY = desiredZ.y - currentToolZ.y;
+                    oErrZ = desiredZ.z - currentToolZ.z;
+                }
+
+                const ss = baseStepSize / (1 + posErr / 60);
+                for (let j = 0; j < numJoints; j++) {
+                    let grad = Jp[0][j] * errX + Jp[1][j] * errY + Jp[2][j] * errZ;
+                    if (hasOri && Jo) grad += oriWeight * (Jo[0][j] * oErrX + Jo[1][j] * oErrY + Jo[2][j] * oErrZ);
+                    const delta = ss * grad;
+                    angles[j] = clampJoint(angles[j] + Math.max(-maxDeltaDeg, Math.min(maxDeltaDeg, delta)), j);
+                }
+            }
+
+            steps.push(angles.slice());
+            prevAngles = angles;
+        }
+
+        return { steps, totalDistanceMm: totalDist, stepMm: effectiveStep };
+    }
 }
 
 const robotKinematics = new RobotKinematics();
