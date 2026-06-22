@@ -422,11 +422,11 @@ class RobotKinematics {
             }
         }
 
-        const maxIterations = 500;
+        const maxIterations = 800;
         const positionToleranceMm = 0.3;
         const finiteDifferenceDeg = 0.25;   // finer Jacobian → better accuracy
         const baseStepSize = 0.025;
-        const orientationWeight = 8.0;
+        const orientationWeight = 40.0;     // high weight keeps wrist joints on orientation target
         const maxDeltaPerIterDeg = 4.0;     // cap per-joint step to prevent singularity blow-up
 
         for (let iter = 0; iter < maxIterations; iter++) {

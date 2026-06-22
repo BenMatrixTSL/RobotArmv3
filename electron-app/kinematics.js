@@ -411,11 +411,11 @@ class RobotKinematics {
         }
 
         // Settings for the solver
-        const maxIterations = 500;
+        const maxIterations = 800;
         const positionToleranceMm = 0.3; // stop main loop when we are within 0.3mm
         const finiteDifferenceDeg = 0.25; // finer step → more accurate Jacobian
         const baseStepSize = 0.025;       // baseline strength for the Jacobian transpose update
-        const orientationWeight = 8.0;    // how strongly to try to match orientation
+        const orientationWeight = 40.0;   // high weight keeps wrist joints on orientation target
         const maxDeltaPerIterDeg = 4.0;   // cap per-joint step to prevent singularity blow-up
 
         // We temporarily disable verbose FK logging while we iterate
