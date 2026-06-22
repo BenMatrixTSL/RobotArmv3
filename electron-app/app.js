@@ -2850,17 +2850,17 @@ async function moveToXYZ(xArg, yArg, zArg) {
             let baseAngles = null;
             let refined = null;
 
-            if (!robotArmClient || !robotArmClient.isConnected || typeof robotArmClient.inverseKinematics !== 'function' || typeof robotArmClient.refineOrientationWithAccuracy !== 'function') {
-                showAppMessage('Server kinematics is not available. Connect to the robot arm controller and reload URDF.');
+            if (!robotKinematics || !robotKinematics.isConfigured()) {
+                showAppMessage('Kinematics not configured. Load joint configurations first.');
                 return;
             }
 
-            baseAngles = await robotArmClient.inverseKinematics(
+            baseAngles = robotKinematics.inverseKinematics(
                 { x: wp.x, y: wp.y, z: wp.z, orientation: currentToolOrientation },
                 previousRefinedAngles
             );
             if (baseAngles) {
-                refined = await robotArmClient.refineOrientationWithAccuracy(
+                refined = robotKinematics.refineOrientationWithAccuracy(
                     { x: wp.x, y: wp.y, z: wp.z },
                     baseAngles,
                     currentToolOrientation,
@@ -3587,17 +3587,17 @@ async function moveJointsToAnglesWithDeadZones(targetAngles, speedDegreesPerSeco
             let baseAngles = null;
             let refined = null;
 
-            if (!robotArmClient || !robotArmClient.isConnected || typeof robotArmClient.inverseKinematics !== 'function' || typeof robotArmClient.refineOrientationWithAccuracy !== 'function') {
-                showAppMessage('Server kinematics is not available. Connect to the robot arm controller and reload URDF.');
+            if (!robotKinematics || !robotKinematics.isConfigured()) {
+                showAppMessage('Kinematics not configured. Load joint configurations first.');
                 return;
             }
 
-            baseAngles = await robotArmClient.inverseKinematics(
+            baseAngles = robotKinematics.inverseKinematics(
                 { x: wp.x, y: wp.y, z: wp.z, orientation: currentToolOrientation },
                 initialAngles
             );
             if (baseAngles) {
-                refined = await robotArmClient.refineOrientationWithAccuracy(
+                refined = robotKinematics.refineOrientationWithAccuracy(
                     { x: wp.x, y: wp.y, z: wp.z },
                     baseAngles,
                     currentToolOrientation,
@@ -3613,17 +3613,17 @@ async function moveJointsToAnglesWithDeadZones(targetAngles, speedDegreesPerSeco
                     let finalBaseAngles = null;
                     let finalRefined = null;
 
-                    if (!robotArmClient || !robotArmClient.isConnected || typeof robotArmClient.inverseKinematics !== 'function' || typeof robotArmClient.refineOrientationWithAccuracy !== 'function') {
-                        showAppMessage('Server kinematics is not available. Connect to the robot arm controller and reload URDF.');
+                    if (!robotKinematics || !robotKinematics.isConfigured()) {
+                        showAppMessage('Kinematics not configured. Load joint configurations first.');
                         return;
                     }
 
-                    finalBaseAngles = await robotArmClient.inverseKinematics(
+                    finalBaseAngles = robotKinematics.inverseKinematics(
                         { x: finalWp.x, y: finalWp.y, z: finalWp.z, orientation: currentToolOrientation },
                         initialAngles
                     );
                     if (finalBaseAngles) {
-                        finalRefined = await robotArmClient.refineOrientationWithAccuracy(
+                        finalRefined = robotKinematics.refineOrientationWithAccuracy(
                             { x: finalWp.x, y: finalWp.y, z: finalWp.z },
                             finalBaseAngles,
                             currentToolOrientation,
@@ -4111,16 +4111,16 @@ async function executeGCodeCommand(command) {
                 let baseAngles = null;
                 let jointAngles = null;
 
-                if (!robotArmClient || !robotArmClient.isConnected || typeof robotArmClient.inverseKinematics !== 'function' || typeof robotArmClient.refineOrientationWithAccuracy !== 'function') {
-                    gcodeProcessor.log('Error: Server kinematics is not available. Connect to the robot arm controller and reload URDF.');
+                if (!robotKinematics || !robotKinematics.isConfigured()) {
+                    gcodeProcessor.log('Error: Kinematics not configured. Load joint configurations first.');
                     return;
                 }
-                baseAngles = await robotArmClient.inverseKinematics(
+                baseAngles = robotKinematics.inverseKinematics(
                     { x: wp.x, y: wp.y, z: wp.z, orientation: currentToolOrientation },
                     initialAngles
                 );
                 if (baseAngles) {
-                    const refined = await robotArmClient.refineOrientationWithAccuracy(
+                    const refined = robotKinematics.refineOrientationWithAccuracy(
                         { x: wp.x, y: wp.y, z: wp.z },
                         baseAngles,
                         currentToolOrientation,
@@ -4701,16 +4701,16 @@ async function runRapidProgram() {
                 let baseAngles = null;
                 let jointAngles = null;
 
-                if (!robotArmClient || !robotArmClient.isConnected || typeof robotArmClient.inverseKinematics !== 'function' || typeof robotArmClient.refineOrientationWithAccuracy !== 'function') {
-                    console.warn('RAPID: Server kinematics is not available. Connect to Raspberry Pi and reload URDF.');
+                if (!robotKinematics || !robotKinematics.isConfigured()) {
+                    console.warn('RAPID: Kinematics not configured. Load joint configurations first.');
                     break;
                 }
-                baseAngles = await robotArmClient.inverseKinematics(
+                baseAngles = robotKinematics.inverseKinematics(
                     { x: wp.x, y: wp.y, z: wp.z, orientation: currentToolOrientation },
                     initialAngles
                 );
                 if (baseAngles) {
-                    const refined = await robotArmClient.refineOrientationWithAccuracy(
+                    const refined = robotKinematics.refineOrientationWithAccuracy(
                         { x: wp.x, y: wp.y, z: wp.z },
                         baseAngles,
                         currentToolOrientation,
@@ -4798,16 +4798,16 @@ async function runRapidProgram() {
                 let baseAngles2 = null;
                 let jointAngles2 = null;
 
-                if (!robotArmClient || !robotArmClient.isConnected || typeof robotArmClient.inverseKinematics !== 'function' || typeof robotArmClient.refineOrientationWithAccuracy !== 'function') {
-                    console.warn('RAPID: Server kinematics is not available. Connect to Raspberry Pi and reload URDF.');
+                if (!robotKinematics || !robotKinematics.isConfigured()) {
+                    console.warn('RAPID: Kinematics not configured. Load joint configurations first.');
                     break;
                 }
-                baseAngles2 = await robotArmClient.inverseKinematics(
+                baseAngles2 = robotKinematics.inverseKinematics(
                     { x: wp.x, y: wp.y, z: wp.z, orientation: currentToolOrientation },
                     initialAngles2
                 );
                 if (baseAngles2) {
-                    const refined2 = await robotArmClient.refineOrientationWithAccuracy(
+                    const refined2 = robotKinematics.refineOrientationWithAccuracy(
                         { x: wp.x, y: wp.y, z: wp.z },
                         baseAngles2,
                         currentToolOrientation,
@@ -5967,8 +5967,8 @@ async function testInverseKinematics() {
     }
     
     try {
-        if (!robotArmClient || !robotArmClient.isConnected || typeof robotArmClient.inverseKinematics !== 'function' || typeof robotArmClient.refineOrientationWithAccuracy !== 'function') {
-            document.getElementById('ikResult').innerHTML = '<span class="error-text">Server kinematics is not available. Connect to the robot arm controller and reload URDF.</span>';
+        if (!robotKinematics || !robotKinematics.isConfigured()) {
+            document.getElementById('ikResult').innerHTML = '<span class="error-text">Kinematics not configured. Load joint configurations first.</span>';
             return;
         }
 
@@ -5976,7 +5976,7 @@ async function testInverseKinematics() {
             ? lastGoodJointStatus.map(j => (j && typeof j.angleDegrees === 'number' && !isNaN(j.angleDegrees)) ? j.angleDegrees : 0)
             : null;
 
-        const baseAngles = await robotArmClient.inverseKinematics({
+        const baseAngles = robotKinematics.inverseKinematics({
             x: x,
             y: y,
             z: z,
@@ -5984,7 +5984,7 @@ async function testInverseKinematics() {
         }, ikTestInitialAngles);
 
         const refined = baseAngles
-            ? await robotArmClient.refineOrientationWithAccuracy({ x: x, y: y, z: z }, baseAngles, currentToolOrientation, ikTestInitialAngles)
+            ? robotKinematics.refineOrientationWithAccuracy({ x: x, y: y, z: z }, baseAngles, currentToolOrientation, ikTestInitialAngles)
             : null;
         const angles = refined ? refined.angles : null;
 
