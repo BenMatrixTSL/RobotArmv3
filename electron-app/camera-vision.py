@@ -291,15 +291,8 @@ def draw_aruco_overlays(frame, corners, ids):
         center_x = int(np.mean(points[:, 0]))
         center_y = int(np.mean(points[:, 1]))
         label = "id " + str(int(marker_id))
-        cv2.putText(
-            frame,
-            label,
-            (center_x + 8, center_y - 8),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            0.8,
-            (0, 255, 0),
-            3,
-        )
+        put_text_bg(frame, label, (center_x + 8, center_y - 8),
+                    scale=0.8, color=(0, 255, 0), thickness=2)
 
 
 def marker_centers(corners, ids, frame_width, frame_height):
@@ -396,6 +389,23 @@ def transform_to_world(H, nx, ny):
     return float(world[0][0][0]), float(world[0][0][1])
 
 
+def put_text_bg(img, text, org, font=cv2.FONT_HERSHEY_SIMPLEX, scale=0.6,
+                color=(255, 255, 255), thickness=1, bg=(0, 0, 0), alpha=0.6, pad=4):
+    """Draw text with a semi-transparent dark background for readability."""
+    (tw, th), baseline = cv2.getTextSize(text, font, scale, thickness)
+    x, y = int(org[0]), int(org[1])
+    h, w = img.shape[:2]
+    x1 = max(0, x - pad)
+    y1 = max(0, y - th - pad)
+    x2 = min(w - 1, x + tw + pad)
+    y2 = min(h - 1, y + baseline + pad)
+    if x2 > x1 and y2 > y1:
+        roi = img[y1:y2, x1:x2]
+        bg_rect = np.full_like(roi, bg)
+        img[y1:y2, x1:x2] = cv2.addWeighted(bg_rect, alpha, roi, 1.0 - alpha, 0)
+    cv2.putText(img, text, (x, y), font, scale, color, thickness, cv2.LINE_AA)
+
+
 def draw_coordinate_frame(frame, markers, frame_width, frame_height):
     """
     Draw the mapped workspace boundary and X/Y axes on the high-res annotated frame.
@@ -441,16 +451,19 @@ def draw_coordinate_frame(frame, markers, frame_width, frame_height):
         if tr is not None:
             tr_px = to_px(tr)
             cv2.arrowedLine(frame, origin_px, lerp_pt(origin_px, tr_px, 0.25), (0, 0, 255), 3, tipLength=0.3)
-            cv2.putText(frame, "X", lerp_pt(origin_px, tr_px, 0.28), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+            put_text_bg(frame, "X", lerp_pt(origin_px, tr_px, 0.28),
+                        scale=0.7, color=(0, 0, 255), thickness=2)
         if bl is not None:
             bl_px = to_px(bl)
             cv2.arrowedLine(frame, origin_px, lerp_pt(origin_px, bl_px, 0.25), (0, 200, 0), 3, tipLength=0.3)
-            cv2.putText(frame, "Y", lerp_pt(origin_px, bl_px, 0.28), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 200, 0), 2)
-        cv2.putText(frame, "0,0", (origin_px[0] + 8, origin_px[1] - 8), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 0), 2)
+            put_text_bg(frame, "Y", lerp_pt(origin_px, bl_px, 0.28),
+                        scale=0.7, color=(0, 200, 0), thickness=2)
+        put_text_bg(frame, "0,0", (origin_px[0] + 8, origin_px[1] - 8),
+                    scale=0.6, color=(255, 255, 0), thickness=2)
 
     if n_found == 3:
-        cv2.putText(frame, "3/4 markers (affine)", (10, frame_height - 10),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.55, (0, 200, 255), 2)
+        put_text_bg(frame, "3/4 markers (affine)", (10, frame_height - 10),
+                    scale=0.55, color=(0, 200, 255), thickness=2)
 
 
 def detect_color_blocks(frame):
@@ -501,26 +514,14 @@ def draw_color_blocks(frame, blocks):
         w = int(block["width"] * fw)
         h = int(block["height"] * fh)
         cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 255), 2)
-        cv2.putText(
-            frame,
-            block["color"] + " block",
-            (x, max(y - 8, 20)),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            0.6,
-            (0, 255, 255),
-            2,
-        )
+        put_text_bg(frame, block["color"] + " block",
+                    (x, max(y - 8, 20)),
+                    scale=0.6, color=(0, 255, 255), thickness=2)
         if "world_x_mm" in block:
             pos_label = f"X:{block['world_x_mm']:.1f}  Y:{block['world_y_mm']:.1f} mm"
-            cv2.putText(
-                frame,
-                pos_label,
-                (x, min(y + h + 22, fh - 4)),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                0.6,
-                (255, 220, 0),
-                2,
-            )
+            put_text_bg(frame, pos_label,
+                        (x, min(y + h + 22, fh - 4)),
+                        scale=0.6, color=(255, 220, 0), thickness=2)
 
 
 def open_camera(device_path):
