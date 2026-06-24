@@ -942,6 +942,11 @@ let appMessageTimeoutId = null;
  * @param {string} message - Message to show
  * @param {number} [durationMs] - How long to show it (default 3000ms)
  */
+function toggleSidebar() {
+    const tabs = document.querySelector('.tabs');
+    if (tabs) tabs.classList.toggle('collapsed');
+}
+
 function showAppMessage(message, durationMs) {
     const box = document.getElementById('appMessage');
     if (!box) {
