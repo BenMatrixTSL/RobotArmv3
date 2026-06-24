@@ -285,6 +285,11 @@ header h1 {
     align-items: flex-start;
     gap: 20px;
     margin-top: 20px;
+    transition: gap 0.25s ease;
+}
+
+.main-layout.sidebar-collapsed {
+    gap: 0;
 }
 
 /* Sidebar toggle burger button */

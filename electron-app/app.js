@@ -944,7 +944,9 @@ let appMessageTimeoutId = null;
  */
 function toggleSidebar() {
     const tabs = document.querySelector('.tabs');
+    const layout = document.querySelector('.main-layout');
     if (tabs) tabs.classList.toggle('collapsed');
+    if (layout) layout.classList.toggle('sidebar-collapsed');
 }
 
 function showAppMessage(message, durationMs) {
