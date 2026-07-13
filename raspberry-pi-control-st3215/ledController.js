@@ -1,7 +1,7 @@
 'use strict';
 /**
  * WS2812B LED status indicator for the robot arm server.
- * Connects to GPIO pin 18 (configurable via LED_GPIO env var).
+ * Spawns led_driver.py (Python, rpi_ws281x) and communicates via stdin/stdout JSON.
  *
  * States (highest priority first):
  *   error      → solid red    (worker crashed, fatal fault)
@@ -12,45 +12,65 @@
  *   off        → all LEDs off (startup / shutdown)
  */
 
-const LED_COUNT = parseInt(process.env.LED_COUNT || '30', 10);
-const LED_GPIO  = parseInt(process.env.LED_GPIO  || '18', 10);
+const { spawn } = require('child_process');
+const path       = require('path');
 
-// 0x00RRGGBB — the rpi-ws281x-native library converts to WS2812B GRB internally.
-const C_OFF    = 0x000000;
-const C_RED    = 0xFF0000;
-const C_GREEN  = 0x00AA00;
-const C_BLUE   = 0x0000CC;
-const C_ORANGE = 0xFF7000;
+// 0-255 RGB values for each state
+const COLORS = {
+    off:       { r: 0,   g: 0,   b: 0   },
+    red:       { r: 255, g: 0,   b: 0   },
+    green:     { r: 0,   g: 170, b: 0   },
+    blue:      { r: 0,   g: 0,   b: 200 },
+    orange:    { r: 255, g: 112, b: 0   },
+};
 
-let ws281x     = null;
-let pixelData  = null;
-let available  = false;
+let pyProc      = null;
+let available   = false;
+let currentState = 'off';
+let animTimer   = null;
+let animPhase   = 0;
 
-try {
-    ws281x    = require('rpi-ws281x-native');
-    pixelData = new Uint32Array(LED_COUNT);
-    ws281x.init(LED_COUNT, { gpioPin: LED_GPIO });
-    available = true;
-    console.log(`[LED] Initialized ${LED_COUNT} LEDs on GPIO${LED_GPIO}`);
-} catch (e) {
-    console.log('[LED] rpi-ws281x-native not available — LED output disabled (' + e.message + ')');
+function startDriver() {
+    const script = path.join(__dirname, 'led_driver.py');
+    pyProc = spawn('python3', [script], { stdio: ['pipe', 'pipe', 'pipe'] });
+
+    pyProc.stdout.once('data', () => {
+        // First line is the ready signal from the driver
+        available = true;
+        console.log('[LED] Python driver ready');
+        // Re-apply whatever state was set before the driver was ready
+        applyState(currentState);
+    });
+
+    pyProc.stderr.on('data', (d) => {
+        console.error('[LED] driver stderr:', d.toString().trim());
+    });
+
+    pyProc.on('exit', (code) => {
+        available = false;
+        if (code !== 0 && code !== null) {
+            console.error('[LED] driver exited with code', code, '— LEDs disabled');
+        }
+    });
 }
 
-let currentState   = 'off';
-let animTimer      = null;
-let animPhase      = 0;
+function send(obj) {
+    if (!available || !pyProc || pyProc.killed) return;
+    try {
+        pyProc.stdin.write(JSON.stringify(obj) + '\n');
+    } catch (e) { /* ignore write errors if process died */ }
+}
 
 function scaleColor(color, brightness) {
-    const r = Math.round(((color >> 16) & 0xFF) * brightness);
-    const g = Math.round(((color >>  8) & 0xFF) * brightness);
-    const b = Math.round(( color        & 0xFF) * brightness);
-    return (r << 16) | (g << 8) | b;
+    return {
+        r: Math.round(color.r * brightness),
+        g: Math.round(color.g * brightness),
+        b: Math.round(color.b * brightness),
+    };
 }
 
 function fill(color) {
-    if (!available) return;
-    for (let i = 0; i < LED_COUNT; i++) pixelData[i] = color;
-    ws281x.render(pixelData);
+    send({ cmd: 'fill', r: color.r, g: color.g, b: color.b });
 }
 
 function stopAnim() {
@@ -67,27 +87,30 @@ function startPulse(color) {
     }, 30);
 }
 
+function applyState(state) {
+    stopAnim();
+    switch (state) {
+        case 'error':      fill(COLORS.red);                   break;
+        case 'torque_off': fill(COLORS.blue);                  break;
+        case 'moving':     startPulse(COLORS.orange);          break;
+        case 'connected':  fill(COLORS.orange);                break;
+        case 'online':     fill(COLORS.green);                 break;
+        default:           send({ cmd: 'off' });               break;
+    }
+}
+
 function setState(state) {
     if (state === currentState) return;
     currentState = state;
-    stopAnim();
-
-    switch (state) {
-        case 'error':      fill(C_RED);             break;
-        case 'torque_off': fill(C_BLUE);            break;
-        case 'moving':     startPulse(C_ORANGE);    break;
-        case 'connected':  fill(C_ORANGE);          break;
-        case 'online':     fill(C_GREEN);           break;
-        default:           fill(C_OFF);             break;
-    }
+    if (available) applyState(state);
 }
 
 function shutdown() {
     stopAnim();
-    if (available) {
-        fill(C_OFF);
-        try { ws281x.reset(); } catch (e) { /* ignore */ }
-    }
+    send({ cmd: 'quit' });
+    if (pyProc) { try { pyProc.stdin.end(); } catch (e) { /* ignore */ } }
 }
+
+startDriver();
 
 module.exports = { setState, shutdown };

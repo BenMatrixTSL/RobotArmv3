@@ -19,9 +19,6 @@
   "dependencies": {
     "serialport": "^12.0.0",
     "ws": "^8.16.0"
-  },
-  "optionalDependencies": {
-    "rpi-ws281x-native": "^1.0.0"
   }
 }
 
