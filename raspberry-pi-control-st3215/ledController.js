@@ -27,8 +27,7 @@ const COLORS = {
 let pyProc      = null;
 let available   = false;
 let currentState = 'off';
-let animTimer   = null;
-let animPhase   = 0;
+let animTimer   = null; // reserved; animation runs inside led_driver.py
 
 function startDriver() {
     const script = path.join(__dirname, 'led_driver.py');
@@ -61,41 +60,21 @@ function send(obj) {
     } catch (e) { /* ignore write errors if process died */ }
 }
 
-function scaleColor(color, brightness) {
-    return {
-        r: Math.round(color.r * brightness),
-        g: Math.round(color.g * brightness),
-        b: Math.round(color.b * brightness),
-    };
-}
-
 function fill(color) {
     send({ cmd: 'fill', r: color.r, g: color.g, b: color.b });
 }
 
-function stopAnim() {
-    if (animTimer) { clearInterval(animTimer); animTimer = null; }
-    animPhase = 0;
-}
-
-function startPulse(color) {
-    stopAnim();
-    animTimer = setInterval(() => {
-        animPhase += 0.06;
-        const brightness = 0.25 + 0.75 * (0.5 + 0.5 * Math.sin(animPhase));
-        fill(scaleColor(color, brightness));
-    }, 30);
-}
-
 function applyState(state) {
-    stopAnim();
     switch (state) {
-        case 'error':      fill(COLORS.red);                   break;
-        case 'torque_off': fill(COLORS.blue);                  break;
-        case 'moving':     startPulse(COLORS.orange);          break;
-        case 'connected':  fill(COLORS.orange);                break;
-        case 'online':     fill(COLORS.green);                 break;
-        default:           send({ cmd: 'off' });               break;
+        case 'error':      fill(COLORS.red);    break;
+        case 'torque_off': fill(COLORS.blue);   break;
+        case 'moving':
+            send({ cmd: 'comet', r: COLORS.orange.r, g: COLORS.orange.g, b: COLORS.orange.b,
+                   tail: 14, speed: 1.4 });
+            break;
+        case 'connected':  fill(COLORS.orange); break;
+        case 'online':     fill(COLORS.green);  break;
+        default:           send({ cmd: 'off' }); break;
     }
 }
 
