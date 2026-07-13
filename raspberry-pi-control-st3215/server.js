@@ -17,6 +17,7 @@ const path        = require('path');
 const { exec, execFile, fork } = require('child_process');
 const { promisify } = require('util');
 const { robotKinematics } = require('./kinematicsService');
+const ledController = require('./ledController');
 const execFileAsync = promisify(execFile);
 
 // ===== Configuration =====
@@ -69,6 +70,29 @@ const CONTROL_IDLE_CHECK_INTERVAL_MS = 30 * 1000;
 // Linear path execution state — only one path runs at a time.
 let linearPathRunning = false;
 let linearPathClientWs = null;
+
+// LED state tracking
+let ledHasError = false;
+
+function computeLedState() {
+    if (ledHasError) return 'error';
+
+    // Blue if all detected (non-stale) joints have torque disabled.
+    const liveJoints = lastKnownStatusJoints.filter(j => j && !j.readStale);
+    if (liveJoints.length > 0 && liveJoints.every(j => !j.torqueEnabled)) return 'torque_off';
+
+    // Orange pulse if any joint is moving.
+    if (lastKnownStatusJoints.some(j => j && j.isMoving)) return 'moving';
+
+    // Orange solid if a client holds the control session.
+    if (controlSession.ws && controlSession.ws.readyState === WebSocket.OPEN) return 'connected';
+
+    return 'online';
+}
+
+function updateLed() {
+    ledController.setState(computeLedState());
+}
 
 // ===== Logging =====
 function debugLog(message, isError) {
@@ -212,6 +236,7 @@ function broadcastControlStatus(extraForClient) {
         if (extraForClient && extraForClient.ws === clientWs) Object.assign(payload, extraForClient.data);
         clientWs.send(JSON.stringify(payload));
     });
+    updateLed();
 }
 function releaseControlForIdle() {
     if (!controlSession.ws || !controlSession.lastMoveAt) return;
@@ -247,12 +272,15 @@ function handleWorkerMessage(msg) {
         lastKnownCacheAgeMs   = msg.cacheAgeMs;
         if (msg.diagnostics)  lastWorkerDiagnostics = msg.diagnostics;
         broadcastStatusToClients();
+        updateLed();
         return;
     }
 
     if (msg.type === 'ready') {
         if (msg.jointConfigs) lastKnownJointConfigs = msg.jointConfigs;
         debugLog('Servo worker ready — starting WebSocket server');
+        ledHasError = false;
+        updateLed();
         startServer();
         return;
     }
@@ -273,6 +301,8 @@ function handleWorkerMessage(msg) {
 
     if (msg.type === 'initError') {
         debugLog('Servo worker failed to initialize: ' + msg.message, true);
+        ledHasError = true;
+        updateLed();
         process.exit(1);
     }
 
@@ -280,6 +310,10 @@ function handleWorkerMessage(msg) {
         const warning = JSON.stringify({ type: 'servoThermalFault', joint: msg.joint, message: msg.message });
         connectedClients.forEach((ws) => { if (ws.readyState === WebSocket.OPEN) ws.send(warning); });
         debugLog('[THERMAL] ' + msg.message, true);
+        ledHasError = true;
+        updateLed();
+        // Auto-clear the error LED after the thermal backoff window so it doesn't stay red forever.
+        setTimeout(() => { ledHasError = false; updateLed(); }, 30000);
         return;
     }
 
@@ -306,6 +340,10 @@ function startServoWorker() {
         if (serverShuttingDown) return;
 
         debugLog(`Servo worker exited unexpectedly with code ${code} — scheduling restart`, true);
+
+        // Signal error on the LED strip.
+        ledHasError = true;
+        updateLed();
 
         // Broadcast a warning so any connected UI can display it.
         const crashMsg = JSON.stringify({ type: 'servoWorkerCrashed', code: code });
@@ -757,6 +795,7 @@ function startServer() {
             connectedClients.delete(ws);
             clientMap.delete(ws.clientId);
             releaseControlSession(ws);
+            updateLed();
             debugLog('Client disconnected from ' + clientIp + ' (id=' + ws.clientId + ')');
         });
 
@@ -782,6 +821,7 @@ async function cleanup(signalName) {
     }, 8000);
 
     try {
+        ledController.shutdown();
         if (servoWorker) {
             servoWorker.send({ type: 'shutdown' });
             await new Promise(resolve => servoWorker.once('exit', resolve));
