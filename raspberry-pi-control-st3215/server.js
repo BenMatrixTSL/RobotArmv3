@@ -72,20 +72,26 @@ let linearPathRunning = false;
 let linearPathClientWs = null;
 
 // LED state tracking
-let ledHasError = false;
+let ledIsBooting       = true;   // true until the worker first signals ready
+let ledIsRecovering    = false;  // true while worker has crashed and is restarting
+let ledThermalFaultUntil = 0;   // epoch ms — thermal flash active until this time
 
 function computeLedState() {
-    if (ledHasError) return 'error';
+    if (ledIsRecovering)                          return 'recovering';
+    if (ledThermalFaultUntil > Date.now())        return 'thermal';
+    if (ledIsBooting)                             return 'booting';
 
-    // Blue if all detected (non-stale) joints have torque disabled.
     const liveJoints = lastKnownStatusJoints.filter(j => j && !j.readStale);
     if (liveJoints.length > 0 && liveJoints.every(j => !j.torqueEnabled)) return 'torque_off';
 
-    // Orange pulse if any joint is moving.
+    if (linearPathRunning)                        return 'linear_path';
     if (lastKnownStatusJoints.some(j => j && j.isMoving)) return 'moving';
 
-    // Orange solid if a client holds the control session.
     if (controlSession.ws && controlSession.ws.readyState === WebSocket.OPEN) return 'connected';
+
+    // Purple if the arm is only partially connected (some servos missing).
+    if (lastKnownJointConfigs.count < lastKnownJointConfigs.total &&
+        lastKnownJointConfigs.total > 0)          return 'partial';
 
     return 'online';
 }
@@ -279,15 +285,18 @@ function handleWorkerMessage(msg) {
     if (msg.type === 'ready') {
         if (msg.jointConfigs) lastKnownJointConfigs = msg.jointConfigs;
         debugLog('Servo worker ready — starting WebSocket server');
-        ledHasError = false;
+        const firstBoot = ledIsBooting;
+        ledIsBooting    = false;
+        ledIsRecovering = false;
         updateLed();
-        startServer();
+        if (firstBoot) startServer();
         return;
     }
 
     if (msg.type === 'jointConfigs') {
         lastKnownJointConfigs = { count: msg.count, total: msg.total, joints: msg.joints };
         broadcastJointConfigs();
+        updateLed();
         return;
     }
 
@@ -301,7 +310,7 @@ function handleWorkerMessage(msg) {
 
     if (msg.type === 'initError') {
         debugLog('Servo worker failed to initialize: ' + msg.message, true);
-        ledHasError = true;
+        ledIsRecovering = true;
         updateLed();
         process.exit(1);
     }
@@ -310,10 +319,9 @@ function handleWorkerMessage(msg) {
         const warning = JSON.stringify({ type: 'servoThermalFault', joint: msg.joint, message: msg.message });
         connectedClients.forEach((ws) => { if (ws.readyState === WebSocket.OPEN) ws.send(warning); });
         debugLog('[THERMAL] ' + msg.message, true);
-        ledHasError = true;
+        ledThermalFaultUntil = Date.now() + 30000;
         updateLed();
-        // Auto-clear the error LED after the thermal backoff window so it doesn't stay red forever.
-        setTimeout(() => { ledHasError = false; updateLed(); }, 30000);
+        setTimeout(updateLed, 30000); // re-evaluate once fault window expires
         return;
     }
 
@@ -341,8 +349,7 @@ function startServoWorker() {
 
         debugLog(`Servo worker exited unexpectedly with code ${code} — scheduling restart`, true);
 
-        // Signal error on the LED strip.
-        ledHasError = true;
+        ledIsRecovering = true;
         updateLed();
 
         // Broadcast a warning so any connected UI can display it.
@@ -660,6 +667,7 @@ async function handleCommand(ws, data) {
 
                 linearPathRunning  = true;
                 linearPathClientWs = ws;
+                updateLed();
 
                 // Acknowledge immediately — client can display progress
                 sendResponse({ type: 'linearPathStarted', totalSteps: steps.length, totalDistanceMm, intervalMs, requestId });
@@ -693,6 +701,7 @@ async function handleCommand(ws, data) {
 
                     linearPathRunning  = false;
                     linearPathClientWs = null;
+                    updateLed();
                     if (ws.readyState === 1 /* OPEN */) {
                         ws.send(JSON.stringify({ type: 'linearPathComplete' }));
                     }
@@ -709,6 +718,7 @@ async function handleCommand(ws, data) {
         case 'abortLinearPath': {
             linearPathRunning  = false;
             linearPathClientWs = null;
+            updateLed();
             sendResponse({ type: 'success', message: 'Linear path aborted' });
             break;
         }

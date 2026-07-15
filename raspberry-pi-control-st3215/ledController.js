@@ -1,43 +1,36 @@
 'use strict';
 /**
  * WS2812B LED status indicator for the robot arm server.
- * Spawns led_driver.py (Python, rpi_ws281x) and communicates via stdin/stdout JSON.
+ * Spawns led_driver.py and communicates via stdin/stdout JSON lines.
  *
  * States (highest priority first):
- *   error      → solid red    (worker crashed, fatal fault)
- *   torque_off → solid blue   (motors online but torque disabled)
- *   moving     → orange pulse (any joint is moving)
- *   connected  → solid orange (a client holds the control session)
- *   online     → solid green  (motors ready, no active session)
- *   off        → all LEDs off (startup / shutdown)
+ *   error        → solid red          (fatal / unrecoverable)
+ *   recovering   → pulsing red        (worker crashed, restart in progress)
+ *   thermal      → flashing orange    (servo thermal fault, auto-clears after 30 s)
+ *   booting      → slow white pulse   (startup, worker not yet ready)
+ *   torque_off   → solid grey/white   (motors online but disengaged)
+ *   linear_path  → dual yellow comet  (executeLinearMove in progress)
+ *   moving       → yellow comet       (any joint moving)
+ *   connected    → solid cyan         (client holds the control session)
+ *   partial      → solid purple       (some servos not detected)
+ *   online       → solid green        (all servos ready, no active session)
+ *   off          → all LEDs off       (startup / shutdown)
  */
 
 const { spawn } = require('child_process');
 const path       = require('path');
 
-// 0-255 RGB values for each state
-const COLORS = {
-    off:       { r: 0,   g: 0,   b: 0   },
-    red:       { r: 255, g: 0,   b: 0   },
-    green:     { r: 0,   g: 170, b: 0   },
-    blue:      { r: 0,   g: 0,   b: 200 },
-    orange:    { r: 255, g: 112, b: 0   },
-};
-
-let pyProc      = null;
-let available   = false;
+let pyProc       = null;
+let available    = false;
 let currentState = 'off';
-let animTimer   = null; // reserved; animation runs inside led_driver.py
 
 function startDriver() {
     const script = path.join(__dirname, 'led_driver.py');
     pyProc = spawn('python3', [script], { stdio: ['pipe', 'pipe', 'pipe'] });
 
     pyProc.stdout.once('data', () => {
-        // First line is the ready signal from the driver
         available = true;
         console.log('[LED] Python driver ready');
-        // Re-apply whatever state was set before the driver was ready
         applyState(currentState);
     });
 
@@ -55,26 +48,44 @@ function startDriver() {
 
 function send(obj) {
     if (!available || !pyProc || pyProc.killed) return;
-    try {
-        pyProc.stdin.write(JSON.stringify(obj) + '\n');
-    } catch (e) { /* ignore write errors if process died */ }
-}
-
-function fill(color) {
-    send({ cmd: 'fill', r: color.r, g: color.g, b: color.b });
+    try { pyProc.stdin.write(JSON.stringify(obj) + '\n'); } catch (e) { /* ignore */ }
 }
 
 function applyState(state) {
     switch (state) {
-        case 'error':      fill(COLORS.red);    break;
-        case 'torque_off': fill(COLORS.blue);   break;
-        case 'moving':
-            send({ cmd: 'comet', r: COLORS.orange.r, g: COLORS.orange.g, b: COLORS.orange.b,
-                   tail: 14, speed: 1.4 });
+        case 'error':
+            send({ cmd: 'fill', r: 255, g: 0, b: 0 });
             break;
-        case 'connected':  fill(COLORS.orange); break;
-        case 'online':     fill(COLORS.green);  break;
-        default:           send({ cmd: 'off' }); break;
+        case 'recovering':
+            send({ cmd: 'pulse', r: 255, g: 0, b: 0, lo: 0.04, hi: 0.7, period: 1.2 });
+            break;
+        case 'thermal':
+            send({ cmd: 'flash', r: 255, g: 100, b: 0, on_ms: 150, period_ms: 500 });
+            break;
+        case 'booting':
+            send({ cmd: 'pulse', r: 160, g: 160, b: 160, lo: 0.04, hi: 0.6, period: 2.5 });
+            break;
+        case 'torque_off':
+            send({ cmd: 'fill', r: 130, g: 130, b: 130 });
+            break;
+        case 'linear_path':
+            send({ cmd: 'comet', r: 255, g: 208, b: 0, tail: 10, speed: 1.2, heads: 2 });
+            break;
+        case 'moving':
+            send({ cmd: 'comet', r: 255, g: 208, b: 0, tail: 14, speed: 1.4, heads: 1 });
+            break;
+        case 'connected':
+            send({ cmd: 'fill', r: 0, g: 160, b: 255 });
+            break;
+        case 'partial':
+            send({ cmd: 'fill', r: 140, g: 0, b: 220 });
+            break;
+        case 'online':
+            send({ cmd: 'fill', r: 0, g: 200, b: 60 });
+            break;
+        default:
+            send({ cmd: 'off' });
+            break;
     }
 }
 
@@ -85,7 +96,6 @@ function setState(state) {
 }
 
 function shutdown() {
-    stopAnim();
     send({ cmd: 'quit' });
     if (pyProc) { try { pyProc.stdin.end(); } catch (e) { /* ignore */ } }
 }
