@@ -95,6 +95,103 @@ function normalizeVector(v) {
     return { x: x / len, y: y / len, z: z / len };
 }
 
+// ---------------------------------------------------------------------------
+// Null-space IK helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Inverts a 3×3 matrix using cofactors. Returns null if singular.
+ * @param {number[][]} m - 3×3 matrix (array of 3 rows)
+ * @returns {number[][]|null}
+ */
+function invertMat3(m) {
+    const a=m[0][0], b=m[0][1], c=m[0][2];
+    const d=m[1][0], e=m[1][1], f=m[1][2];
+    const g=m[2][0], h=m[2][1], k=m[2][2];
+    const det = a*(e*k - f*h) - b*(d*k - f*g) + c*(d*h - e*g);
+    if (Math.abs(det) < 1e-9) return null;
+    const inv = 1.0 / det;
+    return [
+        [(e*k-f*h)*inv, (c*h-b*k)*inv, (b*f-c*e)*inv],
+        [(f*g-d*k)*inv, (a*k-c*g)*inv, (c*d-a*f)*inv],
+        [(d*h-e*g)*inv, (b*g-a*h)*inv, (a*e-b*d)*inv]
+    ];
+}
+
+/**
+ * Damped-least-squares pseudoinverse of a 3×N Jacobian.
+ * J_pinv = J^T (J J^T + λ²I)^{-1}
+ *
+ * @param {number[][]} J  - 3-element array, each row is an N-element array
+ * @param {number}     n  - number of columns (joints)
+ * @param {number}     lambda - damping factor
+ * @returns {number[][]|null} N×3 matrix, or null if inversion fails
+ */
+function dampedPseudoinverse3xN(J, n, lambda) {
+    // JJT = J * J^T  (3×3)
+    const JJT = [[0,0,0],[0,0,0],[0,0,0]];
+    for (let i = 0; i < 3; i++) {
+        for (let k = 0; k < 3; k++) {
+            let s = 0;
+            for (let j = 0; j < n; j++) s += J[i][j] * J[k][j];
+            JJT[i][k] = s;
+        }
+    }
+    const lsq = lambda * lambda;
+    JJT[0][0] += lsq; JJT[1][1] += lsq; JJT[2][2] += lsq;
+
+    const inv = invertMat3(JJT);
+    if (!inv) return null;
+
+    // J_pinv = J^T * inv(JJT)  (N×3)
+    const pinv = [];
+    for (let j = 0; j < n; j++) {
+        pinv.push([
+            J[0][j]*inv[0][0] + J[1][j]*inv[1][0] + J[2][j]*inv[2][0],
+            J[0][j]*inv[0][1] + J[1][j]*inv[1][1] + J[2][j]*inv[2][1],
+            J[0][j]*inv[0][2] + J[1][j]*inv[1][2] + J[2][j]*inv[2][2]
+        ]);
+    }
+    return pinv;
+}
+
+/**
+ * Multiplies an N×3 matrix by a 3-element vector, returning an N-element vector.
+ * @param {number[][]} M - N×3
+ * @param {number[]}   v - length 3
+ * @returns {number[]} length N
+ */
+function matVec3(M, v) {
+    return M.map(row => row[0]*v[0] + row[1]*v[1] + row[2]*v[2]);
+}
+
+/**
+ * Projects vector g (length N) into the null space of J_pos (3×N).
+ * (I - J_pos_pinv * J_pos) * g  — computed without forming the N×N matrix:
+ *   result = g - J_pos_pinv * (J_pos * g)
+ *
+ * @param {number[][]} Jpos     - 3×N position Jacobian
+ * @param {number[][]} Jpos_pinv - N×3 pseudoinverse
+ * @param {number[]}   g        - length-N vector to project
+ * @param {number}     n        - number of joints
+ * @returns {number[]} length-N null-space projected vector
+ */
+function nullSpaceProject(Jpos, Jpos_pinv, g, n) {
+    // h = J_pos * g  (3×1)
+    const h = [0, 0, 0];
+    for (let j = 0; j < n; j++) {
+        h[0] += Jpos[0][j] * g[j];
+        h[1] += Jpos[1][j] * g[j];
+        h[2] += Jpos[2][j] * g[j];
+    }
+    // J_pos_pinv * h  (N×1)
+    const Jph = matVec3(Jpos_pinv, h);
+    // g - J_pos_pinv * J_pos * g
+    return g.map((gi, i) => gi - Jph[i]);
+}
+
+// ---------------------------------------------------------------------------
+
 /**
  * Robot Arm Kinematics Class
  * Handles forward and inverse kinematics for a multi-joint robot arm using URDF
@@ -412,11 +509,12 @@ class RobotKinematics {
 
         // Settings for the solver
         const maxIterations = 800;
-        const positionToleranceMm = 0.3; // stop main loop when we are within 0.3mm
-        const finiteDifferenceDeg = 0.25; // finer step → more accurate Jacobian
-        const baseStepSize = 0.025;       // baseline strength for the Jacobian transpose update
-        const orientationWeight = 40.0;   // high weight keeps wrist joints on orientation target
-        const maxDeltaPerIterDeg = 4.0;   // cap per-joint step to prevent singularity blow-up
+        const positionToleranceMm = 0.3;  // stop when within 0.3 mm
+        const finiteDifferenceDeg = 0.25; // finite-difference step for numeric Jacobian
+        const lambda = 0.5;               // DLS damping factor (singularity robustness)
+        const posStepSize = 0.7;          // fraction of pseudoinverse step (handles nonlinearity)
+        const nullSpaceGain = 0.3;        // orientation correction gain in null space
+        const maxDeltaPerIterDeg = 4.0;   // per-joint safety cap
 
         // We temporarily disable verbose FK logging while we iterate
         const previousLogging = this.enableDebugLogging;
@@ -491,24 +589,34 @@ class RobotKinematics {
                     }
                 }
 
-                // Adaptive step: smaller when close (fine tuning), larger when far (fast approach)
-                const stepSize = baseStepSize / (1 + positionErrorLength / 60);
-                for (let j = 0; j < numJoints; j++) {
-                    let grad =
-                        Jpos[0][j] * errX +
-                        Jpos[1][j] * errY +
-                        Jpos[2][j] * errZ;
+                // --- Null-space IK update ---
+                // Primary task: position via damped pseudoinverse (J_pos^+)
+                // Secondary task: orientation correction projected into null space of J_pos,
+                // so it cannot disturb the primary position solution.
 
-                    if (hasOrientationTarget && Jori) {
-                        grad += orientationWeight * (
-                            Jori[0][j] * oriErrX +
-                            Jori[1][j] * oriErrY +
-                            Jori[2][j] * oriErrZ
-                        );
+                const Jpos_pinv = dampedPseudoinverse3xN(Jpos, numJoints, lambda);
+                if (!Jpos_pinv) continue; // degenerate — skip this iteration
+
+                // Primary update: move toward target position
+                const dq_primary = matVec3(Jpos_pinv, [errX, errY, errZ]);
+
+                // Secondary update: orientation correction in null space
+                let dq_null = null;
+                if (hasOrientationTarget && Jori) {
+                    // J_ori^T * oriErr  (N×1) — orientation gradient
+                    const g_ori = [];
+                    for (let j = 0; j < numJoints; j++) {
+                        g_ori.push(Jori[0][j]*oriErrX + Jori[1][j]*oriErrY + Jori[2][j]*oriErrZ);
                     }
+                    // Project into null space of J_pos so position is unaffected
+                    dq_null = nullSpaceProject(Jpos, Jpos_pinv, g_ori, numJoints);
+                }
+
+                for (let j = 0; j < numJoints; j++) {
+                    let delta = posStepSize * dq_primary[j];
+                    if (dq_null) delta += nullSpaceGain * dq_null[j];
 
                     // Cap per-iteration delta to prevent divergence near singularities
-                    const delta = stepSize * grad;
                     angles[j] += Math.max(-maxDeltaPerIterDeg, Math.min(maxDeltaPerIterDeg, delta));
 
                     // Clamp to joint limits if provided (in degrees)
