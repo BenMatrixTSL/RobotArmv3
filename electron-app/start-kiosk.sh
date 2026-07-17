@@ -108,13 +108,14 @@ build_chromium_flags() {
         --disable-features=TranslateUI,PasswordCheck,AutofillServerCommunication,MediaRouter,OptimizationHints
     )
     if [ "$CHROMIUM_USE_WAYLAND" = "1" ]; then
-        CHROMIUM_FLAGS+=(--ozone-platform=wayland --enable-features=UseOzonePlatform --disable-gpu --use-gl=swiftshader --enable-unsafe-swiftshader)
+        # Wayland on Pi: hardware GPU (Mesa v3d) provides WebGL — do NOT disable-gpu.
+        # ignore-gpu-blocklist ensures Chromium's built-in blocklist doesn't kill WebGL
+        # on the Pi's VideoCore GPU even if it's on the deny list.
+        CHROMIUM_FLAGS+=(--ozone-platform=wayland --enable-features=UseOzonePlatform --ignore-gpu-blocklist)
     else
-        # --disable-gpu disables hardware rasterisation but we still want WebGL
-        # (Three.js 3D view). --use-gl=swiftshader selects CPU-based SwiftShader
-        # for WebGL; --enable-unsafe-swiftshader allows it when GPU is disabled.
-        # Both flags are needed for Chromium 120+ on Pi without GPU drivers.
-        CHROMIUM_FLAGS+=(--disable-gpu --use-gl=swiftshader --enable-unsafe-swiftshader --ignore-gpu-blocklist)
+        # X11 fallback: no reliable GPU context; use Vulkan SwiftShader for software WebGL.
+        # Chromium 120+ ships libvk_swiftshader.so — ANGLE picks it up via the Vulkan ICD.
+        CHROMIUM_FLAGS+=(--disable-gpu --use-gl=angle --use-angle=vulkan --ignore-gpu-blocklist)
     fi
 }
 
