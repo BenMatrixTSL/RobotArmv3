@@ -16,7 +16,7 @@ if [ -f "$HOME/.config/robot-arm-kiosk.env" ]; then
 fi
 
 PORT="${ROBOT_ARM_KIOSK_PORT:-80}"
-KIOSK_URL="http://127.0.0.1:${PORT}/index.html?kiosk=1"
+KIOSK_URL="http://127.0.0.1:${PORT}/splash.html"
 KIOSK_SCREENS="${ROBOT_ARM_KIOSK_SCREENS:-1}"
 PROFILE_BASE="${HOME}/.robot-arm-kiosk"
 LOG_FILE="${PROFILE_BASE}/kiosk.log"
@@ -29,7 +29,7 @@ mkdir -p "$PROFILE_BASE"
 exec >>"$LOG_FILE" 2>&1
 echo ""
 echo "========== Kiosk start $(date) =========="
-echo "Kiosk: script version 2026-06-08c"
+echo "Kiosk: script version 2026-06-24a"
 
 # Only one kiosk script at a time (desktop autostart + labwc may both try to start it)
 KIOSK_LOCK_FILE="${PROFILE_BASE}/kiosk.lock"
@@ -108,12 +108,13 @@ build_chromium_flags() {
         --disable-features=TranslateUI,PasswordCheck,AutofillServerCommunication,MediaRouter,OptimizationHints
     )
     if [ "$CHROMIUM_USE_WAYLAND" = "1" ]; then
-        CHROMIUM_FLAGS+=(--ozone-platform=wayland --enable-features=UseOzonePlatform --disable-gpu --enable-unsafe-swiftshader)
+        CHROMIUM_FLAGS+=(--ozone-platform=wayland --enable-features=UseOzonePlatform --disable-gpu --use-gl=swiftshader --enable-unsafe-swiftshader)
     else
         # --disable-gpu disables hardware rasterisation but we still want WebGL
-        # (Three.js 3D view). --enable-unsafe-swiftshader provides CPU-based
-        # WebGL via SwiftShader so the visualization tab works without a GPU driver.
-        CHROMIUM_FLAGS+=(--disable-gpu --enable-unsafe-swiftshader)
+        # (Three.js 3D view). --use-gl=swiftshader selects CPU-based SwiftShader
+        # for WebGL; --enable-unsafe-swiftshader allows it when GPU is disabled.
+        # Both flags are needed for Chromium 120+ on Pi without GPU drivers.
+        CHROMIUM_FLAGS+=(--disable-gpu --use-gl=swiftshader --enable-unsafe-swiftshader --ignore-gpu-blocklist)
     fi
 }
 
@@ -227,7 +228,7 @@ PY
 
 wait_for_http_server() {
     local attempt=0
-    local max_attempts=45
+    local max_attempts=10
 
     echo "Kiosk: waiting for HTTP server on port $PORT ..."
 
@@ -240,8 +241,8 @@ wait_for_http_server() {
         sleep 1
     done
 
-    echo "Kiosk: HTTP server did not become ready in ${max_attempts}s" >&2
-    return 1
+    echo "Kiosk: HTTP server did not become ready in ${max_attempts}s — starting Chromium anyway" >&2
+    return 0
 }
 
 start_http_server() {
@@ -256,12 +257,9 @@ start_http_server() {
 
     if [ "$PORT" -lt 1024 ]; then
         echo "Kiosk: waiting for existing service on port $PORT (needs root to start here) ..."
-        if wait_for_http_server; then
-            HTTP_PID=""
-            return 0
-        fi
-        echo "Kiosk: error — nothing is serving port $PORT. Install: sudo ./install-web-server-service.sh" >&2
-        return 1
+        wait_for_http_server || true
+        HTTP_PID=""
+        return 0
     fi
 
     free_port_if_busy
