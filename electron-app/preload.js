@@ -1,6 +1,6 @@
 /**
  * Preload Script
- * 
+ *
  * This script runs in the renderer process before the page loads.
  * It provides a secure bridge between the renderer and Node.js APIs.
  */
@@ -9,8 +9,7 @@ const { contextBridge, ipcRenderer } = require('electron');
 const fs = require('fs');
 const path = require('path');
 
-// Expose a secure API to the renderer process
-contextBridge.exposeInMainWorld('electronAPI', {
+const api = {
     // Basic app info
     platform: process.platform,
     version: process.versions.electron,
@@ -70,5 +69,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
             return { ok: false, message: e.message || String(e) };
         }
     }
-});
+};
 
+// contextBridge.exposeInMainWorld only works when contextIsolation is enabled.
+// When contextIsolation is false (nodeIntegration mode), set window directly.
+try {
+    contextBridge.exposeInMainWorld('electronAPI', api);
+} catch (e) {
+    // contextIsolation is disabled — preload shares the renderer's global scope
+    window.electronAPI = api;
+}

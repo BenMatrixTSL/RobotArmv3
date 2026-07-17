@@ -914,16 +914,23 @@ function initializeTabs() {
 
 /**
  * Opens the 3D visualisation in a separate always-on-top window.
- * Uses the Electron preload bridge (electronAPI) to ask the main
- * process to create the extra window.
+ * Prefers the Electron IPC bridge; falls back to window.open() when
+ * running as a web page or when the bridge is unavailable.
  */
 function openVisualisationPopup() {
     try {
         if (window.electronAPI && typeof window.electronAPI.openVisualisationWindow === 'function') {
             window.electronAPI.openVisualisationWindow();
         } else {
-            showAppMessage('Opening extra 3D window is not available in this build.');
-            console.warn('openVisualisationPopup: electronAPI.openVisualisationWindow is not available.');
+            // Fallback: works in browser and in Electron when nodeIntegration is on
+            const popup = window.open(
+                'index.html?visualisationOnly=1',
+                'robotArm3DVisualisation',
+                'width=800,height=600,resizable=yes'
+            );
+            if (!popup) {
+                showAppMessage('Pop-up was blocked. Please allow pop-ups for this page and try again.');
+            }
         }
     } catch (e) {
         console.error('openVisualisationPopup failed:', e);
