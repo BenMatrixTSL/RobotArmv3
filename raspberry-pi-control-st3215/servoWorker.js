@@ -635,12 +635,8 @@ async function initializeServos() {
                 continue;
             }
             log(`Servo ${i + 1} (ID: ${SERVO_IDS[i]}) responded to ping`);
-            // Ensure RESPONSE_STATUS_LEVEL=1 so the servo replies to READ commands.
-            // A servo accidentally set to level 0 (PING-only) responds to pings but
-            // not status reads.  This write is fire-and-forget and safe at any level.
-            await servo.setResponseStatusLevel(1);
-            await new Promise(r => setTimeout(r, 100));
             log(`Servo ${i + 1} initialized (ST3215 ID: ${SERVO_IDS[i]})`);
+            await new Promise(r => setTimeout(r, 50));
             await servo.startServo();
         } catch (error) {
             log(`Failed to initialize servo ${i + 1}: ${error.message}`, true);
@@ -676,8 +672,6 @@ async function createAndInitializeServo(jointIndex) {
         servos[jointIndex] = null;
         throw new Error(`Servo ${jointIndex + 1} (ID: ${servoId}) did not respond`);
     }
-    await servo.setResponseStatusLevel(1);
-    await new Promise(r => setTimeout(r, 100));
     await servo.startServo();
     servoTorqueEnabled[jointIndex] = true;
     return servo;
