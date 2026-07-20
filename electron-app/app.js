@@ -4240,11 +4240,31 @@ async function executeGCodeCommand(command) {
         
         if (robotArmClient.isConnected) {
             const numJoints = getNumJoints();
+
+            // Fetch current angles so we can (a) scale speeds for coordinated arrival
+            // and (b) compute how long to wait for the slowest joint to reach 0°.
+            let currentAngles = null;
+            let maxTravelDeg = 180; // conservative fallback
+            try {
+                const status = await robotArmClient.getStatus();
+                if (Array.isArray(status) && status.length > 0) {
+                    currentAngles = status.map(j =>
+                        (j && typeof j.angleDegrees === 'number' && !isNaN(j.angleDegrees))
+                            ? j.angleDegrees : 0
+                    );
+                    maxTravelDeg = currentAngles.reduce((m, a) => Math.max(m, Math.abs(a)), 0);
+                }
+            } catch (e) { /* use fallback */ }
+
+            const homeTargets = new Array(numJoints).fill(0);
+            const coordSpeeds = computeCoordinatedSpeeds(currentAngles, homeTargets, speed);
             for (let i = 1; i <= numJoints; i++) {
-                robotArmClient.moveJoint(i, 0, speed);
-                await new Promise(resolve => setTimeout(resolve, 50));
+                robotArmClient.moveJoint(i, 0, coordSpeeds[i - 1] || speed);
             }
-            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            // Wait for the joint with the most travel to reach 0°, plus a 500 ms buffer.
+            const waitMs = Math.ceil((maxTravelDeg / speedDegreesPerSecond) * 1000) + 500;
+            await new Promise(resolve => setTimeout(resolve, Math.max(waitMs, 1000)));
         }
         
     } else if (command.code.startsWith('J') || commandHasJointAngleParams(command.params)) {
