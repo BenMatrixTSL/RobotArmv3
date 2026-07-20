@@ -42,6 +42,10 @@ const COMM_SUCCESS = 0;
 const COMM_RX_TIMEOUT = -6;
 const COMM_RX_CORRUPT = -7;
 
+// EEPROM configuration registers (require unlock before writing)
+const SCS_RESPONSE_STATUS_LEVEL = 0x08; // 0=PING only, 1=READ+PING, 2=all instructions
+const SCS_EEPROM_LOCK = 0x37;           // 0=unlocked, 1=locked
+
 // Register Addresses (from values.py)
 const STS_TORQUE_ENABLE = 40;
 const STS_ACC = 41;
@@ -968,6 +972,20 @@ class ServoController {
      */
     async sendTorqueEnableFireAndForget() {
         await this.sendPacket(INST_WRITE, [STS_TORQUE_ENABLE & 0xFF, 1]);
+    }
+
+    /**
+     * Set RESPONSE_STATUS_LEVEL so the servo replies to READ commands.
+     * Sent fire-and-forget because the servo may be at level 0 (PING-only)
+     * and will not ack these writes.  Safe to call on servos already at
+     * the target level — the write is a no-op from their perspective.
+     * Requires EEPROM unlock (0x37=0) before writing register 0x08.
+     */
+    async setResponseStatusLevel(level) {
+        await this.sendPacket(INST_WRITE, [SCS_EEPROM_LOCK & 0xFF, 0]);
+        await new Promise(r => setTimeout(r, 50));
+        await this.sendPacket(INST_WRITE, [SCS_RESPONSE_STATUS_LEVEL & 0xFF, level & 0xFF]);
+        await new Promise(r => setTimeout(r, 50));
     }
 
     /**
