@@ -660,7 +660,7 @@ function defineCustomBlocks() {
             this.setPreviousStatement(true, null);
             this.setNextStatement(true, null);
             this.setColour(165);
-            this.setTooltip('Open the gripper (moves end-tool servo to 0°)');
+            this.setTooltip('Open the gripper (moves end-tool servo to 180°)');
         }
     };
 
@@ -672,7 +672,7 @@ function defineCustomBlocks() {
             this.setPreviousStatement(true, null);
             this.setNextStatement(true, null);
             this.setColour(165);
-            this.setTooltip('Close the gripper (moves end-tool servo to 90°)');
+            this.setTooltip('Close the gripper (moves end-tool servo to 0°)');
         }
     };
 
