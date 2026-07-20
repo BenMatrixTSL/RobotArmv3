@@ -1963,6 +1963,9 @@ function updateJointStatus(joints) {
                     ? lastGoodJointStatus[i].angleDegrees
                     : 0;
 
+        // True if we have ever received a good read for this joint.
+        const hasAnyGoodData = !!lastGoodJointStatus[i];
+
         if (hasFreshAngle) {
             lastGoodJointStatus[i] = joint;
             jogCommandedAngles[i] = angleDegrees;
@@ -1970,19 +1973,28 @@ function updateJointStatus(joints) {
             joint = Object.assign({}, lastGoodJointStatus[i], { readStale: true });
         }
 
+        // readUnknown: servo is not responding to reads and we have no cached data.
+        // Display '?' rather than the misleading default values (0° / torque Off).
+        const readUnknown = !hasFreshAngle && !hasAnyGoodData;
+
         jointAngles.push(angleDegrees);
-        
+
         // Update angle display
         const angleElement = document.getElementById(`joint${jointNumber}Angle`);
         if (angleElement) {
-            angleElement.textContent = angleDegrees.toFixed(2);
+            angleElement.textContent = readUnknown ? '?' : angleDegrees.toFixed(2);
         }
-        
+
         // Update moving status
         const movingElement = document.getElementById(`joint${jointNumber}Moving`);
         if (movingElement) {
-            movingElement.textContent = joint.isMoving ? 'Yes' : 'No';
-            movingElement.style.color = joint.isMoving ? '#e74c3c' : '#27ae60';
+            if (readUnknown) {
+                movingElement.textContent = '?';
+                movingElement.style.color = '#f39c12';
+            } else {
+                movingElement.textContent = joint.isMoving ? 'Yes' : 'No';
+                movingElement.style.color = joint.isMoving ? '#e74c3c' : '#27ae60';
+            }
         }
         
         // Update position display
@@ -2034,30 +2046,35 @@ function updateJointStatus(joints) {
         
         // Update torque display
         const torqueElement = document.getElementById(`joint${jointNumber}Torque`);
-        if (torqueElement && joint && typeof joint.torqueEnabled === 'boolean') {
-            torqueElement.textContent = joint.torqueEnabled ? 'On' : 'Off';
-            torqueElement.style.color = joint.torqueEnabled ? '#27ae60' : '#e74c3c';
-            
-            // Update global torque state and button if all joints have the same state
-            if (jointNumber === 1) {
-                // Check if all joints have the same torque state
-                let allSame = true;
-                for (let j = 0; j < Math.min(joints.length, numJoints); j++) {
-                    if (joints[j] && typeof joints[j].torqueEnabled === 'boolean') {
-                        if (joints[j].torqueEnabled !== joint.torqueEnabled) {
-                            allSame = false;
-                            break;
+        if (torqueElement) {
+            if (readUnknown) {
+                // Servo not responding to reads and no cached data — show '?' in amber
+                // so the user knows it's a communication problem, not that torque is off.
+                torqueElement.textContent = '?';
+                torqueElement.style.color = '#f39c12';
+            } else if (joint && typeof joint.torqueEnabled === 'boolean') {
+                torqueElement.textContent = joint.torqueEnabled ? 'On' : 'Off';
+                torqueElement.style.color = joint.torqueEnabled ? '#27ae60' : '#e74c3c';
+
+                // Update global torque state and button if all joints have the same state
+                if (jointNumber === 1) {
+                    let allSame = true;
+                    for (let j = 0; j < Math.min(joints.length, numJoints); j++) {
+                        if (joints[j] && typeof joints[j].torqueEnabled === 'boolean') {
+                            if (joints[j].torqueEnabled !== joint.torqueEnabled) {
+                                allSame = false;
+                                break;
+                            }
                         }
                     }
-                }
-                
-                if (allSame) {
-                    torqueEnabled = joint.torqueEnabled;
-                    const button = document.getElementById('torqueToggleButton');
-                    if (button) {
-                        button.textContent = `Torque: ${torqueEnabled ? 'On' : 'Off'}`;
-                        button.classList.remove(torqueEnabled ? 'btn-secondary' : 'btn-warning');
-                        button.classList.add(torqueEnabled ? 'btn-warning' : 'btn-secondary');
+                    if (allSame) {
+                        torqueEnabled = joint.torqueEnabled;
+                        const button = document.getElementById('torqueToggleButton');
+                        if (button) {
+                            button.textContent = `Torque: ${torqueEnabled ? 'On' : 'Off'}`;
+                            button.classList.remove(torqueEnabled ? 'btn-secondary' : 'btn-warning');
+                            button.classList.add(torqueEnabled ? 'btn-warning' : 'btn-secondary');
+                        }
                     }
                 }
             }
