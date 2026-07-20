@@ -2892,7 +2892,7 @@ async function moveToXYZ(xArg, yArg, zArg, orientationOverride, skipRefinement) 
                 return;
             }
 
-            const refAngles = previousRefinedAngles || moveToXyzInitialAngles || jointAngles.map(() => 0);
+            const refAngles = previousRefinedAngles || moveToXyzInitialAngles || null;
             previousRefinedAngles = jointAngles.slice();
             lastAccuracy = refined || { positionErrorMm: 0, orientationErrorDeg: 0 };
 
@@ -3489,8 +3489,14 @@ async function executeLinearMoveToXYZ(targetPose, startAngles) {
 }
 
 function computeCoordinatedSpeeds(currentAngles, targetAngles, baseStepsPerSecond) {
-    if (!Array.isArray(currentAngles) || !Array.isArray(targetAngles) || currentAngles.length === 0) {
+    if (!Array.isArray(targetAngles) || targetAngles.length === 0) {
         return [];
+    }
+    // If current position is unknown, scaling would use wrong reference angles and produce
+    // wildly incorrect speed ratios — fall back to uniform speed so all joints move
+    // independently at the same rate rather than desynchronising.
+    if (!Array.isArray(currentAngles) || currentAngles.length === 0) {
+        return targetAngles.map(() => Math.max(baseStepsPerSecond, 50));
     }
     const n = Math.min(currentAngles.length, targetAngles.length);
     const travels = [];
@@ -4199,7 +4205,7 @@ async function executeGCodeCommand(command) {
 
                 // Dispatch all joints simultaneously with speeds scaled for coordinated arrival.
                 if (robotArmClient.isConnected) {
-                    const gcodeSpeeds = computeCoordinatedSpeeds(initialAngles || jointAngles.map(() => 0), jointAngles, speed);
+                    const gcodeSpeeds = computeCoordinatedSpeeds(initialAngles || null, jointAngles, speed);
                     for (let i = 0; i < jointAngles.length; i++) {
                         robotArmClient.moveJoint(i + 1, jointAngles[i], gcodeSpeeds[i] || speed);
                     }
@@ -4782,7 +4788,7 @@ async function runRapidProgram() {
                 }
 
                 // `jointAngles` now contains the final IK solution — dispatch with coordinated speeds.
-                const rapidSpeeds = computeCoordinatedSpeeds(initialAngles || jointAngles.map(() => 0), jointAngles, speedStepsPerSecond);
+                const rapidSpeeds = computeCoordinatedSpeeds(initialAngles || null, jointAngles, speedStepsPerSecond);
                 for (let j = 0; j < numJoints; j++) {
                     const targetAngle = jointAngles[j];
                     if (typeof targetAngle === 'number' && !isNaN(targetAngle)) {
@@ -4877,7 +4883,7 @@ async function runRapidProgram() {
                 }
 
                 // `jointAngles2` now contains the final IK solution — dispatch with coordinated speeds.
-                const rapidOffsSpeeds = computeCoordinatedSpeeds(initialAngles2 || jointAngles2.map(() => 0), jointAngles2, speedStepsPerSecond);
+                const rapidOffsSpeeds = computeCoordinatedSpeeds(initialAngles2 || null, jointAngles2, speedStepsPerSecond);
                 for (let j = 0; j < numJoints; j++) {
                     const targetAngle = jointAngles2[j];
                     if (typeof targetAngle === 'number' && !isNaN(targetAngle)) {
