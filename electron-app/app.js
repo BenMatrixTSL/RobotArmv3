@@ -4448,17 +4448,17 @@ async function executeGCodeCommand(command) {
             }
             
         } else if (command.code === 'M10') {
-            // M10 = Gripper open (servo to 0°)
+            // M10 = Gripper open (servo to 180° = fully open)
             gcodeProcessor.log('M10: Gripper open');
             if (robotArmClient.isConnected) {
-                await robotArmClient.sendCommand('toolSetServoEnabledAndAngle', { angle: 0 });
+                await robotArmClient.sendCommand('toolSetServoEnabledAndAngle', { angle: 180 });
                 await new Promise(resolve => setTimeout(resolve, 500));
             }
         } else if (command.code === 'M11') {
-            // M11 = Gripper close (servo to 90°)
+            // M11 = Gripper close (servo to 0° = fully closed)
             gcodeProcessor.log('M11: Gripper close');
             if (robotArmClient.isConnected) {
-                await robotArmClient.sendCommand('toolSetServoEnabledAndAngle', { angle: 90 });
+                await robotArmClient.sendCommand('toolSetServoEnabledAndAngle', { angle: 0 });
                 await new Promise(resolve => setTimeout(resolve, 500));
             }
         } else if (command.code === 'M62') {
@@ -4968,13 +4968,13 @@ async function runRapidProgram() {
         } else if (/^GripperOpen\b/i.test(line)) {
             console.log('RAPID: GripperOpen on line', i + 1);
             if (robotArmClient && robotArmClient.isConnected) {
-                await robotArmClient.sendCommand('toolSetServoEnabledAndAngle', { angle: 0 });
+                await robotArmClient.sendCommand('toolSetServoEnabledAndAngle', { angle: 180 });
                 await new Promise(function (resolve) { setTimeout(resolve, 500); });
             }
         } else if (/^GripperClose\b/i.test(line)) {
             console.log('RAPID: GripperClose on line', i + 1);
             if (robotArmClient && robotArmClient.isConnected) {
-                await robotArmClient.sendCommand('toolSetServoEnabledAndAngle', { angle: 90 });
+                await robotArmClient.sendCommand('toolSetServoEnabledAndAngle', { angle: 0 });
                 await new Promise(function (resolve) { setTimeout(resolve, 500); });
             }
         } else if (/^PumpOn\b/i.test(line)) {

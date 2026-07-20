@@ -287,7 +287,7 @@
                         <span class="servo-state-text" id="endToolServoStateText">--</span>
                     </div>
                     <div class="servo-angle-row">
-                        <label>Angle (0–180°):</label>
+                        <label>Angle (0° = fully closed, 180° = fully open):</label>
                         <input type="range" id="endToolServoSlider" min="0" max="180" value="90" oninput="updateEndToolServoLabel(this.value)" onchange="moveEndToolServo(this.value)">
                         <span id="endToolServoAngleLabel">90°</span>
                     </div>
