@@ -4107,12 +4107,10 @@ async function executeGCodeCommand(command) {
         try {
             // Work out the target XYZ in mm.
             // If any axis is not specified, we try to keep the current value from the UI.
-            let currentX = parseFloat(document.getElementById('currentX').textContent);
-            let currentY = parseFloat(document.getElementById('currentY').textContent);
-            let currentZ = parseFloat(document.getElementById('currentZ').textContent);
-            if (!isFinite(currentX)) currentX = 0;
-            if (!isFinite(currentY)) currentY = 0;
-            if (!isFinite(currentZ)) currentZ = 0;
+            const currentPos = getCurrentDisplayXYZ();
+            let currentX = isFinite(currentPos.x) ? currentPos.x : 0;
+            let currentY = isFinite(currentPos.y) ? currentPos.y : 0;
+            let currentZ = isFinite(currentPos.z) ? currentPos.z : 0;
 
             const startPose = { x: currentX, y: currentY, z: currentZ };
             const targetPose = {
@@ -4706,13 +4704,12 @@ async function runRapidProgram() {
             console.log('RAPID: MoveLXYZ on line', i + 1, 'target XYZ:', targetPose);
 
             // Get current XYZ from the UI as a starting pose
-            let currentX = parseFloat(document.getElementById('currentX').textContent);
-            let currentY = parseFloat(document.getElementById('currentY').textContent);
-            let currentZ = parseFloat(document.getElementById('currentZ').textContent);
-            if (!isFinite(currentX)) currentX = targetPose.x;
-            if (!isFinite(currentY)) currentY = targetPose.y;
-            if (!isFinite(currentZ)) currentZ = targetPose.z;
-            const startPose = { x: currentX, y: currentY, z: currentZ };
+            const _cp1 = getCurrentDisplayXYZ();
+            const startPose = {
+                x: isFinite(_cp1.x) ? _cp1.x : targetPose.x,
+                y: isFinite(_cp1.y) ? _cp1.y : targetPose.y,
+                z: isFinite(_cp1.z) ? _cp1.z : targetPose.z,
+            };
 
             const waypointsRapid = planSafePathAroundDeadZones(startPose, targetPose, deadZones, safeZHeight);
             if (!waypointsRapid) {
@@ -4812,14 +4809,12 @@ async function runRapidProgram() {
             }
 
             // Get current XYZ from the UI
-            let currentX = parseFloat(document.getElementById('currentX').textContent);
-            let currentY = parseFloat(document.getElementById('currentY').textContent);
-            let currentZ = parseFloat(document.getElementById('currentZ').textContent);
-            if (!isFinite(currentX)) currentX = 0;
-            if (!isFinite(currentY)) currentY = 0;
-            if (!isFinite(currentZ)) currentZ = 0;
-
-            const startPoseRapid = { x: currentX, y: currentY, z: currentZ };
+            const _cp2 = getCurrentDisplayXYZ();
+            const startPoseRapid = {
+                x: isFinite(_cp2.x) ? _cp2.x : 0,
+                y: isFinite(_cp2.y) ? _cp2.y : 0,
+                z: isFinite(_cp2.z) ? _cp2.z : 0,
+            };
             const targetPose = {
                 x: currentX + offsets[0],
                 y: currentY + offsets[1],

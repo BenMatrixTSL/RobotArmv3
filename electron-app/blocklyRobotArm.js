@@ -1610,14 +1610,12 @@ function registerBlocklyGenerators() {
             const targetPose = { x: ${x}, y: ${y}, z: ${z} };
 
             // Read current XYZ from the UI as start pose
-            let currentX = parseFloat(document.getElementById('currentX').textContent);
-            let currentY = parseFloat(document.getElementById('currentY').textContent);
-            let currentZ = parseFloat(document.getElementById('currentZ').textContent);
-            if (!isFinite(currentX)) currentX = targetPose.x;
-            if (!isFinite(currentY)) currentY = targetPose.y;
-            if (!isFinite(currentZ)) currentZ = targetPose.z;
-
-            const startPose = { x: currentX, y: currentY, z: currentZ };
+            const _bcp1 = getCurrentDisplayXYZ();
+            const startPose = {
+                x: isFinite(_bcp1.x) ? _bcp1.x : targetPose.x,
+                y: isFinite(_bcp1.y) ? _bcp1.y : targetPose.y,
+                z: isFinite(_bcp1.z) ? _bcp1.z : targetPose.z,
+            };
             const waypoints = planSafePathAroundDeadZones(startPose, targetPose, deadZones, safeZHeight);
             if (!waypoints) {
                 appendBlocklyOutput('Move TCP to XYZ cancelled: target lies inside a dead zone.');
@@ -1700,14 +1698,12 @@ function registerBlocklyGenerators() {
             appendBlocklyOutput('Kinematics not configured. Cannot run "Move TCP by offset" block.');
         } else {
             // Read current XYZ from the UI labels
-            let currentX = parseFloat(document.getElementById('currentX').textContent);
-            let currentY = parseFloat(document.getElementById('currentY').textContent);
-            let currentZ = parseFloat(document.getElementById('currentZ').textContent);
-            if (!isFinite(currentX)) currentX = 0;
-            if (!isFinite(currentY)) currentY = 0;
-            if (!isFinite(currentZ)) currentZ = 0;
-
-            const startPose = { x: currentX, y: currentY, z: currentZ };
+            const _bcp2 = getCurrentDisplayXYZ();
+            const startPose = {
+                x: isFinite(_bcp2.x) ? _bcp2.x : 0,
+                y: isFinite(_bcp2.y) ? _bcp2.y : 0,
+                z: isFinite(_bcp2.z) ? _bcp2.z : 0,
+            };
             const targetPose = {
                 x: currentX + (${dx}),
                 y: currentY + (${dy}),
