@@ -1197,43 +1197,10 @@
         The setup script runs automatically after npm install.
     -->
     
-    <!-- Three.js library for 3D visualization -->
-    <!-- Loads from local libs/ directory first, falls back to CDN if not available -->
-    <script>
-        (function() {
-            function loadURDF() {
-                const urdfScript = document.createElement('script');
-                urdfScript.src = './libs/URDFLoader.js';
-                urdfScript.onerror = function() {
-                    console.warn('URDFLoader not found locally, trying CDN...');
-                    const cdnScript = document.createElement('script');
-                    cdnScript.src = 'https://unpkg.com/urdf-loader@0.8.2/dist/urdf-loader.js';
-                    cdnScript.onerror = function() {
-                        console.error('Failed to load URDFLoader library. For offline use, download URDFLoader.js into the libs/ folder.');
-                    };
-                    document.head.appendChild(cdnScript);
-                };
-                document.head.appendChild(urdfScript);
-            }
-
-            const threeScript = document.createElement('script');
-            threeScript.src = './libs/three.min.js';
-            threeScript.onload = loadURDF;
-            threeScript.onerror = function() {
-                console.warn('Three.js not found locally, trying CDN...');
-                const cdnScript = document.createElement('script');
-                cdnScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
-                cdnScript.onload = loadURDF;
-                cdnScript.onerror = function() {
-                    console.error('Failed to load Three.js library from CDN. Run "npm run setup-libs" for offline use.');
-                };
-                document.head.appendChild(cdnScript);
-            };
-            document.head.appendChild(threeScript);
-        })();
-    </script>
-
-    <!-- URDFLoader is now chained inside the Three.js onload above -->
+    <!-- Three.js and URDFLoader: static tags so they always load in the right order
+         with no async race conditions. Both files are always present on this server. -->
+    <script src="./libs/three.min.js"></script>
+    <script src="./libs/URDFLoader.js"></script>
     
     <!-- Blockly library for visual programming -->
     <!-- Loads from local libs/ directory first, falls back to CDN if not available -->

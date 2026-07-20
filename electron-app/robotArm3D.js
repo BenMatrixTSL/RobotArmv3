@@ -88,8 +88,25 @@ class RobotArm3D {
         this.camera.position.set(300, 300, 300);
         this.camera.lookAt(this.cameraTarget);
 
-        // Create renderer
-        this.renderer = new THREE.WebGLRenderer({ antialias: true });
+        // Create renderer — try with antialias first, fall back if context creation fails
+        let rendererCreated = false;
+        const rendererOptions = [
+            { antialias: true },
+            { antialias: false },
+            { antialias: false, powerPreference: 'low-power' },
+        ];
+        for (const opts of rendererOptions) {
+            try {
+                this.renderer = new THREE.WebGLRenderer(opts);
+                rendererCreated = true;
+                break;
+            } catch (e) {
+                console.warn('WebGL renderer failed with options', JSON.stringify(opts), '—', e.message);
+            }
+        }
+        if (!rendererCreated) {
+            throw new Error('WebGL is not available in this browser. Check that hardware acceleration is enabled in browser settings.');
+        }
         this.renderer.setSize(width, height);
         this.renderer.setPixelRatio(window.devicePixelRatio);
         this.container.appendChild(this.renderer.domElement);
@@ -150,33 +167,35 @@ class RobotArm3D {
         // Create robot arm
         this.createRobotArm();
 
-        // If URDFLoader is available, load the URDF robot for accurate kinematics
-        if (typeof URDFLoader !== 'undefined') {
-            try {
-                const loader = new URDFLoader();
-                // Load the URDF that lives alongside index.html
-                loader.load('kinematics.urdf', (robot) => {
-                    console.log('URDF robot loaded for 3D visualization');
-                    this.urdfRobot = robot;
-                    // Add robot to the scene
-                    this.scene.add(robot);
-                    // Optionally hide the placeholder arm
-                    if (this.robotArm) {
-                        this.robotArm.visible = false;
-                    }
-                });
-            } catch (error) {
-                console.error('Failed to load URDF robot:', error);
-            }
-        } else {
-            console.warn('URDFLoader not available. Falling back to simple placeholder arm.');
-        }
+        // Load URDF robot model. Retry for up to 5s in case the script is still loading.
+        this._loadURDFWithRetry(0);
 
         // Handle window resize
         window.addEventListener('resize', () => this.onWindowResize());
 
         // Start animation loop
         this.animate();
+    }
+
+    _loadURDFWithRetry(attempt) {
+        const MAX_ATTEMPTS = 10, RETRY_MS = 500;
+        if (typeof URDFLoader !== 'undefined') {
+            try {
+                const loader = new URDFLoader();
+                loader.load('kinematics.urdf', (robot) => {
+                    console.log('URDF robot loaded for 3D visualization');
+                    this.urdfRobot = robot;
+                    this.scene.add(robot);
+                    if (this.robotArm) this.robotArm.visible = false;
+                });
+            } catch (error) {
+                console.error('Failed to load URDF robot:', error);
+            }
+        } else if (attempt < MAX_ATTEMPTS) {
+            setTimeout(() => this._loadURDFWithRetry(attempt + 1), RETRY_MS);
+        } else {
+            console.warn('URDFLoader not available after retries — using placeholder arm.');
+        }
     }
 
     /**
