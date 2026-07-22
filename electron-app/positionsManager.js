@@ -77,6 +77,79 @@ function setPositionAngles(angles) {
 }
 
 /**
+ * Sets the XYZ display fields
+ */
+function setPositionXYZ(xyz) {
+    const xInput = document.getElementById('positionX');
+    const yInput = document.getElementById('positionY');
+    const zInput = document.getElementById('positionZ');
+    if (xInput) xInput.value = xyz.x.toFixed(1);
+    if (yInput) yInput.value = xyz.y.toFixed(1);
+    if (zInput) zInput.value = xyz.z.toFixed(1);
+}
+
+/**
+ * Runs FK on the current joint angle inputs and updates the XYZ fields
+ */
+function updateXYZFromAngles() {
+    if (typeof robotKinematics === 'undefined' || !robotKinematics.isConfigured()) {
+        updatePositionsXYZStatus('Kinematics not configured', 'error');
+        return;
+    }
+    const angles = getPositionAngles();
+    try {
+        const fk = robotKinematics.forwardKinematics(angles);
+        if (fk && fk.position) {
+            setPositionXYZ(fk.position);
+            updatePositionsXYZStatus(`FK: (${fk.position.x.toFixed(1)}, ${fk.position.y.toFixed(1)}, ${fk.position.z.toFixed(1)}) mm`, 'success');
+        }
+    } catch (e) {
+        updatePositionsXYZStatus('FK error: ' + e.message, 'error');
+    }
+}
+
+/**
+ * Runs IK from the XYZ inputs and populates the joint angle fields
+ */
+function applyIKFromXYZ() {
+    if (typeof robotKinematics === 'undefined' || !robotKinematics.isConfigured()) {
+        updatePositionsXYZStatus('Kinematics not configured', 'error');
+        return;
+    }
+    const x = parseFloat(document.getElementById('positionX').value);
+    const y = parseFloat(document.getElementById('positionY').value);
+    const z = parseFloat(document.getElementById('positionZ').value);
+    if (isNaN(x) || isNaN(y) || isNaN(z)) {
+        updatePositionsXYZStatus('Enter X, Y, Z values first', 'error');
+        return;
+    }
+    updatePositionsXYZStatus('Computing IK…', 'info');
+    try {
+        const currentAngles = getPositionAngles();
+        const angles = robotKinematics.inverseKinematics({ x, y, z }, currentAngles);
+        if (!angles) {
+            updatePositionsXYZStatus(`Position (${x}, ${y}, ${z}) mm is unreachable`, 'error');
+            return;
+        }
+        setPositionAngles(angles);
+        updatePositionsXYZStatus(`IK solved — angles set`, 'success');
+    } catch (e) {
+        updatePositionsXYZStatus('IK error: ' + e.message, 'error');
+    }
+}
+
+/**
+ * Updates the XYZ section status message
+ */
+function updatePositionsXYZStatus(message, type = 'info') {
+    const el = document.getElementById('positionsXYZStatus');
+    if (!el) return;
+    el.textContent = message;
+    el.className = `positions-xyz-status positions-xyz-status-${type}`;
+    setTimeout(() => { el.textContent = ''; el.className = 'positions-xyz-status'; }, 4000);
+}
+
+/**
  * Gets all stored positions from localStorage
  */
 function getAllPositions() {
@@ -153,16 +226,27 @@ function savePosition() {
     const positionNumber = parseInt(document.getElementById('positionNumber').value);
     const label = document.getElementById('positionLabel').value.trim();
     const angles = getPositionAngles();
-    
+
     if (isNaN(positionNumber) || positionNumber < 0 || positionNumber > 99) {
         updatePositionsStatus('Error: Position number must be between 0 and 99', 'error');
         return;
     }
-    
+
+    let xyz = null;
+    if (typeof robotKinematics !== 'undefined' && robotKinematics.isConfigured()) {
+        try {
+            const fk = robotKinematics.forwardKinematics(angles);
+            if (fk && fk.position) {
+                xyz = { x: fk.position.x, y: fk.position.y, z: fk.position.z };
+            }
+        } catch (e) {}
+    }
+
     const positions = getAllPositions();
     positions[positionNumber] = {
         label: label || `Position ${positionNumber}`,
         angles: angles,
+        xyz: xyz,
         timestamp: new Date().toISOString()
     };
     
@@ -232,7 +316,14 @@ function loadPosition() {
     // Load into editor
     document.getElementById('positionLabel').value = position.label || '';
     setPositionAngles(position.angles || []);
-    
+
+    // Populate XYZ: use stored value if present, otherwise compute via FK
+    if (position.xyz) {
+        setPositionXYZ(position.xyz);
+    } else {
+        updateXYZFromAngles();
+    }
+
     updatePositionsStatus(`Position ${positionNumber} loaded: "${position.label}"`, 'success');
 }
 
@@ -289,11 +380,18 @@ function refreshPositionsList() {
     let html = '<div class="positions-list-items">';
     positionNumbers.forEach(num => {
         const pos = positions[num];
+        const anglesStr = pos.angles ? pos.angles.map((a, i) => `J${i+1}:${a.toFixed(1)}°`).join(', ') : 'No angles';
+        const xyzStr = pos.xyz
+            ? `X:${pos.xyz.x.toFixed(1)} Y:${pos.xyz.y.toFixed(1)} Z:${pos.xyz.z.toFixed(1)} mm`
+            : '';
         html += `
             <div class="positions-list-item" onclick="selectPosition(${num})">
                 <div class="position-item-number">${num}</div>
-                <div class="position-item-label">${pos.label || `Position ${num}`}</div>
-                <div class="position-item-angles">${pos.angles ? pos.angles.map((a, i) => `J${i+1}:${a.toFixed(1)}°`).join(', ') : 'No angles'}</div>
+                <div class="position-item-info">
+                    <div class="position-item-label">${pos.label || `Position ${num}`}</div>
+                    <div class="position-item-angles">${anglesStr}</div>
+                    ${xyzStr ? `<div class="position-item-xyz">${xyzStr}</div>` : ''}
+                </div>
                 <button class="btn btn-small" onclick="event.stopPropagation(); loadPositionToEditor(${num})">Load</button>
                 <button class="btn btn-small btn-danger" onclick="event.stopPropagation(); deletePositionByNumber(${num})">Delete</button>
             </div>

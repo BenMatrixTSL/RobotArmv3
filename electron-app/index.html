@@ -843,6 +843,32 @@
                         <!-- Joint angle inputs will be generated dynamically -->
                     </div>
                 </div>
+
+                <div class="positions-xyz">
+                    <h3>Tool Position — XYZ (mm)</h3>
+                    <div class="positions-xyz-row">
+                        <div class="xyz-item">
+                            <label>X:</label>
+                            <input type="number" id="positionX" step="0.1" style="width: 90px;">
+                            <span>mm</span>
+                        </div>
+                        <div class="xyz-item">
+                            <label>Y:</label>
+                            <input type="number" id="positionY" step="0.1" style="width: 90px;">
+                            <span>mm</span>
+                        </div>
+                        <div class="xyz-item">
+                            <label>Z:</label>
+                            <input type="number" id="positionZ" step="0.1" style="width: 90px;">
+                            <span>mm</span>
+                        </div>
+                    </div>
+                    <div class="positions-xyz-buttons">
+                        <button class="btn btn-small" onclick="updateXYZFromAngles()" title="Compute XYZ from current joint angles using forward kinematics">Update XYZ from Angles (FK)</button>
+                        <button class="btn btn-small btn-primary" onclick="applyIKFromXYZ()" title="Compute joint angles from XYZ using inverse kinematics">Apply Angles from XYZ (IK)</button>
+                    </div>
+                    <div id="positionsXYZStatus" class="positions-xyz-status"></div>
+                </div>
                 
                 <div class="positions-list">
                     <h3>Saved Positions</h3>
