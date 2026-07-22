@@ -7005,12 +7005,9 @@ function moveEndToolServo(angle) {
 function setEndToolServoEnabled(enabled) {
     if (!robotArmClient.isConnected) { showAppMessage('Not connected'); return; }
     if (!robotArmClient.hasArmControl) { showAppMessage('Read-only — use Take control on the Connection tab first'); return; }
-    robotArmClient.sendCommand('toolSetServoEnabled', { enabled })
-        .then(() => {
-            const stateEl = document.getElementById('endToolServoStateText');
-            if (stateEl) stateEl.textContent = enabled ? 'Enabled' : 'Disabled';
-        })
-        .catch(err => showAppMessage('End tool servo enable: ' + err.message));
+    robotArmClient.sendCommand('toolSetServoEnabled', { enabled });
+    const stateEl = document.getElementById('endToolServoStateText');
+    if (stateEl) stateEl.textContent = enabled ? 'Enabled' : 'Disabled';
     setEndToolBtnActive(
         enabled ? 'endToolServoEnableBtn' : 'endToolServoDisableBtn',
         enabled ? 'endToolServoDisableBtn' : 'endToolServoEnableBtn'
@@ -7054,8 +7051,7 @@ function setEndToolBtnActive(activeId, inactiveId) {
 const endToolPwmState = { pwm1Duty: 0, enable1: false, pwm2Duty: 0, enable2: false };
 
 function sendEndToolPwm() {
-    robotArmClient.sendCommand('toolSetPwm', { ...endToolPwmState })
-        .catch(err => showAppMessage('End tool PWM: ' + err.message));
+    robotArmClient.sendCommand('toolSetPwm', { ...endToolPwmState });
 }
 
 function updateEndToolPneumaticButtonsState() {
