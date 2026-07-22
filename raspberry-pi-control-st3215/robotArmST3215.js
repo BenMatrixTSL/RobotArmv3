@@ -1315,7 +1315,11 @@ class ServoController {
         );
         const angleDegrees = this.stepsToAngle(position);
         const isMoving    = data[STS_MOVING - startAddr] !== 0;
-        return { angleDegrees, position, isMoving, torqueEnabled };
+        const speed       = this.makeWord(data[STS_PRESENT_SPEED_L - startAddr], data[STS_PRESENT_SPEED_H - startAddr]);
+        const load        = data[STS_PRESENT_LOAD_L - startAddr] * 0.1;
+        const voltage     = data[STS_PRESENT_VOLTAGE - startAddr] * 0.1;
+        const temperature = data[STS_PRESENT_TEMPERATURE - startAddr];
+        return { angleDegrees, position, isMoving, torqueEnabled, speed, load, voltage, temperature };
     }
 
     /**
@@ -1324,9 +1328,10 @@ class ServoController {
      * Extracts:
      *  - torqueEnabled (STS_TORQUE_ENABLE)
      *  - position -> angleDegrees (STS_PRESENT_POSITION_L/H)
+     *  - speed, load, voltage, temperature (STS_PRESENT_SPEED_L/H, STS_PRESENT_LOAD_L, STS_PRESENT_VOLTAGE, STS_PRESENT_TEMPERATURE)
      *  - isMoving (STS_MOVING)
      *
-     * @returns {Object} { angleDegrees, position, isMoving, torqueEnabled }
+     * @returns {Object} { angleDegrees, position, isMoving, torqueEnabled, speed, load, voltage, temperature }
      */
     async readQuickStatus() {
         try {
@@ -1351,11 +1356,20 @@ class ServoController {
             const movingIndex = STS_MOVING - startAddr;
             const isMoving = data[movingIndex] !== 0;
 
+            const speed       = this.makeWord(data[STS_PRESENT_SPEED_L - startAddr], data[STS_PRESENT_SPEED_H - startAddr]);
+            const load        = data[STS_PRESENT_LOAD_L - startAddr] * 0.1;
+            const voltage     = data[STS_PRESENT_VOLTAGE - startAddr] * 0.1;
+            const temperature = data[STS_PRESENT_TEMPERATURE - startAddr];
+
             return {
                 angleDegrees,
                 position,
                 isMoving,
-                torqueEnabled
+                torqueEnabled,
+                speed,
+                load,
+                voltage,
+                temperature
             };
         } catch (error) {
             if (DEBUG) console.error(`Servo ${this.servoId}: Failed to read quick status:`, error.message);
