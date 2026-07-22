@@ -7049,81 +7049,27 @@ function sendEndToolPwm() {
 
 function updateEndToolPneumaticButtonsState() {
     const canControl = robotArmClient.isConnected && robotArmClient.hasArmControl;
-    const ids = [
-        'endToolPumpEnableBtn', 'endToolPumpDisableBtn', 'endToolPumpSlider',
-        'endToolSolenoidEnableBtn', 'endToolSolenoidDisableBtn', 'endToolSolenoidSlider'
-    ];
-    ids.forEach(id => {
+    ['endToolPumpEnableBtn', 'endToolPumpDisableBtn',
+     'endToolSolenoidEnableBtn', 'endToolSolenoidDisableBtn'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.disabled = !canControl;
     });
-    document.querySelectorAll('#endToolPneumaticPanel .btn-small').forEach(btn => {
-        btn.disabled = !canControl;
-    });
-}
-
-function updateEndToolPumpLabel(value) {
-    const label = document.getElementById('endToolPumpDutyLabel');
-    if (label) label.textContent = value;
-}
-
-function updateEndToolSolenoidLabel(value) {
-    const label = document.getElementById('endToolSolenoidDutyLabel');
-    if (label) label.textContent = value;
-}
-
-function setEndToolPumpDutyTo(duty) {
-    const slider = document.getElementById('endToolPumpSlider');
-    if (slider) { slider.value = duty; updateEndToolPumpLabel(duty); }
-    setEndToolPumpDuty(duty);
-}
-
-function setEndToolSolenoidDutyTo(duty) {
-    const slider = document.getElementById('endToolSolenoidSlider');
-    if (slider) { slider.value = duty; updateEndToolSolenoidLabel(duty); }
-    setEndToolSolenoidDuty(duty);
-}
-
-function setEndToolPumpDuty(duty) {
-    if (!robotArmClient.isConnected) { showAppMessage('Not connected'); return; }
-    if (!robotArmClient.hasArmControl) { showAppMessage('Read-only — use Take control on the Connection tab first'); return; }
-    const d = Math.round(Number(duty));
-    endToolPwmState.pwm1Duty = d;
-    endToolPwmState.enable1 = d > 0;
-    sendEndToolPwm();
-    const stateEl = document.getElementById('endToolPumpStateText');
-    if (stateEl) stateEl.textContent = d > 0 ? 'Running — duty ' + d : 'Off';
-}
-
-function setEndToolSolenoidDuty(duty) {
-    if (!robotArmClient.isConnected) { showAppMessage('Not connected'); return; }
-    if (!robotArmClient.hasArmControl) { showAppMessage('Read-only — use Take control on the Connection tab first'); return; }
-    const d = Math.round(Number(duty));
-    endToolPwmState.pwm2Duty = d;
-    endToolPwmState.enable2 = d > 0;
-    sendEndToolPwm();
-    const stateEl = document.getElementById('endToolSolenoidStateText');
-    if (stateEl) stateEl.textContent = d > 0 ? 'Open — duty ' + d : 'Closed';
 }
 
 function setEndToolPumpEnabled(enabled) {
     if (!robotArmClient.isConnected) { showAppMessage('Not connected'); return; }
     if (!robotArmClient.hasArmControl) { showAppMessage('Read-only — use Take control on the Connection tab first'); return; }
-    const slider = document.getElementById('endToolPumpSlider');
-    const duty = enabled ? (slider ? Number(slider.value) || 255 : 255) : 0;
-    endToolPwmState.pwm1Duty = duty;
+    endToolPwmState.pwm1Duty = enabled ? 255 : 0;
     endToolPwmState.enable1 = enabled;
     sendEndToolPwm();
     const stateEl = document.getElementById('endToolPumpStateText');
-    if (stateEl) stateEl.textContent = enabled ? 'Enabled — duty ' + duty : 'Disabled';
+    if (stateEl) stateEl.textContent = enabled ? 'On' : 'Off';
 }
 
 function setEndToolSolenoidEnabled(enabled) {
     if (!robotArmClient.isConnected) { showAppMessage('Not connected'); return; }
     if (!robotArmClient.hasArmControl) { showAppMessage('Read-only — use Take control on the Connection tab first'); return; }
-    const slider = document.getElementById('endToolSolenoidSlider');
-    const duty = enabled ? (slider ? Number(slider.value) || 255 : 255) : 0;
-    endToolPwmState.pwm2Duty = duty;
+    endToolPwmState.pwm2Duty = enabled ? 255 : 0;
     endToolPwmState.enable2 = enabled;
     sendEndToolPwm();
     const stateEl = document.getElementById('endToolSolenoidStateText');

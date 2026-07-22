@@ -307,11 +307,6 @@ header h1 {
     color: #2c3e50;
 }
 
-#endToolPumpSlider,
-#endToolSolenoidSlider {
-    flex: 1;
-    min-width: 120px;
-}
 
 /* Main layout: sidebar on the left, pages on the right */
 .main-layout {
