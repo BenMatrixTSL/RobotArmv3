@@ -2562,15 +2562,6 @@ body.kiosk-mode .main-layout.sidebar-collapsed {
     gap: 0;
 }
 
-/* Show only 6 useful tabs on the Pi screen */
-body.kiosk-mode .tab-button[data-tab="gcode"],
-body.kiosk-mode .tab-button[data-tab="rapid"],
-body.kiosk-mode .tab-button[data-tab="blockly"],
-body.kiosk-mode .tab-button[data-tab="kinematics"],
-body.kiosk-mode .tab-button[data-tab="deadzones"],
-body.kiosk-mode .tab-button[data-tab="settings"] {
-    display: none;
-}
 
 /* Touch scrolling: disable text selection while the finger is moving so
    dragging scrolls the page instead of highlighting text.
