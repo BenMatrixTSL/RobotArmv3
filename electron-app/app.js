@@ -7151,7 +7151,7 @@ function stopEndToolCurrentPolling() {
 
 function pollEndToolCurrents() {
     if (!robotArmClient.isConnected) return;
-    robotArmClient.sendCommand('toolReadCurrents', {})
+    robotArmClient.sendRequest('toolReadCurrents', {})
         .then(resp => {
             const servo   = document.getElementById('endToolServoCurrentText');
             const pump    = document.getElementById('endToolPumpCurrentText');
