@@ -303,6 +303,57 @@
                     </div>
                 </div>
             </div>
+
+            <!-- End Tool Pneumatic -->
+            <div class="control-panel" id="endToolPneumaticPanel">
+                <h3>End Tool Pneumatic</h3>
+                <div class="end-tool-pneumatic-controls">
+                    <!-- Pump -->
+                    <div class="pneumatic-section-label">Pump (PWM1)</div>
+                    <div class="servo-enable-row">
+                        <label class="servo-enable-label">Pump Enabled:</label>
+                        <button class="btn btn-secondary" id="endToolPumpEnableBtn" onclick="setEndToolPumpEnabled(true)">Enable</button>
+                        <button class="btn btn-secondary" id="endToolPumpDisableBtn" onclick="setEndToolPumpEnabled(false)">Disable</button>
+                        <span class="servo-state-text" id="endToolPumpStateText">--</span>
+                    </div>
+                    <div class="servo-angle-row">
+                        <label>Duty (0 = off, 255 = full):</label>
+                        <input type="range" id="endToolPumpSlider" min="0" max="255" value="0"
+                               oninput="updateEndToolPumpLabel(this.value)"
+                               onchange="setEndToolPumpDuty(this.value)">
+                        <span id="endToolPumpDutyLabel">0</span>
+                    </div>
+                    <div class="servo-angle-row">
+                        <button class="btn btn-small" id="endToolPumpBtn0"   onclick="setEndToolPumpDutyTo(0)">Off</button>
+                        <button class="btn btn-small" id="endToolPumpBtn64"  onclick="setEndToolPumpDutyTo(64)">25%</button>
+                        <button class="btn btn-small" id="endToolPumpBtn128" onclick="setEndToolPumpDutyTo(128)">50%</button>
+                        <button class="btn btn-small" id="endToolPumpBtn191" onclick="setEndToolPumpDutyTo(191)">75%</button>
+                        <button class="btn btn-small" id="endToolPumpBtn255" onclick="setEndToolPumpDutyTo(255)">Full</button>
+                    </div>
+                    <!-- Solenoid Valve -->
+                    <div class="pneumatic-section-label" style="margin-top:6px;">Solenoid Valve (PWM2)</div>
+                    <div class="servo-enable-row">
+                        <label class="servo-enable-label">Valve Enabled:</label>
+                        <button class="btn btn-secondary" id="endToolSolenoidEnableBtn" onclick="setEndToolSolenoidEnabled(true)">Enable</button>
+                        <button class="btn btn-secondary" id="endToolSolenoidDisableBtn" onclick="setEndToolSolenoidEnabled(false)">Disable</button>
+                        <span class="servo-state-text" id="endToolSolenoidStateText">--</span>
+                    </div>
+                    <div class="servo-angle-row">
+                        <label>Duty (0 = off, 255 = full):</label>
+                        <input type="range" id="endToolSolenoidSlider" min="0" max="255" value="0"
+                               oninput="updateEndToolSolenoidLabel(this.value)"
+                               onchange="setEndToolSolenoidDuty(this.value)">
+                        <span id="endToolSolenoidDutyLabel">0</span>
+                    </div>
+                    <div class="servo-angle-row">
+                        <button class="btn btn-small" id="endToolSolenoidBtn0"   onclick="setEndToolSolenoidDutyTo(0)">Off</button>
+                        <button class="btn btn-small" id="endToolSolenoidBtn64"  onclick="setEndToolSolenoidDutyTo(64)">25%</button>
+                        <button class="btn btn-small" id="endToolSolenoidBtn128" onclick="setEndToolSolenoidDutyTo(128)">50%</button>
+                        <button class="btn btn-small" id="endToolSolenoidBtn191" onclick="setEndToolSolenoidDutyTo(191)">75%</button>
+                        <button class="btn btn-small" id="endToolSolenoidBtn255" onclick="setEndToolSolenoidDutyTo(255)">Full</button>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Touchscreen Pendant Tab -->

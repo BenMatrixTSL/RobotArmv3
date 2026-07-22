@@ -279,6 +279,29 @@ header h1 {
     min-width: 120px;
 }
 
+/* End Tool Pneumatic panel */
+.end-tool-pneumatic-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.pneumatic-section-label {
+    font-weight: 600;
+    font-size: 0.85em;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #555;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 2px;
+}
+
+#endToolPumpSlider,
+#endToolSolenoidSlider {
+    flex: 1;
+    min-width: 120px;
+}
+
 /* Main layout: sidebar on the left, pages on the right */
 .main-layout {
     display: flex;
@@ -2407,8 +2430,8 @@ body.kiosk-mode header {
 }
 
 body.kiosk-mode .header-logo {
-    height: 28px;
-    max-width: 110px;
+    height: 42px;
+    max-width: 175px;
 }
 
 body.kiosk-mode header h1 {
@@ -2444,8 +2467,25 @@ body.kiosk-mode .tabs {
     padding-right: 4px;
     padding-bottom: 0;
     gap: 3px;
-    max-height: calc(100vh - 55px);
+    max-height: calc(100vh - 68px);
     overflow-y: auto;
+}
+
+/* Sidebar collapse in kiosk mode — explicit overrides needed because
+   body.kiosk-mode .tabs (specificity 0,2,1) beats .tabs.collapsed (0,2,0),
+   so min-width/gap would not collapse without these higher-specificity rules. */
+body.kiosk-mode .tabs.collapsed {
+    width: 0;
+    min-width: 0;
+    max-width: 0;
+    padding: 0;
+    border-right-width: 0;
+    opacity: 0;
+    pointer-events: none;
+}
+
+body.kiosk-mode .main-layout.sidebar-collapsed {
+    gap: 0;
 }
 
 /* Show only 6 useful tabs on the Pi screen */
@@ -2504,7 +2544,7 @@ body.kiosk-mode .tab-content-container {
     flex: 1;
     min-width: 0;
     overflow-y: auto;
-    max-height: calc(100vh - 55px);
+    max-height: calc(100vh - 68px);
 }
 
 body.kiosk-mode .tab-content {
