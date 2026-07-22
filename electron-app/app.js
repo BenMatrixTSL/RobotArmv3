@@ -7038,6 +7038,13 @@ function readEndToolServoState() {
 
 // ===== End Tool Pneumatic Controls =====
 
+const endToolPwmState = { pwm1Duty: 0, enable1: false, pwm2Duty: 0, enable2: false };
+
+function sendEndToolPwm() {
+    robotArmClient.sendCommand('toolSetPwm', { ...endToolPwmState })
+        .catch(err => showAppMessage('End tool PWM: ' + err.message));
+}
+
 function updateEndToolPneumaticButtonsState() {
     const canControl = robotArmClient.isConnected && robotArmClient.hasArmControl;
     const ids = [
@@ -7079,8 +7086,9 @@ function setEndToolPumpDuty(duty) {
     if (!robotArmClient.isConnected) { showAppMessage('Not connected'); return; }
     if (!robotArmClient.hasArmControl) { showAppMessage('Read-only — use Take control on the Connection tab first'); return; }
     const d = Math.round(Number(duty));
-    robotArmClient.sendCommand('toolSetPwm', { pwm1Duty: d, enable1: d > 0 })
-        .catch(err => showAppMessage('End tool pump: ' + err.message));
+    endToolPwmState.pwm1Duty = d;
+    endToolPwmState.enable1 = d > 0;
+    sendEndToolPwm();
     const stateEl = document.getElementById('endToolPumpStateText');
     if (stateEl) stateEl.textContent = d > 0 ? 'Running — duty ' + d : 'Off';
 }
@@ -7089,8 +7097,9 @@ function setEndToolSolenoidDuty(duty) {
     if (!robotArmClient.isConnected) { showAppMessage('Not connected'); return; }
     if (!robotArmClient.hasArmControl) { showAppMessage('Read-only — use Take control on the Connection tab first'); return; }
     const d = Math.round(Number(duty));
-    robotArmClient.sendCommand('toolSetPwm', { pwm2Duty: d, enable2: d > 0 })
-        .catch(err => showAppMessage('End tool solenoid: ' + err.message));
+    endToolPwmState.pwm2Duty = d;
+    endToolPwmState.enable2 = d > 0;
+    sendEndToolPwm();
     const stateEl = document.getElementById('endToolSolenoidStateText');
     if (stateEl) stateEl.textContent = d > 0 ? 'Open — duty ' + d : 'Closed';
 }
@@ -7100,8 +7109,9 @@ function setEndToolPumpEnabled(enabled) {
     if (!robotArmClient.hasArmControl) { showAppMessage('Read-only — use Take control on the Connection tab first'); return; }
     const slider = document.getElementById('endToolPumpSlider');
     const duty = enabled ? (slider ? Number(slider.value) || 255 : 255) : 0;
-    robotArmClient.sendCommand('toolSetPwm', { pwm1Duty: duty, enable1: enabled })
-        .catch(err => showAppMessage('End tool pump enable: ' + err.message));
+    endToolPwmState.pwm1Duty = duty;
+    endToolPwmState.enable1 = enabled;
+    sendEndToolPwm();
     const stateEl = document.getElementById('endToolPumpStateText');
     if (stateEl) stateEl.textContent = enabled ? 'Enabled — duty ' + duty : 'Disabled';
 }
@@ -7111,8 +7121,9 @@ function setEndToolSolenoidEnabled(enabled) {
     if (!robotArmClient.hasArmControl) { showAppMessage('Read-only — use Take control on the Connection tab first'); return; }
     const slider = document.getElementById('endToolSolenoidSlider');
     const duty = enabled ? (slider ? Number(slider.value) || 255 : 255) : 0;
-    robotArmClient.sendCommand('toolSetPwm', { pwm2Duty: duty, enable2: enabled })
-        .catch(err => showAppMessage('End tool solenoid enable: ' + err.message));
+    endToolPwmState.pwm2Duty = duty;
+    endToolPwmState.enable2 = enabled;
+    sendEndToolPwm();
     const stateEl = document.getElementById('endToolSolenoidStateText');
     if (stateEl) stateEl.textContent = enabled ? 'Open — duty ' + duty : 'Closed';
 }
