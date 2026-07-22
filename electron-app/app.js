@@ -1443,10 +1443,11 @@ function initializeConnection() {
             }
 
             startControlStatusUpdates();
-            
+
             // Status: server pushes updates; app also polls cached status at Settings interval
             startStatusUpdates(isKioskView);
             startServerDiagnosticsUpdates();
+            startEndToolCurrentPolling();
             
             // Joint configs are sent on connect; request again if needed
             if (!robotArmClient.jointConfigs || robotArmClient.jointConfigs.length === 0) {
@@ -1472,6 +1473,7 @@ function initializeConnection() {
         stopStatusUpdates();
         stopServerDiagnosticsUpdates();
         stopControlStatusUpdates();
+        stopEndToolCurrentPolling();
             if (connectButton) connectButton.disabled = false;
         disconnectButton.disabled = true;
     });
@@ -7126,6 +7128,39 @@ function setEndToolSolenoidEnabled(enabled) {
     sendEndToolPwm();
     const stateEl = document.getElementById('endToolSolenoidStateText');
     if (stateEl) stateEl.textContent = enabled ? 'Open — duty ' + duty : 'Closed';
+}
+
+// ===== End Tool Current Polling =====
+
+let endToolCurrentPollInterval = null;
+
+function startEndToolCurrentPolling() {
+    if (endToolCurrentPollInterval) return;
+    pollEndToolCurrents();
+    endToolCurrentPollInterval = setInterval(pollEndToolCurrents, 1000);
+}
+
+function stopEndToolCurrentPolling() {
+    if (endToolCurrentPollInterval) {
+        clearInterval(endToolCurrentPollInterval);
+        endToolCurrentPollInterval = null;
+    }
+    ['endToolServoCurrentText', 'endToolPumpCurrentText', 'endToolSolenoidCurrentText']
+        .forEach(id => { const el = document.getElementById(id); if (el) el.textContent = '--'; });
+}
+
+function pollEndToolCurrents() {
+    if (!robotArmClient.isConnected) return;
+    robotArmClient.sendCommand('toolReadCurrents', {})
+        .then(resp => {
+            const servo   = document.getElementById('endToolServoCurrentText');
+            const pump    = document.getElementById('endToolPumpCurrentText');
+            const solenoid = document.getElementById('endToolSolenoidCurrentText');
+            if (servo)    servo.textContent    = resp.servoCurrentRaw  != null ? resp.servoCurrentRaw  + ' mA' : '--';
+            if (pump)     pump.textContent     = resp.pwm1CurrentRaw   != null ? resp.pwm1CurrentRaw   + ' mA' : '--';
+            if (solenoid) solenoid.textContent = resp.pwm2CurrentRaw   != null ? resp.pwm2CurrentRaw   + ' mA' : '--';
+        })
+        .catch(() => {});
 }
 
 function testConnection(address, port, timeout) {

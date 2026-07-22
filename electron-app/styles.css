@@ -296,6 +296,17 @@ header h1 {
     padding-bottom: 2px;
 }
 
+.end-tool-current-row {
+    margin-top: 2px;
+}
+
+.end-tool-current-value {
+    font-family: monospace;
+    font-size: 0.95em;
+    min-width: 70px;
+    color: #2c3e50;
+}
+
 #endToolPumpSlider,
 #endToolSolenoidSlider {
     flex: 1;
