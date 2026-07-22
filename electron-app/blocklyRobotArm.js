@@ -1575,14 +1575,11 @@ function registerBlocklyGenerators() {
                 // Convert speeds to steps/s and move joints
                 appendBlocklyOutput('Moving to ${positionLabel} at speed ${speedDegreesPerSecond} degrees/s (scaled speeds for synchronized arrival)');
                 `;
+                const movePromises = [];
                 for (let i = 0; i < position.angles.length; i++) {
-                    code += `
-                    if (scaledSpeeds_pos_${sanitizedId}[${i}] > 0) {
-                        const speedStepsPerSecond_pos_${sanitizedId}_${i} = degreesPerSecondToStepsPerSecond(scaledSpeeds_pos_${sanitizedId}[${i}]);
-                        await robotArmClient.moveJoint(${i + 1}, targetAngles_pos_${sanitizedId}[${i}], speedStepsPerSecond_pos_${sanitizedId}_${i});
-                    }
-                    `;
+                    movePromises.push(`scaledSpeeds_pos_${sanitizedId}[${i}] > 0 ? robotArmClient.moveJoint(${i + 1}, targetAngles_pos_${sanitizedId}[${i}], degreesPerSecondToStepsPerSecond(scaledSpeeds_pos_${sanitizedId}[${i}])) : Promise.resolve()`);
                 }
+                code += `await Promise.all([${movePromises.join(', ')}]);\n`;
                 return code;
             }
         }
