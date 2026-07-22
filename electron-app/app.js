@@ -4066,13 +4066,14 @@ async function executeGCodeCommand(command) {
                     speedStepsPerSecond = Math.round(speedDegreesPerSecond * 11.37);
                 }
                 
+                const storedPosPromises = [];
                 for (let i = 0; i < Math.min(targetAngles.length, numJoints); i++) {
                     if (robotArmClient.isConnected) {
-                        robotArmClient.moveJoint(i + 1, targetAngles[i], speedStepsPerSecond);
-                        await new Promise(resolve => setTimeout(resolve, 50));
+                        storedPosPromises.push(robotArmClient.moveJoint(i + 1, targetAngles[i], speedStepsPerSecond));
                     }
                 }
-                await new Promise(resolve => setTimeout(resolve, 1000));
+                await Promise.all(storedPosPromises);
+                await robotArmClient.waitForMotionComplete(30000);
             }
             
             return;
@@ -4228,16 +4229,16 @@ async function executeGCodeCommand(command) {
                 // Dispatch all joints simultaneously with speeds scaled for coordinated arrival.
                 if (robotArmClient.isConnected) {
                     const gcodeSpeeds = computeCoordinatedSpeeds(initialAngles || null, jointAngles, speed);
+                    const movePromises = [];
                     for (let i = 0; i < jointAngles.length; i++) {
-                        robotArmClient.moveJoint(i + 1, jointAngles[i], gcodeSpeeds[i] || speed);
+                        movePromises.push(robotArmClient.moveJoint(i + 1, jointAngles[i], gcodeSpeeds[i] || speed));
                     }
+                    await Promise.all(movePromises);
+                    await robotArmClient.waitForMotionComplete(30000);
                 }
 
                 // Update initial angles for next waypoint's speed calculation
                 initialAngles = jointAngles.slice();
-
-                // Brief pause between waypoints
-                await new Promise(resolve => setTimeout(resolve, 500));
             }
         } catch (error) {
             gcodeProcessor.log(`Error executing ${command.code}: ${error.message}`);
@@ -4364,7 +4365,7 @@ async function executeGCodeCommand(command) {
                         
                         gcodeProcessor.log(`  Joint ${jointNum}: ${targetAngle}° at ${scaledSpeedDegreesPerSecond.toFixed(1)} degrees/s`);
                         if (robotArmClient.isConnected) {
-                            robotArmClient.moveJoint(jointNum, targetAngle, speedStepsPerSecond);
+                            await robotArmClient.moveJoint(jointNum, targetAngle, speedStepsPerSecond);
                         }
                     }
                 }
@@ -4380,17 +4381,19 @@ async function executeGCodeCommand(command) {
                 } else {
                     speedStepsPerSecond = Math.round(speedDegreesPerSecond * 11.37);
                 }
+                const fallbackPromises = [];
                 for (let i = 0; i < jointsToMove.length; i++) {
                     const jointNum = jointsToMove[i];
                     const targetAngle = targetAnglesToMove[i];
                     gcodeProcessor.log(`Moving Joint ${jointNum} to ${targetAngle}° at speed ${speedDegreesPerSecond} degrees/s`);
                     if (robotArmClient.isConnected) {
-                        robotArmClient.moveJoint(jointNum, targetAngle, speedStepsPerSecond);
+                        fallbackPromises.push(robotArmClient.moveJoint(jointNum, targetAngle, speedStepsPerSecond));
                     }
                 }
+                await Promise.all(fallbackPromises);
             }
         }
-        
+
         // If no joint parameters found, check if the command code itself is a joint command (e.g., J1=45)
         if (!movedAny && command.code.startsWith('J')) {
             const jointMatch = command.code.match(/J(\d+)/i);
@@ -4402,16 +4405,15 @@ async function executeGCodeCommand(command) {
                     const angle = parseFloat(angleMatch[1]);
                     gcodeProcessor.log(`Moving Joint ${jointNumber} to ${angle}° at speed ${speedDegreesPerSecond} degrees/s`);
                     if (robotArmClient.isConnected) {
-                        robotArmClient.moveJoint(jointNumber, angle, speed);
+                        await robotArmClient.moveJoint(jointNumber, angle, speed);
                         movedAny = true;
                     }
                 }
             }
         }
-        
+
         if (movedAny) {
-            // Wait for all movements to complete
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            await robotArmClient.waitForMotionComplete(30000);
         } else {
             gcodeProcessor.log(`Warning: No joint angles specified in ${command.code} command`);
         }
@@ -7088,15 +7090,19 @@ function setEndToolSolenoidEnabled(enabled) {
         enabled ? 'endToolSolenoidDisableBtn' : 'endToolSolenoidEnableBtn'
     );
     const stateEl = document.getElementById('endToolSolenoidStateText');
-    if (stateEl) stateEl.textContent = enabled ? 'Open — duty ' + duty : 'Closed';
+    if (stateEl) stateEl.textContent = enabled ? 'Open' : 'Closed';
 }
 
 // ===== End Tool Current Polling =====
 
 let endToolCurrentPollInterval = null;
+let endToolCurrentPollFailures = 0;
+const END_TOOL_POLL_MAX_FAILURES = 3;  // stop polling after this many consecutive failures
+const END_TOOL_POLL_RETRY_MS = 10000; // retry interval after backing off
 
 function startEndToolCurrentPolling() {
     if (endToolCurrentPollInterval) return;
+    endToolCurrentPollFailures = 0;
     pollEndToolCurrents();
     endToolCurrentPollInterval = setInterval(pollEndToolCurrents, 1000);
 }
@@ -7106,6 +7112,7 @@ function stopEndToolCurrentPolling() {
         clearInterval(endToolCurrentPollInterval);
         endToolCurrentPollInterval = null;
     }
+    endToolCurrentPollFailures = 0;
     ['endToolServoCurrentText', 'endToolPumpCurrentText', 'endToolSolenoidCurrentText']
         .forEach(id => { const el = document.getElementById(id); if (el) el.textContent = '--'; });
 }
@@ -7114,6 +7121,7 @@ function pollEndToolCurrents() {
     if (!robotArmClient.isConnected) return;
     robotArmClient.sendRequest('toolReadCurrents', {})
         .then(resp => {
+            endToolCurrentPollFailures = 0;
             const servo   = document.getElementById('endToolServoCurrentText');
             const pump    = document.getElementById('endToolPumpCurrentText');
             const solenoid = document.getElementById('endToolSolenoidCurrentText');
@@ -7121,7 +7129,21 @@ function pollEndToolCurrents() {
             if (pump)     pump.textContent     = resp.pwm1CurrentRaw   != null ? resp.pwm1CurrentRaw   + ' mA' : '--';
             if (solenoid) solenoid.textContent = resp.pwm2CurrentRaw   != null ? resp.pwm2CurrentRaw   + ' mA' : '--';
         })
-        .catch(() => {});
+        .catch(() => {
+            endToolCurrentPollFailures++;
+            if (endToolCurrentPollFailures >= END_TOOL_POLL_MAX_FAILURES) {
+                // End tool not responding — stop the 1 Hz poll to avoid flooding the bus queue.
+                // Retry after a longer delay.
+                clearInterval(endToolCurrentPollInterval);
+                endToolCurrentPollInterval = null;
+                setTimeout(() => {
+                    if (robotArmClient.isConnected) {
+                        endToolCurrentPollFailures = 0;
+                        startEndToolCurrentPolling();
+                    }
+                }, END_TOOL_POLL_RETRY_MS);
+            }
+        });
 }
 
 function testConnection(address, port, timeout) {
