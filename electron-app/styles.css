@@ -220,6 +220,16 @@ header h1 {
     background-color: #7f8c8d;
 }
 
+.btn-secondary.active {
+    background-color: #3498db;
+    border-color: #3498db;
+    color: white;
+}
+
+.btn-secondary.active:hover {
+    background-color: #2980b9;
+}
+
 .btn-danger {
     background-color: #e74c3c;
     color: white;

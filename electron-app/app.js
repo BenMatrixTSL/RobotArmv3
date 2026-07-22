@@ -7011,6 +7011,10 @@ function setEndToolServoEnabled(enabled) {
             if (stateEl) stateEl.textContent = enabled ? 'Enabled' : 'Disabled';
         })
         .catch(err => showAppMessage('End tool servo enable: ' + err.message));
+    setEndToolBtnActive(
+        enabled ? 'endToolServoEnableBtn' : 'endToolServoDisableBtn',
+        enabled ? 'endToolServoDisableBtn' : 'endToolServoEnableBtn'
+    );
 }
 
 function setToolPump(on) {
@@ -7036,6 +7040,13 @@ function readEndToolServoState() {
             }
         })
         .catch(err => showAppMessage('Could not read servo state: ' + err.message));
+}
+
+function setEndToolBtnActive(activeId, inactiveId) {
+    const a = document.getElementById(activeId);
+    const b = document.getElementById(inactiveId);
+    if (a) a.classList.add('active');
+    if (b) b.classList.remove('active');
 }
 
 // ===== End Tool Pneumatic Controls =====
@@ -7064,6 +7075,10 @@ function setEndToolPumpEnabled(enabled) {
     sendEndToolPwm();
     const stateEl = document.getElementById('endToolPumpStateText');
     if (stateEl) stateEl.textContent = enabled ? 'On' : 'Off';
+    setEndToolBtnActive(
+        enabled ? 'endToolPumpEnableBtn' : 'endToolPumpDisableBtn',
+        enabled ? 'endToolPumpDisableBtn' : 'endToolPumpEnableBtn'
+    );
 }
 
 function setEndToolSolenoidEnabled(enabled) {
@@ -7072,6 +7087,10 @@ function setEndToolSolenoidEnabled(enabled) {
     endToolPwmState.pwm2Duty = enabled ? 255 : 0;
     endToolPwmState.enable2 = enabled;
     sendEndToolPwm();
+    setEndToolBtnActive(
+        enabled ? 'endToolSolenoidEnableBtn' : 'endToolSolenoidDisableBtn',
+        enabled ? 'endToolSolenoidDisableBtn' : 'endToolSolenoidEnableBtn'
+    );
     const stateEl = document.getElementById('endToolSolenoidStateText');
     if (stateEl) stateEl.textContent = enabled ? 'Open — duty ' + duty : 'Closed';
 }
