@@ -4072,7 +4072,7 @@ async function executeGCodeCommand(command) {
                         storedPosPromises.push(robotArmClient.moveJoint(i + 1, targetAngles[i], speedStepsPerSecond));
                     }
                 }
-                await Promise.all(storedPosPromises);
+                await Promise.allSettled(storedPosPromises);
                 await robotArmClient.waitForMotionComplete(30000);
             }
             
@@ -4233,7 +4233,7 @@ async function executeGCodeCommand(command) {
                     for (let i = 0; i < jointAngles.length; i++) {
                         movePromises.push(robotArmClient.moveJoint(i + 1, jointAngles[i], gcodeSpeeds[i] || speed));
                     }
-                    await Promise.all(movePromises);
+                    await Promise.allSettled(movePromises);
                     await robotArmClient.waitForMotionComplete(30000);
                 }
 
@@ -4390,7 +4390,7 @@ async function executeGCodeCommand(command) {
                         fallbackPromises.push(robotArmClient.moveJoint(jointNum, targetAngle, speedStepsPerSecond));
                     }
                 }
-                await Promise.all(fallbackPromises);
+                await Promise.allSettled(fallbackPromises);
             }
         }
 

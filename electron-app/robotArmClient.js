@@ -482,20 +482,20 @@ class RobotArmClient {
      * @param {number} timeoutMs - Safety timeout in ms (default 30000). Resolves (not rejects) on timeout.
      */
     waitForMotionComplete(timeoutMs = 30000) {
+        // IMPORTANT: call this AFTER awaiting Promise.allSettled() on the move
+        // commands. The Pi fires status updates during the serial write drain
+        // (immediately after writing each servo, before it starts moving) which
+        // show isMoving:false. Those fire before this listener is registered, so
+        // they are safely ignored. By the time this is called the drain is done
+        // and the bus-tick loop has resumed with real status readings.
         return new Promise((resolve) => {
-            // We must see isMoving:true at least once before we accept isMoving:false
-            // as "done". The Pi posts status right after writing each servo goal
-            // position (before the servo physically starts moving), so early status
-            // pushes may show isMoving:false even though the arm hasn't moved yet.
-            let sawMoving = false;
             let stableCount = 0;
-            const STABLE_NEEDED = 2; // require 2 consecutive not-moving reads (~40 ms)
+            const STABLE_NEEDED = 3; // 3 × 20 ms poll = 60 ms stability window
 
             const cleanup = () => {
                 const idx = this._motionListeners.indexOf(onStatus);
                 if (idx !== -1) this._motionListeners.splice(idx, 1);
                 clearTimeout(safetyTimer);
-                clearTimeout(noMotionTimer);
             };
 
             const onStatus = (joints) => {
@@ -504,11 +504,8 @@ class RobotArmClient {
                 if (available.length === 0) return;
 
                 if (available.some(j => j.isMoving)) {
-                    sawMoving = true;
                     stableCount = 0;
-                    // Cancel the no-motion fallback — real movement detected.
-                    clearTimeout(noMotionTimer);
-                } else if (sawMoving) {
+                } else {
                     stableCount++;
                     if (stableCount >= STABLE_NEEDED) {
                         cleanup();
@@ -516,17 +513,6 @@ class RobotArmClient {
                     }
                 }
             };
-
-            // Fallback: if we never see any isMoving:true after 1 s, the move was
-            // a no-op or so short it finished before the bus tick loop resumed.
-            // By 1 s the regular 20 ms polls will have run many times — if still
-            // no movement, it's safe to continue.
-            const noMotionTimer = setTimeout(() => {
-                if (!sawMoving) {
-                    cleanup();
-                    resolve();
-                }
-            }, 1000);
 
             const safetyTimer = setTimeout(() => {
                 cleanup();
