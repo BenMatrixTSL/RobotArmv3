@@ -1572,14 +1572,17 @@ function registerBlocklyGenerators() {
                 // Calculate scaled speeds using linear interpolation
                 const scaledSpeeds_pos_${sanitizedId} = calculateScaledSpeeds(currentAngles_pos_${sanitizedId}, targetAngles_pos_${sanitizedId}, ${speedDegreesPerSecond});
                 
-                // Convert speeds to steps/s and move joints
+                // Fire all joint moves simultaneously without awaiting individual bus acks.
+                // Awaiting each ack causes the 6 serial-bus writes to queue up; by the
+                // time the last joint's write runs (~300-500 ms later) the bus can time out.
+                // Instead we fire-and-forget (matching the G-code path) and then wait for
+                // the arm to physically stop moving via the hardware isMoving register.
                 appendBlocklyOutput('Moving to ${positionLabel} at speed ${speedDegreesPerSecond} degrees/s (scaled speeds for synchronized arrival)');
                 `;
-                const movePromises = [];
                 for (let i = 0; i < position.angles.length; i++) {
-                    movePromises.push(`scaledSpeeds_pos_${sanitizedId}[${i}] > 0 ? robotArmClient.moveJoint(${i + 1}, targetAngles_pos_${sanitizedId}[${i}], degreesPerSecondToStepsPerSecond(scaledSpeeds_pos_${sanitizedId}[${i}])) : Promise.resolve()`);
+                    code += `if (scaledSpeeds_pos_${sanitizedId}[${i}] > 0) robotArmClient.moveJoint(${i + 1}, targetAngles_pos_${sanitizedId}[${i}], degreesPerSecondToStepsPerSecond(scaledSpeeds_pos_${sanitizedId}[${i}]));\n`;
                 }
-                code += `await Promise.all([${movePromises.join(', ')}]);\n`;
+                code += `await robotArmClient.waitForMotionComplete(30000);\n`;
                 return code;
             }
         }

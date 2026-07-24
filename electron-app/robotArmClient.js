@@ -33,6 +33,8 @@ class RobotArmClient {
         this._linearResolve = null;
         this._linearReject  = null;
         this._linearTimeout = null;
+        // Motion completion listeners (functions called on each status push)
+        this._motionListeners = [];
     }
 
     /**
@@ -245,6 +247,7 @@ class RobotArmClient {
                     if (this.onStatusUpdate) {
                         this.onStatusUpdate(data.joints);
                     }
+                    this._notifyMotionListeners(data.joints);
                 }
                 if (data.type === 'error') {
                     pending.reject(new Error(data.message || 'Server error'));
@@ -271,6 +274,7 @@ class RobotArmClient {
             if (this.onStatusUpdate) {
                 this.onStatusUpdate(data.joints);
             }
+            this._notifyMotionListeners(data.joints);
         }
 
         if (data.type === 'controlStatus') {
@@ -458,6 +462,58 @@ class RobotArmClient {
             angle: angle,
             speed: speedValue
         }, 8000);
+    }
+
+    /**
+     * Internal: fire all registered motion listeners with the latest joint array.
+     * @param {Array} joints
+     */
+    _notifyMotionListeners(joints) {
+        if (!this._motionListeners || this._motionListeners.length === 0) return;
+        for (const fn of this._motionListeners.slice()) {
+            try { fn(joints); } catch (_) {}
+        }
+    }
+
+    /**
+     * Returns a promise that resolves once all available joints have stopped moving.
+     * Call this after dispatching move commands to block until the arm is truly still.
+     *
+     * @param {number} timeoutMs - Safety timeout in ms (default 30000). Resolves (not rejects) on timeout.
+     */
+    waitForMotionComplete(timeoutMs = 30000) {
+        return new Promise((resolve) => {
+            let startupDone = false;
+
+            const cleanup = () => {
+                const idx = this._motionListeners.indexOf(onStatus);
+                if (idx !== -1) this._motionListeners.splice(idx, 1);
+                clearTimeout(safetyTimer);
+                clearTimeout(startupTimer);
+            };
+
+            const onStatus = (joints) => {
+                if (!startupDone) return;
+                if (!Array.isArray(joints) || joints.length === 0) return;
+                const available = joints.filter(j => j && j.available);
+                if (available.length === 0 || available.every(j => !j.isMoving)) {
+                    cleanup();
+                    resolve();
+                }
+            };
+
+            // Allow 150 ms for the servo to register as moving before we start checking.
+            const startupTimer = setTimeout(() => {
+                startupDone = true;
+            }, 150);
+
+            const safetyTimer = setTimeout(() => {
+                cleanup();
+                resolve();
+            }, timeoutMs);
+
+            this._motionListeners.push(onStatus);
+        });
     }
 
     /**
