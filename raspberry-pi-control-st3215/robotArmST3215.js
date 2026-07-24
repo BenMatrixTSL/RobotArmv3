@@ -1114,19 +1114,20 @@ class ServoController {
             // Check explicitly for null/undefined, but allow 0 as a valid speed value
             const speedToUse = (speed !== null && speed !== undefined) ? speed : this.currentSpeed;
             
-            // Set speed before goal position.  setSpeed updates currentSpeed before
-            // writing, so if the ack is lost we won't retry the speed write on the
-            // next call.  Swallow the ack failure and continue to the position write.
-            if (speedToUse !== this.currentSpeed) {
-                try {
-                    await this.setSpeed(speedToUse);
-                } catch (_) {
-                    // Ack lost — currentSpeed already updated by setSpeed; continue.
-                }
-                await new Promise((resolve) => setTimeout(resolve, BUS_GAP_BETWEEN_WRITES_MS));
-            } else {
-                await new Promise((resolve) => setTimeout(resolve, 8));
+            // Always write the speed register before the position command.
+            // Skipping when speedToUse === currentSpeed was an optimisation, but it
+            // caused intermittent "too slow" moves: if a previous speed write failed
+            // silently (ack timeout — the catch in setSpeed swallows it), currentSpeed
+            // tracks the intended value while the servo still holds the old value.
+            // The next call with the same intended speed then skips the write, so the
+            // servo runs at the stale speed.  Always writing costs one extra bus write
+            // (~7 ms) per joint per move — acceptable.
+            try {
+                await this.setSpeed(speedToUse);
+            } catch (_) {
+                // Ack lost; servo very likely received the write anyway — continue.
             }
+            await new Promise((resolve) => setTimeout(resolve, BUS_GAP_BETWEEN_WRITES_MS));
             
             // Don't read position before move - it can cause response matching issues
             // Just proceed with the move

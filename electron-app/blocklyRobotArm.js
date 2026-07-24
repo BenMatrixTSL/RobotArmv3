@@ -68,13 +68,18 @@ function calculateScaledSpeeds(currentAngles, targetAngles, baseSpeedDegreesPerS
         return Array(currentAngles.length).fill(baseSpeedDegreesPerSecond);
     }
     
+    // Minimum speed floor (matches the 50 steps/s floor in computeCoordinatedSpeeds).
+    // Without this, joints with very small travel get near-zero speeds that the
+    // servo cannot accurately track, causing them to appear to move too slowly.
+    const MIN_SPEED_DEG_PER_SEC = 50 / 11.37; // ~4.4 deg/s
+
     // Calculate scaled speeds: speed = baseSpeed * (distance / maxDistance)
     // This ensures all joints finish at the same time
     const scaledSpeeds = distances.map(distance => {
         if (distance === 0) {
             return 0; // Joint already at target, no movement needed
         }
-        return baseSpeedDegreesPerSecond * (distance / maxDistance);
+        return Math.max(baseSpeedDegreesPerSecond * (distance / maxDistance), MIN_SPEED_DEG_PER_SEC);
     });
     
     return scaledSpeeds;
