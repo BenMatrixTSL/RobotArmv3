@@ -52,9 +52,10 @@ DETECTION_FPS = max(1, int(os.environ.get("ROBOT_ARM_DETECTION_FPS", "5")))
 # keeping CPU manageable regardless of capture resolution.
 # Set ROBOT_ARM_COLOR_DETECTION=0 to disable entirely if not needed.
 COLOR_DETECTION_ENABLED = os.environ.get("ROBOT_ARM_COLOR_DETECTION", "1").strip() not in ("0", "false", "no")
-# Side length of the square formed by the 4 corner ArUco markers, in mm.
+# X and Y spacing between the corner ArUco markers, in mm.
 # Used to compute world (mm) positions of detected colour blocks.
-MARKER_SQUARE_SIZE_MM = float(os.environ.get("ROBOT_ARM_MARKER_SQUARE_MM", "80"))
+MARKER_SPACING_X_MM = float(os.environ.get("ROBOT_ARM_MARKER_SPACING_X_MM", "240"))
+MARKER_SPACING_Y_MM = float(os.environ.get("ROBOT_ARM_MARKER_SPACING_Y_MM", "230"))
 JPEG_QUALITY = 80
 MIN_BLOCK_AREA = 2500
 BOUNDARY = b"--jpgboundary"
@@ -326,9 +327,9 @@ def get_homography_from_markers(markers):
       so transform_to_world works unchanged via cv2.perspectiveTransform.
 
     Markers are classified as TL/TR/BL/BR relative to their centroid, then
-    mapped to the corners of a MARKER_SQUARE_SIZE_MM square:
-        TL → (0, 0)   TR → (size, 0)
-        BL → (0, size) BR → (size, size)
+    mapped to the corners of a MARKER_SPACING_X_MM × MARKER_SPACING_Y_MM rectangle:
+        TL → (0, 0)    TR → (wx, 0)
+        BL → (0, wy)   BR → (wx, wy)
 
     Returns a 3×3 float32 matrix, or None if markers are insufficient/degenerate.
     """
@@ -349,12 +350,13 @@ def get_homography_from_markers(markers):
             return None  # two markers in the same quadrant — degenerate
         corner_map[key] = pt
 
-    s = MARKER_SQUARE_SIZE_MM
+    wx = MARKER_SPACING_X_MM
+    wy = MARKER_SPACING_Y_MM
     world_pos = {
-        ("top", "left"):     [0, 0],
-        ("top", "right"):    [s, 0],
-        ("bottom", "right"): [s, s],
-        ("bottom", "left"):  [0, s],
+        ("top", "left"):     [0,  0 ],
+        ("top", "right"):    [wx, 0 ],
+        ("bottom", "right"): [wx, wy],
+        ("bottom", "left"):  [0,  wy],
     }
 
     if n == 4:
