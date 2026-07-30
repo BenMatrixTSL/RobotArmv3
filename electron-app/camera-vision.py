@@ -57,7 +57,7 @@ COLOR_DETECTION_ENABLED = os.environ.get("ROBOT_ARM_COLOR_DETECTION", "1").strip
 MARKER_SPACING_X_MM = float(os.environ.get("ROBOT_ARM_MARKER_SPACING_X_MM", "240"))
 MARKER_SPACING_Y_MM = float(os.environ.get("ROBOT_ARM_MARKER_SPACING_Y_MM", "230"))
 JPEG_QUALITY = 80
-MIN_BLOCK_AREA = 800
+MIN_BLOCK_AREA = 300
 BOUNDARY = b"--jpgboundary"
 
 # Try these dictionaries in order (most common first).
@@ -89,7 +89,7 @@ COLOR_RANGES = {
         ((20, 120, 130), (35, 255, 255)),
     ],
     "purple": [
-        ((125, 80, 60), (160, 255, 255)),
+        ((125, 50, 40), (165, 255, 255)),
     ],
 }
 
