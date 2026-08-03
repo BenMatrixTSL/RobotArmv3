@@ -7058,8 +7058,8 @@ function setEndToolServoEnabled(enabled) {
     const stateEl = document.getElementById('endToolServoStateText');
     if (stateEl) stateEl.textContent = enabled ? 'Enabled' : 'Disabled';
     setEndToolBtnActive(
-        enabled ? 'endToolServoEnableBtn' : 'endToolServoDisableBtn',
-        enabled ? 'endToolServoDisableBtn' : 'endToolServoEnableBtn'
+        enabled ? 'servo-enable' : 'servo-disable',
+        enabled ? 'servo-disable' : 'servo-enable'
     );
 }
 
@@ -7088,11 +7088,9 @@ function readEndToolServoState() {
         .catch(err => showAppMessage('Could not read servo state: ' + err.message));
 }
 
-function setEndToolBtnActive(activeId, inactiveId) {
-    const a = document.getElementById(activeId);
-    const b = document.getElementById(inactiveId);
-    if (a) a.classList.add('active');
-    if (b) b.classList.remove('active');
+function setEndToolBtnActive(activeAction, inactiveAction) {
+    document.querySelectorAll(`[data-end-tool-action="${activeAction}"]`).forEach(el => el.classList.add('active'));
+    document.querySelectorAll(`[data-end-tool-action="${inactiveAction}"]`).forEach(el => el.classList.remove('active'));
 }
 
 // ===== End Tool Pneumatic Controls =====
@@ -7121,8 +7119,8 @@ function setEndToolPumpEnabled(enabled) {
     const stateEl = document.getElementById('endToolPumpStateText');
     if (stateEl) stateEl.textContent = enabled ? 'On' : 'Off';
     setEndToolBtnActive(
-        enabled ? 'endToolPumpEnableBtn' : 'endToolPumpDisableBtn',
-        enabled ? 'endToolPumpDisableBtn' : 'endToolPumpEnableBtn'
+        enabled ? 'pump-enable' : 'pump-disable',
+        enabled ? 'pump-disable' : 'pump-enable'
     );
 }
 
@@ -7133,8 +7131,8 @@ function setEndToolSolenoidEnabled(enabled) {
     endToolPwmState.enable2 = enabled;
     sendEndToolPwm();
     setEndToolBtnActive(
-        enabled ? 'endToolSolenoidEnableBtn' : 'endToolSolenoidDisableBtn',
-        enabled ? 'endToolSolenoidDisableBtn' : 'endToolSolenoidEnableBtn'
+        enabled ? 'solenoid-enable' : 'solenoid-disable',
+        enabled ? 'solenoid-disable' : 'solenoid-enable'
     );
     const stateEl = document.getElementById('endToolSolenoidStateText');
     if (stateEl) stateEl.textContent = enabled ? 'Open' : 'Closed';

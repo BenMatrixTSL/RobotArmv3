@@ -283,8 +283,8 @@
                 <div class="pendant2-card pendant2-end-tool-card" id="endToolServoPanel">
                     <div class="pendant2-card-title">End Tool — Servo</div>
                     <div class="pendant2-end-tool-btns">
-                        <button class="btn btn-secondary pendant2-tool-btn end-tool-on-btn" id="endToolServoEnableBtn" onclick="setEndToolServoEnabled(true)">Enable</button>
-                        <button class="btn btn-secondary pendant2-tool-btn end-tool-off-btn" id="endToolServoDisableBtn" onclick="setEndToolServoEnabled(false)">Disable</button>
+                        <button class="btn btn-secondary pendant2-tool-btn end-tool-on-btn" id="endToolServoEnableBtn" data-end-tool-action="servo-enable" onclick="setEndToolServoEnabled(true)">Enable</button>
+                        <button class="btn btn-secondary pendant2-tool-btn end-tool-off-btn" id="endToolServoDisableBtn" data-end-tool-action="servo-disable" onclick="setEndToolServoEnabled(false)">Disable</button>
                     </div>
                     <div class="pendant2-end-tool-btns pendant2-end-tool-presets">
                         <button class="btn pendant2-tool-btn pendant2-servo-btn" onclick="moveEndToolServoTo(0)">Close<br><span class="pendant2-angle-sub">0°</span></button>
@@ -298,16 +298,16 @@
                 <div class="pendant2-card pendant2-end-tool-card" id="endToolPneumaticPanel">
                     <div class="pendant2-card-title">End Tool — Pump</div>
                     <div class="pendant2-end-tool-btns">
-                        <button class="btn btn-secondary pendant2-tool-btn end-tool-on-btn" id="endToolPumpEnableBtn" onclick="setEndToolPumpEnabled(true)">Pump ON</button>
-                        <button class="btn btn-secondary pendant2-tool-btn end-tool-off-btn" id="endToolPumpDisableBtn" onclick="setEndToolPumpEnabled(false)">Pump OFF</button>
+                        <button class="btn btn-secondary pendant2-tool-btn end-tool-on-btn" id="endToolPumpEnableBtn" data-end-tool-action="pump-enable" onclick="setEndToolPumpEnabled(true)">Pump ON</button>
+                        <button class="btn btn-secondary pendant2-tool-btn end-tool-off-btn" id="endToolPumpDisableBtn" data-end-tool-action="pump-disable" onclick="setEndToolPumpEnabled(false)">Pump OFF</button>
                     </div>
                 </div>
 
                 <div class="pendant2-card pendant2-end-tool-card">
                     <div class="pendant2-card-title">End Tool — Solenoid Valve</div>
                     <div class="pendant2-end-tool-btns">
-                        <button class="btn btn-secondary pendant2-tool-btn end-tool-on-btn" id="endToolSolenoidEnableBtn" onclick="setEndToolSolenoidEnabled(true)">Valve ON</button>
-                        <button class="btn btn-secondary pendant2-tool-btn end-tool-off-btn" id="endToolSolenoidDisableBtn" onclick="setEndToolSolenoidEnabled(false)">Valve OFF</button>
+                        <button class="btn btn-secondary pendant2-tool-btn end-tool-on-btn" id="endToolSolenoidEnableBtn" data-end-tool-action="solenoid-enable" onclick="setEndToolSolenoidEnabled(true)">Valve ON</button>
+                        <button class="btn btn-secondary pendant2-tool-btn end-tool-off-btn" id="endToolSolenoidDisableBtn" data-end-tool-action="solenoid-disable" onclick="setEndToolSolenoidEnabled(false)">Valve OFF</button>
                     </div>
                 </div>
 
@@ -396,8 +396,8 @@
                 <div class="pendant2-card pendant2-end-tool-card">
                     <div class="pendant2-card-title">End Tool — Servo</div>
                     <div class="pendant2-end-tool-btns">
-                        <button class="btn btn-secondary pendant2-tool-btn" onclick="setEndToolServoEnabled(true)">Enable</button>
-                        <button class="btn btn-secondary pendant2-tool-btn" onclick="setEndToolServoEnabled(false)">Disable</button>
+                        <button class="btn btn-secondary pendant2-tool-btn end-tool-on-btn" data-end-tool-action="servo-enable" onclick="setEndToolServoEnabled(true)">Enable</button>
+                        <button class="btn btn-secondary pendant2-tool-btn end-tool-off-btn" data-end-tool-action="servo-disable" onclick="setEndToolServoEnabled(false)">Disable</button>
                     </div>
                     <div class="pendant2-end-tool-btns pendant2-end-tool-presets">
                         <button class="btn pendant2-tool-btn pendant2-servo-btn" onclick="moveEndToolServoTo(0)">Close<br><span class="pendant2-angle-sub">0°</span></button>
@@ -411,16 +411,16 @@
                 <div class="pendant2-card pendant2-end-tool-card">
                     <div class="pendant2-card-title">End Tool — Pump</div>
                     <div class="pendant2-end-tool-btns">
-                        <button class="btn btn-secondary pendant2-tool-btn pendant2-pump-on" onclick="setEndToolPumpEnabled(true)">Pump ON</button>
-                        <button class="btn btn-secondary pendant2-tool-btn" onclick="setEndToolPumpEnabled(false)">Pump OFF</button>
+                        <button class="btn btn-secondary pendant2-tool-btn end-tool-on-btn" data-end-tool-action="pump-enable" onclick="setEndToolPumpEnabled(true)">Pump ON</button>
+                        <button class="btn btn-secondary pendant2-tool-btn end-tool-off-btn" data-end-tool-action="pump-disable" onclick="setEndToolPumpEnabled(false)">Pump OFF</button>
                     </div>
                 </div>
 
                 <div class="pendant2-card pendant2-end-tool-card">
                     <div class="pendant2-card-title">End Tool — Solenoid Valve</div>
                     <div class="pendant2-end-tool-btns">
-                        <button class="btn btn-secondary pendant2-tool-btn pendant2-pump-on" onclick="setEndToolSolenoidEnabled(true)">Valve ON</button>
-                        <button class="btn btn-secondary pendant2-tool-btn" onclick="setEndToolSolenoidEnabled(false)">Valve OFF</button>
+                        <button class="btn btn-secondary pendant2-tool-btn end-tool-on-btn" data-end-tool-action="solenoid-enable" onclick="setEndToolSolenoidEnabled(true)">Valve ON</button>
+                        <button class="btn btn-secondary pendant2-tool-btn end-tool-off-btn" data-end-tool-action="solenoid-disable" onclick="setEndToolSolenoidEnabled(false)">Valve OFF</button>
                     </div>
                 </div>
 
