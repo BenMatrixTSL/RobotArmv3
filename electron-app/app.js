@@ -2923,8 +2923,10 @@ async function moveToXYZ(xArg, yArg, zArg, orientationOverride, skipRefinement) 
             lastAccuracy = refined || { positionErrorMm: 0, orientationErrorDeg: 0 };
 
             console.log(`Moving to XYZ waypoint ${w + 1}/${waypoints.length}: (${wp.x}, ${wp.y}, ${wp.z})`);
-            console.log(`Joint angles: ${jointAngles.map((a, i) => `J${i+1}:${a.toFixed(2)}°`).join(', ')}`);
-            console.log(`Accuracy: position ${lastAccuracy.positionErrorMm.toFixed(2)} mm, orientation ${lastAccuracy.orientationErrorDeg.toFixed(1)}°`);
+            console.log(`IK commanded angles: ${jointAngles.map((a, i) => `J${i+1}:${a.toFixed(2)}°`).join(', ')}`);
+            // Verify what position the IK thinks those angles achieve
+            const ikFkCheck = robotKinematics.forwardKinematics(jointAngles);
+            console.log(`IK FK verify — target: X:${wp.x.toFixed(2)} Y:${wp.y.toFixed(2)} Z:${wp.z.toFixed(2)} | IK result: X:${ikFkCheck.position.x.toFixed(2)} Y:${ikFkCheck.position.y.toFixed(2)} Z:${ikFkCheck.position.z.toFixed(2)}`);
 
             // Dispatch all joints simultaneously with proportional speeds so they arrive together.
             const defaultStepsPerSec = typeof degreesPerSecondToStepsPerSecond === 'function'
@@ -2936,6 +2938,16 @@ async function moveToXYZ(xArg, yArg, zArg, orientationOverride, skipRefinement) 
             }
             await Promise.allSettled(xyzMovePromises);
             await robotArmClient.waitForMotionComplete(30000);
+
+            // Log actual servo angles vs commanded — reveals whether servos reached target
+            if (Array.isArray(lastGoodJointStatus) && lastGoodJointStatus.length > 0) {
+                const actualAngles = lastGoodJointStatus.map(j => (j && typeof j.angleDegrees === 'number') ? j.angleDegrees : 0);
+                const actualFk = robotKinematics.forwardKinematics(actualAngles);
+                console.log(`Post-move servo angles: ${actualAngles.map((a, i) => `J${i+1}:${a.toFixed(2)}°`).join(', ')}`);
+                console.log(`Post-move FK: X:${actualFk.position.x.toFixed(2)} Y:${actualFk.position.y.toFixed(2)} Z:${actualFk.position.z.toFixed(2)}`);
+                const maxErr = actualAngles.reduce((m, a, i) => Math.max(m, Math.abs(a - jointAngles[i])), 0);
+                console.log(`Max servo tracking error: ${maxErr.toFixed(2)}°`);
+            }
         }
 
         if (lastAccuracy) {
