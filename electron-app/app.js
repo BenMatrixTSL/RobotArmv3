@@ -7019,15 +7019,11 @@ async function autoDetectRaspberryPi() {
 
 function updateEndToolServoButtonsState() {
     const canControl = robotArmClient.isConnected && robotArmClient.hasArmControl;
-    const ids = [
-        'endToolServoEnableBtn', 'endToolServoDisableBtn',
-        'endToolServoSlider'
-    ];
-    ids.forEach(id => {
+    ['endToolServoEnableBtn', 'endToolServoDisableBtn'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.disabled = !canControl;
     });
-    document.querySelectorAll('#endToolServoPanel .btn-small').forEach(btn => {
+    document.querySelectorAll('#endToolServoPanel .pendant2-servo-btn').forEach(btn => {
         btn.disabled = !canControl;
     });
 }

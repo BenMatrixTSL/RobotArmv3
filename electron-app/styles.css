@@ -816,6 +816,27 @@ header h1 {
     background: #fff;
 }
 
+/* End tool button active-state colouring — ON=green, OFF=red */
+.end-tool-on-btn.active {
+    background-color: #27ae60 !important;
+    border-color: #27ae60 !important;
+    color: #fff !important;
+}
+
+.end-tool-on-btn.active:hover {
+    background-color: #2ecc71 !important;
+}
+
+.end-tool-off-btn.active {
+    background-color: #e74c3c !important;
+    border-color: #e74c3c !important;
+    color: #fff !important;
+}
+
+.end-tool-off-btn.active:hover {
+    background-color: #c0392b !important;
+}
+
 /* End tool row */
 .pendant2-end-tools-row {
     display: flex;
