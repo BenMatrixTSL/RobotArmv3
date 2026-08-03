@@ -414,6 +414,13 @@ header h1 {
     display: block;
 }
 
+.curriculum-tab-content {
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 60px);
+}
+
 .tab-content h2 {
     margin-bottom: 20px;
     font-size: 20px;
