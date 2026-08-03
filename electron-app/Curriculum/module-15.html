@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Module 15 — Technical Documentation</title>
+<style>
+  :root {
+    --bg: #f8fafc; --card: #ffffff; --border: #e2e8f0;
+    --text: #1e293b; --muted: #64748b;
+    --accent: #3b82f6; --accent-light: #eff6ff;
+    --green: #16a34a; --green-light: #f0fdf4;
+    --purple: #7c3aed; --purple-light: #faf5ff;
+    --orange: #ea580c; --orange-light: #fff7ed;
+    --red: #dc2626; --red-light: #fef2f2;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+  .hero { background: linear-gradient(135deg, #0c4a6e 0%, #075985 100%); color: white; padding: 3rem 2rem; text-align: center; }
+  .hero .module-num { font-size: 0.85rem; opacity: 0.6; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 0.5rem; }
+  .hero h1 { font-size: 2rem; font-weight: 700; margin-bottom: 0.75rem; }
+  .hero p { font-size: 1.05rem; opacity: 0.85; max-width: 600px; margin: 0 auto; }
+  .meta-bar { display: flex; justify-content: center; gap: 2rem; padding: 1rem; background: #1e293b; color: #94a3b8; font-size: 0.85rem; flex-wrap: wrap; }
+  .container { max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem; }
+  .section-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.75rem; margin-bottom: 1.5rem; }
+  .pill { display: inline-block; font-size: 0.75rem; font-weight: 600; padding: 0.2rem 0.65rem; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.9rem; }
+  .pill-theory   { background: var(--accent-light); color: var(--accent); }
+  .pill-worksheet{ background: var(--purple-light); color: var(--purple); }
+  .pill-sowhat   { background: var(--orange-light); color: var(--orange); }
+  .pill-mcq      { background: #fff8e1; color: #856404; }
+  h2 { font-size: 1.3rem; font-weight: 700; margin-bottom: 0.75rem; }
+  h3 { font-size: 1.05rem; font-weight: 600; margin: 1.2rem 0 0.5rem; }
+  p  { margin-bottom: 0.8rem; }
+  .highlight-box { background: var(--accent-light); border-left: 4px solid var(--accent); padding: 1rem 1.2rem; border-radius: 0 8px 8px 0; margin: 1rem 0; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1rem 0; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 1rem; margin: 1rem 0; }
+  .mini-card { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; }
+  .mini-card h4 { font-size: 0.9rem; font-weight: 700; margin-bottom: 0.4rem; }
+  .mini-card p  { font-size: 0.85rem; color: var(--muted); margin: 0; }
+  table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+  th { background: var(--accent-light); color: var(--accent); text-align: left; padding: 0.6rem 0.8rem; font-weight: 600; }
+  td { padding: 0.55rem 0.8rem; border-bottom: 1px solid var(--border); }
+  tr:last-child td { border-bottom: none; }
+  .doc-example { background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 1.2rem; margin: 1rem 0; font-family: system-ui, sans-serif; font-size: 0.88rem; }
+  .doc-example .doc-title { font-weight: 700; font-size: 1rem; border-bottom: 2px solid var(--border); padding-bottom: 0.5rem; margin-bottom: 0.8rem; }
+  .doc-example .doc-meta { color: var(--muted); font-size: 0.8rem; margin-bottom: 0.8rem; }
+  .doc-section { margin-top: 0.6rem; }
+  .doc-section strong { display: block; font-size: 0.85rem; color: var(--accent); margin-bottom: 0.2rem; }
+  .steps { list-style: none; counter-reset: step; padding: 0; }
+  .steps li { counter-increment: step; display: flex; gap: 1rem; margin-bottom: 0.9rem; align-items: flex-start; }
+  .steps li::before { content: counter(step); min-width: 28px; height: 28px; background: var(--green); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; flex-shrink: 0; }
+  .checklist { list-style: none; padding: 0; }
+  .checklist li { display: flex; align-items: flex-start; gap: 0.6rem; margin-bottom: 0.4rem; font-size: 0.9rem; }
+  .checklist li::before { content: "☐"; font-size: 1.1rem; flex-shrink: 0; }
+  .mcq-question { margin-bottom: 1.5rem; }
+  .mcq-question p { font-weight: 600; margin-bottom: 0.6rem; }
+  .mcq-option { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.35rem; cursor: pointer; font-size: 0.95rem; }
+  .mcq-option input { accent-color: var(--accent); }
+  .feedback-msg { font-size: 0.85rem; padding: 0.45rem 0.8rem; border-radius: 6px; margin-top: 0.5rem; display: none; }
+  .feedback-correct { background: var(--green-light); color: var(--green); }
+  .feedback-wrong   { background: var(--red-light);   color: var(--red); }
+  .check-btn { background: var(--accent); color: white; border: none; padding: 0.7rem 1.6rem; border-radius: 8px; font-size: 0.95rem; font-weight: 600; cursor: pointer; margin-top: 0.5rem; }
+  .check-btn:hover { background: #2563eb; }
+  .score-bar-wrap { height: 8px; background: var(--border); border-radius: 4px; margin: 1rem 0 0.4rem; }
+  .score-bar { height: 100%; background: var(--green); border-radius: 4px; transition: width 0.4s; width: 0%; }
+  .score-text { font-size: 0.9rem; color: var(--muted); }
+  .nav-row { display: flex; justify-content: space-between; margin-top: 2rem; }
+  .nav-btn { display: inline-block; padding: 0.6rem 1.4rem; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 0.9rem; border: 2px solid var(--border); color: var(--text); }
+  .nav-btn.primary { background: var(--accent); color: white; border-color: var(--accent); }
+  .callout { display:flex; gap:0.75rem; padding:1rem 1.2rem; border-radius:8px; margin:1rem 0; }
+  .callout-info    { background:var(--accent-light); border-left:4px solid var(--accent); }
+  .callout-warning { background:#fefce8; border-left:4px solid #ca8a04; color:#713f12; }
+  .callout-tip     { background:var(--green-light); border-left:4px solid var(--green); color:#14532d; }
+  .callout-danger  { background:var(--red-light); border-left:4px solid var(--red); color:#991b1b; }
+  .callout-icon { font-size:1.2rem; flex-shrink:0; padding-top:0.1rem; }
+  .callout-body { flex:1; font-size:0.9rem; }
+  .callout-body ul, .callout-body ol { padding-left:1.2rem; margin-top:0.3rem; }
+  .ui-ref { display:inline-block; background:var(--green); color:#fff; font-size:0.75rem; font-weight:600; padding:0.1rem 0.45rem; border-radius:4px; font-family:monospace; }
+  @media(max-width:600px){ .grid-2,.grid-3{ grid-template-columns:1fr; } }
+</style>
+<link rel="stylesheet" href="worksheet.css">
+</head>
+<body>
+
+<div class="hero">
+  <div class="module-num">Module 15 of 16</div>
+  <h1>Technical Documentation</h1>
+  <p>Writing clear, complete, and useful engineering documentation — circuit diagrams, annotated code, test records, and user guides.</p>
+</div>
+<div class="meta-bar">
+  <span>&#128340; 75–90 min</span>
+  <span>&#127919; Group: Project</span>
+  <span>&#128268; Context: Your own robot arm project</span>
+</div>
+
+<div class="container">
+
+  <!-- THEORY 1 -->
+  <div class="section-card">
+    <span class="pill pill-theory">Theory</span>
+    <h2>Why Documentation Matters</h2>
+    <p>An undocumented engineering project is only half-finished. Without documentation, a system cannot be safely maintained, repaired, or handed to someone else. In professional settings, missing documentation can be a legal liability.</p>
+    <div class="grid-3">
+      <div class="mini-card">
+        <h4>&#128296; Maintenance</h4>
+        <p>A technician needs to fault-find two years later. Wiring diagrams and component lists save hours.</p>
+      </div>
+      <div class="mini-card">
+        <h4>&#128101; Handover</h4>
+        <p>When you leave a project, someone else must understand it. Documentation is the bridge.</p>
+      </div>
+      <div class="mini-card">
+        <h4>&#9878;&#65039; Compliance</h4>
+        <p>Regulatory approvals (CE marking, ISO certification) require evidence — test records, risk assessments, drawings.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- THEORY 2 -->
+  <div class="section-card">
+    <span class="pill pill-theory">Theory</span>
+    <h2>Types of Technical Document</h2>
+    <img src="images/block-diagram-template.svg" alt="System block diagram template" style="width:100%;height:auto;display:block;border-radius:8px;margin:12px 0;">
+    <table>
+      <tr><th>Document type</th><th>Purpose</th><th>Audience</th></tr>
+      <tr><td>Circuit / wiring diagram</td><td>Shows electrical connections and component values</td><td>Technicians, engineers</td></tr>
+      <tr><td>Block diagram</td><td>System overview — how subsystems connect</td><td>Engineers, managers</td></tr>
+      <tr><td>Annotated code</td><td>Explains why key sections of code work as they do</td><td>Developers, future maintainers</td></tr>
+      <tr><td>Test record</td><td>Documents what was tested, how, and the results</td><td>Engineers, quality assurance</td></tr>
+      <tr><td>Risk assessment</td><td>Identifies hazards and controls — legal requirement</td><td>Health &amp; safety, operators</td></tr>
+      <tr><td>User guide / SOP</td><td>How to operate the system safely and correctly</td><td>Operators, students</td></tr>
+      <tr><td>Project report</td><td>Narrative of decisions made, evidence of process</td><td>Assessors, clients</td></tr>
+    </table>
+
+    <div class="callout callout-info">
+      <span class="callout-icon">📐</span>
+      <div class="callout-body">
+        <strong>System Block Diagram — Required Components</strong></br>
+        A complete system block diagram for this arm must include ALL of the following, with the communication protocol labelled at each boundary:
+        <ul style="margin:0.4rem 0 0;padding-left:1.2rem;">
+          <li><strong>Electron App</strong> (PC/laptop) → <strong>WebSocket / JSON TCP:8080</strong> → <strong>Server on Raspberry Pi</strong></li>
+          <li><strong>Server</strong> → <strong>UART serial bus (1 Mbps)</strong> → <strong>ST3215 Servos ×6</strong></li>
+          <li><strong>Server</strong> → <strong>Serial bus</strong> → <strong>ESP32 End-Tool Node</strong> (gripper/pump/ADC)</li>
+          <li><strong>Server</strong> → <strong>LED Status Strip</strong> (peripheral output, WS2812B)</li>
+          <li><strong>USB Camera</strong> → <strong>Server</strong> → <strong>WebSocket</strong> (vision results proxied to app)</li>
+          <li><strong>AS5600 Magnetic Encoders</strong> → <strong>I²C bus</strong> → <strong>Raspberry Pi GPIO</strong></li>
+        </ul>
+        Students who correctly draw all subsystems and label all protocol boundaries have demonstrated genuine understanding of the system architecture. Students who only draw "PC → Raspberry Pi → Arm" have missed critical subsystems.
+      </div>
+    </div>
+  </div>
+
+  <!-- THEORY 3 -->
+  <div class="section-card">
+    <span class="pill pill-theory">Theory</span>
+    <h2>What Makes Good Documentation?</h2>
+    <p>Good documentation is not about length — it is about clarity and completeness for the intended audience. Key principles:</p>
+    <div class="grid-2">
+      <div class="mini-card">
+        <h4>&#127919; Audience-appropriate</h4>
+        <p>A user guide for students uses different language than a maintenance manual for technicians.</p>
+      </div>
+      <div class="mini-card">
+        <h4>&#128200; Evidence-based</h4>
+        <p>Test records include actual measurements, not just "it worked". Show the data.</p>
+      </div>
+      <div class="mini-card">
+        <h4>&#128197; Version-controlled</h4>
+        <p>Date every document. Include a revision history so readers know which version is current.</p>
+      </div>
+      <div class="mini-card">
+        <h4>&#128248; Visual where possible</h4>
+        <p>A labelled photo, circuit diagram, or flowchart often communicates faster than paragraphs of text.</p>
+      </div>
+    </div>
+
+    <h3>Example: Test Record Entry</h3>
+    <div class="doc-example">
+      <div class="doc-title">Test Record — Robot Arm Project</div>
+      <div class="doc-meta">Author: [Name] | Date: [Date] | Firmware version: 1.2.3</div>
+      <div class="doc-section">
+        <strong>Test ID: T03 — Repeat Position Accuracy</strong>
+        Specification: Joint 2 shall return to 45° within ±2° after 10 consecutive cycles.<br>
+        Method: Commanded J2 to 45° × 10 cycles. Read position from Joint Control tab after each.<br>
+        Results: 44.8°, 45.1°, 44.9°, 45.0°, 45.2°, 44.7°, 45.1°, 45.0°, 44.9°, 45.1°<br>
+        Max deviation: 0.3° | Pass/Fail: <strong style="color:var(--green)">PASS</strong>
+      </div>
+    </div>
+    <div class="highlight-box">
+      <strong>Notice:</strong> The test record references the specification point, states the method, shows actual numbers, and gives an explicit pass/fail. A future engineer can reproduce the test and verify the result.
+    </div>
+
+    <div class="callout callout-info">
+      <span class="callout-icon">📋</span>
+      <div class="callout-body">
+        <strong>Test Records — Specific Data Sources for This Arm</strong></br>
+        When writing test records, always cite the specific data source in the app:
+        <ul style="margin:0.4rem 0 0;padding-left:1.2rem;">
+          <li><strong>Joint temperature</strong>: read from the Temperature (°C) field in the <span class="ui-ref">Joint Control</span> tab — not estimated</li>
+          <li><strong>Joint position / repeatability</strong>: read from the Angle (°) field in Joint Control — record 10 consecutive readings</li>
+          <li><strong>Load (%)</strong>: read from the Load field in Joint Control at three different poses</li>
+          <li><strong>Cycle time</strong>: measure with a stopwatch, or compare the execution log timestamps in the <span class="ui-ref">G-Code Control</span> tab</li>
+          <li><strong>Connection time</strong>: time from pressing Connect to "you have control" in the <span class="ui-ref">Connection</span> tab diagnostics</li>
+        </ul>
+        Results must show the <em>actual measured value</em>, the specification threshold, and a clear pass/fail verdict. "Temperature stayed acceptable" is not a test record — "Temperature peaked at 43°C against a 50°C threshold — PASS" is.
+      </div>
+    </div>
+  </div>
+
+  <!-- WORKSHEET -->
+  <div class="section-card worksheet-card">
+    <span class="pill pill-worksheet">Worksheet</span>
+    <h2>Activity — Document Your Project</h2>
+    <p>Produce a documentation pack for your robot arm project. Use the checklist below to ensure nothing is missing.</p>
+    <ul class="steps">
+      <li><strong>Block diagram:</strong> Draw a system block diagram showing all hardware components (Pi, servos, sensors, PSU, app) and how they connect. Label each connection with the protocol used (UART, WebSocket, I²C, etc.).</li>
+      <li><strong>Annotated program:</strong> Take your G-code or Blockly program from Module 12 and add annotations explaining each section — what it does and why (not line-by-line, just the important parts).</li>
+      <li><strong>Test record:</strong> Design three tests against your specification points (from Module 14). Run each test, record actual results, and state pass/fail against the specification.</li>
+      <li><strong>User guide:</strong> Write a one-page user guide for operating your arm program. Assume the reader has never used the app. Include: how to connect, how to run the program, what to do if it does not work, how to shut down safely.</li>
+      <li><strong>Revision log:</strong> Add a short revision history table to each document: date, version number, and what changed.</li>
+    </ul>
+
+    <div class="callout callout-tip no-print">
+      <span class="callout-icon">🤖</span>
+      <div class="callout-body">
+        <strong>RAPID as an Alternative to G-Code for Annotated Code</strong></br>
+        For the "annotated code" document, you may use a RAPID script from the <span class="ui-ref">RAPID</span> tab instead of G-code. RAPID is closer to real industrial robot programming languages and produces a stronger portfolio artefact. The annotation requirement is the same: each <code>MoveJ</code>, <code>MoveLXYZ</code>, or <code>GripperClose</code> line must be commented with the physical action it performs, the reason for the speed choice, and any safety consideration. A well-annotated RAPID program demonstrates professional programming practice.
+      </div>
+    </div>
+
+    <h3>Documentation Pack Checklist</h3>
+    <ul class="checklist">
+      <li><label><input type="checkbox"> System block diagram — all components, all connections labelled</label></li>
+      <li><label><input type="checkbox"> Annotated G-code, Blockly, or RAPID program</label></li>
+      <li><label><input type="checkbox"> Three completed test records with actual measurements</label></li>
+      <li><label><input type="checkbox"> One-page user guide / SOP</label></li>
+      <li><label><input type="checkbox"> Risk assessment (from Module 13)</label></li>
+      <li><label><input type="checkbox"> Project plan / Gantt chart (from Module 14)</label></li>
+      <li><label><input type="checkbox"> Revision history on each document</label></li>
+    </ul>
+
+    <div class="ws-field">
+      <label>Test 1 — description, result, pass/fail</label>
+      <textarea placeholder="Spec point: ...&#10;Method: ...&#10;Result: ...&#10;Pass / Fail:"></textarea>
+    </div>
+    <div class="ws-field">
+      <label>Test 2 — description, result, pass/fail</label>
+      <textarea placeholder="Spec point: ...&#10;Method: ...&#10;Result: ...&#10;Pass / Fail:"></textarea>
+    </div>
+    <div class="ws-field">
+      <label>Test 3 — description, result, pass/fail</label>
+      <textarea placeholder="Spec point: ...&#10;Method: ...&#10;Result: ...&#10;Pass / Fail:"></textarea>
+    </div>
+    <div class="ws-field">
+      <label>Notes / gaps still to complete</label>
+      <textarea placeholder="Anything still missing from the documentation pack..."></textarea>
+    </div>
+  </div>
+
+  <!-- SO WHAT -->
+  <div class="section-card">
+    <span class="pill pill-sowhat">So What?</span>
+    <h2>Documentation as a Professional Skill</h2>
+    <p>In a survey of engineering employers, poor written communication consistently ranks in the top three skill gaps in new graduates. The ability to document a system clearly — so that someone else can understand, operate, and maintain it — is as valuable as the ability to build it.</p>
+    <p>The documentation pack you produce in this module is direct evidence of your engineering process. An assessor marking your project can tell, from your test records alone, whether you actually tested the system or just claimed it worked.</p>
+    <p><strong>Think about:</strong> Could a student who was not in your class pick up your documentation pack and successfully operate your arm program? If not, what is missing?</p>
+  </div>
+
+  <!-- MCQ -->
+  <div class="section-card">
+    <span class="pill pill-mcq">Quiz</span>
+    <h2>Check Your Understanding</h2>
+
+    <div class="mcq-question">
+      <p>1. A test record is most useful when it includes:</p>
+      <label class="mcq-option"><input type="radio" name="q1" value="a"> A description of how long the test took</label>
+      <label class="mcq-option"><input type="radio" name="q1" value="b"> Actual measured results, the specification point being tested, and a pass/fail verdict</label>
+      <label class="mcq-option"><input type="radio" name="q1" value="c"> A photo of the equipment</label>
+      <label class="mcq-option"><input type="radio" name="q1" value="d"> The engineer's opinion of whether it worked</label>
+      <div class="feedback-msg" id="q1-fb"></div>
+    </div>
+
+    <div class="mcq-question">
+      <p>2. Which document type is specifically required by law for machinery used in a workplace?</p>
+      <label class="mcq-option"><input type="radio" name="q2" value="a"> User guide</label>
+      <label class="mcq-option"><input type="radio" name="q2" value="b"> Circuit diagram</label>
+      <label class="mcq-option"><input type="radio" name="q2" value="c"> Risk assessment</label>
+      <label class="mcq-option"><input type="radio" name="q2" value="d"> Gantt chart</label>
+      <div class="feedback-msg" id="q2-fb"></div>
+    </div>
+
+    <div class="mcq-question">
+      <p>3. Good documentation is best described as:</p>
+      <label class="mcq-option"><input type="radio" name="q3" value="a"> As long and detailed as possible</label>
+      <label class="mcq-option"><input type="radio" name="q3" value="b"> Written only for expert audiences</label>
+      <label class="mcq-option"><input type="radio" name="q3" value="c"> Clear, complete, and appropriate for its intended audience</label>
+      <label class="mcq-option"><input type="radio" name="q3" value="d"> Created after the project is finished</label>
+      <div class="feedback-msg" id="q3-fb"></div>
+    </div>
+
+    <button class="check-btn" onclick="checkMCQ()">Check Answers</button>
+    <div class="score-bar-wrap"><div class="score-bar" id="score-bar"></div></div>
+    <div class="score-text" id="score-text"></div>
+  </div>
+
+  <div class="nav-row">
+    <a class="nav-btn" href="module-14.html">&#8592; Module 14</a>
+    <a class="nav-btn primary" href="module-16.html">Module 16 &#8594;</a>
+  </div>
+</div>
+
+<script>
+const answers = { q1: 'b', q2: 'c', q3: 'c' };
+const feedback = {
+  q1: { b: 'Correct! A useful test record includes actual measured results, the spec point being tested, and a clear pass/fail against that spec.', wrong: 'Not quite. A test record needs actual measured results, the specification point it is testing, and a pass/fail verdict.' },
+  q2: { c: 'Correct! Risk assessments are a legal requirement under PUWER 1998 and the Health and Safety at Work Act 1974.', wrong: 'Not quite. Risk assessments are the document specifically required by law (PUWER 1998) for machinery in the workplace.' },
+  q3: { c: 'Correct! Good documentation is clear, complete, and pitched at the right level for its intended audience.', wrong: 'Not quite. Good documentation is clear, complete, and appropriate for its intended audience — not necessarily long.' }
+};
+function checkMCQ() {
+  let score = 0;
+  ['q1','q2','q3'].forEach(q => {
+    const sel = document.querySelector(`input[name="${q}"]:checked`);
+    const fb = document.getElementById(`${q}-fb`);
+    if (!sel) { fb.textContent = 'Please select an answer.'; fb.className = 'feedback-msg feedback-wrong'; fb.style.display = 'block'; return; }
+    const correct = sel.value === answers[q];
+    if (correct) score++;
+    fb.textContent = correct ? feedback[q][sel.value] : feedback[q].wrong;
+    fb.className = 'feedback-msg ' + (correct ? 'feedback-correct' : 'feedback-wrong');
+    fb.style.display = 'block';
+  });
+  document.getElementById('score-bar').style.width = (score / 3 * 100) + '%';
+  document.getElementById('score-text').textContent = `Score: ${score} / 3`;
+}
+</script>
+<script src="worksheet.js"></script>
+</body>
+</html>

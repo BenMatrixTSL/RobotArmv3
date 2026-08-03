@@ -1,0 +1,86 @@
+<svg viewBox="0 0 620 400" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, sans-serif">
+  <rect width="620" height="400" fill="#f8fafc" rx="8"/>
+  <text x="310" y="24" text-anchor="middle" font-size="15" font-weight="700" fill="#1e293b">Project Gantt Chart — Template</text>
+  <text x="310" y="40" text-anchor="middle" font-size="11" fill="#64748b">Fill in your task bars — shade cells for the weeks each task is active</text>
+
+  <!-- Column widths: task name=160, then 8 week cols=56 each, total=160+448=608 -->
+  <!-- Header row -->
+  <rect x="20" y="52" width="160" height="30" rx="0" fill="#1e293b"/>
+  <text x="100" y="72" text-anchor="middle" font-size="11" font-weight="700" fill="white">Task</text>
+  <!-- Week headers -->
+  <rect x="180" y="52" width="448" height="30" fill="#334155" rx="0"/>
+  <text x="208" y="72" text-anchor="middle" font-size="10" fill="white">Wk 1</text>
+  <text x="264" y="72" text-anchor="middle" font-size="10" fill="white">Wk 2</text>
+  <text x="320" y="72" text-anchor="middle" font-size="10" fill="white">Wk 3</text>
+  <text x="376" y="72" text-anchor="middle" font-size="10" fill="white">Wk 4</text>
+  <text x="432" y="72" text-anchor="middle" font-size="10" fill="white">Wk 5</text>
+  <text x="488" y="72" text-anchor="middle" font-size="10" fill="white">Wk 6</text>
+  <text x="544" y="72" text-anchor="middle" font-size="10" fill="white">Wk 7</text>
+  <text x="600" y="72" text-anchor="middle" font-size="10" fill="white">Wk 8</text>
+
+  <!-- Row heights = 36 each, starting y=82 -->
+  <!-- Task rows with alternating bg -->
+  <rect x="20" y="82" width="608" height="36" fill="white" stroke="#e2e8f0" stroke-width="0.5"/>
+  <rect x="20" y="118" width="608" height="36" fill="#f8fafc" stroke="#e2e8f0" stroke-width="0.5"/>
+  <rect x="20" y="154" width="608" height="36" fill="white" stroke="#e2e8f0" stroke-width="0.5"/>
+  <rect x="20" y="190" width="608" height="36" fill="#f8fafc" stroke="#e2e8f0" stroke-width="0.5"/>
+  <rect x="20" y="226" width="608" height="36" fill="white" stroke="#e2e8f0" stroke-width="0.5"/>
+  <rect x="20" y="262" width="608" height="36" fill="#f8fafc" stroke="#e2e8f0" stroke-width="0.5"/>
+  <rect x="20" y="298" width="608" height="36" fill="white" stroke="#e2e8f0" stroke-width="0.5"/>
+  <rect x="20" y="334" width="608" height="36" fill="#f8fafc" stroke="#e2e8f0" stroke-width="0.5"/>
+
+  <!-- Task name column divider -->
+  <line x1="180" y1="52" x2="180" y2="370" stroke="#334155" stroke-width="1.5"/>
+
+  <!-- Vertical week dividers -->
+  <line x1="236" y1="52" x2="236" y2="370" stroke="#e2e8f0" stroke-width="1"/>
+  <line x1="292" y1="52" x2="292" y2="370" stroke="#e2e8f0" stroke-width="1"/>
+  <line x1="348" y1="52" x2="348" y2="370" stroke="#e2e8f0" stroke-width="1"/>
+  <line x1="404" y1="52" x2="404" y2="370" stroke="#e2e8f0" stroke-width="1"/>
+  <line x1="460" y1="52" x2="460" y2="370" stroke="#e2e8f0" stroke-width="1"/>
+  <line x1="516" y1="52" x2="516" y2="370" stroke="#e2e8f0" stroke-width="1"/>
+  <line x1="572" y1="52" x2="572" y2="370" stroke="#e2e8f0" stroke-width="1"/>
+
+  <!-- Task names -->
+  <text x="30" y="105" font-size="10" fill="#64748b">1. Brief &amp; Research</text>
+  <text x="30" y="141" font-size="10" fill="#64748b">2. Write Specification</text>
+  <text x="30" y="177" font-size="10" fill="#64748b">3. Design &amp; Plan</text>
+  <text x="30" y="213" font-size="10" fill="#64748b">4. Build / Program</text>
+  <text x="30" y="249" font-size="10" fill="#64748b">5. Test &amp; Debug</text>
+  <text x="30" y="285" font-size="10" fill="#64748b">6. Document</text>
+  <text x="30" y="321" font-size="10" fill="#64748b">7. Evaluate</text>
+  <text x="30" y="357" font-size="10" fill="#64748b">8. Present</text>
+
+  <!-- Example bars (filled) -->
+  <!-- Row 1: Wk1-2 -->
+  <rect x="183" y="88" width="108" height="22" rx="4" fill="#3b82f6" fill-opacity="0.85"/>
+  <text x="237" y="103" text-anchor="middle" font-size="9" fill="white">Research</text>
+  <!-- Row 2: Wk2-3 -->
+  <rect x="239" y="124" width="108" height="22" rx="4" fill="#7c3aed" fill-opacity="0.85"/>
+  <text x="293" y="139" text-anchor="middle" font-size="9" fill="white">Spec</text>
+  <!-- Row 3: Wk3-4 -->
+  <rect x="295" y="160" width="108" height="22" rx="4" fill="#ea580c" fill-opacity="0.85"/>
+  <text x="349" y="175" text-anchor="middle" font-size="9" fill="white">Design</text>
+  <!-- Row 4: Wk4-6 -->
+  <rect x="351" y="196" width="164" height="22" rx="4" fill="#16a34a" fill-opacity="0.85"/>
+  <text x="433" y="211" text-anchor="middle" font-size="9" fill="white">Build &amp; Program</text>
+  <!-- Row 5: Wk5-7 -->
+  <rect x="407" y="232" width="164" height="22" rx="4" fill="#0369a1" fill-opacity="0.85"/>
+  <text x="489" y="247" text-anchor="middle" font-size="9" fill="white">Test &amp; Debug</text>
+  <!-- Row 6: Wk5-7 -->
+  <rect x="407" y="268" width="110" height="22" rx="4" fill="#ca8a04" fill-opacity="0.85"/>
+  <text x="462" y="283" text-anchor="middle" font-size="9" fill="white">Document</text>
+  <!-- Row 7: Wk7 -->
+  <rect x="519" y="304" width="54" height="22" rx="4" fill="#dc2626" fill-opacity="0.85"/>
+  <text x="546" y="319" text-anchor="middle" font-size="9" fill="white">Evaluate</text>
+  <!-- Row 8: Wk8 -->
+  <rect x="575" y="340" width="51" height="22" rx="4" fill="#475569" fill-opacity="0.85"/>
+  <text x="600" y="355" text-anchor="middle" font-size="9" fill="white">Present</text>
+
+  <!-- Today marker line -->
+  <line x1="348" y1="52" x2="348" y2="370" stroke="#ef4444" stroke-width="2" stroke-dasharray="4,3"/>
+  <text x="348" y="48" text-anchor="middle" font-size="9" fill="#ef4444" font-weight="700">Today</text>
+
+  <!-- Legend -->
+  <text x="310" y="388" text-anchor="middle" font-size="10" fill="#64748b">Overlapping bars (rows 4+5) show parallel tasks — efficient project scheduling. Adapt this template for your own project.</text>
+</svg>

@@ -1,0 +1,472 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   viewBox="0 0 580 380"
+   font-family="system-ui, sans-serif"
+   version="1.1"
+   id="svg110"
+   sodipodi:docname="open-closed-loop.svg"
+   inkscape:version="1.2.2 (732a01da63, 2022-12-09)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview112"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     showgrid="false"
+     inkscape:zoom="2.0862069"
+     inkscape:cx="232.71901"
+     inkscape:cy="189.81818"
+     inkscape:window-width="1920"
+     inkscape:window-height="1009"
+     inkscape:window-x="-8"
+     inkscape:window-y="1042"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg110" />
+  <defs
+     id="defs8">
+    <marker
+       id="arrow"
+       markerWidth="8"
+       markerHeight="8"
+       refX="6"
+       refY="3"
+       orient="auto">
+      <path
+         d="M 0,0 V 6 L 8,3 Z"
+         fill="#475569"
+         id="path2" />
+    </marker>
+    <marker
+       id="arrow-b"
+       markerWidth="8"
+       markerHeight="8"
+       refX="6"
+       refY="3"
+       orient="auto">
+      <path
+         d="M 0,0 V 6 L 8,3 Z"
+         fill="#3b82f6"
+         id="path5" />
+    </marker>
+  </defs>
+  <rect
+     width="580"
+     height="380"
+     fill="#f8fafc"
+     rx="8"
+     id="rect10" />
+  <text
+     x="290"
+     y="26"
+     text-anchor="middle"
+     font-size="15"
+     font-weight="700"
+     fill="#1e293b"
+     id="text12">Open-Loop vs Closed-Loop Control</text>
+  <!-- ── OPEN LOOP (top) ── -->
+  <text
+     x="290"
+     y="58"
+     text-anchor="middle"
+     font-size="12"
+     font-weight="700"
+     fill="#ea580c"
+     id="text14">Open-Loop Control</text>
+  <text
+     x="290"
+     y="72"
+     text-anchor="middle"
+     font-size="10"
+     fill="#64748b"
+     id="text16">No feedback — output is not measured or corrected</text>
+  <!-- Input -->
+  <rect
+     x="30"
+     y="85"
+     width="90"
+     height="40"
+     rx="6"
+     fill="#fef3c7"
+     stroke="#d97706"
+     stroke-width="1.5"
+     id="rect18" />
+  <text
+     x="75"
+     y="103"
+     text-anchor="middle"
+     font-size="11px"
+     font-weight="600"
+     fill="#92400e"
+     id="text20">Input</text>
+  <text
+     x="75"
+     y="115"
+     text-anchor="middle"
+     font-size="9px"
+     fill="#92400e"
+     id="text22">(Command)</text>
+  <!-- Arrow -->
+  <line
+     x1="120"
+     y1="105"
+     x2="155"
+     y2="105"
+     stroke="#475569"
+     stroke-width="2"
+     marker-end="url(#arrow)"
+     id="line24" />
+  <!-- Controller -->
+  <rect
+     x="155"
+     y="85"
+     width="100"
+     height="40"
+     rx="6"
+     fill="#eff6ff"
+     stroke="#3b82f6"
+     stroke-width="1.5"
+     id="rect26" />
+  <text
+     x="205"
+     y="103"
+     text-anchor="middle"
+     font-size="11px"
+     font-weight="600"
+     fill="#1d4ed8"
+     id="text28">Controller</text>
+  <text
+     x="205"
+     y="115"
+     text-anchor="middle"
+     font-size="9px"
+     fill="#1d4ed8"
+     id="text30">(Python / Pi)</text>
+  <!-- Arrow -->
+  <line
+     x1="255"
+     y1="105"
+     x2="290"
+     y2="105"
+     stroke="#475569"
+     stroke-width="2"
+     marker-end="url(#arrow)"
+     id="line32" />
+  <!-- Plant / Actuator -->
+  <rect
+     x="290"
+     y="85"
+     width="100"
+     height="40"
+     rx="6"
+     fill="#f0fdf4"
+     stroke="#16a34a"
+     stroke-width="1.5"
+     id="rect34" />
+  <text
+     x="340"
+     y="103"
+     text-anchor="middle"
+     font-size="11px"
+     font-weight="600"
+     fill="#166534"
+     id="text36">Plant</text>
+  <text
+     x="340"
+     y="115"
+     text-anchor="middle"
+     font-size="9px"
+     fill="#166534"
+     id="text38">(Servo Motor)</text>
+  <!-- Arrow -->
+  <line
+     x1="390"
+     y1="105"
+     x2="425"
+     y2="105"
+     stroke="#475569"
+     stroke-width="2"
+     marker-end="url(#arrow)"
+     id="line40" />
+  <!-- Output -->
+  <rect
+     x="425"
+     y="85"
+     width="100"
+     height="40"
+     rx="6"
+     fill="#faf5ff"
+     stroke="#7c3aed"
+     stroke-width="1.5"
+     id="rect42" />
+  <text
+     x="475"
+     y="103"
+     text-anchor="middle"
+     font-size="11px"
+     font-weight="600"
+     fill="#6d28d9"
+     id="text44">Output</text>
+  <text
+     x="475"
+     y="115"
+     text-anchor="middle"
+     font-size="9px"
+     fill="#6d28d9"
+     id="text46">(Joint Position)</text>
+  <!-- X mark - no feedback -->
+  <line
+     x1="475"
+     y1="129"
+     x2="475"
+     y2="149"
+     stroke="#e2e8f0"
+     stroke-width="2"
+     stroke-dasharray="4, 3"
+     id="line48" />
+  <line
+     x1="403.51239"
+     y1="351"
+     x2="77.625832"
+     y2="351"
+     stroke="#3b82f6"
+     stroke-width="2"
+     marker-end="url(#arrow-b)"
+     id="line104" />
+  <text
+     x="475"
+     y="162"
+     text-anchor="middle"
+     font-size="18px"
+     fill="#ef4444"
+     id="text50">✕</text>
+  <line
+     x1="450"
+     y1="296"
+     x2="450"
+     y2="334"
+     stroke="#3b82f6"
+     stroke-width="2"
+     marker-end="url(#arrow-b)"
+     id="line100" />
+  <text
+     x="475"
+     y="176"
+     text-anchor="middle"
+     font-size="9px"
+     fill="#ef4444"
+     id="text52">No feedback</text>
+  <!-- ── CLOSED LOOP (bottom) ── -->
+  <line
+     x1="30"
+     y1="210"
+     x2="550"
+     y2="210"
+     stroke="#e2e8f0"
+     stroke-width="1.5"
+     stroke-dasharray="6,3"
+     id="line54" />
+  <text
+     x="290"
+     y="232"
+     text-anchor="middle"
+     font-size="12"
+     font-weight="700"
+     fill="#16a34a"
+     id="text56">Closed-Loop Control</text>
+  <text
+     x="290"
+     y="246"
+     text-anchor="middle"
+     font-size="10"
+     fill="#64748b"
+     id="text58">Feedback — output is measured and compared to the input</text>
+  <!-- Sum/Compare circle -->
+  <circle
+     cx="75"
+     cy="290"
+     r="20"
+     fill="#fef3c7"
+     stroke="#d97706"
+     stroke-width="1.5"
+     id="circle60" />
+  <text
+     x="75"
+     y="295"
+     text-anchor="middle"
+     font-size="16"
+     fill="#92400e"
+     id="text62">Σ</text>
+  <!-- Arrow from input -->
+  <line
+     x1="30"
+     y1="290"
+     x2="54"
+     y2="290"
+     stroke="#475569"
+     stroke-width="2"
+     marker-end="url(#arrow)"
+     id="line64" />
+  <text
+     x="18"
+     y="280"
+     font-size="9px"
+     fill="#92400e"
+     id="text66">setpoint</text>
+  <!-- Arrow to controller -->
+  <line
+     x1="95"
+     y1="290"
+     x2="130"
+     y2="290"
+     stroke="#475569"
+     stroke-width="2"
+     marker-end="url(#arrow)"
+     id="line70" />
+  <text
+     x="108"
+     y="281"
+     text-anchor="middle"
+     font-size="9px"
+     fill="#ef4444"
+     id="text72">error</text>
+  <!-- Controller -->
+  <rect
+     x="130"
+     y="268"
+     width="100"
+     height="44"
+     rx="6"
+     fill="#eff6ff"
+     stroke="#3b82f6"
+     stroke-width="1.5"
+     id="rect74" />
+  <text
+     x="180"
+     y="287"
+     text-anchor="middle"
+     font-size="11px"
+     font-weight="600"
+     fill="#1d4ed8"
+     id="text76">Controller</text>
+  <text
+     x="180"
+     y="300"
+     text-anchor="middle"
+     font-size="9px"
+     fill="#1d4ed8"
+     id="text78">(PID)</text>
+  <!-- Arrow -->
+  <line
+     x1="230"
+     y1="290"
+     x2="265"
+     y2="290"
+     stroke="#475569"
+     stroke-width="2"
+     marker-end="url(#arrow)"
+     id="line80" />
+  <!-- Plant -->
+  <rect
+     x="265"
+     y="268"
+     width="100"
+     height="44"
+     rx="6"
+     fill="#f0fdf4"
+     stroke="#16a34a"
+     stroke-width="1.5"
+     id="rect82" />
+  <text
+     x="315"
+     y="287"
+     text-anchor="middle"
+     font-size="11px"
+     font-weight="600"
+     fill="#166534"
+     id="text84">Plant</text>
+  <text
+     x="315"
+     y="300"
+     text-anchor="middle"
+     font-size="9px"
+     fill="#166534"
+     id="text86">(Servo Motor)</text>
+  <!-- Arrow -->
+  <line
+     x1="365"
+     y1="290"
+     x2="400"
+     y2="290"
+     stroke="#475569"
+     stroke-width="2"
+     marker-end="url(#arrow)"
+     id="line88" />
+  <!-- Output -->
+  <rect
+     x="400"
+     y="268"
+     width="100"
+     height="44"
+     rx="6"
+     fill="#faf5ff"
+     stroke="#7c3aed"
+     stroke-width="1.5"
+     id="rect90" />
+  <text
+     x="450"
+     y="287"
+     text-anchor="middle"
+     font-size="11px"
+     font-weight="600"
+     fill="#6d28d9"
+     id="text92">Output</text>
+  <text
+     x="450"
+     y="300"
+     text-anchor="middle"
+     font-size="9px"
+     fill="#6d28d9"
+     id="text94">(Position)</text>
+  <!-- Sensor block -->
+  <rect
+     x="400"
+     y="335"
+     width="100"
+     height="30"
+     rx="6"
+     fill="#fce7f3"
+     stroke="#be185d"
+     stroke-width="1.5"
+     id="rect96" />
+  <text
+     x="450"
+     y="352"
+     text-anchor="middle"
+     font-size="11px"
+     font-weight="600"
+     fill="#9d174d"
+     id="text98">Sensor</text>
+  <!-- Feedback arrows -->
+  <line
+     x1="75"
+     y1="310"
+     x2="75"
+     y2="350.61984"
+     stroke="#3b82f6"
+     stroke-width="2"
+     id="line106" />
+  <text
+     x="234"
+     y="363"
+     text-anchor="middle"
+     font-size="10px"
+     fill="#1d4ed8"
+     id="text108">Feedback signal (magnetic encoder reading)</text>
+</svg>

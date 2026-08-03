@@ -1,0 +1,973 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="curriculum-module" content="15">
+  <title>Module 15: Technical Documentation</title>
+  <style>
+    :root {
+      --bg: #f6f7f9;
+      --card: #fff;
+      --text: #1a1d26;
+      --muted: #5c6370;
+      --accent: #1e5a8a;
+      --border: #d8dde6;
+      --code-bg: #eef1f6;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 17px;
+      line-height: 1.55;
+      color: var(--text);
+      background: var(--bg);
+    }
+    .wrap {
+      max-width: 52rem;
+      margin: 0 auto;
+      padding: 1.25rem 1.25rem 3rem;
+    }
+    .top-nav {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.75rem 1rem;
+      padding: 0.75rem 0;
+      margin-bottom: 1.25rem;
+      border-bottom: 1px solid var(--border);
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+      font-size: 0.9rem;
+    }
+    .nav-title {
+      flex: 1 1 auto;
+      font-weight: 600;
+      color: var(--muted);
+      min-width: 12rem;
+    }
+    a.nav-link {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    a.nav-link:hover { text-decoration: underline; }
+    h1.page-title {
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+      font-size: 1.65rem;
+      font-weight: 700;
+      margin: 0 0 0.5rem;
+      line-height: 1.25;
+    }
+    p.lead {
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+      color: var(--muted);
+      margin: 0 0 1.5rem;
+      font-size: 0.95rem;
+    }
+    section.card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.25rem 1.5rem 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    }
+    section.card h2 {
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+      font-size: 1.15rem;
+      margin: 0 0 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid var(--accent);
+      color: var(--accent);
+    }
+    .card-inner {
+      font-family: Georgia, "Times New Roman", serif;
+    }
+    .card-inner h1, .card-inner h2, .card-inner h3, .card-inner h4 {
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+    }
+    .card-inner h1 { font-size: 1.35rem; }
+    .card-inner h2 { font-size: 1.15rem; border-bottom: none; color: var(--text); }
+    .card-inner h3 { font-size: 1.05rem; }
+    .card-inner h4 { font-size: 1rem; }
+    .card-inner code {
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 0.9em;
+      background: var(--code-bg);
+      padding: 0.1em 0.35em;
+      border-radius: 4px;
+    }
+    .card-inner pre {
+      background: var(--code-bg);
+      padding: 1rem;
+      overflow-x: auto;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+    }
+    .card-inner pre code {
+      background: none;
+      padding: 0;
+    }
+    .card-inner table {
+      border-collapse: collapse;
+      width: 100%;
+      font-size: 0.95rem;
+      margin: 1rem 0;
+    }
+    .card-inner th, .card-inner td {
+      border: 1px solid var(--border);
+      padding: 0.45rem 0.6rem;
+      text-align: left;
+      vertical-align: top;
+    }
+    .card-inner th {
+      background: #eef3f8;
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+      font-weight: 600;
+    }
+    ul.index-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+    }
+    ul.index-list li {
+      margin: 0.35rem 0;
+      padding: 0.5rem 0.65rem;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--card);
+    }
+    ul.index-list a {
+      color: var(--accent);
+      font-weight: 600;
+      text-decoration: none;
+    }
+    ul.index-list a:hover { text-decoration: underline; }
+    .index-meta {
+      display: block;
+      font-size: 0.85rem;
+      color: var(--muted);
+      font-weight: normal;
+      margin-top: 0.2rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <nav class="top-nav">
+  <a class="nav-link" href="index.html">All modules</a>
+  <a class="nav-link" href="module-14.html">← Previous</a>
+  <span class="nav-title">Module 15: Technical Documentation</span>
+  <a class="nav-link" href="module-16.html">Next →</a>
+</nav>
+<h1 class="page-title">Module 15: Technical Documentation</h1>
+<p class="lead">BTEC robot arm curriculum — one page per module. Work through sections in order.</p>
+<section class="card"><h2>Curriculum plan (from BTEC_Robot_Arm_Curriculum_Plan.md)</h2><div class="card-inner"><h2><strong>Module 15: Technical Documentation</strong></h2>
+<p><em>Across Levels - Building on Module 14</em></p>
+<h3>Learning Objectives Covered:</h3>
+<ul>
+<li>✅ <strong>Technical documentation</strong> (Across levels)</li>
+<li>Produce and maintain: system block diagrams, architecture descriptions, wiring diagrams, interface descriptions, kinematic/URDF descriptions, test plans/procedures/results</li>
+</ul>
+<h3>Content:</h3>
+<ol>
+<li>
+<p><strong>Documentation Standards</strong><br />
+   - Why document?<br />
+   - Documentation types<br />
+   - Standards and conventions<br />
+   - Audience considerations</p>
+</li>
+<li>
+<p><strong>System Documentation</strong><br />
+   - System block diagrams<br />
+   - Architecture descriptions<br />
+   - Component descriptions<br />
+   - Interface specifications</p>
+</li>
+<li>
+<p><strong>Electrical Documentation</strong><br />
+   - Wiring diagrams<br />
+   - Connection tables<br />
+   - Pin assignments<br />
+   - Power requirements</p>
+</li>
+<li>
+<p><strong>Mechanical Documentation</strong><br />
+   - Kinematic descriptions<br />
+   - URDF format<br />
+   - Link and joint specifications<br />
+   - Workspace descriptions</p>
+</li>
+<li>
+<p><strong>Test Documentation</strong><br />
+   - Test plans<br />
+   - Test procedures<br />
+   - Test results<br />
+   - Analysis and conclusions</p>
+</li>
+<li>
+<p><strong>Documentation Maintenance</strong><br />
+   - Keeping documents current<br />
+   - Version control<br />
+   - Review processes</p>
+</li>
+</ol>
+<h3>Practical Activities:</h3>
+<ul>
+<li>Create system block diagram</li>
+<li>Write architecture description</li>
+<li>Draw wiring diagram</li>
+<li>Create URDF description</li>
+<li>Write test plan</li>
+<li>Execute tests and document results</li>
+<li>Maintain documentation</li>
+<li>Present technical documentation</li>
+</ul>
+<hr /></div></section>
+<section class="card"><h2>Theory & teaching notes</h2><div class="card-inner"><h1>Module 15: Technical Documentation</h1>
+<h2>Theory &amp; Teaching Notes</h2>
+<p><strong>Module Duration:</strong> 2-3 hours<br />
+<strong>Level:</strong> Professional Skills (Across Levels)</p>
+<hr />
+<h2>Learning Objectives</h2>
+<p>By the end of this module, students will be able to:<br />
+- Understand why technical documentation is important<br />
+- Create system documentation<br />
+- Create electrical documentation<br />
+- Create mechanical documentation<br />
+- Create test documentation<br />
+- Maintain documentation</p>
+<hr />
+<h2>1. Documentation Standards</h2>
+<h3>Why Document?</h3>
+<p><strong>Documentation is important because:</strong></p>
+<ol>
+<li>
+<p><strong>Communication</strong><br />
+   - Explains system to others<br />
+   - Shares knowledge<br />
+   - Enables understanding</p>
+</li>
+<li>
+<p><strong>Maintenance</strong><br />
+   - Helps fix problems<br />
+   - Enables updates<br />
+   - Supports changes</p>
+</li>
+<li>
+<p><strong>Reference</strong><br />
+   - Look up information<br />
+   - Understand design<br />
+   - Learn system</p>
+</li>
+<li>
+<p><strong>Evidence</strong><br />
+   - Shows what was done<br />
+   - Documents decisions<br />
+   - Provides proof</p>
+</li>
+</ol>
+<p><strong>Think of it like:</strong> A manual for your system - tells others how it works and how to use it.</p>
+<h3>Documentation Types</h3>
+<p><strong>Types of documentation:</strong></p>
+<ol>
+<li>
+<p><strong>System Documentation</strong><br />
+   - Overall system description<br />
+   - Architecture<br />
+   - Components</p>
+</li>
+<li>
+<p><strong>Electrical Documentation</strong><br />
+   - Wiring diagrams<br />
+   - Connections<br />
+   - Power requirements</p>
+</li>
+<li>
+<p><strong>Mechanical Documentation</strong><br />
+   - Drawings<br />
+   - Specifications<br />
+   - Assembly instructions</p>
+</li>
+<li>
+<p><strong>Software Documentation</strong><br />
+   - Code comments<br />
+   - User manuals<br />
+   - API documentation</p>
+</li>
+<li>
+<p><strong>Test Documentation</strong><br />
+   - Test plans<br />
+   - Test results<br />
+   - Analysis</p>
+</li>
+</ol>
+<h3>Audience Considerations</h3>
+<p><strong>Who reads documentation?</strong></p>
+<ol>
+<li>
+<p><strong>Technical audience</strong><br />
+   - Engineers<br />
+   - Technicians<br />
+   - Developers<br />
+   - <strong>Need:</strong> Technical details</p>
+</li>
+<li>
+<p><strong>Non-technical audience</strong><br />
+   - Managers<br />
+   - Users<br />
+   - General public<br />
+   - <strong>Need:</strong> Simplified explanations</p>
+</li>
+</ol>
+<p><strong>Write for your audience:</strong><br />
+- Use appropriate language<br />
+- Include right level of detail<br />
+- Consider background knowledge</p>
+<hr />
+<h2>2. System Documentation</h2>
+<h3>System Block Diagrams</h3>
+<p><strong>What it is:</strong> Visual representation of system components</p>
+<p><strong>Shows:</strong><br />
+- Major components<br />
+- How components connect<br />
+- Data/control flow<br />
+- System structure</p>
+<p><strong>How to create:</strong><br />
+1. List all major components<br />
+2. Show connections<br />
+3. Label clearly<br />
+4. Use standard symbols</p>
+<p><strong>Example components:</strong><br />
+- Power Supply<br />
+- Controller (Raspberry Pi)<br />
+- Servos<br />
+- User Interface<br />
+- Communication Bus</p>
+<h3>Architecture Description</h3>
+<p><strong>What it is:</strong> Written description of system architecture</p>
+<p><strong>Includes:</strong><br />
+- System overview<br />
+- Component descriptions<br />
+- How components interact<br />
+- Design decisions</p>
+<p><strong>Structure:</strong><br />
+1. Introduction<br />
+2. System overview<br />
+3. Component descriptions<br />
+4. Interactions<br />
+5. Design rationale</p>
+<h3>Component Descriptions</h3>
+<p><strong>For each component, describe:</strong><br />
+- What it is<br />
+- What it does<br />
+- How it connects<br />
+- Specifications<br />
+- Purpose</p>
+<hr />
+<h2>3. Electrical Documentation</h2>
+<h3>Wiring Diagrams</h3>
+<p><strong>What it is:</strong> Diagram showing electrical connections</p>
+<p><strong>Shows:</strong><br />
+- Components<br />
+- Wires/connections<br />
+- Power flow<br />
+- Signal flow</p>
+<p><strong>Elements:</strong><br />
+- Component symbols<br />
+- Wire lines<br />
+- Connection points<br />
+- Labels<br />
+- Colors (if applicable)</p>
+<p><strong>How to create:</strong><br />
+1. Draw components<br />
+2. Draw connections<br />
+3. Label everything<br />
+4. Use standard symbols<br />
+5. Add notes if needed</p>
+<h3>Connection Tables</h3>
+<p><strong>What it is:</strong> Table listing all connections</p>
+<p><strong>Columns:</strong><br />
+- Connection name<br />
+- From (component/pin)<br />
+- To (component/pin)<br />
+- Type (power/data)<br />
+- Notes</p>
+<p><strong>Why useful:</strong><br />
+- Easy reference<br />
+- Complete list<br />
+- Clear documentation</p>
+<h3>Power Requirements</h3>
+<p><strong>Document:</strong><br />
+- Voltage requirements<br />
+- Current requirements<br />
+- Power consumption<br />
+- Power supply specifications</p>
+<p><strong>Why important:</strong><br />
+- Ensures adequate power<br />
+- Prevents problems<br />
+- Enables proper design</p>
+<hr />
+<h2>4. Mechanical Documentation</h2>
+<h3>Kinematic Description</h3>
+<p><strong>What it is:</strong> Description of robot arm kinematics</p>
+<p><strong>Includes:</strong><br />
+- Link lengths<br />
+- Joint types<br />
+- Joint axes<br />
+- Degrees of freedom<br />
+- Coordinate frames</p>
+<p><strong>Why important:</strong><br />
+- Understands structure<br />
+- Enables calculations<br />
+- Supports programming</p>
+<h3>URDF Description</h3>
+<p><strong>URDF</strong> = Unified Robot Description Format</p>
+<p><strong>What it is:</strong> Standard format for describing robots</p>
+<p><strong>Contains:</strong><br />
+- Link definitions<br />
+- Joint definitions<br />
+- Visual/ collision models<br />
+- Properties</p>
+<p><strong>Why useful:</strong><br />
+- Standard format<br />
+- Software compatible<br />
+- Reusable<br />
+- Complete description</p>
+<h3>Workspace Description</h3>
+<p><strong>Document:</strong><br />
+- Workspace dimensions<br />
+- Reach limits<br />
+- Dead zones<br />
+- Limitations</p>
+<p><strong>Why important:</strong><br />
+- Understands capabilities<br />
+- Plans movements<br />
+- Avoids problems</p>
+<hr />
+<h2>5. Test Documentation</h2>
+<h3>Test Plans</h3>
+<p><strong>What it is:</strong> Plan for testing</p>
+<p><strong>Includes:</strong><br />
+- Test objectives<br />
+- Test procedures<br />
+- Test cases<br />
+- Success criteria<br />
+- Resources needed</p>
+<p><strong>Structure:</strong><br />
+1. Introduction<br />
+2. Test objectives<br />
+3. Test procedures<br />
+4. Test cases<br />
+5. Success criteria</p>
+<h3>Test Procedures</h3>
+<p><strong>What it is:</strong> Step-by-step instructions for testing</p>
+<p><strong>Includes:</strong><br />
+- Setup steps<br />
+- Test steps<br />
+- Expected results<br />
+- Pass/fail criteria</p>
+<p><strong>Why important:</strong><br />
+- Repeatable tests<br />
+- Consistent results<br />
+- Clear procedures</p>
+<h3>Test Results</h3>
+<p><strong>What it is:</strong> Record of test execution</p>
+<p><strong>Includes:</strong><br />
+- Test case<br />
+- Date/time<br />
+- Tester<br />
+- Actual results<br />
+- Pass/fail<br />
+- Notes</p>
+<p><strong>Why important:</strong><br />
+- Documents testing<br />
+- Shows compliance<br />
+- Enables analysis</p>
+<h3>Test Analysis</h3>
+<p><strong>What it is:</strong> Analysis of test results</p>
+<p><strong>Includes:</strong><br />
+- Summary of results<br />
+- Issues found<br />
+- Analysis<br />
+- Recommendations</p>
+<p><strong>Why important:</strong><br />
+- Understands results<br />
+- Identifies problems<br />
+- Guides improvements</p>
+<hr />
+<h2>6. Documentation Maintenance</h2>
+<h3>Version Control</h3>
+<p><strong>What it is:</strong> Tracking changes to documentation</p>
+<p><strong>Why important:</strong><br />
+- Knows current version<br />
+- Tracks changes<br />
+- Enables rollback<br />
+- Maintains history</p>
+<p><strong>How to do it:</strong><br />
+- Version numbers (1.0, 1.1, 2.0)<br />
+- Change logs<br />
+- Date stamps<br />
+- Author information</p>
+<h3>Review Process</h3>
+<p><strong>Why review:</strong><br />
+- Ensures accuracy<br />
+- Checks completeness<br />
+- Verifies clarity<br />
+- Catches errors</p>
+<p><strong>Who reviews:</strong><br />
+- Technical experts<br />
+- Users<br />
+- Peers<br />
+- Supervisors</p>
+<p><strong>When to review:</strong><br />
+- Before release<br />
+- After major changes<br />
+- Periodically<br />
+- When problems found</p>
+<h3>Keeping Current</h3>
+<p><strong>Why important:</strong><br />
+- Outdated docs are useless<br />
+- Can cause problems<br />
+- Misleads users<br />
+- Wastes time</p>
+<p><strong>How to keep current:</strong><br />
+- Update when system changes<br />
+- Regular reviews<br />
+- Version control<br />
+- Clear update process</p>
+<hr />
+<h2>7. Summary</h2>
+<h3>Key Concepts</h3>
+<ol>
+<li><strong>Documentation</strong> communicates and enables maintenance</li>
+<li><strong>System documentation</strong> describes overall system</li>
+<li><strong>Electrical documentation</strong> shows wiring and connections</li>
+<li><strong>Mechanical documentation</strong> describes structure</li>
+<li><strong>Test documentation</strong> records testing</li>
+<li><strong>Documentation maintenance</strong> keeps docs current</li>
+<li><strong>Version control</strong> tracks changes</li>
+</ol>
+<h3>Understanding Documentation</h3>
+<p>You should now understand:<br />
+- Why documentation matters<br />
+- What to document<br />
+- How to create documentation<br />
+- How to maintain documentation<br />
+- How to organize documentation</p>
+<h3>Next Steps</h3>
+<p>After learning this theory, you will:<br />
+- Create system documentation<br />
+- Create electrical documentation<br />
+- Create mechanical documentation<br />
+- Create test documentation<br />
+- Set up version control<br />
+- Complete the Module 15 worksheet</p>
+<hr />
+<h2>Questions for Review</h2>
+<p>Before moving to the worksheet, make sure you can answer:</p>
+<ol>
+<li>Why is technical documentation important?</li>
+<li>What is a system block diagram?</li>
+<li>What should wiring diagrams show?</li>
+<li>What is URDF?</li>
+<li>What should test plans include?</li>
+<li>Why is version control important?</li>
+<li>How do you keep documentation current?</li>
+</ol>
+<hr />
+<p><strong>Remember:</strong> Good documentation is essential for understanding, maintaining, and using systems. Take time to document well, and it will save time later!</p></div></section>
+<section class="card"><h2>Student worksheet</h2><div class="card-inner"><h1>Module 15: Technical Documentation</h1>
+<h2>Student Worksheet</h2>
+<p><strong>Name:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_<br />
+<strong>Date:</strong> </em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>_<br />
+<strong>Group/Class:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>____</p>
+<hr />
+<h2>Part 1: Documentation Standards</h2>
+<h3>Question 1: Why Document?</h3>
+<p>Why is technical documentation important?</p>
+<hr />
+<hr />
+<h3>Question 2: Documentation Types</h3>
+<p>List types of technical documentation:</p>
+<ol>
+<li>
+<hr />
+</li>
+<li>
+<hr />
+</li>
+<li>
+<hr />
+</li>
+<li>
+<hr />
+</li>
+<li>
+<hr />
+</li>
+</ol>
+<hr />
+<h2>Part 2: System Documentation</h2>
+<h3>Question 3: System Block Diagram</h3>
+<p>Create a system block diagram:</p>
+<p>[Space for diagram]</p>
+<h3>Question 4: Architecture Description</h3>
+<p>Write an architecture description:</p>
+<hr />
+<hr />
+<hr />
+<h3>Question 5: Component Descriptions</h3>
+<p>Document key components:</p>
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Description</th>
+<th>Function</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>Part 3: Electrical Documentation</h2>
+<h3>Question 6: Wiring Diagram</h3>
+<p>Create a wiring diagram:</p>
+<p>[Space for diagram]</p>
+<h3>Question 7: Connection Table</h3>
+<p>Create a connection table:</p>
+<table>
+<thead>
+<tr>
+<th>Connection</th>
+<th>From</th>
+<th>To</th>
+<th>Type</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h3>Question 8: Power Requirements</h3>
+<p>Document power requirements:</p>
+<p><strong>Voltage:</strong> <strong><em>_</em></strong> V<br />
+<strong>Current:</strong> <strong><em>_</em></strong> A<br />
+<strong>Power:</strong> <strong><em>_</em></strong> W</p>
+<hr />
+<h2>Part 4: Mechanical Documentation</h2>
+<h3>Question 9: Kinematic Description</h3>
+<p>Write a kinematic description:</p>
+<hr />
+<hr />
+<hr />
+<h3>Question 10: URDF Description</h3>
+<p>Create or document URDF description:</p>
+<p><strong>Key elements:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<p><strong>Link specifications:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<p><strong>Joint specifications:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<h3>Question 11: Workspace Description</h3>
+<p>Document workspace:</p>
+<p><strong>Dimensions:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<p><strong>Limitations:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<hr />
+<h2>Part 5: Test Documentation</h2>
+<h3>Question 12: Test Plan</h3>
+<p>Create a test plan:</p>
+<p><strong>Test objectives:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<p><strong>Test procedures:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<p><strong>Test cases:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<h3>Question 13: Test Results</h3>
+<p>Document test results:</p>
+<table>
+<thead>
+<tr>
+<th>Test Case</th>
+<th>Expected</th>
+<th>Actual</th>
+<th>Pass/Fail</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h3>Question 14: Test Analysis</h3>
+<p>Analyze test results:</p>
+<p><strong>Summary:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<p><strong>Issues found:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<p><strong>Recommendations:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<hr />
+<h2>Part 6: Documentation Maintenance</h2>
+<h3>Question 15: Version Control</h3>
+<p>Set up version control for documentation:</p>
+<p><strong>Version:</strong> <strong><em>_</em></strong><br />
+<strong>Date:</strong> <strong><em>_</em></strong><br />
+<strong>Changes:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<h3>Question 16: Review Process</h3>
+<p>Plan documentation review:</p>
+<p><strong>Who reviews?</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<p><strong>How often?</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<p><strong>Review criteria:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<hr />
+<h2>Part 7: Complete Documentation Package</h2>
+<h3>Exercise: Documentation Portfolio</h3>
+<p>Create a complete documentation package including:<br />
+- System documentation<br />
+- Electrical documentation<br />
+- Mechanical documentation<br />
+- Test documentation<br />
+- Version control</p>
+<p>[Space for portfolio]</p>
+<hr />
+<h2>Part 8: Reflection</h2>
+<h3>Question 17: Documentation</h3>
+<p>Answer the following:</p>
+<p>a) What was most challenging about creating documentation?</p>
+<hr />
+<hr />
+<p>b) How does good documentation help?</p>
+<hr />
+<hr />
+<hr />
+<h2>Self-Assessment Checklist</h2>
+<ul>
+<li>[ ] Understood documentation standards</li>
+<li>[ ] Created system documentation</li>
+<li>[ ] Created electrical documentation</li>
+<li>[ ] Created mechanical documentation</li>
+<li>[ ] Created test documentation</li>
+<li>[ ] Set up version control</li>
+<li>[ ] Created documentation portfolio</li>
+<li>[ ] Written reflection</li>
+</ul>
+<p><strong>Student Signature:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_<br />
+<strong>Date:</strong> </em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><em><br />
+<strong>Instructor Signature:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_<br />
+<strong>Date:</strong> </em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong></em></p></div></section>
+<section class="card"><h2>Multiple choice questions</h2><div class="card-inner"><h1>Module 15: Technical Documentation</h1>
+<h2>Multiple Choice Questions</h2>
+<p><strong>Instructions:</strong> Choose the best answer for each question.</p>
+<hr />
+<p><strong>1. Why is technical documentation important?</strong><br />
+   a) It's not important<br />
+   b) To communicate system design and enable maintenance<br />
+   c) To make it faster<br />
+   d) To make it slower</p>
+<p><strong>2. What is a system block diagram?</strong><br />
+   a) A visual representation of system components<br />
+   b) A list of parts<br />
+   c) A budget<br />
+   d) A schedule</p>
+<p><strong>3. What is a wiring diagram?</strong><br />
+   a) A diagram showing electrical connections<br />
+   b) A diagram showing mechanical parts<br />
+   c) A diagram showing software<br />
+   d) A diagram showing costs</p>
+<p><strong>4. What is URDF?</strong><br />
+   a) Unified Robot Description Format<br />
+   b) A programming language<br />
+   c) A controller<br />
+   d) A sensor</p>
+<p><strong>5. What should a test plan include?</strong><br />
+   a) Test objectives, procedures, and cases<br />
+   b) Only test results<br />
+   c) Only test objectives<br />
+   d) Only procedures</p>
+<p><strong>6. Why document test results?</strong><br />
+   a) To verify system meets requirements<br />
+   b) It's not important<br />
+   c) To make it faster<br />
+   d) To make it slower</p>
+<p><strong>7. What is version control?</strong><br />
+   a) Tracking changes to documentation<br />
+   b) Controlling the robot<br />
+   c) Controlling speed<br />
+   d) Controlling cost</p>
+<p><strong>8. Why review documentation?</strong><br />
+   a) To ensure accuracy and completeness<br />
+   b) It's not important<br />
+   c) To make it faster<br />
+   d) To make it slower</p>
+<p><strong>9. What should mechanical documentation include?</strong><br />
+   a) Kinematics, links, joints, workspace<br />
+   b) Only software<br />
+   c) Only electrical<br />
+   d) Only costs</p>
+<p><strong>10. What makes good documentation?</strong><br />
+   a) Clear, complete, accurate, organized<br />
+   b) Vague and incomplete<br />
+   c) Only diagrams<br />
+   d) Only text</p>
+<hr />
+<h2>Answer Key</h2>
+<ol>
+<li><strong>b)</strong> To communicate system design and enable maintenance</li>
+<li><strong>a)</strong> A visual representation of system components</li>
+<li><strong>a)</strong> A diagram showing electrical connections</li>
+<li><strong>a)</strong> Unified Robot Description Format</li>
+<li><strong>a)</strong> Test objectives, procedures, and cases</li>
+<li><strong>a)</strong> To verify system meets requirements</li>
+<li><strong>a)</strong> Tracking changes to documentation</li>
+<li><strong>a)</strong> To ensure accuracy and completeness</li>
+<li><strong>a)</strong> Kinematics, links, joints, workspace</li>
+<li><strong>a)</strong> Clear, complete, accurate, organized</li>
+</ol>
+<hr />
+<h2>Scoring Guide</h2>
+<ul>
+<li><strong>9-10 correct:</strong> Excellent understanding</li>
+<li><strong>7-8 correct:</strong> Good understanding</li>
+<li><strong>5-6 correct:</strong> Satisfactory understanding</li>
+<li><strong>Below 5 correct:</strong> Needs review</li>
+</ul></div></section>
+<section class="card"><h2>Assessment rubric</h2><div class="card-inner"><h1>Module 15: Technical Documentation</h1>
+<h2>Assessment Rubric</h2>
+<p><strong>Student Name:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_<br />
+<strong>Date:</strong> </em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>_<br />
+<strong>Assessor:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>____</p>
+<hr />
+<h2>Overall Assessment Criteria</h2>
+<table>
+<thead>
+<tr>
+<th>Criteria</th>
+<th>Excellent (4)</th>
+<th>Good (3)</th>
+<th>Satisfactory (2)</th>
+<th>Needs Improvement (1)</th>
+<th>Score</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Knowledge &amp; Understanding</strong></td>
+<td>Comprehensive understanding of documentation</td>
+<td>Good understanding</td>
+<td>Basic understanding</td>
+<td>Limited understanding</td>
+<td>/4</td>
+</tr>
+<tr>
+<td><strong>Documentation Skills</strong></td>
+<td>Complete, accurate, well-organized documentation</td>
+<td>Good documentation</td>
+<td>Basic documentation</td>
+<td>Poor documentation</td>
+<td>/4</td>
+</tr>
+<tr>
+<td><strong>Analysis &amp; Application</strong></td>
+<td>Clear test documentation and analysis</td>
+<td>Good analysis</td>
+<td>Basic analysis</td>
+<td>Limited analysis</td>
+<td>/4</td>
+</tr>
+<tr>
+<td><strong>Organization</strong></td>
+<td>Well-organized documentation package</td>
+<td>Good organization</td>
+<td>Basic organization</td>
+<td>Poor organization</td>
+<td>/4</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Total Score:</strong> /16</p>
+<hr />
+<h2>Detailed Marking Guide</h2>
+<h3>Part 1: Standards (10 marks)</h3>
+<ul>
+<li><strong>Question 1:</strong> 5 marks</li>
+<li><strong>Question 2:</strong> 5 marks</li>
+</ul>
+<p><strong>Mark:</strong> /10</p>
+<hr />
+<h3>Part 2: System Documentation (20 marks)</h3>
+<ul>
+<li><strong>Question 3:</strong> 8 marks (block diagram)</li>
+<li><strong>Question 4:</strong> 6 marks (architecture)</li>
+<li><strong>Question 5:</strong> 6 marks (components)</li>
+</ul>
+<p><strong>Mark:</strong> /20</p>
+<hr />
+<h3>Part 3: Electrical Documentation (20 marks)</h3>
+<ul>
+<li><strong>Question 6:</strong> 8 marks (wiring diagram)</li>
+<li><strong>Question 7:</strong> 7 marks (connection table)</li>
+<li><strong>Question 8:</strong> 5 marks (power requirements)</li>
+</ul>
+<p><strong>Mark:</strong> /20</p>
+<hr />
+<h3>Part 4: Mechanical Documentation (20 marks)</h3>
+<ul>
+<li><strong>Question 9:</strong> 7 marks (kinematics)</li>
+<li><strong>Question 10:</strong> 7 marks (URDF)</li>
+<li><strong>Question 11:</strong> 6 marks (workspace)</li>
+</ul>
+<p><strong>Mark:</strong> /20</p>
+<hr />
+<h3>Part 5: Test Documentation (20 marks)</h3>
+<ul>
+<li><strong>Question 12:</strong> 7 marks (test plan)</li>
+<li><strong>Question 13:</strong> 7 marks (test results)</li>
+<li><strong>Question 14:</strong> 6 marks (analysis)</li>
+</ul>
+<p><strong>Mark:</strong> /20</p>
+<hr />
+<h3>Part 6: Maintenance (10 marks)</h3>
+<ul>
+<li><strong>Question 15:</strong> 5 marks (version control)</li>
+<li><strong>Question 16:</strong> 5 marks (review process)</li>
+</ul>
+<p><strong>Mark:</strong> /10</p>
+<hr />
+<h3>Part 7: Documentation Portfolio (15 marks)</h3>
+<ul>
+<li><strong>Exercise:</strong> 15 marks (complete package)</li>
+</ul>
+<p><strong>Mark:</strong> /15</p>
+<hr />
+<h3>Part 8: Reflection (5 marks)</h3>
+<ul>
+<li><strong>Question 17:</strong> 5 marks</li>
+</ul>
+<p><strong>Mark:</strong> /5</p>
+<hr />
+<p><strong>Final Grade:</strong> <strong><em>_</em></strong>____ / 100</p>
+<p><strong>Assessor Comments:</strong></p>
+<hr />
+<hr />
+<p><strong>Assessor Signature:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_<br />
+<strong>Date:</strong> </em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>_</p></div></section>
+  </div>
+</body>
+</html>

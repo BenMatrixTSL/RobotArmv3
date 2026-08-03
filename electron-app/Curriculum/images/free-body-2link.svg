@@ -1,0 +1,535 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   viewBox="0 0 520 360"
+   font-family="system-ui, sans-serif"
+   version="1.1"
+   id="svg40"
+   sodipodi:docname="free-body-2link.svg"
+   inkscape:version="1.3.2 (091e20e, 2023-11-25, custom)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview40"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:zoom="2.2846154"
+     inkscape:cx="259.78114"
+     inkscape:cy="180.11785"
+     inkscape:window-width="1920"
+     inkscape:window-height="1057"
+     inkscape:window-x="-1"
+     inkscape:window-y="-8"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg40" />
+  <defs
+     id="defs4">
+    <marker
+       id="arr-r"
+       markerWidth="8"
+       markerHeight="8"
+       refX="6"
+       refY="3"
+       orient="auto">
+      <path
+         d="M0,0 L0,6 L8,3 Z"
+         fill="#dc2626"
+         id="path1" />
+    </marker>
+    <marker
+       id="arr-b"
+       markerWidth="8"
+       markerHeight="8"
+       refX="6"
+       refY="3"
+       orient="auto">
+      <path
+         d="M0,0 L0,6 L8,3 Z"
+         fill="#3b82f6"
+         id="path2" />
+    </marker>
+    <marker
+       id="arr-g"
+       markerWidth="8"
+       markerHeight="8"
+       refX="6"
+       refY="3"
+       orient="auto">
+      <path
+         d="M0,0 L0,6 L8,3 Z"
+         fill="#16a34a"
+         id="path3" />
+    </marker>
+    <marker
+       id="arr-p"
+       markerWidth="8"
+       markerHeight="8"
+       refX="6"
+       refY="3"
+       orient="auto">
+      <path
+         d="M0,0 L0,6 L8,3 Z"
+         fill="#7c3aed"
+         id="path4" />
+    </marker>
+  </defs>
+  <rect
+     width="520"
+     height="360"
+     fill="#f8fafc"
+     rx="8"
+     id="rect4" />
+  <text
+     x="260"
+     y="22"
+     text-anchor="middle"
+     font-size="14"
+     font-weight="700"
+     fill="#1e293b"
+     id="text4">Free Body Diagram — 2-Link Arm</text>
+  <text
+     x="260"
+     y="38"
+     text-anchor="middle"
+     font-size="10"
+     fill="#64748b"
+     id="text5">Reaction forces and motor torques at each joint under static loading</text>
+  <!-- Ground / base -->
+  <rect
+     x="96"
+     y="240"
+     width="50"
+     height="12"
+     rx="0"
+     fill="#94a3b8"
+     id="rect5" />
+  <line
+     x1="86"
+     y1="252"
+     x2="156"
+     y2="252"
+     stroke="#475569"
+     stroke-width="2"
+     id="line5" />
+  <line
+     x1="86"
+     y1="252"
+     x2="90"
+     y2="257"
+     stroke="#475569"
+     stroke-width="1.5"
+     id="line6" />
+  <line
+     x1="92"
+     y1="252"
+     x2="96"
+     y2="257"
+     stroke="#475569"
+     stroke-width="1.5"
+     id="line7" />
+  <line
+     x1="98"
+     y1="252"
+     x2="102"
+     y2="257"
+     stroke="#475569"
+     stroke-width="1.5"
+     id="line8" />
+  <line
+     x1="104"
+     y1="252"
+     x2="108"
+     y2="257"
+     stroke="#475569"
+     stroke-width="1.5"
+     id="line9" />
+  <line
+     x1="110"
+     y1="252"
+     x2="114"
+     y2="257"
+     stroke="#475569"
+     stroke-width="1.5"
+     id="line10" />
+  <line
+     x1="116"
+     y1="252"
+     x2="120"
+     y2="257"
+     stroke="#475569"
+     stroke-width="1.5"
+     id="line11" />
+  <line
+     x1="122"
+     y1="252"
+     x2="126"
+     y2="257"
+     stroke="#475569"
+     stroke-width="1.5"
+     id="line12" />
+  <line
+     x1="128"
+     y1="252"
+     x2="132"
+     y2="257"
+     stroke="#475569"
+     stroke-width="1.5"
+     id="line13" />
+  <line
+     x1="134"
+     y1="252"
+     x2="138"
+     y2="257"
+     stroke="#475569"
+     stroke-width="1.5"
+     id="line14" />
+  <line
+     x1="140"
+     y1="252"
+     x2="144"
+     y2="257"
+     stroke="#475569"
+     stroke-width="1.5"
+     id="line15" />
+  <line
+     x1="146"
+     y1="252"
+     x2="150"
+     y2="257"
+     stroke="#475569"
+     stroke-width="1.5"
+     id="line16" />
+  <line
+     x1="152"
+     y1="252"
+     x2="156"
+     y2="257"
+     stroke="#475569"
+     stroke-width="1.5"
+     id="line17" />
+  <!-- Joint J1 (base) -->
+  <circle
+     cx="121"
+     cy="236"
+     r="10"
+     fill="#ffffff"
+     stroke="#3b82f6"
+     stroke-width="3"
+     id="circle17" />
+  <text
+     x="121"
+     y="240"
+     text-anchor="middle"
+     font-size="9px"
+     font-weight="700"
+     fill="#3b82f6"
+     id="text17">J1</text>
+  <text
+     x="121"
+     y="271"
+     text-anchor="middle"
+     font-size="9px"
+     fill="#3b82f6"
+     id="text18">Base joint</text>
+  <!-- Link 1: from J1 upward-right -->
+  <rect
+     x="117"
+     y="140"
+     width="180"
+     height="22"
+     rx="6"
+     fill="#3b82f6"
+     opacity="0.25"
+     stroke="#3b82f6"
+     stroke-width="2"
+     id="rect18" />
+  <text
+     x="207"
+     y="155"
+     text-anchor="middle"
+     font-size="10"
+     font-weight="700"
+     fill="#1d4ed8"
+     id="text19">Link 1 (m₁, L₁)</text>
+  <!-- Joint J2 (elbow) -->
+  <circle
+     cx="299"
+     cy="151"
+     r="10"
+     fill="white"
+     stroke="#7c3aed"
+     stroke-width="3"
+     id="circle19" />
+  <text
+     x="299"
+     y="155"
+     text-anchor="middle"
+     font-size="9"
+     font-weight="700"
+     fill="#7c3aed"
+     id="text20">J2</text>
+  <text
+     x="310"
+     y="175"
+     font-size="9"
+     fill="#7c3aed"
+     id="text21">Elbow joint</text>
+  <!-- Link 2: from J2 further right and slightly up -->
+  <rect
+     x="293"
+     y="72"
+     width="150"
+     height="22"
+     rx="6"
+     fill="#7c3aed"
+     opacity="0.25"
+     stroke="#7c3aed"
+     stroke-width="2"
+     id="rect21" />
+  <text
+     x="368"
+     y="87"
+     text-anchor="middle"
+     font-size="10"
+     font-weight="700"
+     fill="#6d28d9"
+     id="text22">Link 2 (m₂, L₂)</text>
+  <!-- End-effector (tip) -->
+  <circle
+     cx="445"
+     cy="83"
+     r="7"
+     fill="#ea580c"
+     id="circle22" />
+  <text
+     x="457"
+     y="88"
+     font-size="9"
+     fill="#ea580c"
+     id="text23">EE</text>
+  <!-- Weight W1 acting at centre of link 1 -->
+  <ellipse
+     cx="207"
+     cy="-163.09764"
+     fill="#dc2626"
+     id="circle23"
+     transform="scale(1,-1)"
+     style="stroke-width:1"
+     rx="4"
+     ry="4.0976434" />
+  <line
+     x1="207"
+     y1="161.56566"
+     x2="207"
+     y2="197.91751"
+     stroke="#dc2626"
+     stroke-width="2"
+     marker-end="url(#arr-r)"
+     id="line23" />
+  <text
+     x="211.93602"
+     y="179.30977"
+     font-size="9px"
+     fill="#dc2626"
+     id="text24">W₁=m₁g</text>
+  <!-- Weight W2 acting at centre of link 2 -->
+  <circle
+     cx="368"
+     cy="95"
+     r="4"
+     fill="#dc2626"
+     id="circle24" />
+  <line
+     x1="368"
+     y1="94.878784"
+     x2="368"
+     y2="132.95898"
+     stroke="#dc2626"
+     stroke-width="2"
+     marker-end="url(#arr-r)"
+     id="line24" />
+  <text
+     x="370.74747"
+     y="112.30976"
+     font-size="9px"
+     fill="#dc2626"
+     id="text25">W₂=m₂g</text>
+  <!-- Payload at tip -->
+  <line
+     x1="445"
+     y1="90"
+     x2="445"
+     y2="148"
+     stroke="#ea580c"
+     stroke-width="2"
+     marker-end="url(#arr-r)"
+     id="line25" />
+  <text
+     x="453"
+     y="128"
+     font-size="9"
+     fill="#ea580c"
+     id="text26">F_pay</text>
+  <text
+     x="453"
+     y="140"
+     font-size="9"
+     fill="#ea580c"
+     id="text27">(payload)</text>
+  <!-- Reaction at J1 (upward blue) -->
+  <line
+     x1="121"
+     y1="223"
+     x2="121"
+     y2="172"
+     stroke="#3b82f6"
+     stroke-width="2"
+     marker-end="url(#arr-b)"
+     id="line27" />
+  <text
+     x="123.90572"
+     y="194.74748"
+     font-size="9px"
+     fill="#3b82f6"
+     id="text28">R_J1</text>
+  <!-- Reaction at J2 (upward green) -->
+  <line
+     x1="299"
+     y1="138"
+     x2="299"
+     y2="102"
+     stroke="#16a34a"
+     stroke-width="2"
+     marker-end="url(#arr-g)"
+     id="line28" />
+  <text
+     x="307.12457"
+     y="117.49495"
+     font-size="9px"
+     fill="#16a34a"
+     id="text29">R_J2</text>
+  <!-- Motor torque arcs -->
+  <path
+     d="m 111,226 c -0.40879,-13.42375 21.02893,-13.63049 21,0"
+     stroke="#3b82f6"
+     stroke-width="2"
+     fill="none"
+     stroke-dasharray="4, 2"
+     id="path29"
+     sodipodi:nodetypes="cc" />
+  <path
+     d="m 287.9619,141.15174 c -0.40879,-13.42375 21.02893,-13.63049 21,0"
+     stroke="#3b82f6"
+     stroke-width="2"
+     fill="none"
+     stroke-dasharray="4, 2"
+     id="path29-2"
+     sodipodi:nodetypes="cc"
+     style="stroke:#7c3aed;stroke-opacity:1" />
+  <text
+     x="91.562286"
+     y="224.24916"
+     font-size="8px"
+     fill="#3b82f6"
+     id="text30">M_J1</text>
+  <text
+     x="269.30975"
+     y="132.80807"
+     font-size="8px"
+     fill="#7c3aed"
+     id="text31">M_J2</text>
+  <!-- Moment arm annotations -->
+  <line
+     x1="121"
+     y1="212"
+     x2="445"
+     y2="212"
+     stroke="#94a3b8"
+     stroke-width="1"
+     stroke-dasharray="3, 2"
+     id="line31" />
+  <line
+     x1="121"
+     y1="208"
+     x2="121"
+     y2="216"
+     stroke="#94a3b8"
+     stroke-width="1"
+     id="line32" />
+  <line
+     x1="445"
+     y1="208"
+     x2="445"
+     y2="216"
+     stroke="#94a3b8"
+     stroke-width="1"
+     id="line33" />
+  <text
+     x="283"
+     y="227"
+     text-anchor="middle"
+     font-size="9px"
+     fill="#94a3b8"
+     id="text33">d_total = L₁ + L₂ (moment arm for M_J1)</text>
+  <!-- Equations box -->
+  <rect
+     x="10"
+     y="280"
+     width="500"
+     height="54"
+     rx="6"
+     fill="#ffffff"
+     stroke="#e2e8f0"
+     stroke-width="1.5"
+     id="rect33" />
+  <text
+     x="260"
+     y="295"
+     text-anchor="middle"
+     font-size="10px"
+     font-weight="700"
+     fill="#1e293b"
+     id="text34">Static equilibrium equations:</text>
+  <text
+     x="15"
+     y="310"
+     font-size="9px"
+     fill="#64748b"
+     id="text35">M_J2 = W₂·(L₂/2) + F_pay·L₂</text>
+  <text
+     x="15"
+     y="324"
+     font-size="9px"
+     fill="#64748b"
+     id="text36">R_J2 = W₂ + F_pay</text>
+  <text
+     x="200"
+     y="310"
+     font-size="9px"
+     fill="#64748b"
+     id="text37">M_J1 = W₁·(L₁/2) + R_J2·L₁</text>
+  <text
+     x="200"
+     y="324"
+     font-size="9px"
+     fill="#64748b"
+     id="text38">R_J1 = W₁ + R_J2</text>
+  <text
+     x="398"
+     y="310"
+     font-size="9px"
+     fill="#3b82f6"
+     id="text39">J1 carries the weight</text>
+  <text
+     x="398"
+     y="324"
+     font-size="9px"
+     fill="#3b82f6"
+     id="text40">of the whole arm!</text>
+</svg>

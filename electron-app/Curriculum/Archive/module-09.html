@@ -1,0 +1,1018 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="curriculum-module" content="9">
+  <title>Module 9: Software Architecture &amp; Advanced Programming</title>
+  <style>
+    :root {
+      --bg: #f6f7f9;
+      --card: #fff;
+      --text: #1a1d26;
+      --muted: #5c6370;
+      --accent: #1e5a8a;
+      --border: #d8dde6;
+      --code-bg: #eef1f6;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 17px;
+      line-height: 1.55;
+      color: var(--text);
+      background: var(--bg);
+    }
+    .wrap {
+      max-width: 52rem;
+      margin: 0 auto;
+      padding: 1.25rem 1.25rem 3rem;
+    }
+    .top-nav {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.75rem 1rem;
+      padding: 0.75rem 0;
+      margin-bottom: 1.25rem;
+      border-bottom: 1px solid var(--border);
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+      font-size: 0.9rem;
+    }
+    .nav-title {
+      flex: 1 1 auto;
+      font-weight: 600;
+      color: var(--muted);
+      min-width: 12rem;
+    }
+    a.nav-link {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    a.nav-link:hover { text-decoration: underline; }
+    h1.page-title {
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+      font-size: 1.65rem;
+      font-weight: 700;
+      margin: 0 0 0.5rem;
+      line-height: 1.25;
+    }
+    p.lead {
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+      color: var(--muted);
+      margin: 0 0 1.5rem;
+      font-size: 0.95rem;
+    }
+    section.card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.25rem 1.5rem 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    }
+    section.card h2 {
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+      font-size: 1.15rem;
+      margin: 0 0 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid var(--accent);
+      color: var(--accent);
+    }
+    .card-inner {
+      font-family: Georgia, "Times New Roman", serif;
+    }
+    .card-inner h1, .card-inner h2, .card-inner h3, .card-inner h4 {
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+    }
+    .card-inner h1 { font-size: 1.35rem; }
+    .card-inner h2 { font-size: 1.15rem; border-bottom: none; color: var(--text); }
+    .card-inner h3 { font-size: 1.05rem; }
+    .card-inner h4 { font-size: 1rem; }
+    .card-inner code {
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 0.9em;
+      background: var(--code-bg);
+      padding: 0.1em 0.35em;
+      border-radius: 4px;
+    }
+    .card-inner pre {
+      background: var(--code-bg);
+      padding: 1rem;
+      overflow-x: auto;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+    }
+    .card-inner pre code {
+      background: none;
+      padding: 0;
+    }
+    .card-inner table {
+      border-collapse: collapse;
+      width: 100%;
+      font-size: 0.95rem;
+      margin: 1rem 0;
+    }
+    .card-inner th, .card-inner td {
+      border: 1px solid var(--border);
+      padding: 0.45rem 0.6rem;
+      text-align: left;
+      vertical-align: top;
+    }
+    .card-inner th {
+      background: #eef3f8;
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+      font-weight: 600;
+    }
+    ul.index-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+    }
+    ul.index-list li {
+      margin: 0.35rem 0;
+      padding: 0.5rem 0.65rem;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--card);
+    }
+    ul.index-list a {
+      color: var(--accent);
+      font-weight: 600;
+      text-decoration: none;
+    }
+    ul.index-list a:hover { text-decoration: underline; }
+    .index-meta {
+      display: block;
+      font-size: 0.85rem;
+      color: var(--muted);
+      font-weight: normal;
+      margin-top: 0.2rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <nav class="top-nav">
+  <a class="nav-link" href="index.html">All modules</a>
+  <a class="nav-link" href="module-08.html">← Previous</a>
+  <span class="nav-title">Module 9: Software Architecture &amp; Advanced Programming</span>
+  <a class="nav-link" href="module-10.html">Next →</a>
+</nav>
+<h1 class="page-title">Module 9: Software Architecture &amp; Advanced Programming</h1>
+<p class="lead">BTEC robot arm curriculum — one page per module. Work through sections in order.</p>
+<section class="card"><h2>Curriculum plan (from BTEC_Robot_Arm_Curriculum_Plan.md)</h2><div class="card-inner"><h2><strong>Module 9: Software Architecture &amp; Advanced Programming</strong></h2>
+<p><em>Level 4/5 - Building on Module 8</em></p>
+<h3>Learning Objectives Covered:</h3>
+<ul>
+<li>✅ <strong>Application architecture and integration</strong> (Level 4/5)</li>
+<li>Describe software architecture: Electron front-end, Node.js/WebSocket server on Pi, ST3215 servo communication layer</li>
+<li>Modify or extend control logic: joint motion commands, coordinated multi-joint moves, status polling, UI updates</li>
+<li>✅ <strong>Path planning and motion profiles</strong> (Level 4/5)</li>
+<li>Explain differences between joint-space control and Cartesian-space goals</li>
+<li>Analyze motion profiles (speed and acceleration settings) and their effect on smoothness and mechanical stress</li>
+<li>Evaluate trade-offs between speed, accuracy, and wear</li>
+</ul>
+<h3>Content:</h3>
+<ol>
+<li>
+<p><strong>Software Architecture Overview</strong><br />
+   - Electron front-end: what it does<br />
+   - Node.js/WebSocket server: communication layer<br />
+   - ST3215 servo communication layer: low-level control<br />
+   - How components interact<br />
+   - Data flow through the system</p>
+</li>
+<li>
+<p><strong>Extending Control Logic</strong><br />
+   - Understanding existing code structure<br />
+   - Adding new joint motion commands<br />
+   - Implementing coordinated multi-joint moves<br />
+   - Status polling implementation<br />
+   - UI update mechanisms</p>
+</li>
+<li>
+<p><strong>Motion Control Modes</strong><br />
+   - Joint-space control: commanding joint angles<br />
+   - Cartesian-space control: commanding XYZ positions<br />
+   - When to use each approach<br />
+   - Converting between spaces</p>
+</li>
+<li>
+<p><strong>Motion Profiles</strong><br />
+   - What is a motion profile?<br />
+   - Speed settings and their effects<br />
+   - Acceleration settings and their effects<br />
+   - Smoothness considerations<br />
+   - Mechanical stress implications</p>
+</li>
+<li>
+<p><strong>Trade-off Analysis</strong><br />
+   - Speed vs. accuracy<br />
+   - Speed vs. wear<br />
+   - Accuracy vs. wear<br />
+   - Finding optimal settings<br />
+   - Application-specific considerations</p>
+</li>
+</ol>
+<h3>Practical Activities:</h3>
+<ul>
+<li>Draw software architecture diagram</li>
+<li>Trace data flow through system</li>
+<li>Modify code to add new motion command</li>
+<li>Implement coordinated multi-joint move</li>
+<li>Compare joint-space vs. Cartesian-space control</li>
+<li>Test different motion profiles</li>
+<li>Measure smoothness and stress</li>
+<li>Create trade-off analysis report</li>
+<li>Document code modifications</li>
+</ul>
+<hr /></div></section>
+<section class="card"><h2>Theory & teaching notes</h2><div class="card-inner"><h1>Module 9: Software Architecture &amp; Advanced Programming</h1>
+<h2>Theory &amp; Teaching Notes</h2>
+<p><strong>Module Duration:</strong> 3-4 hours<br />
+<strong>Level:</strong> Advanced (Level 4/5)</p>
+<hr />
+<h2>Learning Objectives</h2>
+<p>By the end of this module, students will be able to:<br />
+- Describe the software architecture<br />
+- Understand how components interact<br />
+- Modify and extend control logic<br />
+- Understand motion control modes<br />
+- Analyze motion profiles<br />
+- Evaluate trade-offs between speed, accuracy, and wear</p>
+<hr />
+<h2>1. Software Architecture Overview</h2>
+<h3>Three-Layer Architecture</h3>
+<p>The robot arm software has three main layers:</p>
+<h4>Layer 1: Electron Front-End</h4>
+<p><strong>What it is:</strong> User interface application</p>
+<p><strong>What it does:</strong><br />
+- Displays robot status<br />
+- Accepts user input<br />
+- Shows visualizations<br />
+- Provides controls</p>
+<p><strong>Technology:</strong> Electron (web technologies in desktop app)</p>
+<p><strong>Location:</strong> Runs on your computer</p>
+<h4>Layer 2: Node.js/WebSocket Server</h4>
+<p><strong>What it is:</strong> Communication and processing server</p>
+<p><strong>What it does:</strong><br />
+- Receives commands from front-end<br />
+- Processes commands<br />
+- Sends commands to servos<br />
+- Receives feedback from servos<br />
+- Sends feedback to front-end</p>
+<p><strong>Technology:</strong> Node.js (JavaScript server)</p>
+<p><strong>Location:</strong> Runs on Raspberry Pi</p>
+<h4>Layer 3: ST3215 Servo Communication Layer</h4>
+<p><strong>What it is:</strong> Low-level servo control</p>
+<p><strong>What it does:</strong><br />
+- Communicates with servos via serial bus<br />
+- Sends servo commands<br />
+- Receives servo feedback<br />
+- Handles protocol details</p>
+<p><strong>Technology:</strong> Serial communication</p>
+<p><strong>Location:</strong> Runs on Raspberry Pi</p>
+<h3>How Components Interact</h3>
+<p><strong>Data Flow:</strong></p>
+<pre><code>User → Electron Front-End → WebSocket → Node.js Server → Serial → Servos
+                                                                      │
+                                                                      ▼
+User ← Electron Front-End ← WebSocket ← Node.js Server ← Serial ← Feedback
+</code></pre>
+<p><strong>Key points:</strong><br />
+- Front-end handles user interaction<br />
+- Server processes and coordinates<br />
+- Communication layer handles low-level details<br />
+- Feedback flows back through all layers</p>
+<hr />
+<h2>2. Extending Control Logic</h2>
+<h3>Understanding Code Structure</h3>
+<p><strong>Before modifying code, understand:</strong><br />
+- How code is organized<br />
+- Where different functions are<br />
+- How data flows<br />
+- What each part does</p>
+<p><strong>Typical structure:</strong><br />
+- <strong>UI handlers:</strong> Handle user input<br />
+- <strong>Command processors:</strong> Process commands<br />
+- <strong>Servo controllers:</strong> Control servos<br />
+- <strong>Feedback handlers:</strong> Process feedback<br />
+- <strong>Utilities:</strong> Helper functions</p>
+<h3>Adding New Joint Motion Commands</h3>
+<p><strong>Steps to add new command:</strong></p>
+<ol>
+<li>
+<p><strong>Define the command</strong><br />
+   - What should it do?<br />
+   - What parameters does it need?<br />
+   - What should it return?</p>
+</li>
+<li>
+<p><strong>Implement the command</strong><br />
+   - Write the code<br />
+   - Handle parameters<br />
+   - Send to servo<br />
+   - Handle response</p>
+</li>
+<li>
+<p><strong>Add to UI</strong><br />
+   - Add button or control<br />
+   - Connect to command<br />
+   - Display results</p>
+</li>
+<li>
+<p><strong>Test</strong><br />
+   - Test with different parameters<br />
+   - Test error cases<br />
+   - Verify it works</p>
+</li>
+</ol>
+<h3>Coordinated Multi-Joint Moves</h3>
+<p><strong>What it is:</strong> Moving multiple joints together with shared timing</p>
+<p><strong>Why useful:</strong><br />
+- Smooth movement<br />
+- Coordinated motion<br />
+- Better control<br />
+- More natural movement</p>
+<p><strong>How to implement:</strong></p>
+<ol>
+<li><strong>Calculate target positions</strong> for all joints</li>
+<li><strong>Plan timing</strong> (how long to take)</li>
+<li><strong>Send commands</strong> to all joints simultaneously</li>
+<li><strong>Monitor progress</strong> of all joints</li>
+<li><strong>Wait for completion</strong> of all joints</li>
+</ol>
+<p><strong>Example:</strong> Moving shoulder, elbow, and wrist together to reach a position smoothly.</p>
+<h3>Status Polling Implementation</h3>
+<p><strong>Status polling</strong> = Regularly checking servo status</p>
+<p><strong>How to implement:</strong></p>
+<ol>
+<li><strong>Set up timer</strong> (e.g., every 30ms)</li>
+<li><strong>On timer:</strong> Request status from servos</li>
+<li><strong>Process responses:</strong> Update internal state</li>
+<li><strong>Send to UI:</strong> Update display</li>
+<li><strong>Repeat</strong></li>
+</ol>
+<p><strong>Considerations:</strong><br />
+- Polling frequency (how often?)<br />
+- Which servos to poll?<br />
+- Error handling<br />
+- Performance impact</p>
+<h3>UI Update Mechanisms</h3>
+<p><strong>How UI gets updated:</strong></p>
+<ol>
+<li><strong>Server receives feedback</strong> from servos</li>
+<li><strong>Server processes feedback</strong></li>
+<li><strong>Server sends update</strong> to front-end via WebSocket</li>
+<li><strong>Front-end receives update</strong></li>
+<li><strong>Front-end updates display</strong></li>
+</ol>
+<p><strong>Update types:</strong><br />
+- Position updates<br />
+- Status updates<br />
+- Error notifications<br />
+- System state changes</p>
+<hr />
+<h2>3. Motion Control Modes</h2>
+<h3>Joint-Space Control</h3>
+<p><strong>What it is:</strong> Commanding joint angles directly</p>
+<p><strong>Example:</strong><br />
+- Joint 1 = 45°<br />
+- Joint 2 = 30°<br />
+- Joint 3 = -20°</p>
+<p><strong>Advantages:</strong><br />
+- Direct control<br />
+- Simple to implement<br />
+- Fast execution<br />
+- No conversion needed</p>
+<p><strong>Disadvantages:</strong><br />
+- Harder to plan paths<br />
+- Don't know end effector position directly<br />
+- May cause collisions</p>
+<p><strong>When to use:</strong><br />
+- Simple movements<br />
+- Known safe positions<br />
+- When speed is priority</p>
+<h3>Cartesian-Space Control</h3>
+<p><strong>What it is:</strong> Commanding end effector position (X, Y, Z)</p>
+<p><strong>Example:</strong><br />
+- X = 100mm<br />
+- Y = 200mm<br />
+- Z = 150mm</p>
+<p><strong>Advantages:</strong><br />
+- Intuitive (know where end effector goes)<br />
+- Easier path planning<br />
+- Better for applications<br />
+- Natural for humans</p>
+<p><strong>Disadvantages:</strong><br />
+- Requires inverse kinematics<br />
+- More complex<br />
+- May have multiple solutions<br />
+- Slower execution</p>
+<p><strong>When to use:</strong><br />
+- Precise positioning needed<br />
+- Path planning important<br />
+- Application-specific tasks</p>
+<h3>Converting Between Spaces</h3>
+<p><strong>Forward kinematics:</strong> Joint space → Cartesian space<br />
+- Given joint angles, calculate end effector position</p>
+<p><strong>Inverse kinematics:</strong> Cartesian space → Joint space<br />
+- Given end effector position, calculate joint angles</p>
+<p><strong>Why conversion matters:</strong><br />
+- Different control modes need different inputs<br />
+- Applications may need Cartesian coordinates<br />
+- Robot needs joint angles to move</p>
+<hr />
+<h2>4. Motion Profiles</h2>
+<h3>What is a Motion Profile?</h3>
+<p><strong>Motion profile</strong> = How speed changes over time during movement</p>
+<p><strong>Think of it like:</strong> Acceleration and deceleration curve</p>
+<h3>Speed Settings and Effects</h3>
+<p><strong>Speed setting</strong> = Maximum speed during movement</p>
+<p><strong>Effects:</strong></p>
+<p><strong>High speed:</strong><br />
+- ✅ Faster completion<br />
+- ✅ Higher productivity<br />
+- ❌ Less smooth<br />
+- ❌ More stress<br />
+- ❌ Less accurate</p>
+<p><strong>Low speed:</strong><br />
+- ✅ Smoother movement<br />
+- ✅ Less stress<br />
+- ✅ More accurate<br />
+- ❌ Slower completion<br />
+- ❌ Lower productivity</p>
+<p><strong>Trade-off:</strong> Speed vs. smoothness vs. accuracy</p>
+<h3>Acceleration Settings and Effects</h3>
+<p><strong>Acceleration</strong> = How quickly speed changes</p>
+<p><strong>Effects:</strong></p>
+<p><strong>High acceleration:</strong><br />
+- ✅ Faster to reach speed<br />
+- ✅ Quicker movements<br />
+- ❌ Jerky movement<br />
+- ❌ High stress<br />
+- ❌ Less smooth</p>
+<p><strong>Low acceleration:</strong><br />
+- ✅ Smooth movement<br />
+- ✅ Low stress<br />
+- ✅ Better control<br />
+- ❌ Slower to reach speed<br />
+- ❌ Slower overall</p>
+<p><strong>Trade-off:</strong> Acceleration vs. smoothness vs. stress</p>
+<h3>Smoothness Considerations</h3>
+<p><strong>Smooth movement:</strong><br />
+- Gradual speed changes<br />
+- No sudden stops/starts<br />
+- Continuous motion<br />
+- Better for mechanisms</p>
+<p><strong>Jerk movement:</strong><br />
+- Sudden speed changes<br />
+- Abrupt stops/starts<br />
+- Discontinuous motion<br />
+- Hard on mechanisms</p>
+<p><strong>Why smoothness matters:</strong><br />
+- Reduces wear<br />
+- Better accuracy<br />
+- Quieter operation<br />
+- Longer lifespan</p>
+<h3>Mechanical Stress Implications</h3>
+<p><strong>High stress causes:</strong><br />
+- Faster wear<br />
+- Potential damage<br />
+- Reduced lifespan<br />
+- More maintenance</p>
+<p><strong>Factors affecting stress:</strong><br />
+- Speed (higher = more stress)<br />
+- Acceleration (higher = more stress)<br />
+- Payload (heavier = more stress)<br />
+- Movement frequency (more = more stress)</p>
+<p><strong>Reducing stress:</strong><br />
+- Lower speeds<br />
+- Lower accelerations<br />
+- Smooth profiles<br />
+- Appropriate payloads</p>
+<hr />
+<h2>5. Trade-off Analysis</h2>
+<h3>Speed vs. Accuracy</h3>
+<p><strong>Relationship:</strong> Higher speed typically reduces accuracy</p>
+<p><strong>Why:</strong><br />
+- Less time to reach exact position<br />
+- Momentum effects<br />
+- Control system limitations<br />
+- Mechanical play more noticeable</p>
+<p><strong>Trade-off:</strong><br />
+- <strong>High speed:</strong> Fast but less accurate<br />
+- <strong>Low speed:</strong> Slow but more accurate<br />
+- <strong>Medium speed:</strong> Balance</p>
+<p><strong>Application considerations:</strong><br />
+- Need accuracy? → Lower speed<br />
+- Need speed? → Accept lower accuracy<br />
+- Find balance for your application</p>
+<h3>Speed vs. Wear</h3>
+<p><strong>Relationship:</strong> Higher speed increases wear</p>
+<p><strong>Why:</strong><br />
+- More movement cycles<br />
+- Higher forces<br />
+- More friction<br />
+- More stress</p>
+<p><strong>Trade-off:</strong><br />
+- <strong>High speed:</strong> Fast but more wear<br />
+- <strong>Low speed:</strong> Slow but less wear<br />
+- <strong>Medium speed:</strong> Balance</p>
+<p><strong>Application considerations:</strong><br />
+- Long-term use? → Lower speed<br />
+- Short-term use? → Can use higher speed<br />
+- Maintenance schedule? → Consider wear</p>
+<h3>Accuracy vs. Wear</h3>
+<p><strong>Relationship:</strong> More accuracy may require slower speeds (less wear)</p>
+<p><strong>Why:</strong><br />
+- Accurate positioning takes time<br />
+- Slower = less stress = less wear<br />
+- But may need more cycles for accuracy</p>
+<p><strong>Trade-off:</strong><br />
+- <strong>High accuracy:</strong> May require slower speeds<br />
+- <strong>Lower accuracy:</strong> Can use higher speeds<br />
+- <strong>Balance:</strong> Acceptable accuracy with reasonable wear</p>
+<h3>Finding Optimal Settings</h3>
+<p><strong>Process:</strong></p>
+<ol>
+<li>
+<p><strong>Define requirements</strong><br />
+   - What accuracy is needed?<br />
+   - What speed is needed?<br />
+   - What lifespan is expected?</p>
+</li>
+<li>
+<p><strong>Test different settings</strong><br />
+   - Try various speeds<br />
+   - Measure accuracy<br />
+   - Monitor wear</p>
+</li>
+<li>
+<p><strong>Analyze results</strong><br />
+   - Which settings meet requirements?<br />
+   - What are the trade-offs?<br />
+   - What's the best balance?</p>
+</li>
+<li>
+<p><strong>Choose optimal settings</strong><br />
+   - Balance all factors<br />
+   - Meet requirements<br />
+   - Optimize for application</p>
+</li>
+</ol>
+<h3>Application-Specific Considerations</h3>
+<p><strong>Different applications need different settings:</strong></p>
+<p><strong>Precision assembly:</strong><br />
+- Priority: Accuracy<br />
+- Speed: Lower acceptable<br />
+- Wear: Less important</p>
+<p><strong>High-speed pick-and-place:</strong><br />
+- Priority: Speed<br />
+- Accuracy: Acceptable range<br />
+- Wear: Monitor closely</p>
+<p><strong>Long-term operation:</strong><br />
+- Priority: Wear reduction<br />
+- Speed: Moderate<br />
+- Accuracy: Adequate</p>
+<hr />
+<h2>6. Summary</h2>
+<h3>Key Concepts</h3>
+<ol>
+<li><strong>Software architecture</strong> has three layers: Front-end, Server, Communication</li>
+<li><strong>Control logic</strong> can be extended and modified</li>
+<li><strong>Motion control</strong> has two modes: Joint-space and Cartesian-space</li>
+<li><strong>Motion profiles</strong> affect smoothness and stress</li>
+<li><strong>Trade-offs</strong> exist between speed, accuracy, and wear</li>
+<li><strong>Optimal settings</strong> depend on application requirements</li>
+</ol>
+<h3>Understanding Software Architecture</h3>
+<p>You should now understand:<br />
+- How software components work together<br />
+- How to extend control logic<br />
+- Different motion control modes<br />
+- How motion profiles affect performance<br />
+- How to evaluate trade-offs<br />
+- How to find optimal settings</p>
+<h3>Next Steps</h3>
+<p>After learning this theory, you will:<br />
+- Understand software architecture<br />
+- Modify control logic<br />
+- Implement coordinated moves<br />
+- Analyze motion profiles<br />
+- Evaluate trade-offs<br />
+- Complete the Module 9 worksheet</p>
+<hr />
+<h2>Questions for Review</h2>
+<p>Before moving to the worksheet, make sure you can answer:</p>
+<ol>
+<li>What are the three layers of software architecture?</li>
+<li>How do components interact?</li>
+<li>What is the difference between joint-space and Cartesian-space control?</li>
+<li>How do speed settings affect movement?</li>
+<li>How do acceleration settings affect movement?</li>
+<li>What are the trade-offs between speed and accuracy?</li>
+<li>How do you find optimal settings?</li>
+</ol>
+<hr />
+<p><strong>Remember:</strong> Understanding software architecture helps you modify and optimize the system. Consider trade-offs carefully for your specific application!</p></div></section>
+<section class="card"><h2>Student worksheet</h2><div class="card-inner"><h1>Module 9: Software Architecture &amp; Advanced Programming</h1>
+<h2>Student Worksheet</h2>
+<p><strong>Name:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_<br />
+<strong>Date:</strong> </em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>_<br />
+<strong>Group/Class:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>____</p>
+<hr />
+<h2>Part 1: Software Architecture Overview</h2>
+<h3>Question 1: Architecture Components</h3>
+<p>Describe each component of the software architecture:</p>
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th>What It Does</th>
+<th>How It Interacts</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Electron Front-end</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Node.js/WebSocket Server</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>ST3215 Servo Communication Layer</td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h3>Question 2: Data Flow Diagram</h3>
+<p>Draw a diagram showing data flow through the system:</p>
+<p>[Space for diagram]</p>
+<hr />
+<h2>Part 2: Extending Control Logic</h2>
+<h3>Question 3: Code Structure</h3>
+<p>Examine the existing code structure and document:</p>
+<p><strong>Main files/modules:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<p><strong>Key functions:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<p><strong>How code is organized:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<h3>Question 4: Adding New Motion Command</h3>
+<p>Add a new joint motion command:</p>
+<p><strong>Command name:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_<br />
+<strong>What it does:</strong> </em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>______</p>
+<p><strong>Code location:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<p><strong>Test result:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<hr />
+<h2>Part 3: Motion Control Modes</h2>
+<h3>Question 5: Joint-Space vs Cartesian-Space</h3>
+<p>Complete the comparison:</p>
+<table>
+<thead>
+<tr>
+<th>Aspect</th>
+<th>Joint-Space Control</th>
+<th>Cartesian-Space Control</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>What you command</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Advantages</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Disadvantages</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>When to use</td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h3>Question 6: Converting Between Spaces</h3>
+<p>Explain how to convert between joint-space and Cartesian-space:</p>
+<hr />
+<hr />
+<hr />
+<h2>Part 4: Motion Profiles</h2>
+<h3>Question 7: Motion Profile Analysis</h3>
+<p>Test THREE different motion profiles:</p>
+<table>
+<thead>
+<tr>
+<th>Profile</th>
+<th>Speed</th>
+<th>Acceleration</th>
+<th>Smoothness (1-10)</th>
+<th>Stress Observed</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Slow</td>
+<td>Low</td>
+<td>Low</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Medium</td>
+<td>Medium</td>
+<td>Medium</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Fast</td>
+<td>High</td>
+<td>High</td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><strong>What did you observe?</strong></p>
+<hr />
+<hr />
+<h3>Question 8: Profile Effects</h3>
+<p>Explain how speed and acceleration settings affect:</p>
+<p><strong>Smoothness:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<p><strong>Mechanical Stress:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<hr />
+<h2>Part 5: Trade-off Analysis</h2>
+<h3>Question 9: Speed vs Accuracy</h3>
+<p>Test and document:</p>
+<table>
+<thead>
+<tr>
+<th>Speed Setting</th>
+<th>Accuracy Achieved</th>
+<th>Time Taken</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Low</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Medium</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>High</td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Conclusion:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<h3>Question 10: Trade-off Evaluation</h3>
+<p>Evaluate trade-offs for your application:</p>
+<p><strong>Speed vs Accuracy:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<p><strong>Speed vs Wear:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<p><strong>Accuracy vs Wear:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<p><strong>Optimal Settings:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<hr />
+<h2>Part 6: Practical Exercise</h2>
+<h3>Exercise 1: Coordinated Multi-Joint Move</h3>
+<p>Implement a coordinated multi-joint move:</p>
+<p><strong>Description:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<p><strong>Code:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<p><strong>Result:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<h3>Exercise 2: Trade-off Report</h3>
+<p>Create a trade-off analysis report:</p>
+<p>[Space for report]</p>
+<hr />
+<h2>Part 7: Reflection</h2>
+<h3>Question 11: Understanding Architecture</h3>
+<p>Answer the following:</p>
+<p>a) How does understanding software architecture help you?</p>
+<hr />
+<hr />
+<p>b) What was most challenging about extending control logic?</p>
+<hr />
+<hr />
+<hr />
+<h2>Self-Assessment Checklist</h2>
+<ul>
+<li>[ ] Understood software architecture</li>
+<li>[ ] Examined code structure</li>
+<li>[ ] Added new motion command</li>
+<li>[ ] Understood motion control modes</li>
+<li>[ ] Analyzed motion profiles</li>
+<li>[ ] Evaluated trade-offs</li>
+<li>[ ] Implemented coordinated move</li>
+<li>[ ] Written reflection</li>
+</ul>
+<p><strong>Student Signature:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_<br />
+<strong>Date:</strong> </em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><em><br />
+<strong>Instructor Signature:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_<br />
+<strong>Date:</strong> </em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong></em></p></div></section>
+<section class="card"><h2>Multiple choice questions</h2><div class="card-inner"><h1>Module 9: Software Architecture &amp; Advanced Programming</h1>
+<h2>Multiple Choice Questions</h2>
+<p><strong>Instructions:</strong> Choose the best answer for each question.</p>
+<hr />
+<p><strong>1. What is the Electron front-end responsible for?</strong><br />
+   a) Low-level servo control<br />
+   b) User interface and visualization<br />
+   c) Power supply<br />
+   d) Mechanical structure</p>
+<p><strong>2. What does the Node.js/WebSocket server do?</strong><br />
+   a) Provides power<br />
+   b) Handles communication between front-end and servos<br />
+   c) Moves the robot<br />
+   d) Holds the robot together</p>
+<p><strong>3. What is joint-space control?</strong><br />
+   a) Commanding XYZ positions<br />
+   b) Commanding joint angles<br />
+   c) Commanding speed only<br />
+   d) Commanding load</p>
+<p><strong>4. What is Cartesian-space control?</strong><br />
+   a) Commanding joint angles<br />
+   b) Commanding XYZ positions<br />
+   c) Commanding speed only<br />
+   d) Commanding load</p>
+<p><strong>5. What is a motion profile?</strong><br />
+   a) How the robot moves over time (speed/acceleration)<br />
+   b) The robot's appearance<br />
+   c) The robot's cost<br />
+   d) The robot's weight</p>
+<p><strong>6. How does high acceleration affect smoothness?</strong><br />
+   a) Improves smoothness<br />
+   b) Reduces smoothness (more jerky)<br />
+   c) No effect<br />
+   d) Makes it slower</p>
+<p><strong>7. How does high speed affect mechanical stress?</strong><br />
+   a) Reduces stress<br />
+   b) Increases stress<br />
+   c) No effect<br />
+   d) Makes it smoother</p>
+<p><strong>8. What is the trade-off between speed and accuracy?</strong><br />
+   a) Higher speed typically reduces accuracy<br />
+   b) Higher speed increases accuracy<br />
+   c) No relationship<br />
+   d) They're the same</p>
+<p><strong>9. What is a coordinated multi-joint move?</strong><br />
+   a) Moving joints independently<br />
+   b) Moving multiple joints together with shared timing<br />
+   c) Moving one joint at a time<br />
+   d) Stopping all joints</p>
+<p><strong>10. Why is understanding software architecture important?</strong><br />
+   a) It's not important<br />
+   b) It helps you modify and extend the system<br />
+   c) It makes the robot faster<br />
+   d) It changes the robot's color</p>
+<hr />
+<h2>Answer Key</h2>
+<ol>
+<li><strong>b)</strong> User interface and visualization</li>
+<li><strong>b)</strong> Handles communication between front-end and servos</li>
+<li><strong>b)</strong> Commanding joint angles</li>
+<li><strong>b)</strong> Commanding XYZ positions</li>
+<li><strong>a)</strong> How the robot moves over time (speed/acceleration)</li>
+<li><strong>b)</strong> Reduces smoothness (more jerky)</li>
+<li><strong>b)</strong> Increases stress</li>
+<li><strong>a)</strong> Higher speed typically reduces accuracy</li>
+<li><strong>b)</strong> Moving multiple joints together with shared timing</li>
+<li><strong>b)</strong> It helps you modify and extend the system</li>
+</ol>
+<hr />
+<h2>Scoring Guide</h2>
+<ul>
+<li><strong>9-10 correct:</strong> Excellent understanding</li>
+<li><strong>7-8 correct:</strong> Good understanding</li>
+<li><strong>5-6 correct:</strong> Satisfactory understanding</li>
+<li><strong>Below 5 correct:</strong> Needs review</li>
+</ul></div></section>
+<section class="card"><h2>Assessment rubric</h2><div class="card-inner"><h1>Module 9: Software Architecture &amp; Advanced Programming</h1>
+<h2>Assessment Rubric</h2>
+<p><strong>Student Name:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_<br />
+<strong>Date:</strong> </em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>_<br />
+<strong>Assessor:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>____</p>
+<hr />
+<h2>Overall Assessment Criteria</h2>
+<table>
+<thead>
+<tr>
+<th>Criteria</th>
+<th>Excellent (4)</th>
+<th>Good (3)</th>
+<th>Satisfactory (2)</th>
+<th>Needs Improvement (1)</th>
+<th>Score</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Knowledge &amp; Understanding</strong></td>
+<td>Comprehensive understanding of architecture and programming</td>
+<td>Good understanding</td>
+<td>Basic understanding</td>
+<td>Limited understanding</td>
+<td>/4</td>
+</tr>
+<tr>
+<td><strong>Practical Skills</strong></td>
+<td>Successfully extends code and implements features</td>
+<td>Mostly successful</td>
+<td>Basic implementation</td>
+<td>Struggles with implementation</td>
+<td>/4</td>
+</tr>
+<tr>
+<td><strong>Analysis &amp; Application</strong></td>
+<td>Clear analysis of motion profiles and trade-offs</td>
+<td>Good analysis</td>
+<td>Basic analysis</td>
+<td>Limited analysis</td>
+<td>/4</td>
+</tr>
+<tr>
+<td><strong>Documentation</strong></td>
+<td>Complete, accurate code and documentation</td>
+<td>Good documentation</td>
+<td>Basic documentation</td>
+<td>Incomplete documentation</td>
+<td>/4</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Total Score:</strong> /16</p>
+<hr />
+<h2>Detailed Marking Guide</h2>
+<h3>Part 1: Architecture (20 marks)</h3>
+<ul>
+<li><strong>Question 1:</strong> 12 marks (4 per component)</li>
+<li><strong>Question 2:</strong> 8 marks (data flow diagram)</li>
+</ul>
+<p><strong>Mark:</strong> /20</p>
+<hr />
+<h3>Part 2: Extending Logic (25 marks)</h3>
+<ul>
+<li><strong>Question 3:</strong> 10 marks (code structure)</li>
+<li><strong>Question 4:</strong> 15 marks (new command implementation)</li>
+</ul>
+<p><strong>Mark:</strong> /25</p>
+<hr />
+<h3>Part 3: Motion Modes (20 marks)</h3>
+<ul>
+<li><strong>Question 5:</strong> 12 marks (comparison table)</li>
+<li><strong>Question 6:</strong> 8 marks (conversion explanation)</li>
+</ul>
+<p><strong>Mark:</strong> /20</p>
+<hr />
+<h3>Part 4: Motion Profiles (15 marks)</h3>
+<ul>
+<li><strong>Question 7:</strong> 8 marks (profile analysis)</li>
+<li><strong>Question 8:</strong> 7 marks (effects explanation)</li>
+</ul>
+<p><strong>Mark:</strong> /15</p>
+<hr />
+<h3>Part 5: Trade-offs (15 marks)</h3>
+<ul>
+<li><strong>Question 9:</strong> 7 marks (speed vs accuracy)</li>
+<li><strong>Question 10:</strong> 8 marks (trade-off evaluation)</li>
+</ul>
+<p><strong>Mark:</strong> /15</p>
+<hr />
+<h3>Part 6: Practical (15 marks)</h3>
+<ul>
+<li><strong>Exercise 1:</strong> 8 marks (coordinated move)</li>
+<li><strong>Exercise 2:</strong> 7 marks (trade-off report)</li>
+</ul>
+<p><strong>Mark:</strong> /15</p>
+<hr />
+<h3>Part 7: Reflection (5 marks)</h3>
+<ul>
+<li><strong>Question 11:</strong> 5 marks</li>
+</ul>
+<p><strong>Mark:</strong> /5</p>
+<hr />
+<p><strong>Final Grade:</strong> <strong><em>_</em></strong>____ / 100</p>
+<p><strong>Assessor Comments:</strong></p>
+<hr />
+<hr />
+<p><strong>Assessor Signature:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_<br />
+<strong>Date:</strong> </em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>_</p></div></section>
+  </div>
+</body>
+</html>

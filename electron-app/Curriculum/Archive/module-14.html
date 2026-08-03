@@ -1,0 +1,1014 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="curriculum-module" content="14">
+  <title>Module 14: Project Planning &amp; Management</title>
+  <style>
+    :root {
+      --bg: #f6f7f9;
+      --card: #fff;
+      --text: #1a1d26;
+      --muted: #5c6370;
+      --accent: #1e5a8a;
+      --border: #d8dde6;
+      --code-bg: #eef1f6;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 17px;
+      line-height: 1.55;
+      color: var(--text);
+      background: var(--bg);
+    }
+    .wrap {
+      max-width: 52rem;
+      margin: 0 auto;
+      padding: 1.25rem 1.25rem 3rem;
+    }
+    .top-nav {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.75rem 1rem;
+      padding: 0.75rem 0;
+      margin-bottom: 1.25rem;
+      border-bottom: 1px solid var(--border);
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+      font-size: 0.9rem;
+    }
+    .nav-title {
+      flex: 1 1 auto;
+      font-weight: 600;
+      color: var(--muted);
+      min-width: 12rem;
+    }
+    a.nav-link {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    a.nav-link:hover { text-decoration: underline; }
+    h1.page-title {
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+      font-size: 1.65rem;
+      font-weight: 700;
+      margin: 0 0 0.5rem;
+      line-height: 1.25;
+    }
+    p.lead {
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+      color: var(--muted);
+      margin: 0 0 1.5rem;
+      font-size: 0.95rem;
+    }
+    section.card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.25rem 1.5rem 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    }
+    section.card h2 {
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+      font-size: 1.15rem;
+      margin: 0 0 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid var(--accent);
+      color: var(--accent);
+    }
+    .card-inner {
+      font-family: Georgia, "Times New Roman", serif;
+    }
+    .card-inner h1, .card-inner h2, .card-inner h3, .card-inner h4 {
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+    }
+    .card-inner h1 { font-size: 1.35rem; }
+    .card-inner h2 { font-size: 1.15rem; border-bottom: none; color: var(--text); }
+    .card-inner h3 { font-size: 1.05rem; }
+    .card-inner h4 { font-size: 1rem; }
+    .card-inner code {
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 0.9em;
+      background: var(--code-bg);
+      padding: 0.1em 0.35em;
+      border-radius: 4px;
+    }
+    .card-inner pre {
+      background: var(--code-bg);
+      padding: 1rem;
+      overflow-x: auto;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+    }
+    .card-inner pre code {
+      background: none;
+      padding: 0;
+    }
+    .card-inner table {
+      border-collapse: collapse;
+      width: 100%;
+      font-size: 0.95rem;
+      margin: 1rem 0;
+    }
+    .card-inner th, .card-inner td {
+      border: 1px solid var(--border);
+      padding: 0.45rem 0.6rem;
+      text-align: left;
+      vertical-align: top;
+    }
+    .card-inner th {
+      background: #eef3f8;
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+      font-weight: 600;
+    }
+    ul.index-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+    }
+    ul.index-list li {
+      margin: 0.35rem 0;
+      padding: 0.5rem 0.65rem;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--card);
+    }
+    ul.index-list a {
+      color: var(--accent);
+      font-weight: 600;
+      text-decoration: none;
+    }
+    ul.index-list a:hover { text-decoration: underline; }
+    .index-meta {
+      display: block;
+      font-size: 0.85rem;
+      color: var(--muted);
+      font-weight: normal;
+      margin-top: 0.2rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <nav class="top-nav">
+  <a class="nav-link" href="index.html">All modules</a>
+  <a class="nav-link" href="module-13.html">← Previous</a>
+  <span class="nav-title">Module 14: Project Planning &amp; Management</span>
+  <a class="nav-link" href="module-15.html">Next →</a>
+</nav>
+<h1 class="page-title">Module 14: Project Planning &amp; Management</h1>
+<p class="lead">BTEC robot arm curriculum — one page per module. Work through sections in order.</p>
+<section class="card"><h2>Curriculum plan (from BTEC_Robot_Arm_Curriculum_Plan.md)</h2><div class="card-inner"><h2><strong>Module 14: Project Planning &amp; Management</strong></h2>
+<p><em>Across Levels - Building on Module 13</em></p>
+<h3>Learning Objectives Covered:</h3>
+<ul>
+<li>✅ <strong>Project planning and management</strong> (Across levels)</li>
+<li>Plan robot-arm project: define aims/requirements, break into tasks (mechanical, electrical, software, testing), produce and follow schedule</li>
+</ul>
+<h3>Content:</h3>
+<ol>
+<li>
+<p><strong>Project Planning Basics</strong><br />
+   - Why plan?<br />
+   - Project lifecycle<br />
+   - Planning tools and techniques</p>
+</li>
+<li>
+<p><strong>Defining Project Scope</strong><br />
+   - Setting aims and objectives<br />
+   - Defining requirements<br />
+   - Success criteria<br />
+   - Constraints and limitations</p>
+</li>
+<li>
+<p><strong>Task Breakdown</strong><br />
+   - Mechanical tasks<br />
+   - Electrical tasks<br />
+   - Software tasks<br />
+   - Testing tasks<br />
+   - Documentation tasks</p>
+</li>
+<li>
+<p><strong>Scheduling</strong><br />
+   - Estimating time<br />
+   - Creating timeline<br />
+   - Identifying dependencies<br />
+   - Critical path analysis<br />
+   - Resource allocation</p>
+</li>
+<li>
+<p><strong>Project Management</strong><br />
+   - Tracking progress<br />
+   - Managing changes<br />
+   - Risk management<br />
+   - Communication</p>
+</li>
+</ol>
+<h3>Practical Activities:</h3>
+<ul>
+<li>Define a robot arm project</li>
+<li>Break down into tasks</li>
+<li>Create project schedule</li>
+<li>Identify dependencies</li>
+<li>Track project progress</li>
+<li>Document project plan</li>
+<li>Present project proposal</li>
+</ul>
+<hr /></div></section>
+<section class="card"><h2>Theory & teaching notes</h2><div class="card-inner"><h1>Module 14: Project Planning &amp; Management</h1>
+<h2>Theory &amp; Teaching Notes</h2>
+<p><strong>Module Duration:</strong> 2-3 hours<br />
+<strong>Level:</strong> Professional Skills (Across Levels)</p>
+<hr />
+<h2>Learning Objectives</h2>
+<p>By the end of this module, students will be able to:<br />
+- Understand project planning principles<br />
+- Define project scope and requirements<br />
+- Break down projects into tasks<br />
+- Create project schedules<br />
+- Identify dependencies and critical paths<br />
+- Track progress and manage risks</p>
+<hr />
+<h2>1. Project Planning Basics</h2>
+<h3>Why Plan?</h3>
+<p><strong>Planning helps you:</strong><br />
+- Organize work<br />
+- Manage time<br />
+- Allocate resources<br />
+- Identify problems early<br />
+- Ensure completion<br />
+- Meet deadlines</p>
+<p><strong>Think of it like:</strong> A roadmap for your project - you know where you're going and how to get there.</p>
+<h3>Project Lifecycle</h3>
+<p><strong>Typical stages:</strong></p>
+<ol>
+<li>
+<p><strong>Initiation</strong><br />
+   - Define project<br />
+   - Get approval<br />
+   - Set up</p>
+</li>
+<li>
+<p><strong>Planning</strong><br />
+   - Detailed planning<br />
+   - Schedule<br />
+   - Resources</p>
+</li>
+<li>
+<p><strong>Execution</strong><br />
+   - Do the work<br />
+   - Monitor progress<br />
+   - Manage changes</p>
+</li>
+<li>
+<p><strong>Monitoring &amp; Control</strong><br />
+   - Track progress<br />
+   - Manage issues<br />
+   - Adjust as needed</p>
+</li>
+<li>
+<p><strong>Closure</strong><br />
+   - Complete work<br />
+   - Document<br />
+   - Review</p>
+</li>
+</ol>
+<hr />
+<h2>2. Defining Project Scope</h2>
+<h3>Project Aims</h3>
+<p><strong>Aims</strong> = What you want to achieve (high-level goals)</p>
+<p><strong>Example:</strong><br />
+- "Build a robot arm that can pick and place objects"<br />
+- "Create an automated assembly system"<br />
+- "Design a robot cell for sorting"</p>
+<p><strong>Characteristics:</strong><br />
+- Broad<br />
+- High-level<br />
+- Overall goal</p>
+<h3>Objectives</h3>
+<p><strong>Objectives</strong> = Specific, measurable goals</p>
+<p><strong>Example:</strong><br />
+- "Robot can pick objects up to 500g"<br />
+- "Repeatability of ±1mm"<br />
+- "Cycle time under 5 seconds"</p>
+<p><strong>Characteristics:</strong><br />
+- Specific<br />
+- Measurable<br />
+- Achievable</p>
+<h3>Requirements</h3>
+<p><strong>Requirements</strong> = What the system must do</p>
+<p><strong>Types:</strong></p>
+<ol>
+<li>
+<p><strong>Functional Requirements</strong><br />
+   - What it must do<br />
+   - Features needed<br />
+   - Capabilities required</p>
+</li>
+<li>
+<p><strong>Performance Requirements</strong><br />
+   - How well it must do it<br />
+   - Speed, accuracy, etc.<br />
+   - Quality standards</p>
+</li>
+<li>
+<p><strong>Constraints</strong><br />
+   - Limitations<br />
+   - Budget, time, resources<br />
+   - Restrictions</p>
+</li>
+</ol>
+<h3>Success Criteria</h3>
+<p><strong>Success criteria</strong> = How you know project succeeded</p>
+<p><strong>Example:</strong><br />
+- All requirements met<br />
+- Within budget<br />
+- On time<br />
+- Quality acceptable</p>
+<hr />
+<h2>3. Task Breakdown</h2>
+<h3>Breaking Down Work</h3>
+<p><strong>Process:</strong></p>
+<ol>
+<li>
+<p><strong>Identify major areas</strong><br />
+   - Mechanical work<br />
+   - Electrical work<br />
+   - Software work<br />
+   - Testing<br />
+   - Documentation</p>
+</li>
+<li>
+<p><strong>Break into tasks</strong><br />
+   - Smaller, manageable pieces<br />
+   - Clear deliverables<br />
+   - Specific actions</p>
+</li>
+<li>
+<p><strong>Organize logically</strong><br />
+   - Sequence tasks<br />
+   - Group related tasks<br />
+   - Identify dependencies</p>
+</li>
+</ol>
+<h3>Task Categories</h3>
+<p><strong>Mechanical tasks:</strong><br />
+- Design<br />
+- Fabrication<br />
+- Assembly<br />
+- Testing</p>
+<p><strong>Electrical tasks:</strong><br />
+- Wiring<br />
+- Connections<br />
+- Testing<br />
+- Troubleshooting</p>
+<p><strong>Software tasks:</strong><br />
+- Programming<br />
+- Testing<br />
+- Integration<br />
+- Documentation</p>
+<p><strong>Testing tasks:</strong><br />
+- Unit testing<br />
+- Integration testing<br />
+- System testing<br />
+- Validation</p>
+<p><strong>Documentation tasks:</strong><br />
+- Writing<br />
+- Diagrams<br />
+- Reports<br />
+- Presentations</p>
+<hr />
+<h2>4. Scheduling</h2>
+<h3>Time Estimation</h3>
+<p><strong>How to estimate:</strong></p>
+<ol>
+<li>
+<p><strong>Break task into steps</strong><br />
+   - List all steps<br />
+   - Estimate each step<br />
+   - Add up</p>
+</li>
+<li>
+<p><strong>Consider factors</strong><br />
+   - Complexity<br />
+   - Experience<br />
+   - Resources available<br />
+   - Dependencies</p>
+</li>
+<li>
+<p><strong>Add buffer</strong><br />
+   - Unexpected problems<br />
+   - Learning curve<br />
+   - Contingency</p>
+</li>
+</ol>
+<p><strong>Tips:</strong><br />
+- Be realistic<br />
+- Consider worst case<br />
+- Ask experienced people<br />
+- Review similar projects</p>
+<h3>Creating Timeline</h3>
+<p><strong>Tools:</strong></p>
+<ol>
+<li>
+<p><strong>Gantt Chart</strong><br />
+   - Visual timeline<br />
+   - Shows tasks and durations<br />
+   - Shows dependencies<br />
+   - Easy to understand</p>
+</li>
+<li>
+<p><strong>Simple Timeline</strong><br />
+   - List tasks with dates<br />
+   - Sequential order<br />
+   - Simple format</p>
+</li>
+<li>
+<p><strong>Milestone Chart</strong><br />
+   - Key dates<br />
+   - Major achievements<br />
+   - Progress markers</p>
+</li>
+</ol>
+<h3>Dependencies</h3>
+<p><strong>What are dependencies?</strong></p>
+<p><strong>Dependency</strong> = One task must be completed before another can start</p>
+<p><strong>Types:</strong></p>
+<ol>
+<li>
+<p><strong>Finish-to-Start</strong><br />
+   - Task A must finish before Task B starts<br />
+   - Most common</p>
+</li>
+<li>
+<p><strong>Start-to-Start</strong><br />
+   - Task A must start before Task B starts<br />
+   - Parallel work</p>
+</li>
+<li>
+<p><strong>Finish-to-Finish</strong><br />
+   - Task A must finish before Task B finishes<br />
+   - Coordinated completion</p>
+</li>
+</ol>
+<p><strong>Example:</strong><br />
+- "Assemble robot" must finish before "Test robot" starts<br />
+- <strong>Dependency:</strong> Assembly → Testing</p>
+<h3>Critical Path</h3>
+<p><strong>What is critical path?</strong></p>
+<p><strong>Critical path</strong> = Longest sequence of dependent tasks</p>
+<p><strong>Why it matters:</strong><br />
+- Determines project duration<br />
+- Any delay on critical path delays project<br />
+- Focus attention here</p>
+<p><strong>How to find:</strong><br />
+1. List all tasks<br />
+2. Identify dependencies<br />
+3. Find longest path<br />
+4. That's critical path</p>
+<p><strong>Example:</strong><br />
+- Path 1: Design (2 days) → Build (5 days) → Test (2 days) = 9 days<br />
+- Path 2: Order parts (3 days) → Receive (2 days) = 5 days<br />
+- <strong>Critical path:</strong> Path 1 (9 days)</p>
+<hr />
+<h2>5. Project Management</h2>
+<h3>Progress Tracking</h3>
+<p><strong>Why track progress:</strong><br />
+- Know where you are<br />
+- Identify problems early<br />
+- Adjust if needed<br />
+- Report status</p>
+<p><strong>How to track:</strong></p>
+<ol>
+<li>
+<p><strong>Regular updates</strong><br />
+   - Daily or weekly<br />
+   - Update status<br />
+   - Record progress</p>
+</li>
+<li>
+<p><strong>Status indicators</strong><br />
+   - Not started<br />
+   - In progress<br />
+   - Complete<br />
+   - Blocked</p>
+</li>
+<li>
+<p><strong>Percent complete</strong><br />
+   - Estimate completion<br />
+   - Track progress<br />
+   - Visualize</p>
+</li>
+</ol>
+<h3>Risk Management</h3>
+<p><strong>What is risk?</strong></p>
+<p><strong>Risk</strong> = Something that could go wrong</p>
+<p><strong>Risk management process:</strong></p>
+<ol>
+<li>
+<p><strong>Identify risks</strong><br />
+   - What could go wrong?<br />
+   - List possibilities</p>
+</li>
+<li>
+<p><strong>Assess risks</strong><br />
+   - Likelihood (how likely?)<br />
+   - Impact (how bad?)<br />
+   - Risk level</p>
+</li>
+<li>
+<p><strong>Mitigate risks</strong><br />
+   - How to reduce likelihood?<br />
+   - How to reduce impact?<br />
+   - Plan responses</p>
+</li>
+<li>
+<p><strong>Monitor risks</strong><br />
+   - Watch for risks<br />
+   - Update assessment<br />
+   - Take action if needed</p>
+</li>
+</ol>
+<p><strong>Example risk:</strong><br />
+- <strong>Risk:</strong> Parts delayed<br />
+- <strong>Likelihood:</strong> Medium<br />
+- <strong>Impact:</strong> High (delays project)<br />
+- <strong>Mitigation:</strong> Order early, have backup supplier</p>
+<h3>Communication</h3>
+<p><strong>Why communicate:</strong><br />
+- Keep stakeholders informed<br />
+- Coordinate team<br />
+- Share information<br />
+- Get help</p>
+<p><strong>Who to communicate with:</strong><br />
+- Team members<br />
+- Supervisor/instructor<br />
+- Stakeholders<br />
+- Others involved</p>
+<p><strong>What to communicate:</strong><br />
+- Progress updates<br />
+- Problems encountered<br />
+- Decisions made<br />
+- Changes needed</p>
+<p><strong>How often:</strong><br />
+- Regular updates<br />
+- When problems occur<br />
+- When decisions needed<br />
+- As appropriate</p>
+<hr />
+<h2>6. Summary</h2>
+<h3>Key Concepts</h3>
+<ol>
+<li><strong>Planning</strong> organizes work and ensures completion</li>
+<li><strong>Scope</strong> defines what project includes</li>
+<li><strong>Task breakdown</strong> divides work into manageable pieces</li>
+<li><strong>Scheduling</strong> plans when work happens</li>
+<li><strong>Dependencies</strong> show task relationships</li>
+<li><strong>Critical path</strong> determines project duration</li>
+<li><strong>Management</strong> tracks progress and manages risks</li>
+</ol>
+<h3>Understanding Project Management</h3>
+<p>You should now understand:<br />
+- Why planning matters<br />
+- How to define scope<br />
+- How to break down work<br />
+- How to create schedules<br />
+- How to manage projects<br />
+- How to handle risks</p>
+<h3>Next Steps</h3>
+<p>After learning this theory, you will:<br />
+- Define a project scope<br />
+- Break down tasks<br />
+- Create a schedule<br />
+- Identify dependencies<br />
+- Track progress<br />
+- Manage risks<br />
+- Complete the Module 14 worksheet</p>
+<hr />
+<h2>Questions for Review</h2>
+<p>Before moving to the worksheet, make sure you can answer:</p>
+<ol>
+<li>Why is project planning important?</li>
+<li>What is project scope?</li>
+<li>How do you break down work into tasks?</li>
+<li>What is a dependency?</li>
+<li>What is critical path?</li>
+<li>How do you track progress?</li>
+<li>How do you manage risks?</li>
+</ol>
+<hr />
+<p><strong>Remember:</strong> Good planning saves time and prevents problems. Take time to plan well, and your project will go more smoothly!</p></div></section>
+<section class="card"><h2>Student worksheet</h2><div class="card-inner"><h1>Module 14: Project Planning &amp; Management</h1>
+<h2>Student Worksheet</h2>
+<p><strong>Name:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_<br />
+<strong>Date:</strong> </em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>_<br />
+<strong>Group/Class:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>____</p>
+<hr />
+<h2>Part 1: Project Planning Basics</h2>
+<h3>Question 1: Why Plan?</h3>
+<p>Why is project planning important?</p>
+<hr />
+<hr />
+<h3>Question 2: Project Lifecycle</h3>
+<p>Describe the project lifecycle stages:</p>
+<ol>
+<li>
+<hr />
+</li>
+<li>
+<hr />
+</li>
+<li>
+<hr />
+</li>
+<li>
+<hr />
+</li>
+<li>
+<hr />
+</li>
+</ol>
+<hr />
+<h2>Part 2: Defining Project Scope</h2>
+<h3>Question 3: Project Aims</h3>
+<p>Define your robot arm project:</p>
+<p><strong>Project Title:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<p><strong>Aims:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<hr />
+<p><strong>Objectives:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<hr />
+<h3>Question 4: Requirements</h3>
+<p>Define project requirements:</p>
+<p><strong>Functional Requirements:</strong><br />
+1. <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><br />
+2. <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong></strong><br />
+3. <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<p><strong>Performance Requirements:</strong><br />
+1. <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><br />
+2. <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong></strong><br />
+3. <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<h3>Question 5: Success Criteria</h3>
+<p>Define success criteria:</p>
+<p><strong>How will you know the project is successful?</strong></p>
+<hr />
+<hr />
+<h3>Question 6: Constraints</h3>
+<p>Identify constraints:</p>
+<p><strong>Time:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<p><strong>Resources:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<p><strong>Budget:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<p><strong>Other:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<hr />
+<h2>Part 3: Task Breakdown</h2>
+<h3>Question 7: Task Breakdown Structure</h3>
+<p>Break down your project into tasks:</p>
+<table>
+<thead>
+<tr>
+<th>Task Category</th>
+<th>Specific Tasks</th>
+<th>Estimated Time</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Mechanical</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Electrical</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Software</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Testing</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Documentation</td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>Part 4: Scheduling</h2>
+<h3>Question 8: Time Estimation</h3>
+<p>Estimate time for each major task:</p>
+<table>
+<thead>
+<tr>
+<th>Task</th>
+<th>Estimated Time</th>
+<th>Actual Time</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h3>Question 9: Timeline</h3>
+<p>Create a project timeline:</p>
+<p>[Space for Gantt chart or timeline]</p>
+<h3>Question 10: Dependencies</h3>
+<p>Identify task dependencies:</p>
+<p><strong>Which tasks must be completed before others?</strong></p>
+<hr />
+<hr />
+<h3>Question 11: Critical Path</h3>
+<p>Identify the critical path:</p>
+<p><strong>Critical tasks:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<p><strong>Why critical?</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<hr />
+<h2>Part 5: Project Management</h2>
+<h3>Question 12: Progress Tracking</h3>
+<p>Set up progress tracking:</p>
+<p><strong>How will you track progress?</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<p><strong>Tracking method:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<h3>Question 13: Risk Management</h3>
+<p>Identify project risks:</p>
+<table>
+<thead>
+<tr>
+<th>Risk</th>
+<th>Likelihood</th>
+<th>Impact</th>
+<th>Mitigation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h3>Question 14: Communication</h3>
+<p>Plan project communication:</p>
+<p><strong>Who needs to be informed?</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<p><strong>How often?</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<p><strong>What information?</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<hr />
+<h2>Part 6: Project Plan Document</h2>
+<h3>Exercise: Complete Project Plan</h3>
+<p>Create a complete project plan document including:<br />
+- Project scope<br />
+- Task breakdown<br />
+- Schedule<br />
+- Risk management<br />
+- Communication plan</p>
+<p>[Space for project plan]</p>
+<hr />
+<h2>Part 7: Reflection</h2>
+<h3>Question 15: Project Planning</h3>
+<p>Answer the following:</p>
+<p>a) What was most challenging about project planning?</p>
+<hr />
+<hr />
+<p>b) How will project planning help your project succeed?</p>
+<hr />
+<hr />
+<hr />
+<h2>Self-Assessment Checklist</h2>
+<ul>
+<li>[ ] Understood project planning basics</li>
+<li>[ ] Defined project scope</li>
+<li>[ ] Identified requirements</li>
+<li>[ ] Broke down tasks</li>
+<li>[ ] Created schedule</li>
+<li>[ ] Identified dependencies</li>
+<li>[ ] Set up progress tracking</li>
+<li>[ ] Identified risks</li>
+<li>[ ] Created project plan</li>
+<li>[ ] Written reflection</li>
+</ul>
+<p><strong>Student Signature:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_<br />
+<strong>Date:</strong> </em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><em><br />
+<strong>Instructor Signature:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_<br />
+<strong>Date:</strong> </em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong></em></p></div></section>
+<section class="card"><h2>Multiple choice questions</h2><div class="card-inner"><h1>Module 14: Project Planning &amp; Management</h1>
+<h2>Multiple Choice Questions</h2>
+<p><strong>Instructions:</strong> Choose the best answer for each question.</p>
+<hr />
+<p><strong>1. Why is project planning important?</strong><br />
+   a) It's not important<br />
+   b) To organize work, manage time, and ensure success<br />
+   c) To make it faster<br />
+   d) To make it slower</p>
+<p><strong>2. What is project scope?</strong><br />
+   a) What the project will and won't include<br />
+   b) The project's speed<br />
+   c) The project's cost<br />
+   d) The project's color</p>
+<p><strong>3. What are functional requirements?</strong><br />
+   a) What the system must do<br />
+   b) How fast it must be<br />
+   c) How much it costs<br />
+   d) What color it is</p>
+<p><strong>4. What is a task breakdown?</strong><br />
+   a) Dividing project into manageable tasks<br />
+   b) Breaking equipment<br />
+   c) Stopping work<br />
+   d) Making it faster</p>
+<p><strong>5. What is a dependency?</strong><br />
+   a) When one task must be completed before another<br />
+   b) When tasks are independent<br />
+   c) When tasks are the same<br />
+   d) When tasks don't matter</p>
+<p><strong>6. What is a critical path?</strong><br />
+   a) The longest sequence of dependent tasks<br />
+   b) The shortest path<br />
+   c) The easiest path<br />
+   d) The most expensive path</p>
+<p><strong>7. Why track progress?</strong><br />
+   a) To monitor project status and identify issues<br />
+   b) It's not important<br />
+   c) To make it faster<br />
+   d) To make it slower</p>
+<p><strong>8. What is risk management?</strong><br />
+   a) Identifying and mitigating project risks<br />
+   b) Ignoring risks<br />
+   c) Creating risks<br />
+   d) Avoiding planning</p>
+<p><strong>9. Why is communication important in projects?</strong><br />
+   a) To keep stakeholders informed<br />
+   b) It's not important<br />
+   c) To make it faster<br />
+   d) To make it slower</p>
+<p><strong>10. What is a Gantt chart?</strong><br />
+   a) A visual timeline of project tasks<br />
+   b) A list of tasks<br />
+   c) A budget<br />
+   d) A schedule</p>
+<hr />
+<h2>Answer Key</h2>
+<ol>
+<li><strong>b)</strong> To organize work, manage time, and ensure success</li>
+<li><strong>a)</strong> What the project will and won't include</li>
+<li><strong>a)</strong> What the system must do</li>
+<li><strong>a)</strong> Dividing project into manageable tasks</li>
+<li><strong>a)</strong> When one task must be completed before another</li>
+<li><strong>a)</strong> The longest sequence of dependent tasks</li>
+<li><strong>a)</strong> To monitor project status and identify issues</li>
+<li><strong>a)</strong> Identifying and mitigating project risks</li>
+<li><strong>a)</strong> To keep stakeholders informed</li>
+<li><strong>a)</strong> A visual timeline of project tasks</li>
+</ol>
+<hr />
+<h2>Scoring Guide</h2>
+<ul>
+<li><strong>9-10 correct:</strong> Excellent understanding</li>
+<li><strong>7-8 correct:</strong> Good understanding</li>
+<li><strong>5-6 correct:</strong> Satisfactory understanding</li>
+<li><strong>Below 5 correct:</strong> Needs review</li>
+</ul></div></section>
+<section class="card"><h2>Assessment rubric</h2><div class="card-inner"><h1>Module 14: Project Planning &amp; Management</h1>
+<h2>Assessment Rubric</h2>
+<p><strong>Student Name:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_<br />
+<strong>Date:</strong> </em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>_<br />
+<strong>Assessor:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>____</p>
+<hr />
+<h2>Overall Assessment Criteria</h2>
+<table>
+<thead>
+<tr>
+<th>Criteria</th>
+<th>Excellent (4)</th>
+<th>Good (3)</th>
+<th>Satisfactory (2)</th>
+<th>Needs Improvement (1)</th>
+<th>Score</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Knowledge &amp; Understanding</strong></td>
+<td>Comprehensive understanding of project management</td>
+<td>Good understanding</td>
+<td>Basic understanding</td>
+<td>Limited understanding</td>
+<td>/4</td>
+</tr>
+<tr>
+<td><strong>Planning Skills</strong></td>
+<td>Well-structured, realistic project plan</td>
+<td>Good plan</td>
+<td>Basic plan</td>
+<td>Poor plan</td>
+<td>/4</td>
+</tr>
+<tr>
+<td><strong>Analysis &amp; Application</strong></td>
+<td>Clear analysis of tasks, dependencies, risks</td>
+<td>Good analysis</td>
+<td>Basic analysis</td>
+<td>Limited analysis</td>
+<td>/4</td>
+</tr>
+<tr>
+<td><strong>Documentation</strong></td>
+<td>Complete project plan documentation</td>
+<td>Good documentation</td>
+<td>Basic documentation</td>
+<td>Incomplete documentation</td>
+<td>/4</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Total Score:</strong> /16</p>
+<hr />
+<h2>Detailed Marking Guide</h2>
+<h3>Part 1: Basics (10 marks)</h3>
+<ul>
+<li><strong>Question 1:</strong> 5 marks</li>
+<li><strong>Question 2:</strong> 5 marks</li>
+</ul>
+<p><strong>Mark:</strong> /10</p>
+<hr />
+<h3>Part 2: Scope Definition (25 marks)</h3>
+<ul>
+<li><strong>Question 3:</strong> 8 marks (aims/objectives)</li>
+<li><strong>Question 4:</strong> 8 marks (requirements)</li>
+<li><strong>Question 5:</strong> 5 marks (success criteria)</li>
+<li><strong>Question 6:</strong> 4 marks (constraints)</li>
+</ul>
+<p><strong>Mark:</strong> /25</p>
+<hr />
+<h3>Part 3: Task Breakdown (15 marks)</h3>
+<ul>
+<li><strong>Question 7:</strong> 15 marks (task breakdown table)</li>
+</ul>
+<p><strong>Mark:</strong> /15</p>
+<hr />
+<h3>Part 4: Scheduling (25 marks)</h3>
+<ul>
+<li><strong>Question 8:</strong> 8 marks (time estimation)</li>
+<li><strong>Question 9:</strong> 8 marks (timeline)</li>
+<li><strong>Question 10:</strong> 5 marks (dependencies)</li>
+<li><strong>Question 11:</strong> 4 marks (critical path)</li>
+</ul>
+<p><strong>Mark:</strong> /25</p>
+<hr />
+<h3>Part 5: Management (15 marks)</h3>
+<ul>
+<li><strong>Question 12:</strong> 5 marks (progress tracking)</li>
+<li><strong>Question 13:</strong> 6 marks (risk management)</li>
+<li><strong>Question 14:</strong> 4 marks (communication)</li>
+</ul>
+<p><strong>Mark:</strong> /15</p>
+<hr />
+<h3>Part 6: Project Plan (10 marks)</h3>
+<ul>
+<li><strong>Exercise:</strong> 10 marks (complete project plan)</li>
+</ul>
+<p><strong>Mark:</strong> /10</p>
+<hr />
+<h3>Part 7: Reflection (5 marks)</h3>
+<ul>
+<li><strong>Question 15:</strong> 5 marks</li>
+</ul>
+<p><strong>Mark:</strong> /5</p>
+<hr />
+<p><strong>Final Grade:</strong> <strong><em>_</em></strong>____ / 100</p>
+<p><strong>Assessor Comments:</strong></p>
+<hr />
+<hr />
+<p><strong>Assessor Signature:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_<br />
+<strong>Date:</strong> </em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>_</p></div></section>
+  </div>
+</body>
+</html>

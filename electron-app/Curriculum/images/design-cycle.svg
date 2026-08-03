@@ -1,0 +1,70 @@
+<svg viewBox="0 0 480 480" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, sans-serif">
+  <rect width="480" height="480" fill="#f8fafc" rx="8"/>
+  <text x="240" y="30" text-anchor="middle" font-size="15" font-weight="700" fill="#1e293b">The Engineering Design Cycle</text>
+  <text x="240" y="46" text-anchor="middle" font-size="11" fill="#64748b">Iterative — each loop improves the solution</text>
+
+  <!-- Central circle -->
+  <circle cx="240" cy="255" r="52" fill="#1e293b"/>
+  <text x="240" y="249" text-anchor="middle" font-size="12" font-weight="700" fill="white">Design</text>
+  <text x="240" y="264" text-anchor="middle" font-size="12" font-weight="700" fill="#94a3b8">Cycle</text>
+  <text x="240" y="279" text-anchor="middle" font-size="10" fill="#64748b">Repeat to</text>
+  <text x="240" y="291" text-anchor="middle" font-size="10" fill="#64748b">converge</text>
+
+  <!-- Steps arranged in a circle at radius ~155 -->
+  <!-- Step 1: Brief & Specify (top, 270°) -->
+  <circle cx="240" cy="88" r="46" fill="#3b82f6" stroke="#1d4ed8" stroke-width="2"/>
+  <text x="240" y="83" text-anchor="middle" font-size="11" font-weight="700" fill="white">1. Brief &amp;</text>
+  <text x="240" y="97" text-anchor="middle" font-size="11" font-weight="700" fill="white">Specify</text>
+
+  <!-- Step 2: Research & Design (top-right, 330°) -->
+  <circle cx="374" cy="168" r="46" fill="#7c3aed" stroke="#6d28d9" stroke-width="2"/>
+  <text x="374" y="163" text-anchor="middle" font-size="11" font-weight="700" fill="white">2. Research</text>
+  <text x="374" y="177" text-anchor="middle" font-size="11" font-weight="700" fill="white">&amp; Design</text>
+
+  <!-- Step 3: Build & Prototype (bottom-right, 30°) -->
+  <circle cx="374" cy="342" r="46" fill="#ea580c" stroke="#c2410c" stroke-width="2"/>
+  <text x="374" y="337" text-anchor="middle" font-size="11" font-weight="700" fill="white">3. Build &amp;</text>
+  <text x="374" y="351" text-anchor="middle" font-size="11" font-weight="700" fill="white">Prototype</text>
+
+  <!-- Step 4: Test & Evaluate (bottom, 90°) -->
+  <circle cx="240" cy="422" r="46" fill="#16a34a" stroke="#15803d" stroke-width="2"/>
+  <text x="240" y="417" text-anchor="middle" font-size="11" font-weight="700" fill="white">4. Test &amp;</text>
+  <text x="240" y="431" text-anchor="middle" font-size="11" font-weight="700" fill="white">Evaluate</text>
+
+  <!-- Step 5: Improve (bottom-left, 150°) -->
+  <circle cx="106" cy="342" r="46" fill="#dc2626" stroke="#991b1b" stroke-width="2"/>
+  <text x="106" y="337" text-anchor="middle" font-size="11" font-weight="700" fill="white">5. Improve</text>
+  <text x="106" y="351" text-anchor="middle" font-size="11" font-weight="700" fill="white">&amp; Refine</text>
+
+  <!-- Step 6: Document (top-left, 210°) -->
+  <circle cx="106" cy="168" r="46" fill="#0369a1" stroke="#075985" stroke-width="2"/>
+  <text x="106" y="163" text-anchor="middle" font-size="11" font-weight="700" fill="white">6. Document</text>
+  <text x="106" y="177" text-anchor="middle" font-size="11" font-weight="700" fill="white">&amp; Present</text>
+
+  <!-- Curved arrows between steps (clockwise) -->
+  <defs>
+    <marker id="arr-w" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 Z" fill="#475569"/>
+    </marker>
+  </defs>
+  <!-- 1→2 -->
+  <path d="M 278,110 Q 330,110 350,145" stroke="#475569" stroke-width="2" fill="none" marker-end="url(#arr-w)"/>
+  <!-- 2→3 -->
+  <path d="M 390,210 Q 400,255 388,310" stroke="#475569" stroke-width="2" fill="none" marker-end="url(#arr-w)"/>
+  <!-- 3→4 -->
+  <path d="M 350,370 Q 310,400 278,400" stroke="#475569" stroke-width="2" fill="none" marker-end="url(#arr-w)"/>
+  <!-- 4→5 -->
+  <path d="M 202,400 Q 160,400 132,370" stroke="#475569" stroke-width="2" fill="none" marker-end="url(#arr-w)"/>
+  <!-- 5→6 -->
+  <path d="M 90,300 Q 80,250 90,210" stroke="#475569" stroke-width="2" fill="none" marker-end="url(#arr-w)"/>
+  <!-- 6→1 -->
+  <path d="M 130,145 Q 175,115 202,110" stroke="#475569" stroke-width="2" fill="none" marker-end="url(#arr-w)"/>
+
+  <!-- Sub-labels inside arrows -->
+  <text x="330" y="127" text-anchor="middle" font-size="9" fill="#64748b">choose best</text>
+  <text x="406" y="258" text-anchor="middle" font-size="9" fill="#64748b">make it</text>
+  <text x="315" y="415" text-anchor="middle" font-size="9" fill="#64748b">measure results</text>
+  <text x="152" y="415" text-anchor="middle" font-size="9" fill="#64748b">fix problems</text>
+  <text x="68" y="258" text-anchor="middle" font-size="9" fill="#64748b">evidence</text>
+  <text x="155" y="120" text-anchor="middle" font-size="9" fill="#64748b">next iteration</text>
+</svg>

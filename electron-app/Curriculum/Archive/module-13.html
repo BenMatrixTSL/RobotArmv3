@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="curriculum-module" content="13">
+  <title>Module 13: Safety Standards &amp; Design for Safety</title>
+  <style>
+    :root {
+      --bg: #f6f7f9;
+      --card: #fff;
+      --text: #1a1d26;
+      --muted: #5c6370;
+      --accent: #1e5a8a;
+      --border: #d8dde6;
+      --code-bg: #eef1f6;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 17px;
+      line-height: 1.55;
+      color: var(--text);
+      background: var(--bg);
+    }
+    .wrap {
+      max-width: 52rem;
+      margin: 0 auto;
+      padding: 1.25rem 1.25rem 3rem;
+    }
+    .top-nav {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.75rem 1rem;
+      padding: 0.75rem 0;
+      margin-bottom: 1.25rem;
+      border-bottom: 1px solid var(--border);
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+      font-size: 0.9rem;
+    }
+    .nav-title {
+      flex: 1 1 auto;
+      font-weight: 600;
+      color: var(--muted);
+      min-width: 12rem;
+    }
+    a.nav-link {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    a.nav-link:hover { text-decoration: underline; }
+    h1.page-title {
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+      font-size: 1.65rem;
+      font-weight: 700;
+      margin: 0 0 0.5rem;
+      line-height: 1.25;
+    }
+    p.lead {
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+      color: var(--muted);
+      margin: 0 0 1.5rem;
+      font-size: 0.95rem;
+    }
+    section.card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.25rem 1.5rem 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    }
+    section.card h2 {
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+      font-size: 1.15rem;
+      margin: 0 0 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid var(--accent);
+      color: var(--accent);
+    }
+    .card-inner {
+      font-family: Georgia, "Times New Roman", serif;
+    }
+    .card-inner h1, .card-inner h2, .card-inner h3, .card-inner h4 {
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+    }
+    .card-inner h1 { font-size: 1.35rem; }
+    .card-inner h2 { font-size: 1.15rem; border-bottom: none; color: var(--text); }
+    .card-inner h3 { font-size: 1.05rem; }
+    .card-inner h4 { font-size: 1rem; }
+    .card-inner code {
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 0.9em;
+      background: var(--code-bg);
+      padding: 0.1em 0.35em;
+      border-radius: 4px;
+    }
+    .card-inner pre {
+      background: var(--code-bg);
+      padding: 1rem;
+      overflow-x: auto;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+    }
+    .card-inner pre code {
+      background: none;
+      padding: 0;
+    }
+    .card-inner table {
+      border-collapse: collapse;
+      width: 100%;
+      font-size: 0.95rem;
+      margin: 1rem 0;
+    }
+    .card-inner th, .card-inner td {
+      border: 1px solid var(--border);
+      padding: 0.45rem 0.6rem;
+      text-align: left;
+      vertical-align: top;
+    }
+    .card-inner th {
+      background: #eef3f8;
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+      font-weight: 600;
+    }
+    ul.index-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+    }
+    ul.index-list li {
+      margin: 0.35rem 0;
+      padding: 0.5rem 0.65rem;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--card);
+    }
+    ul.index-list a {
+      color: var(--accent);
+      font-weight: 600;
+      text-decoration: none;
+    }
+    ul.index-list a:hover { text-decoration: underline; }
+    .index-meta {
+      display: block;
+      font-size: 0.85rem;
+      color: var(--muted);
+      font-weight: normal;
+      margin-top: 0.2rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <nav class="top-nav">
+  <a class="nav-link" href="index.html">All modules</a>
+  <a class="nav-link" href="module-12.html">← Previous</a>
+  <span class="nav-title">Module 13: Safety Standards &amp; Design for Safety</span>
+  <a class="nav-link" href="module-14.html">Next →</a>
+</nav>
+<h1 class="page-title">Module 13: Safety Standards &amp; Design for Safety</h1>
+<p class="lead">BTEC robot arm curriculum — one page per module. Work through sections in order.</p>
+<section class="card"><h2>Curriculum plan (from BTEC_Robot_Arm_Curriculum_Plan.md)</h2><div class="card-inner"><h2><strong>Module 13: Safety Standards &amp; Design for Safety</strong></h2>
+<p><em>Level 4/5 - Building on Module 12</em></p>
+<h3>Learning Objectives Covered:</h3>
+<ul>
+<li>✅ <strong>Standards and regulations awareness</strong> (Level 4/5)</li>
+<li>Recognize industrial robot systems subject to machinery and safety standards (ISO 10218, relevant directives)</li>
+<li>Map typical safety requirements (safe stops, emergency stops, guarding, modes of operation) to educational robot setup</li>
+<li>✅ <strong>Designing for safety</strong> (Level 4/5)</li>
+<li>Justify safety-related features: joint limits, speed/acceleration caps, torque on/off control, conservative defaults on communication errors</li>
+<li>Propose safe behaviors on: loss of communication, power failure, sensor/feedback anomalies</li>
+</ul>
+<h3>Content:</h3>
+<ol>
+<li>
+<p><strong>Safety Standards Overview</strong><br />
+   - ISO 10218: industrial robot safety<br />
+   - Relevant directives<br />
+   - Why standards exist<br />
+   - Applicability to educational systems</p>
+</li>
+<li>
+<p><strong>Safety Requirements Mapping</strong><br />
+   - Safe stops: what they are and how implemented<br />
+   - Emergency stops: requirements and implementation<br />
+   - Guarding: requirements and options<br />
+   - Modes of operation: teaching vs. automatic<br />
+   - Mapping to educational robot</p>
+</li>
+<li>
+<p><strong>Safety Features Analysis</strong><br />
+   - Joint limits: why and how<br />
+   - Speed caps: rationale and implementation<br />
+   - Acceleration caps: rationale and implementation<br />
+   - Torque on/off: safety implications<br />
+   - Conservative defaults: why they matter</p>
+</li>
+<li>
+<p><strong>Failure Mode Analysis</strong><br />
+   - Loss of communication: what happens?<br />
+   - Power failure: safe behavior<br />
+   - Sensor anomalies: detection and response<br />
+   - Feedback anomalies: handling<br />
+   - Designing fail-safe behaviors</p>
+</li>
+<li>
+<p><strong>Safety Justification</strong><br />
+   - Documenting safety features<br />
+   - Justifying design choices<br />
+   - Risk reduction analysis<br />
+   - Compliance considerations</p>
+</li>
+</ol>
+<h3>Practical Activities:</h3>
+<ul>
+<li>Research safety standards</li>
+<li>Map requirements to robot system</li>
+<li>Analyze existing safety features</li>
+<li>Test failure mode responses</li>
+<li>Propose safety improvements</li>
+<li>Create safety justification document</li>
+<li>Perform safety audit</li>
+<li>Document safety analysis</li>
+</ul>
+<hr /></div></section>
+<section class="card"><h2>Theory & teaching notes</h2><div class="card-inner"><h1>Module 13: Safety Standards &amp; Design for Safety</h1>
+<h2>Theory &amp; Teaching Notes</h2>
+<p><strong>Module Duration:</strong> 2-3 hours<br />
+<strong>Level:</strong> Advanced (Level 4/5)</p>
+<hr />
+<h2>Learning Objectives</h2>
+<p>By the end of this module, students will be able to:<br />
+- Understand safety standards for robots<br />
+- Map safety requirements to educational systems<br />
+- Justify safety features in design<br />
+- Design fail-safe behaviors<br />
+- Understand safety implications of failures</p>
+<hr />
+<h2>1. Safety Standards Overview</h2>
+<h3>Why Standards Exist</h3>
+<p><strong>Safety standards</strong> exist to:<br />
+- Protect people<br />
+- Prevent accidents<br />
+- Ensure consistent safety<br />
+- Provide guidelines<br />
+- Legal requirements</p>
+<p><strong>Think of it like:</strong> Rules that ensure safety is taken seriously and implemented correctly.</p>
+<h3>ISO 10218</h3>
+<p><strong>What it is:</strong> International standard for industrial robot safety</p>
+<p><strong>Covers:</strong><br />
+- Robot design requirements<br />
+- Safety requirements<br />
+- Installation requirements<br />
+- Operation requirements<br />
+- Maintenance requirements</p>
+<p><strong>Key principles:</strong><br />
+- Risk assessment<br />
+- Safety measures<br />
+- Verification<br />
+- Documentation</p>
+<h3>Other Relevant Standards</h3>
+<p><strong>Examples:</strong><br />
+- Machinery Directive (Europe)<br />
+- OSHA standards (USA)<br />
+- National standards<br />
+- Industry-specific standards</p>
+<p><strong>Why multiple standards:</strong><br />
+- Different regions<br />
+- Different industries<br />
+- Different applications<br />
+- All aim for safety</p>
+<h3>Applicability to Educational Systems</h3>
+<p><strong>Educational robots:</strong><br />
+- May not need full industrial compliance<br />
+- But should follow principles<br />
+- Teach proper practices<br />
+- Prepare for industry</p>
+<p><strong>Key point:</strong> Understand standards even if not fully compliant</p>
+<hr />
+<h2>2. Safety Requirements Mapping</h2>
+<h3>Safe Stops</h3>
+<p><strong>What they are:</strong> Controlled stops that maintain safety</p>
+<p><strong>Types:</strong></p>
+<ol>
+<li>
+<p><strong>Category 0 Stop</strong><br />
+   - Immediate removal of power<br />
+   - Uncontrolled stop<br />
+   - Emergency situations</p>
+</li>
+<li>
+<p><strong>Category 1 Stop</strong><br />
+   - Controlled stop, then power removal<br />
+   - Maintains control during stop<br />
+   - Safer than Category 0</p>
+</li>
+<li>
+<p><strong>Category 2 Stop</strong><br />
+   - Controlled stop, power maintained<br />
+   - Can resume operation<br />
+   - Normal stops</p>
+</li>
+</ol>
+<p><strong>Mapping to educational robot:</strong><br />
+- Emergency stop = Category 0<br />
+- Normal stop = Category 2<br />
+- Software stop = Category 2</p>
+<h3>Emergency Stops</h3>
+<p><strong>What they are:</strong> Immediate stops in dangerous situations</p>
+<p><strong>Requirements:</strong><br />
+- Easily accessible<br />
+- Clearly marked<br />
+- Immediately effective<br />
+- Cannot be bypassed</p>
+<p><strong>Implementation:</strong><br />
+- Physical button<br />
+- Software function<br />
+- Both (redundant)</p>
+<p><strong>Mapping to educational robot:</strong><br />
+- Emergency stop button<br />
+- Software emergency stop<br />
+- Both should work</p>
+<h3>Guarding</h3>
+<p><strong>What it is:</strong> Physical barriers preventing access</p>
+<p><strong>Requirements:</strong><br />
+- Proper height<br />
+- Strong enough<br />
+- Secure mounting<br />
+- Interlocked (stops robot when opened)</p>
+<p><strong>Types:</strong><br />
+- Fixed guards<br />
+- Interlocked guards<br />
+- Light curtains<br />
+- Pressure mats</p>
+<p><strong>Mapping to educational robot:</strong><br />
+- Physical barriers<br />
+- Interlocked gates<br />
+- Clear working envelope<br />
+- Supervision</p>
+<h3>Modes of Operation</h3>
+<p><strong>Types:</strong></p>
+<ol>
+<li>
+<p><strong>Teaching Mode</strong><br />
+   - Slow speed<br />
+   - Direct control<br />
+   - Operator present<br />
+   - Higher risk</p>
+</li>
+<li>
+<p><strong>Automatic Mode</strong><br />
+   - Normal speed<br />
+   - Programmed operation<br />
+   - Operator may not be present<br />
+   - Requires guarding</p>
+</li>
+</ol>
+<p><strong>Mapping to educational robot:</strong><br />
+- Manual control = Teaching mode<br />
+- Sequence execution = Automatic mode<br />
+- Different safety requirements</p>
+<hr />
+<h2>3. Safety Features Analysis</h2>
+<h3>Joint Limits</h3>
+<p><strong>What they are:</strong> Software limits on joint movement</p>
+<p><strong>Why a safety feature:</strong><br />
+- Prevents unsafe positions<br />
+- Prevents collisions<br />
+- Prevents damage<br />
+- Protects mechanisms</p>
+<p><strong>Justification:</strong><br />
+- Prevents accidents<br />
+- Protects equipment<br />
+- Ensures safe operation<br />
+- Required by standards</p>
+<p><strong>Implementation:</strong><br />
+- Software checks<br />
+- Hardware limits (backup)<br />
+- Both (redundant)</p>
+<h3>Speed and Acceleration Caps</h3>
+<p><strong>What they are:</strong> Maximum allowed speed and acceleration</p>
+<p><strong>Why a safety feature:</strong><br />
+- Prevents dangerous speeds<br />
+- Reduces impact force<br />
+- Improves control<br />
+- Protects operators</p>
+<p><strong>Justification:</strong><br />
+- Limits impact energy<br />
+- Improves reaction time<br />
+- Reduces injury severity<br />
+- Required for safety</p>
+<p><strong>Implementation:</strong><br />
+- Software limits<br />
+- Cannot be exceeded<br />
+- Default safe values<br />
+- Can be adjusted (with care)</p>
+<h3>Torque On/Off Control</h3>
+<p><strong>What it is:</strong> Ability to enable/disable motor torque</p>
+<p><strong>Why a safety feature:</strong><br />
+- Prevents accidental movement<br />
+- Allows safe manual positioning<br />
+- Enables safe setup<br />
+- Required for maintenance</p>
+<p><strong>Justification:</strong><br />
+- Essential for safety<br />
+- Prevents unexpected movement<br />
+- Enables safe operation<br />
+- Standard requirement</p>
+<p><strong>Implementation:</strong><br />
+- Software control<br />
+- Physical switch (backup)<br />
+- Clear indication<br />
+- Easy to use</p>
+<h3>Conservative Defaults</h3>
+<p><strong>What they are:</strong> Safe default settings</p>
+<p><strong>Examples:</strong><br />
+- Low speed defaults<br />
+- Low acceleration defaults<br />
+- Torque disabled by default<br />
+- Safe position defaults</p>
+<p><strong>Why a safety feature:</strong><br />
+- Safe if misconfigured<br />
+- Prevents accidents<br />
+- Protects operators<br />
+- Good practice</p>
+<p><strong>Justification:</strong><br />
+- Fail-safe principle<br />
+- Prevents accidents<br />
+- Protects users<br />
+- Industry best practice</p>
+<hr />
+<h2>4. Failure Mode Analysis</h2>
+<h3>Loss of Communication</h3>
+<p><strong>What happens:</strong> Robot loses communication with controller</p>
+<p><strong>Risks:</strong><br />
+- Robot may continue last command<br />
+- Robot may stop unexpectedly<br />
+- No feedback available<br />
+- Unpredictable behavior</p>
+<p><strong>Safe behavior:</strong><br />
+- <strong>Stop robot immediately</strong><br />
+- Disable torque<br />
+- Alert operator<br />
+- Require reset</p>
+<p><strong>Justification:</strong><br />
+- Prevents unpredictable behavior<br />
+- Ensures safety<br />
+- Fail-safe design<br />
+- Standard requirement</p>
+<h3>Power Failure</h3>
+<p><strong>What happens:</strong> Power is lost</p>
+<p><strong>Risks:</strong><br />
+- Robot may fall (gravity)<br />
+- Uncontrolled movement<br />
+- Loss of control<br />
+- Safety hazard</p>
+<p><strong>Safe behavior:</strong><br />
+- <strong>Brake or hold position</strong> (if possible)<br />
+- <strong>Fail to safe state</strong><br />
+- Prevent free fall<br />
+- Safe shutdown</p>
+<p><strong>Justification:</strong><br />
+- Prevents uncontrolled movement<br />
+- Protects operators<br />
+- Prevents damage<br />
+- Critical safety requirement</p>
+<h3>Sensor Anomalies</h3>
+<p><strong>What happens:</strong> Sensors report incorrect or invalid data</p>
+<p><strong>Risks:</strong><br />
+- Incorrect position known<br />
+- Wrong decisions made<br />
+- Unsafe operation<br />
+- Accidents</p>
+<p><strong>Safe behavior:</strong><br />
+- <strong>Detect anomalies</strong><br />
+- <strong>Stop operation</strong><br />
+- <strong>Alert operator</strong><br />
+- <strong>Require verification</strong></p>
+<p><strong>Justification:</strong><br />
+- Prevents unsafe operation<br />
+- Ensures reliability<br />
+- Protects operators<br />
+- Good practice</p>
+<h3>Feedback Anomalies</h3>
+<p><strong>What happens:</strong> Feedback data is invalid or missing</p>
+<p><strong>Risks:</strong><br />
+- Don't know actual state<br />
+- Can't make good decisions<br />
+- Unsafe operation possible</p>
+<p><strong>Safe behavior:</strong><br />
+- <strong>Detect invalid data</strong><br />
+- <strong>Use conservative assumptions</strong><br />
+- <strong>Stop if uncertain</strong><br />
+- <strong>Alert operator</strong></p>
+<p><strong>Justification:</strong><br />
+- Prevents unsafe assumptions<br />
+- Ensures safety<br />
+- Fail-safe design<br />
+- Good practice</p>
+<hr />
+<h2>5. Fail-Safe Design Principles</h2>
+<h3>What is Fail-Safe?</h3>
+<p><strong>Fail-safe</strong> = System fails to safest possible state</p>
+<p><strong>Principle:</strong> When something goes wrong, system becomes safer, not more dangerous.</p>
+<h3>Examples</h3>
+<p><strong>Good fail-safe:</strong><br />
+- Communication loss → Stop robot<br />
+- Power failure → Hold position or safe stop<br />
+- Error detected → Stop and alert</p>
+<p><strong>Bad (not fail-safe):</strong><br />
+- Communication loss → Continue last command<br />
+- Power failure → Free fall<br />
+- Error detected → Ignore and continue</p>
+<h3>Designing Fail-Safe Behaviors</h3>
+<p><strong>Process:</strong></p>
+<ol>
+<li>
+<p><strong>Identify failure modes</strong><br />
+   - What can go wrong?<br />
+   - List all possibilities</p>
+</li>
+<li>
+<p><strong>Determine safe state</strong><br />
+   - What is safest state?<br />
+   - For each failure mode</p>
+</li>
+<li>
+<p><strong>Design behavior</strong><br />
+   - How to reach safe state?<br />
+   - How to detect failure?<br />
+   - How to respond?</p>
+</li>
+<li>
+<p><strong>Verify</strong><br />
+   - Test failure modes<br />
+   - Verify safe behavior<br />
+   - Document</p>
+</li>
+</ol>
+<h3>Conservative Approach</h3>
+<p><strong>Principle:</strong> When in doubt, choose safer option</p>
+<p><strong>Examples:</strong><br />
+- Unknown state → Assume unsafe<br />
+- Uncertain data → Don't trust it<br />
+- Error detected → Stop and verify</p>
+<hr />
+<h2>6. Safety Justification</h2>
+<h3>Documenting Safety Features</h3>
+<p><strong>Why document:</strong><br />
+- Shows safety was considered<br />
+- Explains decisions<br />
+- Provides evidence<br />
+- Required by standards</p>
+<p><strong>What to document:</strong><br />
+- Safety features implemented<br />
+- Why each feature exists<br />
+- How it improves safety<br />
+- How it meets requirements</p>
+<h3>Risk Reduction Analysis</h3>
+<p><strong>Process:</strong></p>
+<ol>
+<li>
+<p><strong>Identify hazards</strong><br />
+   - What are the dangers?<br />
+   - List all hazards</p>
+</li>
+<li>
+<p><strong>Assess risk</strong><br />
+   - How likely?<br />
+   - How severe?<br />
+   - Risk level?</p>
+</li>
+<li>
+<p><strong>Implement controls</strong><br />
+   - How to reduce risk?<br />
+   - Safety features<br />
+   - Procedures</p>
+</li>
+<li>
+<p><strong>Verify reduction</strong><br />
+   - Risk reduced?<br />
+   - Acceptable level?<br />
+   - Document</p>
+</li>
+</ol>
+<h3>Compliance Considerations</h3>
+<p><strong>Standards compliance:</strong><br />
+- Which standards apply?<br />
+- How does design meet them?<br />
+- What evidence exists?<br />
+- Documentation needed?</p>
+<p><strong>For educational systems:</strong><br />
+- Understand standards<br />
+- Apply principles<br />
+- Document approach<br />
+- Prepare for industry</p>
+<hr />
+<h2>7. Summary</h2>
+<h3>Key Concepts</h3>
+<ol>
+<li><strong>Safety standards</strong> provide guidelines for safe design</li>
+<li><strong>Safety requirements</strong> include stops, guards, modes</li>
+<li><strong>Safety features</strong> justify design choices</li>
+<li><strong>Failure modes</strong> must be analyzed</li>
+<li><strong>Fail-safe design</strong> ensures safe failure</li>
+<li><strong>Safety justification</strong> documents decisions</li>
+<li><strong>Risk reduction</strong> is the goal</li>
+</ol>
+<h3>Understanding Safety Design</h3>
+<p>You should now understand:<br />
+- Why safety standards exist<br />
+- What safety requirements are<br />
+- How to justify safety features<br />
+- How to design fail-safe behaviors<br />
+- How to document safety</p>
+<h3>Next Steps</h3>
+<p>After learning this theory, you will:<br />
+- Understand safety standards<br />
+- Map requirements to systems<br />
+- Analyze safety features<br />
+- Design fail-safe behaviors<br />
+- Justify safety decisions<br />
+- Complete the Module 13 worksheet</p>
+<hr />
+<h2>Questions for Review</h2>
+<p>Before moving to the worksheet, make sure you can answer:</p>
+<ol>
+<li>Why do safety standards exist?</li>
+<li>What is ISO 10218?</li>
+<li>What are the types of safe stops?</li>
+<li>Why are joint limits a safety feature?</li>
+<li>What is fail-safe design?</li>
+<li>What should happen on communication loss?</li>
+<li>How do you justify safety features?</li>
+</ol>
+<hr />
+<p><strong>Remember:</strong> Safety is not optional. Design for safety from the start, and always consider what happens when things go wrong!</p></div></section>
+<section class="card"><h2>Student worksheet</h2><div class="card-inner"><h1>Module 13: Safety Standards &amp; Design for Safety</h1>
+<h2>Student Worksheet</h2>
+<p><strong>Name:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_<br />
+<strong>Date:</strong> </em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>_<br />
+<strong>Group/Class:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>____</p>
+<hr />
+<h2>Part 1: Safety Standards Overview</h2>
+<h3>Question 1: Standards Research</h3>
+<p>Research and document safety standards:</p>
+<table>
+<thead>
+<tr>
+<th>Standard</th>
+<th>What It Covers</th>
+<th>Applicability</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ISO 10218</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Other relevant standards</td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h3>Question 2: Why Standards Matter</h3>
+<p>Why are safety standards important?</p>
+<hr />
+<hr />
+<hr />
+<h2>Part 2: Safety Requirements Mapping</h2>
+<h3>Question 3: Safe Stops</h3>
+<p>Document safe stops:</p>
+<p><strong>What are safe stops?</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<p><strong>How implemented:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<p><strong>Mapping to educational robot:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<h3>Question 4: Emergency Stops</h3>
+<p>Document emergency stops:</p>
+<p><strong>Requirements:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<p><strong>Implementation:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<p><strong>Mapping to educational robot:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<h3>Question 5: Guarding</h3>
+<p>Document guarding requirements:</p>
+<p><strong>Requirements:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<p><strong>Implementation:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<p><strong>Mapping to educational robot:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<h3>Question 6: Modes of Operation</h3>
+<p>Document modes of operation:</p>
+<p><strong>Teaching mode:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<p><strong>Automatic mode:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<p><strong>Mapping to educational robot:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<hr />
+<h2>Part 3: Safety Features Analysis</h2>
+<h3>Question 7: Joint Limits</h3>
+<p>Analyze joint limits as a safety feature:</p>
+<p><strong>How implemented:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<p><strong>Why important:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<p><strong>Justification:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<h3>Question 8: Speed and Acceleration Caps</h3>
+<p>Analyze speed/acceleration caps:</p>
+<p><strong>How implemented:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<p><strong>Why important:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<p><strong>Justification:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<h3>Question 9: Torque Control</h3>
+<p>Analyze torque on/off control:</p>
+<p><strong>How implemented:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<p><strong>Why important:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<p><strong>Justification:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<h3>Question 10: Conservative Defaults</h3>
+<p>Analyze conservative defaults:</p>
+<p><strong>What defaults:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<p><strong>Why important:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<p><strong>Justification:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<hr />
+<h2>Part 4: Failure Mode Analysis</h2>
+<h3>Question 11: Loss of Communication</h3>
+<p>Design safe behavior for loss of communication:</p>
+<p><strong>What happens:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<p><strong>Safe behavior:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<p><strong>Justification:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<h3>Question 12: Power Failure</h3>
+<p>Design safe behavior for power failure:</p>
+<p><strong>What happens:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<p><strong>Safe behavior:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<p><strong>Justification:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<h3>Question 13: Sensor Anomalies</h3>
+<p>Design safe behavior for sensor anomalies:</p>
+<p><strong>What happens:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<p><strong>Safe behavior:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<p><strong>Justification:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<hr />
+<h2>Part 5: Safety Justification</h2>
+<h3>Exercise: Safety Analysis Report</h3>
+<p>Create a safety analysis report documenting:<br />
+- Safety features<br />
+- Justification for each feature<br />
+- Failure mode responses<br />
+- Compliance considerations</p>
+<p>[Space for report]</p>
+<hr />
+<h2>Part 6: Reflection</h2>
+<h3>Question 14: Safety Design</h3>
+<p>Answer the following:</p>
+<p>a) Why is designing for safety important?</p>
+<hr />
+<hr />
+<p>b) What was most important safety feature?</p>
+<hr />
+<hr />
+<hr />
+<h2>Self-Assessment Checklist</h2>
+<ul>
+<li>[ ] Researched safety standards</li>
+<li>[ ] Mapped safety requirements</li>
+<li>[ ] Analyzed safety features</li>
+<li>[ ] Designed failure mode responses</li>
+<li>[ ] Created safety justification</li>
+<li>[ ] Written reflection</li>
+</ul>
+<p><strong>Student Signature:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_<br />
+<strong>Date:</strong> </em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><em><br />
+<strong>Instructor Signature:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_<br />
+<strong>Date:</strong> </em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong></em></p></div></section>
+<section class="card"><h2>Multiple choice questions</h2><div class="card-inner"><h1>Module 13: Safety Standards &amp; Design for Safety</h1>
+<h2>Multiple Choice Questions</h2>
+<p><strong>Instructions:</strong> Choose the best answer for each question.</p>
+<hr />
+<p><strong>1. What is ISO 10218?</strong><br />
+   a) A robot speed standard<br />
+   b) Industrial robot safety standard<br />
+   c) A robot color standard<br />
+   d) A robot cost standard</p>
+<p><strong>2. What is a safe stop?</strong><br />
+   a) A controlled stop that maintains safety<br />
+   b) An emergency stop<br />
+   c) The robot stopping permanently<br />
+   d) The robot moving slowly</p>
+<p><strong>3. What is an emergency stop?</strong><br />
+   a) Immediate stop in dangerous situations<br />
+   b) A slow stop<br />
+   c) The robot continuing<br />
+   d) The robot moving faster</p>
+<p><strong>4. Why are joint limits a safety feature?</strong><br />
+   a) To prevent damage and unsafe positions<br />
+   b) To make it faster<br />
+   c) To make it slower<br />
+   d) They're not a safety feature</p>
+<p><strong>5. Why are speed caps important?</strong><br />
+   a) To prevent dangerous high-speed movements<br />
+   b) To make it faster<br />
+   c) To make it slower<br />
+   d) They're not important</p>
+<p><strong>6. What should happen on loss of communication?</strong><br />
+   a) Robot should stop safely<br />
+   b) Robot should continue<br />
+   c) Robot should move faster<br />
+   d) Nothing happens</p>
+<p><strong>7. What should happen on power failure?</strong><br />
+   a) Robot should stop safely (fail-safe)<br />
+   b) Robot should continue<br />
+   c) Robot should move faster<br />
+   d) Nothing happens</p>
+<p><strong>8. What are conservative defaults?</strong><br />
+   a) Safe default settings that prevent accidents<br />
+   b) Fast default settings<br />
+   c) Random settings<br />
+   d) No defaults</p>
+<p><strong>9. Why is torque on/off control important for safety?</strong><br />
+   a) To prevent accidental movement<br />
+   b) To make it faster<br />
+   c) To make it slower<br />
+   d) It's not important</p>
+<p><strong>10. What is fail-safe design?</strong><br />
+   a) System fails to a safe state<br />
+   b) System fails dangerously<br />
+   c) System never fails<br />
+   d) System fails randomly</p>
+<hr />
+<h2>Answer Key</h2>
+<ol>
+<li><strong>b)</strong> Industrial robot safety standard</li>
+<li><strong>a)</strong> A controlled stop that maintains safety</li>
+<li><strong>a)</strong> Immediate stop in dangerous situations</li>
+<li><strong>a)</strong> To prevent damage and unsafe positions</li>
+<li><strong>a)</strong> To prevent dangerous high-speed movements</li>
+<li><strong>a)</strong> Robot should stop safely</li>
+<li><strong>a)</strong> Robot should stop safely (fail-safe)</li>
+<li><strong>a)</strong> Safe default settings that prevent accidents</li>
+<li><strong>a)</strong> To prevent accidental movement</li>
+<li><strong>a)</strong> System fails to a safe state</li>
+</ol>
+<hr />
+<h2>Scoring Guide</h2>
+<ul>
+<li><strong>9-10 correct:</strong> Excellent understanding</li>
+<li><strong>7-8 correct:</strong> Good understanding</li>
+<li><strong>5-6 correct:</strong> Satisfactory understanding</li>
+<li><strong>Below 5 correct:</strong> Needs review</li>
+</ul></div></section>
+<section class="card"><h2>Assessment rubric</h2><div class="card-inner"><h1>Module 13: Safety Standards &amp; Design for Safety</h1>
+<h2>Assessment Rubric</h2>
+<p><strong>Student Name:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_<br />
+<strong>Date:</strong> </em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>_<br />
+<strong>Assessor:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>____</p>
+<hr />
+<h2>Overall Assessment Criteria</h2>
+<table>
+<thead>
+<tr>
+<th>Criteria</th>
+<th>Excellent (4)</th>
+<th>Good (3)</th>
+<th>Satisfactory (2)</th>
+<th>Needs Improvement (1)</th>
+<th>Score</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Knowledge &amp; Understanding</strong></td>
+<td>Comprehensive understanding of safety standards</td>
+<td>Good understanding</td>
+<td>Basic understanding</td>
+<td>Limited understanding</td>
+<td>/4</td>
+</tr>
+<tr>
+<td><strong>Analysis &amp; Application</strong></td>
+<td>Clear analysis and justification of safety features</td>
+<td>Good analysis</td>
+<td>Basic analysis</td>
+<td>Limited analysis</td>
+<td>/4</td>
+</tr>
+<tr>
+<td><strong>Design Skills</strong></td>
+<td>Well-designed failure mode responses</td>
+<td>Good design</td>
+<td>Basic design</td>
+<td>Poor design</td>
+<td>/4</td>
+</tr>
+<tr>
+<td><strong>Documentation</strong></td>
+<td>Complete safety documentation</td>
+<td>Good documentation</td>
+<td>Basic documentation</td>
+<td>Incomplete documentation</td>
+<td>/4</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Total Score:</strong> /16</p>
+<hr />
+<h2>Detailed Marking Guide</h2>
+<h3>Part 1: Standards (15 marks)</h3>
+<ul>
+<li><strong>Question 1:</strong> 10 marks (standards research)</li>
+<li><strong>Question 2:</strong> 5 marks</li>
+</ul>
+<p><strong>Mark:</strong> /15</p>
+<hr />
+<h3>Part 2: Requirements Mapping (25 marks)</h3>
+<ul>
+<li><strong>Question 3:</strong> 6 marks (safe stops)</li>
+<li><strong>Question 4:</strong> 7 marks (emergency stops)</li>
+<li><strong>Question 5:</strong> 6 marks (guarding)</li>
+<li><strong>Question 6:</strong> 6 marks (modes)</li>
+</ul>
+<p><strong>Mark:</strong> /25</p>
+<hr />
+<h3>Part 3: Safety Features (25 marks)</h3>
+<ul>
+<li><strong>Question 7:</strong> 6 marks (joint limits)</li>
+<li><strong>Question 8:</strong> 7 marks (speed caps)</li>
+<li><strong>Question 9:</strong> 6 marks (torque)</li>
+<li><strong>Question 10:</strong> 6 marks (defaults)</li>
+</ul>
+<p><strong>Mark:</strong> /25</p>
+<hr />
+<h3>Part 4: Failure Modes (20 marks)</h3>
+<ul>
+<li><strong>Question 11:</strong> 7 marks (communication loss)</li>
+<li><strong>Question 12:</strong> 7 marks (power failure)</li>
+<li><strong>Question 13:</strong> 6 marks (sensor anomalies)</li>
+</ul>
+<p><strong>Mark:</strong> /20</p>
+<hr />
+<h3>Part 5: Safety Report (10 marks)</h3>
+<ul>
+<li><strong>Exercise:</strong> 10 marks</li>
+</ul>
+<p><strong>Mark:</strong> /10</p>
+<hr />
+<h3>Part 6: Reflection (5 marks)</h3>
+<ul>
+<li><strong>Question 14:</strong> 5 marks</li>
+</ul>
+<p><strong>Mark:</strong> /5</p>
+<hr />
+<p><strong>Final Grade:</strong> <strong><em>_</em></strong>____ / 100</p>
+<p><strong>Assessor Comments:</strong></p>
+<hr />
+<hr />
+<p><strong>Assessor Signature:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_<br />
+<strong>Date:</strong> </em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>_</p></div></section>
+  </div>
+</body>
+</html>

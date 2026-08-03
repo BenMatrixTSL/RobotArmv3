@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Robot Arm — Interactive Curriculum</title>
+  <style>
+    :root {
+      --bg: #f0f2f5;
+      --card: #fff;
+      --text: #1a1d26;
+      --muted: #5c6370;
+      --accent: #1e5a8a;
+      --accent-light: #e8f0f8;
+      --border: #d8dde6;
+      --green: #1a7a4a;
+      --green-light: #e8f5ee;
+      --orange: #b85c00;
+      --orange-light: #fdf0e0;
+      --red: #c0392b;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, sans-serif; font-size: 16px; line-height: 1.6; color: var(--text); background: var(--bg); }
+    .hero { background: var(--accent); color: #fff; padding: 2.5rem 1.5rem; text-align: center; }
+    .hero h1 { margin: 0 0 0.5rem; font-size: 2rem; font-weight: 700; }
+    .hero p { margin: 0; opacity: 0.85; font-size: 1.05rem; }
+    .wrap { max-width: 52rem; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+    .badge { display: inline-block; font-size: 0.75rem; font-weight: 600; padding: 0.2em 0.6em; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.03em; }
+    .badge-foundation { background: #dbeafe; color: #1e40af; }
+    .badge-intermediate { background: #dcfce7; color: #166534; }
+    .badge-advanced { background: #fef3c7; color: #92400e; }
+    .badge-project { background: #f3e8ff; color: #6b21a8; }
+    h2.section-title { font-size: 1.1rem; font-weight: 700; margin: 2rem 0 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; font-size: 0.8rem; }
+    .module-grid { display: grid; gap: 0.65rem; }
+    .module-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 1rem 1.25rem; display: flex; align-items: flex-start; gap: 1rem; text-decoration: none; color: inherit; transition: box-shadow 0.15s, border-color 0.15s; }
+    .module-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); border-color: var(--accent); }
+    .module-card.todo { opacity: 0.6; cursor: not-allowed; pointer-events: none; }
+    .module-num { font-size: 1.4rem; font-weight: 700; color: var(--accent); min-width: 2.2rem; line-height: 1; padding-top: 0.15rem; }
+    .module-info { flex: 1; }
+    .module-title { font-weight: 600; font-size: 1rem; margin: 0 0 0.2rem; }
+    .module-desc { font-size: 0.875rem; color: var(--muted); margin: 0 0 0.4rem; }
+    .module-tags { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+    .tag { font-size: 0.72rem; padding: 0.15em 0.5em; border-radius: 3px; background: var(--accent-light); color: var(--accent); font-weight: 500; }
+    .tag-todo { background: #fee2e2; color: var(--red); }
+    .intro-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 1.25rem 1.5rem; margin-bottom: 1.5rem; }
+    .intro-card h3 { margin: 0 0 0.5rem; font-size: 1rem; }
+    .intro-card p { margin: 0; color: var(--muted); font-size: 0.9rem; }
+    .app-note { background: var(--accent-light); border: 1px solid #b8d0e8; border-radius: 8px; padding: 0.875rem 1rem; margin-bottom: 1.5rem; font-size: 0.9rem; }
+    .app-note strong { color: var(--accent); }
+    .arrow { color: var(--accent); font-size: 1.1rem; align-self: center; }
+    .tools-card { background: var(--accent-light); border: 1px solid var(--border); border-radius: 10px; padding: 1.25rem 1.5rem; margin-bottom: 1.5rem; }
+    .tools-card h3 { margin: 0 0 0.3rem; font-size: 1rem; color: var(--accent); }
+    .tools-card p { margin: 0 0 0.85rem; color: var(--muted); font-size: 0.88rem; }
+    .tools-row { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+    .tool-btn { padding: 0.45rem 1rem; border-radius: 6px; border: 1px solid var(--border); background: #fff; color: var(--text); font-size: 0.88rem; cursor: pointer; font-family: inherit; transition: background 0.15s, border-color 0.15s, color 0.15s; }
+    .tool-btn:hover:not(:disabled) { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .tool-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .tool-btn-danger { color: var(--red); border-color: #e8b4b0; }
+    .tool-btn-danger:hover:not(:disabled) { background: var(--red); color: #fff; border-color: var(--red); }
+  </style>
+<script src="worksheets-bundle.js"></script>
+</head>
+<body>
+  <div class="hero">
+    <h1>Robot Arm — Interactive Curriculum</h1>
+    <p>BTEC Level 3 Engineering &nbsp;·&nbsp; 16 Modules &nbsp;·&nbsp; Theory, Practice &amp; Software Activities</p>
+  </div>
+  <div class="wrap">
+
+    <div class="app-note">
+      <strong>Software required:</strong> These modules link directly to the <strong>Robot Arm Control Application</strong>. Launch the Electron app (or open via browser at your Pi's IP address) before starting any practical activity.
+    </div>
+
+    <div class="intro-card">
+      <h3>How each module works</h3>
+      <p>Each module has four parts: <strong>Theory</strong> — short explanations with diagrams · <strong>Software Activity</strong> — step-by-step tasks using the control app · <strong>Worksheet</strong> — questions and observations to record · <strong>Quick Check</strong> — two or three multiple-choice questions to test understanding.</p>
+    </div>
+
+    <div class="tools-card">
+      <h3>Worksheet Tools</h3>
+      <p>Actions apply to all saved worksheet answers on this computer.</p>
+      <div class="tools-row">
+        <button class="tool-btn" id="btn-print-all">Print All Worksheets</button>
+        <button class="tool-btn" id="btn-save">Save Answers to File</button>
+        <button class="tool-btn" id="btn-load">Load Answers from File</button>
+        <input type="file" id="ws-file-input" accept=".json" style="display:none">
+        <button class="tool-btn tool-btn-danger" id="btn-clear">Clear All Answers</button>
+      </div>
+    </div>
+
+    <h2 class="section-title">Foundation Modules</h2>
+    <div class="module-grid">
+
+      <a class="module-card" href="module-01.html">
+        <span class="module-num">01</span>
+        <div class="module-info">
+          <p class="module-title">Introduction &amp; Safety Fundamentals</p>
+          <p class="module-desc">What is a robot arm? Hazard identification, risk assessment, safe operating procedures and emergency stop.</p>
+          <div class="module-tags">
+            <span class="badge badge-foundation">Foundation</span>
+            <span class="tag">Safety</span><span class="tag">Risk Assessment</span><span class="tag">App: 3D View</span>
+          </div>
+        </div>
+        <span class="arrow">→</span>
+      </a>
+
+      <a class="module-card" href="module-02.html">
+        <span class="module-num">02</span>
+        <div class="module-info">
+          <p class="module-title">Mechanical Fundamentals</p>
+          <p class="module-desc">Links, joints, mechanisms, gear reduction, materials and failure modes.</p>
+          <div class="module-tags">
+            <span class="badge badge-foundation">Foundation</span>
+            <span class="tag">Mechanisms</span><span class="tag">Materials</span><span class="tag">App: 3D View</span>
+          </div>
+        </div>
+        <span class="arrow">→</span>
+      </a>
+
+      <a class="module-card" href="module-03.html">
+        <span class="module-num">03</span>
+        <div class="module-info">
+          <p class="module-title">Basic Electrical &amp; Electronic Systems</p>
+          <p class="module-desc">Power supply, Raspberry Pi, serial servos, sensors and open/closed-loop control.</p>
+          <div class="module-tags">
+            <span class="badge badge-foundation">Foundation</span>
+            <span class="tag">Electronics</span><span class="tag">Servos</span><span class="tag">App: Connection</span><span class="tag">App: Joint Status</span>
+          </div>
+        </div>
+        <span class="arrow">→</span>
+      </a>
+
+      <a class="module-card" href="module-04.html">
+        <span class="module-num">04</span>
+        <div class="module-info">
+          <p class="module-title">Basic Software &amp; Human-Machine Interface</p>
+          <p class="module-desc">Programming basics, HMI design, pendant control and visual programming.</p>
+          <div class="module-tags">
+            <span class="badge badge-foundation">Foundation</span>
+            <span class="tag">HMI</span><span class="tag">Software</span><span class="tag">App: Pendant</span><span class="tag">App: Blockly</span>
+          </div>
+        </div>
+        <span class="arrow">→</span>
+      </a>
+
+    </div>
+
+    <h2 class="section-title">Intermediate Modules</h2>
+    <div class="module-grid">
+
+      <a class="module-card" href="module-05.html">
+        <span class="module-num">05</span>
+        <div class="module-info">
+          <p class="module-title">Statics, Forces &amp; Load Analysis</p>
+          <p class="module-desc">Mechanical analysis, torque calculations, free body diagrams and load limits.</p>
+          <div class="module-tags">
+            <span class="badge badge-intermediate">Intermediate</span>
+            <span class="tag">Statics</span><span class="tag">Torque</span><span class="tag">App: Joint Control</span>
+          </div>
+        </div>
+        <span class="arrow">→</span>
+      </a>
+
+      <a class="module-card" href="module-06.html">
+        <span class="module-num">06</span>
+        <div class="module-info">
+          <p class="module-title">Industrial Context &amp; Basic Automation</p>
+          <p class="module-desc">Robot types, automation levels, cell design and pick-and-place sequences.</p>
+          <div class="module-tags">
+            <span class="badge badge-intermediate">Intermediate</span>
+            <span class="tag">Industry</span><span class="tag">Automation</span><span class="tag">App: Stored Positions</span>
+          </div>
+        </div>
+        <span class="arrow">→</span>
+      </a>
+
+      <a class="module-card" href="module-07.html">
+        <span class="module-num">07</span>
+        <div class="module-info">
+          <p class="module-title">Forward Kinematics &amp; Coordinate Systems</p>
+          <p class="module-desc">Cartesian frames, FK formula, transformation matrices and the kinematics tab.</p>
+          <div class="module-tags">
+            <span class="badge badge-intermediate">Intermediate</span>
+            <span class="tag">Kinematics</span><span class="tag">Maths</span><span class="tag">App: Kinematics</span>
+          </div>
+        </div>
+        <span class="arrow">→</span>
+      </a>
+
+      <a class="module-card" href="module-08.html">
+        <span class="module-num">08</span>
+        <div class="module-info">
+          <p class="module-title">Advanced Control &amp; Communication</p>
+          <p class="module-desc">PID control, path interpolation, speed effects and WebSocket communication.</p>
+          <div class="module-tags">
+            <span class="badge badge-intermediate">Intermediate</span>
+            <span class="tag">PID</span><span class="tag">Control</span><span class="tag">App: Pendant</span><span class="tag">App: Settings</span>
+          </div>
+        </div>
+        <span class="arrow">→</span>
+      </a>
+
+      <a class="module-card" href="module-09.html">
+        <span class="module-num">09</span>
+        <div class="module-info">
+          <p class="module-title">Software Architecture &amp; Advanced Programming</p>
+          <p class="module-desc">System layers, G-code programming, Blockly vs G-code vs RAPID.</p>
+          <div class="module-tags">
+            <span class="badge badge-intermediate">Intermediate</span>
+            <span class="tag">G-code</span><span class="tag">Architecture</span><span class="tag">App: G-Code Control</span>
+          </div>
+        </div>
+        <span class="arrow">→</span>
+      </a>
+
+      <a class="module-card" href="module-10.html">
+        <span class="module-num">10</span>
+        <div class="module-info">
+          <p class="module-title">Data Logging &amp; Diagnostics</p>
+          <p class="module-desc">Live servo telemetry, diagnostic thinking, load/temperature/voltage monitoring.</p>
+          <div class="module-tags">
+            <span class="badge badge-intermediate">Intermediate</span>
+            <span class="tag">Diagnostics</span><span class="tag">Data</span><span class="tag">App: Joint Control</span>
+          </div>
+        </div>
+        <span class="arrow">→</span>
+      </a>
+
+    </div>
+
+    <h2 class="section-title">Advanced Modules</h2>
+    <div class="module-grid">
+
+      <a class="module-card" href="module-11.html">
+        <span class="module-num">11</span>
+        <div class="module-info">
+          <p class="module-title">Mechatronic System Integration</p>
+          <p class="module-desc">Full system stack, integration challenges and tracing commands through all layers.</p>
+          <div class="module-tags"><span class="badge badge-advanced">Advanced</span><span class="tag">Mechatronics</span><span class="tag">Systems</span><span class="tag">App: All tabs</span></div>
+        </div>
+        <span class="arrow">→</span>
+      </a>
+      <a class="module-card" href="module-12.html">
+        <span class="module-num">12</span>
+        <div class="module-info">
+          <p class="module-title">Automation Cell Design</p>
+          <p class="module-desc">Workspace envelope, dead zones, teach-and-playback programming and cycle time.</p>
+          <div class="module-tags"><span class="badge badge-advanced">Advanced</span><span class="tag">Cell Design</span><span class="tag">G-code</span><span class="tag">App: Dead Zones</span></div>
+        </div>
+        <span class="arrow">→</span>
+      </a>
+      <a class="module-card" href="module-13.html">
+        <span class="module-num">13</span>
+        <div class="module-info">
+          <p class="module-title">Safety Standards &amp; Design for Safety</p>
+          <p class="module-desc">ISO 10218, hierarchy of controls, speed/force limiting and safety audit.</p>
+          <div class="module-tags"><span class="badge badge-advanced">Advanced</span><span class="tag">Safety</span><span class="tag">Standards</span><span class="tag">App: Dead Zones</span></div>
+        </div>
+        <span class="arrow">→</span>
+      </a>
+
+    </div>
+
+    <h2 class="section-title">Project Modules</h2>
+    <div class="module-grid">
+
+      <a class="module-card" href="module-14.html">
+        <span class="module-num">14</span>
+        <div class="module-info">
+          <p class="module-title">Project Planning &amp; Management</p>
+          <p class="module-desc">Engineering project phases, Gantt charts, specifications and risk registers.</p>
+          <div class="module-tags"><span class="badge badge-project">Project</span><span class="tag">Planning</span><span class="tag">Gantt</span><span class="tag">Risk Register</span></div>
+        </div>
+        <span class="arrow">→</span>
+      </a>
+      <a class="module-card" href="module-15.html">
+        <span class="module-num">15</span>
+        <div class="module-info">
+          <p class="module-title">Technical Documentation</p>
+          <p class="module-desc">Circuit diagrams, annotated code, test records, user guides and revision control.</p>
+          <div class="module-tags"><span class="badge badge-project">Project</span><span class="tag">Documentation</span><span class="tag">Test Records</span></div>
+        </div>
+        <span class="arrow">→</span>
+      </a>
+      <a class="module-card" href="module-16.html">
+        <span class="module-num">16</span>
+        <div class="module-info">
+          <p class="module-title">Evaluation, Reflection &amp; Communication</p>
+          <p class="module-desc">Critical evaluation, the design cycle, and presenting to technical and non-technical audiences.</p>
+          <div class="module-tags"><span class="badge badge-project">Project</span><span class="tag">Evaluation</span><span class="tag">Presentation</span></div>
+        </div>
+        <span class="arrow">→</span>
+      </a>
+
+    </div>
+
+  </div>
+
+  <script>
+  (function () {
+    var PREFIX = 'curriculum-ws-';
+
+    // Return all answer keys in localStorage (excludes -html snapshot keys).
+    // Keys look like: curriculum-ws-module-01.html
+    function getAnswerKeys() {
+      var keys = [];
+      for (var i = 0; i < localStorage.length; i++) {
+        var k = localStorage.key(i);
+        if (k && k.indexOf(PREFIX) === 0 && k.slice(-5) !== '-html') {
+          keys.push(k);
+        }
+      }
+      // Sort so modules print in order
+      keys.sort();
+      return keys;
+    }
+
+    // Extract the bare module filename from a storage key
+    // e.g. "curriculum-ws-module-01.html" → "module-01.html"
+    function moduleFromKey(key) {
+      return key.slice(PREFIX.length);
+    }
+
+    // Save all answers to a JSON file
+    document.getElementById('btn-save').addEventListener('click', function () {
+      var keys = getAnswerKeys();
+      var all = {};
+      for (var i = 0; i < keys.length; i++) {
+        var raw = localStorage.getItem(keys[i]);
+        if (raw) try { all[keys[i]] = JSON.parse(raw); } catch (e) {}
+      }
+      if (keys.length === 0) {
+        var allKeys = [];
+        for (var di = 0; di < localStorage.length; di++) allKeys.push(localStorage.key(di));
+        var sample = allKeys.slice(0, 5).join(', ') || '(none)';
+        alert(
+          'No saved answers found.\n\n' +
+          'This page\'s localStorage has ' + localStorage.length + ' total key(s).\n' +
+          'Sample keys: ' + sample + '\n\n' +
+          'If the module pages were opened through the Pi (http://...) but this page\n' +
+          'is opened as a local file (file://), they use separate storage — open\n' +
+          'index.html through the Pi at the same address as the module pages.'
+        );
+        return;
+      }
+      var blob = new Blob([JSON.stringify(all, null, 2)], { type: 'application/json' });
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'worksheet-answers.json';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(a.href);
+    });
+
+    // Load answers from a JSON file
+    document.getElementById('btn-load').addEventListener('click', function () {
+      document.getElementById('ws-file-input').click();
+    });
+    document.getElementById('ws-file-input').addEventListener('change', function (e) {
+      var file = e.target.files[0];
+      if (!file) return;
+      var reader = new FileReader();
+      reader.onload = function (ev) {
+        try {
+          var data = JSON.parse(ev.target.result);
+          var count = 0;
+          var dataKeys = Object.keys(data);
+          for (var i = 0; i < dataKeys.length; i++) {
+            var key = dataKeys[i];
+            if (key.indexOf(PREFIX) === 0) {
+              localStorage.setItem(key, JSON.stringify(data[key]));
+              count++;
+            }
+          }
+          alert('Loaded answers for ' + count + ' worksheet(s).');
+        } catch (err) {
+          alert('Could not read the file — make sure it is a valid worksheet answers file.');
+        }
+      };
+      reader.readAsText(file);
+      e.target.value = '';
+    });
+
+    // Clear all saved answers (and their HTML snapshots)
+    document.getElementById('btn-clear').addEventListener('click', function () {
+      if (!confirm('Clear ALL saved worksheet answers on this computer? This cannot be undone.')) return;
+      var keys = getAnswerKeys();
+      for (var i = 0; i < keys.length; i++) {
+        localStorage.removeItem(keys[i]);
+        localStorage.removeItem(keys[i] + '-html');
+      }
+      alert('Cleared answers from ' + keys.length + ' worksheet(s).');
+    });
+
+    // Print all worksheets.
+    // Rebuilds each worksheet from the static bundle HTML then overlays the
+    // student's saved answers directly from localStorage.
+    document.getElementById('btn-print-all').addEventListener('click', function () {
+      var cards = [];
+      var answerKeys = getAnswerKeys();
+
+      // Build a set of module names that have saved answers
+      // so we know which bundle entries to render
+      var savedByModule = {};
+      for (var i = 0; i < answerKeys.length; i++) {
+        var m = moduleFromKey(answerKeys[i]);
+        try { savedByModule[m] = JSON.parse(localStorage.getItem(answerKeys[i])) || {}; }
+        catch (e) { savedByModule[m] = {}; }
+      }
+
+      // Also include bundle entries for modules not yet visited
+      // (so the teacher gets all worksheets even if a student skipped a module)
+      if (typeof WORKSHEET_BUNDLE !== 'undefined') {
+        var bundleKeys = Object.keys(WORKSHEET_BUNDLE).sort();
+        for (var bi = 0; bi < bundleKeys.length; bi++) {
+          var bm = bundleKeys[bi];
+          if (!savedByModule[bm]) savedByModule[bm] = {};
+        }
+      }
+
+      var moduleNames = Object.keys(savedByModule).sort();
+
+      for (var mi = 0; mi < moduleNames.length; mi++) {
+        var mod = moduleNames[mi];
+        if (typeof WORKSHEET_BUNDLE === 'undefined' || !WORKSHEET_BUNDLE[mod]) continue;
+
+        var doc = new DOMParser().parseFromString(WORKSHEET_BUNDLE[mod], 'text/html');
+        var card = doc.body.firstElementChild;
+        if (!card) continue;
+
+        var saved = savedByModule[mod];
+        var fields = card.querySelectorAll('input[type="text"], input[type="number"], input[type="checkbox"], textarea');
+        for (var fi = 0; fi < fields.length; fi++) {
+          var val = saved['c0-f' + fi];
+          if (val === undefined || val === null) continue;
+          var field = fields[fi];
+          if (field.type === 'checkbox') {
+            if (val === true || val === 'true') field.setAttribute('checked', 'checked');
+            else field.removeAttribute('checked');
+          } else if (field.tagName === 'TEXTAREA') {
+            field.textContent = val;
+          } else {
+            field.setAttribute('value', val);
+          }
+        }
+        cards.push(card.outerHTML);
+      }
+
+      if (cards.length === 0) {
+        alert('No worksheets found — worksheets-bundle.js may be missing.');
+        return;
+      }
+
+      var win = window.open('', '_blank');
+      if (!win) {
+        alert('Allow pop-ups for this page to use Print All Worksheets.');
+        return;
+      }
+
+      win.document.write(
+        '<!DOCTYPE html><html><head><meta charset="utf-8"><title>All Worksheets</title>' +
+        '<style>' + PRINT_CSS + '</style></head><body>' +
+        cards.map(function (c, i) {
+          return (i > 0 ? '<div style="page-break-before:always"></div>' : '') + c;
+        }).join('') +
+        '</body></html>'
+      );
+      win.document.close();
+      win.focus();
+      setTimeout(function () { win.print(); }, 400);
+    });
+
+    var PRINT_CSS = [
+      '* { box-sizing: border-box; }',
+      'body { font-family: system-ui, -apple-system, Segoe UI, sans-serif; font-size: 13px; line-height: 1.5; color: #1a1d26; padding: 0.5rem 1.5rem; }',
+      '.worksheet-card { padding: 1rem 0; }',
+      '.worksheet-card h3 { font-size: 1.05rem; margin: 0 0 0.75rem; border-bottom: 2px solid #1e5a8a; padding-bottom: 0.4rem; color: #1e5a8a; }',
+      '.ws-field { margin-bottom: 0.6rem; }',
+      '.ws-field label { display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.2rem; }',
+      '.ws-field input[type="text"], .ws-field input[type="number"] { width: 100%; border: 1px solid #ccc; border-radius: 4px; padding: 0.35rem 0.5rem; font-size: 0.85rem; font-family: inherit; background: #fafafa; }',
+      '.ws-field textarea { width: 100%; border: 1px solid #ccc; border-radius: 4px; padding: 0.4rem 0.5rem; font-size: 0.85rem; font-family: inherit; min-height: 60px; background: #fafafa; }',
+      '.ws-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; margin: 0.4rem 0 0.75rem; }',
+      '.ws-table th { background: #ede9f7; padding: 0.35rem 0.5rem; text-align: left; border: 1px solid #c4b5fd; font-size: 0.78rem; }',
+      '.ws-table td { border: 1px solid #c4b5fd; padding: 0; }',
+      '.ws-table td input[type="text"] { width: 100%; border: none; background: transparent; padding: 0.3rem 0.4rem; font-size: 0.82rem; font-family: inherit; }',
+    ].join('\n');
+  })();
+  </script>
+</body>
+</html>

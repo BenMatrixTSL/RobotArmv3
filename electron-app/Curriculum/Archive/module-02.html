@@ -1,0 +1,1336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="curriculum-module" content="2">
+  <title>Module 2: Mechanical Fundamentals</title>
+  <style>
+    :root {
+      --bg: #f6f7f9;
+      --card: #fff;
+      --text: #1a1d26;
+      --muted: #5c6370;
+      --accent: #1e5a8a;
+      --border: #d8dde6;
+      --code-bg: #eef1f6;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 17px;
+      line-height: 1.55;
+      color: var(--text);
+      background: var(--bg);
+    }
+    .wrap {
+      max-width: 52rem;
+      margin: 0 auto;
+      padding: 1.25rem 1.25rem 3rem;
+    }
+    .top-nav {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.75rem 1rem;
+      padding: 0.75rem 0;
+      margin-bottom: 1.25rem;
+      border-bottom: 1px solid var(--border);
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+      font-size: 0.9rem;
+    }
+    .nav-title {
+      flex: 1 1 auto;
+      font-weight: 600;
+      color: var(--muted);
+      min-width: 12rem;
+    }
+    a.nav-link {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    a.nav-link:hover { text-decoration: underline; }
+    h1.page-title {
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+      font-size: 1.65rem;
+      font-weight: 700;
+      margin: 0 0 0.5rem;
+      line-height: 1.25;
+    }
+    p.lead {
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+      color: var(--muted);
+      margin: 0 0 1.5rem;
+      font-size: 0.95rem;
+    }
+    section.card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.25rem 1.5rem 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    }
+    section.card h2 {
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+      font-size: 1.15rem;
+      margin: 0 0 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid var(--accent);
+      color: var(--accent);
+    }
+    .card-inner {
+      font-family: Georgia, "Times New Roman", serif;
+    }
+    .card-inner h1, .card-inner h2, .card-inner h3, .card-inner h4 {
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+    }
+    .card-inner h1 { font-size: 1.35rem; }
+    .card-inner h2 { font-size: 1.15rem; border-bottom: none; color: var(--text); }
+    .card-inner h3 { font-size: 1.05rem; }
+    .card-inner h4 { font-size: 1rem; }
+    .card-inner code {
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 0.9em;
+      background: var(--code-bg);
+      padding: 0.1em 0.35em;
+      border-radius: 4px;
+    }
+    .card-inner pre {
+      background: var(--code-bg);
+      padding: 1rem;
+      overflow-x: auto;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+    }
+    .card-inner pre code {
+      background: none;
+      padding: 0;
+    }
+    .card-inner table {
+      border-collapse: collapse;
+      width: 100%;
+      font-size: 0.95rem;
+      margin: 1rem 0;
+    }
+    .card-inner th, .card-inner td {
+      border: 1px solid var(--border);
+      padding: 0.45rem 0.6rem;
+      text-align: left;
+      vertical-align: top;
+    }
+    .card-inner th {
+      background: #eef3f8;
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+      font-weight: 600;
+    }
+    ul.index-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+    }
+    ul.index-list li {
+      margin: 0.35rem 0;
+      padding: 0.5rem 0.65rem;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--card);
+    }
+    ul.index-list a {
+      color: var(--accent);
+      font-weight: 600;
+      text-decoration: none;
+    }
+    ul.index-list a:hover { text-decoration: underline; }
+    .index-meta {
+      display: block;
+      font-size: 0.85rem;
+      color: var(--muted);
+      font-weight: normal;
+      margin-top: 0.2rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <nav class="top-nav">
+  <a class="nav-link" href="index.html">All modules</a>
+  <a class="nav-link" href="module-01.html">← Previous</a>
+  <span class="nav-title">Module 2: Mechanical Fundamentals</span>
+  <a class="nav-link" href="module-03.html">Next →</a>
+</nav>
+<h1 class="page-title">Module 2: Mechanical Fundamentals</h1>
+<p class="lead">BTEC robot arm curriculum — one page per module. Work through sections in order.</p>
+<section class="card"><h2>Curriculum plan (from BTEC_Robot_Arm_Curriculum_Plan.md)</h2><div class="card-inner"><h2><strong>Module 2: Mechanical Fundamentals</strong></h2>
+<p><em>Building on Module 1</em></p>
+<h3>Learning Objectives Covered:</h3>
+<ul>
+<li>✅ <strong>Linkages, levers and mechanisms</strong> (Level 3)</li>
+<li>Describe robot arm as multi-link mechanism with joints, links, degrees of freedom</li>
+<li>Relate joint rotation to linear motion of end effector</li>
+<li>Interpret simple engineering diagrams or URDF-style descriptions</li>
+<li>✅ <strong>Materials and structure</strong> (Level 3)</li>
+<li>Explain material choices (stiffness vs. weight vs. cost)</li>
+<li>Identify potential failure modes (bending, backlash, fatigue)</li>
+</ul>
+<h3>Content:</h3>
+<ol>
+<li>
+<p><strong>Understanding Mechanisms</strong><br />
+   - What are linkages and levers?<br />
+   - Types of joints (revolute, prismatic)<br />
+   - Degrees of freedom explained simply<br />
+   - How the robot arm uses these principles</p>
+</li>
+<li>
+<p><strong>Robot Arm Structure</strong><br />
+   - Physical inspection of the arm<br />
+   - Identifying each link and joint<br />
+   - Understanding joint axes and movement directions<br />
+   - Reading basic engineering diagrams</p>
+</li>
+<li>
+<p><strong>Materials Science Basics</strong><br />
+   - Why materials matter (strength, weight, cost)<br />
+   - Materials used in the robot arm<br />
+   - Failure modes: bending, backlash, fatigue<br />
+   - How design reduces risk</p>
+</li>
+</ol>
+<h3>Practical Activities:</h3>
+<ul>
+<li>Count and label joints and links on the physical arm</li>
+<li>Draw simple diagram showing link lengths and joint types</li>
+<li>Measure joint ranges of motion</li>
+<li>Identify materials used in each component</li>
+<li>Document findings in a simple report</li>
+</ul>
+<hr /></div></section>
+<section class="card"><h2>Theory & teaching notes</h2><div class="card-inner"><h1>Module 2: Mechanical Fundamentals</h1>
+<h2>Theory &amp; Teaching Notes</h2>
+<p><strong>Module Duration:</strong> 2-3 hours<br />
+<strong>Level:</strong> Foundation (Level 3)</p>
+<hr />
+<h2>Learning Objectives</h2>
+<p>By the end of this module, students will be able to:<br />
+- Describe robot arms as multi-link mechanisms<br />
+- Understand joints, links, and degrees of freedom<br />
+- Relate joint rotation to end effector motion<br />
+- Understand materials and failure modes<br />
+- Interpret basic engineering diagrams</p>
+<hr />
+<h2>1. Understanding Mechanisms</h2>
+<h3>What is a Mechanism?</h3>
+<p>A <strong>mechanism</strong> is a system of parts that work together to create movement. Robot arms are mechanisms that convert rotational motion (joint movement) into linear motion (end effector position).</p>
+<h3>Basic Mechanism Concepts</h3>
+<h4>Links</h4>
+<p><strong>Links</strong> are rigid sections that connect joints. They don't bend or flex during normal operation.</p>
+<p><strong>Think of it like:</strong> The bones in your arm - they're rigid and don't bend except at joints.</p>
+<p><strong>In a robot arm:</strong><br />
+- Link 1 connects base to first joint<br />
+- Link 2 connects first joint to second joint<br />
+- And so on...</p>
+<h4>Joints</h4>
+<p><strong>Joints</strong> are connection points between links that allow movement.</p>
+<p><strong>Think of it like:</strong> Your elbow or shoulder - they allow your arm to bend and rotate.</p>
+<p><strong>Types of joints:</strong></p>
+<ol>
+<li>
+<p><strong>Revolute Joint</strong> (Rotary)<br />
+   - Allows <strong>rotational</strong> movement<br />
+   - Like a door hinge<br />
+   - Most common in robot arms<br />
+   - Moves in a circle</p>
+</li>
+<li>
+<p><strong>Prismatic Joint</strong> (Linear)<br />
+   - Allows <strong>linear</strong> (sliding) movement<br />
+   - Like a drawer sliding open<br />
+   - Less common in robot arms<br />
+   - Moves in a straight line</p>
+</li>
+</ol>
+<p><strong>Most robot arms use revolute joints</strong> because they're simpler and more reliable.</p>
+<h3>Degrees of Freedom</h3>
+<p><strong>Degrees of freedom</strong> = Number of independent ways something can move</p>
+<p><strong>Simple rule:</strong> Each joint typically provides one degree of freedom.</p>
+<p><strong>Example:</strong><br />
+- Robot arm with 4 joints = 4 degrees of freedom<br />
+- Can move in 4 independent ways</p>
+<p><strong>Why it matters:</strong><br />
+- More degrees of freedom = more flexibility<br />
+- More degrees of freedom = more complex to control<br />
+- Most tasks need 4-6 degrees of freedom</p>
+<hr />
+<h2>2. Robot Arm Structure</h2>
+<h3>Typical Robot Arm Structure</h3>
+<p>A typical robot arm has:</p>
+<ol>
+<li>
+<p><strong>Base</strong> (Link 0)<br />
+   - Fixed to the ground or table<br />
+   - Doesn't move<br />
+   - Provides foundation</p>
+</li>
+<li>
+<p><strong>Link 1</strong><br />
+   - Connects base to first joint<br />
+   - Rotates around base</p>
+</li>
+<li>
+<p><strong>Joint 1</strong> (Base Joint)<br />
+   - Allows rotation around vertical axis<br />
+   - Like turning your body</p>
+</li>
+<li>
+<p><strong>Link 2</strong><br />
+   - Connects joint 1 to joint 2<br />
+   - Moves with joint 1</p>
+</li>
+<li>
+<p><strong>Joint 2</strong> (Shoulder Joint)<br />
+   - Allows up/down movement<br />
+   - Like raising/lowering your arm</p>
+</li>
+<li>
+<p><strong>Link 3</strong><br />
+   - Connects joint 2 to joint 3<br />
+   - The "forearm"</p>
+</li>
+<li>
+<p><strong>Joint 3</strong> (Elbow Joint)<br />
+   - Allows bending<br />
+   - Like bending your elbow</p>
+</li>
+<li>
+<p><strong>Link 4</strong><br />
+   - Connects joint 3 to end effector<br />
+   - The "wrist" area</p>
+</li>
+<li>
+<p><strong>Joint 4</strong> (Wrist Joint)<br />
+   - Allows rotation<br />
+   - Like rotating your wrist</p>
+</li>
+<li>
+<p><strong>End Effector</strong></p>
+<ul>
+<li>The tool or gripper</li>
+<li>Does the actual work</li>
+</ul>
+</li>
+</ol>
+<h3>Understanding Joint Axes</h3>
+<p>Each joint rotates around an <strong>axis</strong> (an imaginary line).</p>
+<p><strong>Example:</strong><br />
+- Base joint rotates around vertical axis (up/down)<br />
+- Shoulder joint rotates around horizontal axis (side to side)<br />
+- Elbow joint rotates around horizontal axis</p>
+<p><strong>Why it matters:</strong> Understanding axes helps you understand how the robot moves.</p>
+<hr />
+<h2>3. Motion Relationships</h2>
+<h3>How Joint Movement Affects End Effector</h3>
+<p><strong>Key concept:</strong> When you move a joint, the end effector moves too.</p>
+<h4>Base Joint Movement</h4>
+<ul>
+<li><strong>What happens:</strong> Robot rotates around base</li>
+<li><strong>End effector moves:</strong> In a circle around the base</li>
+<li><strong>Like:</strong> Turning your whole body</li>
+</ul>
+<h4>Shoulder Joint Movement</h4>
+<ul>
+<li><strong>What happens:</strong> Upper arm raises or lowers</li>
+<li><strong>End effector moves:</strong> Up and down, closer or further from base</li>
+<li><strong>Like:</strong> Raising or lowering your arm</li>
+</ul>
+<h4>Elbow Joint Movement</h4>
+<ul>
+<li><strong>What happens:</strong> Forearm bends or straightens</li>
+<li><strong>End effector moves:</strong> Closer or further from shoulder</li>
+<li><strong>Like:</strong> Bending or straightening your elbow</li>
+</ul>
+<h4>Wrist Joint Movement</h4>
+<ul>
+<li><strong>What happens:</strong> End effector rotates</li>
+<li><strong>End effector moves:</strong> Rotates around wrist axis</li>
+<li><strong>Like:</strong> Rotating your wrist</li>
+</ul>
+<h3>Forward Kinematics (Simple Explanation)</h3>
+<p><strong>Forward kinematics</strong> = Calculating where the end effector is based on joint angles.</p>
+<p><strong>Simple idea:</strong> If you know all the joint angles, you can figure out where the end effector is.</p>
+<p><strong>Example:</strong><br />
+- Joint 1 = 45°<br />
+- Joint 2 = 30°<br />
+- Joint 3 = -20°<br />
+- Joint 4 = 0°</p>
+<p><strong>Result:</strong> End effector is at a specific X, Y, Z position.</p>
+<p><strong>Why it matters:</strong> This is how the robot knows where its end effector is.</p>
+<h3>Joint Space vs. Cartesian Space</h3>
+<p><strong>Joint Space:</strong><br />
+- Describes position using joint angles<br />
+- Example: "Joint 1 = 45°, Joint 2 = 30°"<br />
+- Easier for the robot to understand<br />
+- What you command directly</p>
+<p><strong>Cartesian Space:</strong><br />
+- Describes position using X, Y, Z coordinates<br />
+- Example: "End effector at X=100mm, Y=200mm, Z=150mm"<br />
+- Easier for humans to understand<br />
+- What you might want to achieve</p>
+<p><strong>Conversion:</strong> The robot converts between these using forward kinematics.</p>
+<hr />
+<h2>4. Materials and Structure</h2>
+<h3>Why Materials Matter</h3>
+<p>Different materials have different properties:<br />
+- <strong>Strength</strong>: How much force they can handle<br />
+- <strong>Stiffness</strong>: How much they bend under load<br />
+- <strong>Weight</strong>: How heavy they are<br />
+- <strong>Cost</strong>: How expensive they are</p>
+<h3>Common Materials in Robot Arms</h3>
+<h4>Aluminum</h4>
+<ul>
+<li><strong>Properties:</strong> Lightweight, strong, stiff</li>
+<li><strong>Used for:</strong> Links, structural parts</li>
+<li><strong>Why:</strong> Good balance of strength and weight</li>
+<li><strong>Trade-off:</strong> More expensive than steel</li>
+</ul>
+<h4>Steel</h4>
+<ul>
+<li><strong>Properties:</strong> Very strong, heavy, stiff</li>
+<li><strong>Used for:</strong> Base, heavy-duty parts</li>
+<li><strong>Why:</strong> Maximum strength</li>
+<li><strong>Trade-off:</strong> Heavy, can be expensive</li>
+</ul>
+<h4>Plastic/Composite</h4>
+<ul>
+<li><strong>Properties:</strong> Lightweight, less strong</li>
+<li><strong>Used for:</strong> Covers, non-structural parts</li>
+<li><strong>Why:</strong> Lightweight, low cost</li>
+<li><strong>Trade-off:</strong> Less strong than metal</li>
+</ul>
+<h3>Material Selection Trade-offs</h3>
+<p><strong>The challenge:</strong> You can't have everything.</p>
+<p><strong>Common trade-offs:</strong></p>
+<ol>
+<li>
+<p><strong>Strength vs. Weight</strong><br />
+   - Stronger materials are usually heavier<br />
+   - Need to balance these</p>
+</li>
+<li>
+<p><strong>Stiffness vs. Cost</strong><br />
+   - Stiffer materials are usually more expensive<br />
+   - Need to balance performance and cost</p>
+</li>
+<li>
+<p><strong>Weight vs. Performance</strong><br />
+   - Lighter arms can move faster<br />
+   - But might be less strong</p>
+</li>
+</ol>
+<p><strong>Design decision:</strong> Choose materials based on what's most important for your application.</p>
+<hr />
+<h2>5. Failure Modes</h2>
+<h3>What is a Failure Mode?</h3>
+<p>A <strong>failure mode</strong> is a way something can break or fail.</p>
+<h3>Common Failure Modes</h3>
+<h4>A. Bending</h4>
+<p><strong>What it is:</strong> Links bending under load instead of staying straight.</p>
+<p><strong>Why it happens:</strong><br />
+- Load is too heavy<br />
+- Material not stiff enough<br />
+- Link too long or thin</p>
+<p><strong>How to prevent:</strong><br />
+- Use stiffer materials<br />
+- Make links thicker<br />
+- Reduce load<br />
+- Add support</p>
+<p><strong>Example:</strong> A long, thin link bending when lifting a heavy object.</p>
+<h4>B. Backlash</h4>
+<p><strong>What it is:</strong> Small gaps or play in joints causing inaccuracy.</p>
+<p><strong>Why it happens:</strong><br />
+- Gears have small gaps<br />
+- Wear over time<br />
+- Manufacturing tolerances</p>
+<p><strong>How to reduce:</strong><br />
+- Use better quality gears<br />
+- Preload mechanisms<br />
+- Regular maintenance<br />
+- Design with minimal play</p>
+<p><strong>Example:</strong> When you command 45°, but actual position is 44.5° due to gear play.</p>
+<p><strong>Why it matters:</strong> Reduces accuracy and repeatability.</p>
+<h4>C. Fatigue</h4>
+<p><strong>What it is:</strong> Material breaking due to repeated stress over time.</p>
+<p><strong>Why it happens:</strong><br />
+- Repeated loading and unloading<br />
+- Stress cycles<br />
+- Material weakness</p>
+<p><strong>How to prevent:</strong><br />
+- Use materials resistant to fatigue<br />
+- Avoid sharp corners (stress concentrators)<br />
+- Regular inspection<br />
+- Replace worn parts</p>
+<p><strong>Example:</strong> A link breaking after many cycles of movement.</p>
+<p><strong>Why it matters:</strong> Can cause sudden failure.</p>
+<h3>How Design Reduces Risk</h3>
+<p>Good design addresses these failure modes:</p>
+<ol>
+<li>
+<p><strong>Material selection</strong><br />
+   - Choose appropriate materials<br />
+   - Consider all failure modes</p>
+</li>
+<li>
+<p><strong>Geometry</strong><br />
+   - Avoid stress concentrators<br />
+   - Use appropriate sizes</p>
+</li>
+<li>
+<p><strong>Safety factors</strong><br />
+   - Design stronger than needed<br />
+   - Account for uncertainty</p>
+</li>
+<li>
+<p><strong>Maintenance</strong><br />
+   - Design for easy inspection<br />
+   - Design for easy replacement</p>
+</li>
+</ol>
+<hr />
+<h2>6. Reading Engineering Diagrams</h2>
+<h3>Basic Diagram Elements</h3>
+<h4>Link Representation</h4>
+<ul>
+<li>Usually shown as rectangles or lines</li>
+<li>Labeled (Link 1, Link 2, etc.)</li>
+<li>May show length</li>
+</ul>
+<h4>Joint Representation</h4>
+<ul>
+<li>Usually shown as circles or dots</li>
+<li>Labeled (Joint 1, Joint 2, etc.)</li>
+<li>May show rotation direction</li>
+</ul>
+<h4>Dimensions</h4>
+<ul>
+<li>Show sizes</li>
+<li>Usually in millimeters (mm)</li>
+<li>Helpful for understanding scale</li>
+</ul>
+<h3>Simple Diagram Example</h3>
+<pre><code>        [End Effector]
+              |
+         [Joint 4]
+              |
+         [Link 4]
+              |
+         [Joint 3]
+              |
+         [Link 3]
+              |
+         [Joint 2]
+              |
+         [Link 2]
+              |
+         [Joint 1]
+              |
+         [Link 1]
+              |
+          [Base]
+</code></pre>
+<p><strong>Reading this:</strong><br />
+- Base at bottom (fixed)<br />
+- Links connect joints<br />
+- Joints allow movement<br />
+- End effector at top</p>
+<h3>URDF-Style Descriptions</h3>
+<p><strong>URDF</strong> = Unified Robot Description Format</p>
+<p><strong>What it is:</strong> A way to describe robots using text/XML.</p>
+<p><strong>Contains:</strong><br />
+- Link lengths<br />
+- Joint types<br />
+- Joint axes<br />
+- Joint limits</p>
+<p><strong>Example (simplified):</strong></p>
+<pre><code>Link 1: Length = 100mm
+Joint 1: Type = Revolute, Axis = Z, Limits = -180° to +180°
+Link 2: Length = 150mm
+Joint 2: Type = Revolute, Axis = Y, Limits = -90° to +90°
+</code></pre>
+<p><strong>Why it matters:</strong> Standard format used in robotics software.</p>
+<hr />
+<h2>7. Practical Understanding</h2>
+<h3>Inspecting Your Robot Arm</h3>
+<p>When you look at a robot arm, you should be able to:</p>
+<ol>
+<li>
+<p><strong>Count the links</strong><br />
+   - How many rigid sections?<br />
+   - What are their approximate lengths?</p>
+</li>
+<li>
+<p><strong>Count the joints</strong><br />
+   - How many moving connections?<br />
+   - What type is each (revolute/prismatic)?</p>
+</li>
+<li>
+<p><strong>Identify degrees of freedom</strong><br />
+   - How many independent movements?<br />
+   - Usually equals number of joints</p>
+</li>
+<li>
+<p><strong>Understand movement</strong><br />
+   - Which joint moves which part?<br />
+   - How does end effector move?</p>
+</li>
+<li>
+<p><strong>Identify materials</strong><br />
+   - What is each part made of?<br />
+   - Why was that material chosen?</p>
+</li>
+</ol>
+<h3>Range of Motion</h3>
+<p>Each joint has a <strong>range of motion</strong> - the minimum and maximum angles it can reach.</p>
+<p><strong>Example:</strong><br />
+- Joint 1: -180° to +180° (full rotation)<br />
+- Joint 2: -90° to +90° (half rotation)<br />
+- Joint 3: -120° to +120°</p>
+<p><strong>Why it matters:</strong> Limits where the robot can reach.</p>
+<hr />
+<h2>8. Summary</h2>
+<h3>Key Concepts</h3>
+<ol>
+<li><strong>Robot arms are mechanisms</strong> with links and joints</li>
+<li><strong>Joints allow movement</strong> - usually revolute (rotary)</li>
+<li><strong>Degrees of freedom</strong> = number of independent movements</li>
+<li><strong>Joint movement affects end effector</strong> position</li>
+<li><strong>Materials matter</strong> - strength, stiffness, weight, cost</li>
+<li><strong>Failure modes</strong> include bending, backlash, fatigue</li>
+<li><strong>Good design</strong> reduces failure risk</li>
+</ol>
+<h3>Understanding Your Robot Arm</h3>
+<p>You should now understand:<br />
+- What each part is called<br />
+- How parts connect<br />
+- How movement works<br />
+- Why materials are chosen<br />
+- What can go wrong</p>
+<h3>Next Steps</h3>
+<p>After learning this theory, you will:<br />
+- Inspect a real robot arm<br />
+- Identify links and joints<br />
+- Measure ranges of motion<br />
+- Complete the Module 2 worksheet</p>
+<hr />
+<h2>Questions for Review</h2>
+<p>Before moving to the worksheet, make sure you can answer:</p>
+<ol>
+<li>What is the difference between a link and a joint?</li>
+<li>What is a revolute joint?</li>
+<li>How many degrees of freedom does a 4-joint robot arm have?</li>
+<li>How does shoulder joint movement affect the end effector?</li>
+<li>Why is aluminum often used for robot arm links?</li>
+<li>What is backlash and why does it matter?</li>
+<li>What are the three main failure modes?</li>
+</ol>
+<hr />
+<p><strong>Remember:</strong> Understanding how robot arms work mechanically helps you operate them safely and effectively. Take time to observe and understand your specific robot arm's structure.</p></div></section>
+<section class="card"><h2>Student worksheet</h2><div class="card-inner"><h1>Module 2: Mechanical Fundamentals</h1>
+<h2>Student Worksheet</h2>
+<p><strong>Name:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_<br />
+<strong>Date:</strong> </em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>_<br />
+<strong>Group/Class:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>____</p>
+<hr />
+<h2>Part 1: Understanding Mechanisms</h2>
+<h3>Question 1: Types of Joints</h3>
+<p>Match the joint type with its description:</p>
+<table>
+<thead>
+<tr>
+<th>Joint Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Revolute Joint</td>
+<td>A) Allows linear (sliding) motion</td>
+</tr>
+<tr>
+<td>Prismatic Joint</td>
+<td>B) Allows rotational motion</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Your answers:</strong><br />
+- Revolute Joint: <strong><em>_</em><br />
+- Prismatic Joint: </strong>___</p>
+<h3>Question 2: Degrees of Freedom</h3>
+<p>Count the degrees of freedom on the robot arm:</p>
+<p>a) How many joints does the robot arm have? <strong><em>_</em></strong></p>
+<p>b) How many degrees of freedom does this give the arm? <strong><em>_</em></strong></p>
+<p>c) Explain why the number of joints equals the degrees of freedom:</p>
+<hr />
+<hr />
+<hr />
+<h2>Part 2: Robot Arm Structure</h2>
+<h3>Question 3: Link and Joint Identification</h3>
+<p>Examine the robot arm and complete the table:</p>
+<table>
+<thead>
+<tr>
+<th>Link Number</th>
+<th>Length (approximate)</th>
+<th>Connected To (Joint)</th>
+<th>Joint Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Base</td>
+<td>N/A</td>
+<td>Ground</td>
+<td>Fixed</td>
+</tr>
+<tr>
+<td>Link 1</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Link 2</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Link 3</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Link 4</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>End Effector</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h3>Question 4: Joint Movement</h3>
+<p>For each joint, describe:<br />
+- Which direction it moves (axis of rotation)<br />
+- Its range of motion (approximate)</p>
+<table>
+<thead>
+<tr>
+<th>Joint</th>
+<th>Axis of Rotation</th>
+<th>Range of Motion</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Joint 1 (Base)</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Joint 2 (Shoulder)</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Joint 3 (Elbow)</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Joint 4 (Wrist)</td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>Part 3: Motion Relationships</h2>
+<h3>Question 5: Joint Rotation to End Effector Motion</h3>
+<p>Complete the following:</p>
+<p>a) When Joint 1 (base) rotates clockwise, what happens to the end effector position?</p>
+<hr />
+<p>b) When Joint 2 (shoulder) rotates upward, what happens to the end effector?</p>
+<hr />
+<p>c) When Joint 3 (elbow) bends, what happens to the end effector?</p>
+<hr />
+<h3>Question 6: Simple Diagram</h3>
+<p>Draw a simple side-view diagram of the robot arm showing:<br />
+- All links (label them)<br />
+- All joints (mark with circles)<br />
+- Approximate link lengths<br />
+- Joint axes (arrows showing rotation direction)</p>
+<p>[Space for diagram]</p>
+<hr />
+<h2>Part 4: Materials and Structure</h2>
+<h3>Question 7: Material Identification</h3>
+<p>Identify the materials used in different parts of the robot arm:</p>
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Material Used</th>
+<th>Why This Material?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Links</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Joints/Bearings</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Base</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>End Effector</td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h3>Question 8: Material Properties</h3>
+<p>Explain why each property matters:</p>
+<p>a) <strong>Stiffness:</strong> Why is stiffness important for robot arm links?</p>
+<hr />
+<hr />
+<p>b) <strong>Weight:</strong> Why is low weight desirable?</p>
+<hr />
+<hr />
+<p>c) <strong>Cost:</strong> How does cost affect material choice?</p>
+<hr />
+<hr />
+<hr />
+<h2>Part 5: Failure Modes</h2>
+<h3>Question 9: Types of Failure</h3>
+<p>Match each failure mode with its description:</p>
+<table>
+<thead>
+<tr>
+<th>Failure Mode</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Bending</td>
+<td>A) Small gaps or play in joints causing inaccuracy</td>
+</tr>
+<tr>
+<td>Backlash</td>
+<td>B) Material breaking due to repeated stress</td>
+</tr>
+<tr>
+<td>Fatigue</td>
+<td>C) Links deforming under load</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Your answers:</strong><br />
+- Bending: <strong><em>_</em><br />
+- Backlash: </strong><strong><em><br />
+- Fatigue: </em></strong>__</p>
+<h3>Question 10: Design Solutions</h3>
+<p>For each failure mode, explain how the design reduces risk:</p>
+<p>a) <strong>Bending:</strong> How does the design prevent or reduce bending?</p>
+<hr />
+<hr />
+<p>b) <strong>Backlash:</strong> How does the design minimize backlash?</p>
+<hr />
+<hr />
+<p>c) <strong>Fatigue:</strong> How does the design prevent fatigue failure?</p>
+<hr />
+<hr />
+<hr />
+<h2>Part 6: Practical Exercise</h2>
+<h3>Exercise 1: Physical Inspection</h3>
+<p>Complete this inspection checklist:</p>
+<ul>
+<li>[ ] Counted all links</li>
+<li>[ ] Counted all joints</li>
+<li>[ ] Measured approximate link lengths</li>
+<li>[ ] Identified joint types</li>
+<li>[ ] Tested range of motion for each joint</li>
+<li>[ ] Identified materials used</li>
+<li>[ ] Looked for signs of wear or damage</li>
+<li>[ ] Documented findings</li>
+</ul>
+<p><strong>Notes from inspection:</strong></p>
+<hr />
+<hr />
+<hr />
+<h3>Exercise 2: Range of Motion Measurement</h3>
+<p>Measure the range of motion for each joint:</p>
+<table>
+<thead>
+<tr>
+<th>Joint</th>
+<th>Minimum Angle</th>
+<th>Maximum Angle</th>
+<th>Total Range</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Joint 1</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Joint 2</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Joint 3</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Joint 4</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><strong>What did you notice about the ranges?</strong></p>
+<hr />
+<hr />
+<hr />
+<h2>Part 7: Reflection</h2>
+<h3>Question 11: Understanding Mechanisms</h3>
+<p>Answer the following:</p>
+<p>a) Why is it important to understand how the robot arm's mechanism works?</p>
+<hr />
+<hr />
+<p>b) How does understanding joint types help you operate the robot arm?</p>
+<hr />
+<hr />
+<p>c) What surprised you about the robot arm's structure?</p>
+<hr />
+<hr />
+<hr />
+<h2>Self-Assessment Checklist</h2>
+<p>Before submitting, check that you have:</p>
+<ul>
+<li>[ ] Identified all links and joints</li>
+<li>[ ] Understood joint types</li>
+<li>[ ] Measured ranges of motion</li>
+<li>[ ] Identified materials used</li>
+<li>[ ] Understood failure modes</li>
+<li>[ ] Completed practical exercises</li>
+<li>[ ] Written reflection answers</li>
+</ul>
+<p><strong>Student Signature:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_<br />
+<strong>Date:</strong> </em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><em><br />
+<strong>Instructor Signature:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_<br />
+<strong>Date:</strong> </em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong></em></p></div></section>
+<section class="card"><h2>Multiple choice questions</h2><div class="card-inner"><h1>Module 2: Mechanical Fundamentals</h1>
+<h2>Multiple Choice Questions</h2>
+<p><strong>Instructions:</strong> Choose the best answer for each question. Circle or highlight your choice.</p>
+<hr />
+<h2>Section A: Mechanisms and Joints</h2>
+<p><strong>1. What is a revolute joint?</strong><br />
+   a) A joint that allows linear sliding motion<br />
+   b) A joint that allows rotational motion<br />
+   c) A joint that cannot move<br />
+   d) A joint that moves in all directions</p>
+<p><strong>2. What is a prismatic joint?</strong><br />
+   a) A joint that allows rotational motion<br />
+   b) A joint that allows linear sliding motion<br />
+   c) A joint that is always locked<br />
+   d) A joint that moves randomly</p>
+<p><strong>3. What is a "link" in a robot arm?</strong><br />
+   a) The connection between joints<br />
+   b) A rigid section between two joints<br />
+   c) The end effector<br />
+   d) The power supply</p>
+<p><strong>4. If a robot arm has 4 joints, how many degrees of freedom does it typically have?</strong><br />
+   a) 2<br />
+   b) 4<br />
+   c) 6<br />
+   d) 8</p>
+<hr />
+<h2>Section B: Robot Arm Structure</h2>
+<p><strong>5. What is the base of a robot arm?</strong><br />
+   a) The end effector<br />
+   b) The fixed mounting point that doesn't move<br />
+   c) The middle joint<br />
+   d) The power supply</p>
+<p><strong>6. What is the end effector?</strong><br />
+   a) The base of the robot<br />
+   b) The tool or gripper at the end of the arm<br />
+   c) The first joint<br />
+   d) The controller</p>
+<p><strong>7. When Joint 1 (base) rotates clockwise, what happens to the end effector?</strong><br />
+   a) It moves up<br />
+   b) It moves down<br />
+   c) It rotates around the base axis<br />
+   d) Nothing happens</p>
+<p><strong>8. When the shoulder joint rotates upward, what happens to the end effector?</strong><br />
+   a) It moves closer to the base<br />
+   b) It moves further from the base<br />
+   c) It rotates around the base<br />
+   d) It stays in the same position</p>
+<hr />
+<h2>Section C: Motion Relationships</h2>
+<p><strong>9. Joint rotation (angles) relates to:</strong><br />
+   a) The color of the robot arm<br />
+   b) The linear motion of the end effector<br />
+   c) The weight of the robot arm<br />
+   d) The cost of the robot arm</p>
+<p><strong>10. What does "forward kinematics" mean?</strong><br />
+   a) Calculating joint angles from end effector position<br />
+   b) Calculating end effector position from joint angles<br />
+   c) Moving the robot backward<br />
+   d) Stopping the robot</p>
+<p><strong>11. If you know all the joint angles, what can you determine?</strong><br />
+   a) The robot's color<br />
+   b) The position of the end effector<br />
+   c) The robot's age<br />
+   d) The robot's cost</p>
+<p><strong>12. What is a URDF-style description?</strong><br />
+   a) A description of the robot's appearance<br />
+   b) A description of link lengths, joint types, and axes<br />
+   c) A description of the robot's cost<br />
+   d) A description of the robot's speed</p>
+<hr />
+<h2>Section D: Materials</h2>
+<p><strong>13. Why is stiffness important for robot arm links?</strong><br />
+   a) To make them look good<br />
+   b) To prevent bending under load and maintain accuracy<br />
+   c) To make them cheaper<br />
+   d) To make them heavier</p>
+<p><strong>14. Why is low weight desirable for robot arm components?</strong><br />
+   a) To make them easier to steal<br />
+   b) To reduce joint loading and allow faster movement<br />
+   c) To make them look smaller<br />
+   d) To reduce cost only</p>
+<p><strong>15. What is the trade-off when choosing materials?</strong><br />
+   a) Stiffness vs. weight vs. cost<br />
+   b) Color vs. size vs. shape<br />
+   c) Speed vs. accuracy vs. temperature<br />
+   d) There is no trade-off</p>
+<p><strong>16. Which material property helps prevent bending?</strong><br />
+   a) Color<br />
+   b) Stiffness<br />
+   c) Weight<br />
+   d) Cost</p>
+<hr />
+<h2>Section E: Failure Modes</h2>
+<p><strong>17. What is "bending" as a failure mode?</strong><br />
+   a) Links deforming under load<br />
+   b) Joints moving too fast<br />
+   c) The robot stopping<br />
+   d) The robot moving backward</p>
+<p><strong>18. What is "backlash"?</strong><br />
+   a) Small gaps or play in joints causing inaccuracy<br />
+   b) The robot moving forward<br />
+   c) The robot stopping suddenly<br />
+   d) The robot moving too fast</p>
+<p><strong>19. What is "fatigue" failure?</strong><br />
+   a) The operator getting tired<br />
+   b) Material breaking due to repeated stress<br />
+   c) The robot moving slowly<br />
+   d) The robot stopping</p>
+<p><strong>20. How does good design reduce the risk of failure?</strong><br />
+   a) By making the robot look better<br />
+   b) By choosing appropriate materials and reducing stress concentrations<br />
+   c) By making it cheaper<br />
+   d) By making it slower</p>
+<hr />
+<h2>Answer Key</h2>
+<ol>
+<li><strong>b)</strong> A joint that allows rotational motion</li>
+<li><strong>b)</strong> A joint that allows linear sliding motion</li>
+<li><strong>b)</strong> A rigid section between two joints</li>
+<li><strong>b)</strong> 4</li>
+<li><strong>b)</strong> The fixed mounting point that doesn't move</li>
+<li><strong>b)</strong> The tool or gripper at the end of the arm</li>
+<li><strong>c)</strong> It rotates around the base axis</li>
+<li><strong>b)</strong> It moves further from the base</li>
+<li><strong>b)</strong> The linear motion of the end effector</li>
+<li><strong>b)</strong> Calculating end effector position from joint angles</li>
+<li><strong>b)</strong> The position of the end effector</li>
+<li><strong>b)</strong> A description of link lengths, joint types, and axes</li>
+<li><strong>b)</strong> To prevent bending under load and maintain accuracy</li>
+<li><strong>b)</strong> To reduce joint loading and allow faster movement</li>
+<li><strong>a)</strong> Stiffness vs. weight vs. cost</li>
+<li><strong>b)</strong> Stiffness</li>
+<li><strong>a)</strong> Links deforming under load</li>
+<li><strong>a)</strong> Small gaps or play in joints causing inaccuracy</li>
+<li><strong>b)</strong> Material breaking due to repeated stress</li>
+<li><strong>b)</strong> By choosing appropriate materials and reducing stress concentrations</li>
+</ol>
+<hr />
+<h2>Scoring Guide</h2>
+<ul>
+<li><strong>18-20 correct:</strong> Excellent understanding</li>
+<li><strong>15-17 correct:</strong> Good understanding</li>
+<li><strong>12-14 correct:</strong> Satisfactory understanding</li>
+<li><strong>Below 12 correct:</strong> Needs review of module content</li>
+</ul></div></section>
+<section class="card"><h2>Assessment rubric</h2><div class="card-inner"><h1>Module 2: Mechanical Fundamentals</h1>
+<h2>Assessment Rubric</h2>
+<p><strong>Student Name:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_<br />
+<strong>Date:</strong> </em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>_<br />
+<strong>Assessor:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>____</p>
+<hr />
+<h2>Overall Assessment Criteria</h2>
+<table>
+<thead>
+<tr>
+<th>Criteria</th>
+<th>Excellent (4)</th>
+<th>Good (3)</th>
+<th>Satisfactory (2)</th>
+<th>Needs Improvement (1)</th>
+<th>Score</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Knowledge &amp; Understanding</strong></td>
+<td>Comprehensive understanding of mechanisms, joints, links, and materials</td>
+<td>Good understanding with minor gaps</td>
+<td>Basic understanding evident but some confusion</td>
+<td>Limited understanding, significant gaps</td>
+<td>/4</td>
+</tr>
+<tr>
+<td><strong>Practical Skills</strong></td>
+<td>Accurate identification and measurement of all components</td>
+<td>Mostly accurate identification and measurement</td>
+<td>Basic identification with some errors</td>
+<td>Struggles with identification and measurement</td>
+<td>/4</td>
+</tr>
+<tr>
+<td><strong>Analysis &amp; Application</strong></td>
+<td>Clear analysis of motion relationships and material choices</td>
+<td>Good analysis with minor gaps</td>
+<td>Basic analysis completed</td>
+<td>Limited or incorrect analysis</td>
+<td>/4</td>
+</tr>
+<tr>
+<td><strong>Documentation</strong></td>
+<td>Complete, accurate, and well-organized documentation</td>
+<td>Good documentation with minor omissions</td>
+<td>Basic documentation completed</td>
+<td>Incomplete or disorganized documentation</td>
+<td>/4</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Total Score:</strong> /16</p>
+<hr />
+<h2>Detailed Marking Guide</h2>
+<h3>Part 1: Understanding Mechanisms (15 marks)</h3>
+<h4>Question 1: Types of Joints (4 marks)</h4>
+<ul>
+<li><strong>4 marks:</strong> Both correct</li>
+<li><strong>2 marks:</strong> One correct</li>
+<li><strong>0 marks:</strong> Both incorrect or no answer</li>
+</ul>
+<p><strong>Correct answers:</strong><br />
+- Revolute Joint: B (rotational motion)<br />
+- Prismatic Joint: A (linear motion)</p>
+<h4>Question 2: Degrees of Freedom (11 marks)</h4>
+<ul>
+<li><strong>3 marks:</strong> Correct joint count</li>
+<li><strong>3 marks:</strong> Correct degrees of freedom</li>
+<li><strong>5 marks:</strong> Clear explanation of relationship</li>
+</ul>
+<p><strong>Mark:</strong> /15</p>
+<hr />
+<h3>Part 2: Robot Arm Structure (25 marks)</h3>
+<h4>Question 3: Link and Joint Identification (15 marks)</h4>
+<ul>
+<li><strong>2.5 marks per link:</strong> Complete and accurate information</li>
+<li><strong>1.5 marks per link:</strong> Mostly complete but missing some details</li>
+<li><strong>0.5 marks per link:</strong> Attempted but incorrect</li>
+<li><strong>0 marks:</strong> No answer</li>
+</ul>
+<h4>Question 4: Joint Movement (10 marks)</h4>
+<ul>
+<li><strong>2.5 marks per joint:</strong> Accurate axis and range description</li>
+<li><strong>1.5 marks per joint:</strong> Partially correct</li>
+<li><strong>0.5 marks per joint:</strong> Attempted but incorrect</li>
+<li><strong>0 marks:</strong> No answer</li>
+</ul>
+<p><strong>Mark:</strong> /25</p>
+<hr />
+<h3>Part 3: Motion Relationships (15 marks)</h3>
+<h4>Question 5: Joint Rotation to End Effector Motion (9 marks)</h4>
+<ul>
+<li><strong>3 marks per answer:</strong> Clear and correct explanation</li>
+<li><strong>2 marks per answer:</strong> Mostly correct but lacks clarity</li>
+<li><strong>1 mark per answer:</strong> Attempted but incorrect</li>
+<li><strong>0 marks:</strong> No answer</li>
+</ul>
+<h4>Question 6: Simple Diagram (6 marks)</h4>
+<ul>
+<li><strong>6 marks:</strong> Complete diagram with all required elements, clear and accurate</li>
+<li><strong>4 marks:</strong> Diagram mostly complete, minor omissions</li>
+<li><strong>2 marks:</strong> Basic diagram but missing key elements</li>
+<li><strong>0 marks:</strong> No diagram or completely incorrect</li>
+</ul>
+<p><strong>Mark:</strong> /15</p>
+<hr />
+<h3>Part 4: Materials and Structure (20 marks)</h3>
+<h4>Question 7: Material Identification (12 marks)</h4>
+<ul>
+<li><strong>3 marks per component:</strong> Correct material with appropriate justification</li>
+<li><strong>2 marks per component:</strong> Correct material but weak justification</li>
+<li><strong>1 mark per component:</strong> Incorrect material or no justification</li>
+<li><strong>0 marks:</strong> No answer</li>
+</ul>
+<h4>Question 8: Material Properties (8 marks)</h4>
+<ul>
+<li><strong>3 marks per property:</strong> Clear and correct explanation</li>
+<li><strong>2 marks per property:</strong> Mostly correct explanation</li>
+<li><strong>1 mark per property:</strong> Basic understanding shown</li>
+<li><strong>0 marks:</strong> No answer</li>
+</ul>
+<p><strong>Mark:</strong> /20</p>
+<hr />
+<h3>Part 5: Failure Modes (15 marks)</h3>
+<h4>Question 9: Types of Failure (6 marks)</h4>
+<ul>
+<li><strong>2 marks per match:</strong> All correct</li>
+<li><strong>1 mark per match:</strong> Some correct</li>
+<li><strong>0 marks:</strong> All incorrect or no answer</li>
+</ul>
+<p><strong>Correct answers:</strong><br />
+- Bending: C (deforming under load)<br />
+- Backlash: A (play in joints)<br />
+- Fatigue: B (repeated stress)</p>
+<h4>Question 10: Design Solutions (9 marks)</h4>
+<ul>
+<li><strong>3 marks per answer:</strong> Clear explanation of how design addresses failure mode</li>
+<li><strong>2 marks per answer:</strong> Good explanation but lacks detail</li>
+<li><strong>1 mark per answer:</strong> Basic understanding shown</li>
+<li><strong>0 marks:</strong> No answer</li>
+</ul>
+<p><strong>Mark:</strong> /15</p>
+<hr />
+<h3>Part 6: Practical Exercise (20 marks)</h3>
+<h4>Exercise 1: Physical Inspection (10 marks)</h4>
+<ul>
+<li><strong>10 marks:</strong> All checklist items completed, detailed notes</li>
+<li><strong>7 marks:</strong> Most items completed, some notes</li>
+<li><strong>4 marks:</strong> Basic completion, minimal notes</li>
+<li><strong>2 marks:</strong> Incomplete checklist</li>
+<li><strong>0 marks:</strong> Not attempted</li>
+</ul>
+<h4>Exercise 2: Range of Motion Measurement (10 marks)</h4>
+<ul>
+<li><strong>10 marks:</strong> Accurate measurements for all joints, thoughtful observations</li>
+<li><strong>7 marks:</strong> Mostly accurate measurements, some observations</li>
+<li><strong>4 marks:</strong> Basic measurements completed</li>
+<li><strong>2 marks:</strong> Incomplete measurements</li>
+<li><strong>0 marks:</strong> Not attempted</li>
+</ul>
+<p><strong>Mark:</strong> /20</p>
+<hr />
+<h3>Part 7: Reflection (10 marks)</h3>
+<h4>Question 11: Understanding Mechanisms (10 marks)</h4>
+<ul>
+<li><strong>4 marks per answer:</strong> Thoughtful, well-explained answers showing deep understanding</li>
+<li><strong>3 marks per answer:</strong> Good answers showing understanding</li>
+<li><strong>2 marks per answer:</strong> Basic answers, some understanding</li>
+<li><strong>1 mark per answer:</strong> Limited answers, little understanding</li>
+<li><strong>0 marks:</strong> No answer</li>
+</ul>
+<p><strong>Note:</strong> Only 2-3 questions may be marked, adjust marks accordingly.</p>
+<p><strong>Mark:</strong> /10</p>
+<hr />
+<h2>Overall Performance Levels</h2>
+<h3>Excellent (85-100%)</h3>
+<ul>
+<li>Comprehensive understanding of all mechanical concepts</li>
+<li>Accurate identification and measurement of all components</li>
+<li>Clear analysis of motion relationships and material choices</li>
+<li>Complete, accurate, and well-organized documentation</li>
+<li>All practical exercises completed to high standard</li>
+</ul>
+<h3>Good (70-84%)</h3>
+<ul>
+<li>Good understanding with minor gaps</li>
+<li>Mostly accurate identification and measurement</li>
+<li>Good analysis with minor gaps</li>
+<li>Good documentation with minor omissions</li>
+<li>Most practical exercises completed well</li>
+</ul>
+<h3>Satisfactory (55-69%)</h3>
+<ul>
+<li>Basic understanding evident but some confusion</li>
+<li>Basic identification with some errors</li>
+<li>Basic analysis completed</li>
+<li>Basic documentation completed</li>
+<li>Practical exercises completed but may lack detail</li>
+</ul>
+<h3>Needs Improvement (Below 55%)</h3>
+<ul>
+<li>Limited understanding, significant gaps</li>
+<li>Struggles with identification and measurement</li>
+<li>Limited or incorrect analysis</li>
+<li>Incomplete or disorganized documentation</li>
+<li>Practical exercises incomplete or not attempted</li>
+</ul>
+<hr />
+<h2>Feedback Section</h2>
+<h3>Strengths:</h3>
+<hr />
+<hr />
+<hr />
+<h3>Areas for Improvement:</h3>
+<hr />
+<hr />
+<hr />
+<h3>Action Plan:</h3>
+<hr />
+<hr />
+<hr />
+<h3>Next Steps:</h3>
+<hr />
+<hr />
+<hr />
+<p><strong>Final Grade:</strong> <strong><em>_</em></strong>____ / 100</p>
+<p><strong>Assessor Comments:</strong></p>
+<hr />
+<hr />
+<hr />
+<p><strong>Assessor Signature:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_<br />
+<strong>Date:</strong> </em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>_</p></div></section>
+  </div>
+</body>
+</html>

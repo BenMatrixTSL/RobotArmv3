@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Module 6 — Industrial Context &amp; Basic Automation</title>
+  <style>
+    :root { --bg:#f0f2f5;--card:#fff;--text:#1a1d26;--muted:#5c6370;--accent:#1e5a8a;--accent-light:#e8f0f8;--border:#d8dde6;--green:#1a7a4a;--green-light:#e8f5ee;--green-border:#a3d9bc;--orange:#b85c00;--orange-light:#fdf0e0;--orange-border:#f0c88a;--red:#c0392b;--red-light:#fdecea;--red-border:#f5b7b1;--purple:#6b21a8;--purple-light:#f3e8ff;--purple-border:#d8b4fe; }
+    *{box-sizing:border-box} body{margin:0;font-family:system-ui,-apple-system,Segoe UI,sans-serif;font-size:16px;line-height:1.65;color:var(--text);background:var(--bg)}
+    .top-nav{background:var(--accent);color:#fff;display:flex;align-items:center;gap:1rem;padding:.75rem 1.5rem;font-size:.9rem} .top-nav a{color:rgba(255,255,255,.85);text-decoration:none} .top-nav a:hover{color:#fff;text-decoration:underline} .nav-center{flex:1;text-align:center;font-weight:600}
+    .module-hero{background:var(--accent);color:#fff;padding:2rem 1.5rem 2.5rem;text-align:center} .module-badge{display:inline-block;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35);border-radius:20px;font-size:.78rem;font-weight:600;padding:.25em .9em;letter-spacing:.05em;text-transform:uppercase;margin-bottom:.75rem} .module-hero h1{margin:0 0 .5rem;font-size:1.9rem;font-weight:700} .module-hero p{margin:0;opacity:.85;font-size:1rem} .objectives{display:flex;flex-wrap:wrap;justify-content:center;gap:.4rem;margin-top:1rem} .obj{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);border-radius:4px;font-size:.78rem;padding:.2em .7em}
+    .wrap{max-width:52rem;margin:0 auto;padding:1.75rem 1.25rem 4rem}
+    .section-label{display:flex;align-items:center;gap:.6rem;margin:2.25rem 0 .75rem} .section-label .pill{display:inline-flex;align-items:center;gap:.35rem;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:.3em .8em;border-radius:20px} .pill-theory{background:var(--accent-light);color:var(--accent);border:1px solid #b3cde0} .pill-activity{background:var(--green-light);color:var(--green);border:1px solid var(--green-border)} .pill-worksheet{background:var(--purple-light);color:var(--purple);border:1px solid var(--purple-border)} .pill-sowhat{background:var(--orange-light);color:var(--orange);border:1px solid var(--orange-border)} .pill-mcq{background:#fff8e1;color:#856404;border:1px solid #f0d060} .section-label hr{flex:1;border:none;border-top:1px solid var(--border)}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1.25rem 1.5rem;margin-bottom:1.25rem;box-shadow:0 1px 3px rgba(0,0,0,.04)} .card h3{margin:0 0 .75rem;font-size:1.05rem;color:var(--accent)} .card h4{margin:1rem 0 .35rem;font-size:.95rem} .card p,.card ul,.card ol{margin:0 0 .75rem} .card ul,.card ol{padding-left:1.35rem} .card li{margin-bottom:.3rem}
+    .callout{border-radius:8px;padding:.875rem 1rem;margin:.75rem 0;font-size:.93rem;display:flex;gap:.75rem} .callout-icon{font-size:1.25rem;flex-shrink:0;line-height:1.4} .callout-body{flex:1} .callout-info{background:var(--accent-light);border:1px solid #b3cde0} .callout-warning{background:var(--orange-light);border:1px solid var(--orange-border)} .callout-tip{background:var(--green-light);border:1px solid var(--green-border)}
+    .activity-card{background:var(--green-light);border:1px solid var(--green-border);border-radius:10px;padding:1.25rem 1.5rem;margin-bottom:1.25rem} .activity-card h3{margin:0 0 .3rem;color:var(--green);font-size:1.05rem} .activity-card .app-tab{display:inline-block;background:var(--green);color:#fff;font-size:.75rem;font-weight:600;padding:.15em .6em;border-radius:4px;margin-bottom:.75rem;margin-right:.35rem} .steps{list-style:none;padding:0;margin:.5rem 0 0;counter-reset:step} .steps li{counter-increment:step;display:flex;gap:.85rem;margin-bottom:.75rem;align-items:flex-start} .steps li::before{content:counter(step);display:inline-flex;align-items:center;justify-content:center;min-width:1.75rem;height:1.75rem;background:var(--green);color:#fff;border-radius:50%;font-weight:700;font-size:.8rem;flex-shrink:0} .steps li p{margin:0;font-size:.93rem;padding-top:.2rem} .ui-ref{display:inline;background:#1a7a4a22;border:1px solid var(--green-border);border-radius:4px;font-size:.8rem;font-weight:600;padding:.1em .45em;color:var(--green)}
+    .worksheet-card{background:var(--purple-light);border:1px solid var(--purple-border);border-radius:10px;padding:1.25rem 1.5rem;margin-bottom:1.25rem} .worksheet-card h3{margin:0 0 .75rem;color:var(--purple);font-size:1.05rem} .ws-field{margin-bottom:1rem} .ws-field label{display:block;font-size:.88rem;font-weight:600;margin-bottom:.3rem} .ws-field textarea{width:100%;border:1px solid var(--purple-border);border-radius:6px;padding:.5rem .65rem;font-size:.9rem;font-family:inherit;resize:vertical;min-height:70px;background:rgba(255,255,255,.7)} .ws-field input[type=text]{width:100%;border:1px solid var(--purple-border);border-radius:6px;padding:.45rem .65rem;font-size:.9rem;font-family:inherit;background:rgba(255,255,255,.7)}
+    .sowhat-card{background:var(--orange-light);border:1px solid var(--orange-border);border-radius:10px;padding:1.25rem 1.5rem;margin-bottom:1.25rem} .sowhat-card h3{margin:0 0 .5rem;color:var(--orange);font-size:1.05rem} .sowhat-card p{margin:0 0 .5rem;font-size:.95rem}
+    .mcq-card{background:#fff8e1;border:1px solid #f0d060;border-radius:10px;padding:1.25rem 1.5rem;margin-bottom:1.25rem} .mcq-card h3{margin:0 0 1rem;color:#856404;font-size:1.05rem} .mcq-q{margin-bottom:1.25rem} .mcq-q p{font-weight:600;margin:0 0 .5rem;font-size:.95rem} .mcq-options{display:flex;flex-direction:column;gap:.35rem} .mcq-opt{display:flex;align-items:flex-start;gap:.6rem;padding:.45rem .7rem;border-radius:6px;border:1px solid #e8d030;background:rgba(255,255,255,.55);cursor:pointer;font-size:.9rem} .mcq-opt:hover{background:rgba(255,255,255,.85)} .mcq-opt input{margin-top:.15rem;flex-shrink:0;cursor:pointer} .mcq-opt.correct{background:var(--green-light);border-color:var(--green-border)} .mcq-opt.wrong{background:var(--red-light);border-color:var(--red-border)} .mcq-feedback{font-size:.83rem;margin-top:.4rem;padding:.4rem .6rem;border-radius:5px;display:none} .mcq-feedback.show{display:block} .mcq-feedback.ok{background:var(--green-light);color:var(--green);border:1px solid var(--green-border)} .mcq-feedback.bad{background:var(--red-light);color:var(--red);border:1px solid var(--red-border)} .check-btn{display:inline-block;margin-top:.5rem;padding:.45rem 1.1rem;background:#856404;color:#fff;border:none;border-radius:6px;font-size:.88rem;font-weight:600;cursor:pointer} .score-box{margin-top:1rem;padding:.75rem 1rem;border-radius:8px;font-weight:600;font-size:.93rem;display:none} .score-box.show{display:block} .score-box.pass{background:var(--green-light);color:var(--green);border:1px solid var(--green-border)} .score-box.fail{background:var(--red-light);color:var(--red);border:1px solid var(--red-border)}
+    .robot-grid{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin:.75rem 0} .robot-type{background:var(--accent-light);border:1px solid #b3cde0;border-radius:8px;padding:.75rem 1rem} .robot-type h5{margin:0 0 .3rem;color:var(--accent);font-size:.88rem} .robot-type p{margin:0;font-size:.82rem;color:var(--muted)}
+    .bottom-nav{display:flex;justify-content:space-between;align-items:center;margin-top:2rem;padding-top:1.5rem;border-top:1px solid var(--border)} .btn{display:inline-block;padding:.55rem 1.25rem;border-radius:7px;font-weight:600;font-size:.9rem;text-decoration:none;border:none;cursor:pointer} .btn-primary{background:var(--accent);color:#fff} .btn-outline{background:transparent;color:var(--accent);border:1px solid var(--accent)} .btn:hover{opacity:.88}
+    @media(max-width:480px){.robot-grid{grid-template-columns:1fr}}
+  </style>
+<link rel="stylesheet" href="worksheet.css">
+</head>
+<body>
+<nav class="top-nav">
+  <a href="index.html">← All Modules</a>
+  <span class="nav-center">Module 6 of 16</span>
+  <a href="module-07.html">Next: Module 7 →</a>
+</nav>
+<div class="module-hero">
+  <div class="module-badge">Intermediate · Module 6</div>
+  <h1>Industrial Context &amp; Basic Automation</h1>
+  <p>Duration: 2–3 hours &nbsp;·&nbsp; Prerequisites: Modules 1–4</p>
+  <div class="objectives">
+    <span class="obj">Compare robot arm types by application</span>
+    <span class="obj">Describe levels of automation</span>
+    <span class="obj">Design a simple automation cell layout</span>
+    <span class="obj">Create and run a G-code sequence</span>
+  </div>
+</div>
+<div class="wrap">
+
+<div class="section-label"><span class="pill pill-theory">📖 Theory</span><hr></div>
+  <div class="card">
+    <h3>6.1 — Types of Industrial Robot</h3>
+    <img src="images/robot-types.svg" alt="Types of industrial robot" style="width:100%;height:auto;display:block;border-radius:8px;margin:12px 0;">
+    <p>Not all robot arms are the same. Different configurations are suited to different tasks. Understanding the options helps engineers select the right robot for a given application.</p>
+    <div class="robot-grid">
+      <div class="robot-type"><h5>Articulated (6-DOF)</h5><p>Most flexible. Used for welding, assembly, painting. High reach, complex programming. Examples: KUKA KR6, Fanuc M-10.</p></div>
+      <div class="robot-type"><h5>SCARA</h5><p>Fast horizontal movement, rigid vertically. Ideal for pick-and-place, circuit board assembly. Limited to flat workspace.</p></div>
+      <div class="robot-type"><h5>Delta / Parallel</h5><p>Very high speed, light payload. Used in food packaging and pharmaceutical sorting. Fixed workspace volume.</p></div>
+      <div class="robot-type"><h5>Collaborative (Cobot)</h5><p>Force-limited for safe human contact. Used where humans and robots share a space. Slower but no safety cage needed. Examples: UR5, Franka Emika.</p></div>
+    </div>
+    <div class="callout callout-info">
+      <span class="callout-icon">🏭</span>
+      <div class="callout-body"><strong>Our robot arm</strong></br> is a small-scale articulated arm — structurally similar to a 6-DOF industrial arm but scaled down for education. The programming concepts (teach points, sequences, G-code) directly transfer to industrial practice.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>6.2 — Levels of Automation</h3>
+    <img src="images/automation-pyramid.svg" alt="Levels of automation pyramid" style="width:100%;height:auto;display:block;border-radius:8px;margin:12px 0;">
+    <p>Automation exists on a spectrum. Knowing where a system sits on this spectrum helps set realistic expectations and design appropriate control strategies.</p>
+    <ul>
+      <li><strong>Manual</strong> — human performs all tasks. No automation. Flexible but slow and variable.</li>
+      <li><strong>Mechanised</strong> — machines assist humans (e.g. a powered conveyor). Human still controls the process.</li>
+      <li><strong>Semi-automated</strong> — machine handles repetitive steps; human loads/unloads or supervises. Our pendant-controlled arm fits here.</li>
+      <li><strong>Fully automated</strong> — machine performs entire task autonomously without human intervention. Requires reliable sensors, programming, and safety systems.</li>
+      <li><strong>Intelligent/adaptive</strong> — system can sense its environment and adapt its behaviour (e.g. vision-guided robot that handles variable part positions).</li>
+    </ul>
+    <h4>Automation cell design</h4>
+    <p>An <strong>automation cell</strong> groups all the equipment needed for a task: the robot arm, fixtures, conveyors, sensors, safety fencing, and control systems. Good cell design considers:</p>
+    <ul>
+      <li>Reach envelope — can the robot arm reach all required positions?</li>
+      <li>Cycle time — how long does the task take? Is it fast enough?</li>
+      <li>Safety — fencing, light curtains, or force limits for cobots</li>
+      <li>Maintenance access — can technicians reach the equipment without entering the hazard zone?</li>
+    </ul>
+  </div>
+
+  <div class="section-label"><span class="pill pill-activity">🔧 Software Activity</span><hr></div>
+  <div class="activity-card">
+    <h3>Activity 6A — Plan and execute an automated pick-and-place sequence</h3>
+    <span class="app-tab">App tab: Stored Positions</span>
+    <span class="app-tab">App tab: Visual Programming</span>
+    <p style="font-size:.9rem;margin:0 0 .75rem;">You will define a simple automation scenario: moving an object from a <em>Pick</em> location to a <em>Place</em> location and returning to <em>Home</em>. This mirrors a real industrial cell.</p>
+    <ol class="steps">
+      <li><p>Define your cell layout on paper first. Mark three positions: <strong>Home</strong> (safe rest position), <strong>Pick</strong> (where the object is collected), <strong>Place</strong> (where it is deposited). Note the approximate joint angles for each.</p></li>
+      <li><p>Open the <span class="ui-ref">Stored Positions</span> tab. The app supports up to 100 named positions in slots 0–99. Jog the arm to your Home pose using Pendant Control, then in Stored Positions give it a meaningful name (e.g. "Home") and save it to slot 0.</p></li>
+      <li><p>Repeat for your Pick and Place positions, saving them to slots 1 and 2 with descriptive names ("Pick", "Place"). Using names rather than slot numbers makes the G-code and Blockly programs more readable.</p></li>
+      <li><p>After saving all positions, click <strong>Export JSON</strong> in the Stored Positions tab to save your position set as a file. This is equivalent to saving a robot program — the JSON file can be imported in a future session to restore all positions instantly.</p></li>
+      <li><p>In <span class="ui-ref">Visual Programming</span>, build the sequence: Home → Pick → (pause 1 s) → Place → (pause 1 s) → Home. Add a <strong>repeat 5 times</strong> loop around the Pick–Place–Home section.</p></li>
+      <li><p>Click <strong>Convert to G-Code</strong> in the Blockly toolbar. The exported G-code shows exactly the same sequence in text form. Save this file — you now have a portable, re-runnable version of your cell program that does not require the Blockly workspace.</p></li>
+      <li><p>Before running: confirm workspace is clear, torque is enabled, and you are outside the envelope. Run the program and time one full cycle with a stopwatch.</p></li>
+      <li><p>Record the cycle time (Home → Pick → Place → Home). Calculate cycles per minute and cycles per hour — this is the cell's theoretical throughput.</p></li>
+    </ol>
+  </div>
+
+  <div class="callout callout-tip">
+    <span class="callout-icon">👁️</span>
+    <div class="callout-body">
+      <strong>Perception — Camera Tab</strong></br>
+      The application includes a <span class="ui-ref">Camera</span> tab that streams live video from a USB camera on the Raspberry Pi. The server performs <strong>ArUco marker detection</strong> (recognising printed square markers) and <strong>coloured block highlighting</strong>. This is the beginning of intelligent/adaptive automation — the arm could, in principle, be directed to pick objects it has "seen" rather than moving to pre-taught positions. This places our system at the top tier of the automation pyramid discussed in the theory above.
+    </div>
+  </div>
+
+  <div class="section-label"><span class="pill pill-worksheet">📝 Worksheet</span><hr></div>
+  <div class="worksheet-card">
+    <h3>Worksheet 6 — Industrial Context &amp; Automation Cell</h3>
+    <div class="ws-field">
+      <label>1. Sketch your automation cell layout (top view). Label: robot arm base, Home position, Pick position, Place position, safety boundary.</label>
+      <textarea style="min-height:110px;" placeholder="Describe or sketch your layout. Include approximate distances and the arm's working envelope boundary."></textarea>
+    </div>
+    <div class="ws-field">
+      <label>2. What was the cycle time (seconds) for one Home → Pick → Place → Home sequence?</label>
+      <input type="text" placeholder="Cycle time = ___ s  →  ___ cycles/min  →  ___ cycles/hour">
+    </div>
+    <div class="ws-field">
+      <label>3. What level of automation does your programmed sequence represent? Justify your answer.</label>
+      <textarea placeholder="The sequence represents ___ automation because..."></textarea>
+    </div>
+    <div class="ws-field">
+      <label>4. Compare the articulated arm and the SCARA robot. For which of these tasks would each be better suited, and why?<br>Task A: Welding a curved seam on a 3D part. Task B: Placing chips onto flat PCBs at 60 per minute.</label>
+      <textarea placeholder="Task A: best suited to ___ because...&#10;Task B: best suited to ___ because..."></textarea>
+    </div>
+    <div class="ws-field">
+      <label>5. What safety measures would you add to your cell if it were to run unattended overnight?</label>
+      <textarea placeholder="1. &#10;2. &#10;3. "></textarea>
+    </div>
+    <div class="ws-field">
+      <label>6. Extension: Research the IFR (International Federation of Robotics) statistics for global robot installations in the most recent year available. Which industry sector installs the most robots, and what type are they predominantly?</label>
+      <textarea placeholder="Source: ...  Sector: ...  Robot type: ...  Number installed: ..."></textarea>
+    </div>
+  </div>
+
+  <div class="section-label"><span class="pill pill-sowhat">💭 So What?</span><hr></div>
+  <div class="sowhat-card">
+    <h3>Why does this matter?</h3>
+    <p>The sequence you programmed in this module is structurally identical to how industrial automation cells are programmed. The difference is scale, speed, and the addition of sensors (conveyors, vision systems, presence detectors) that feed information into the control logic.</p>
+    <p>Understanding which robot type suits which task is an engineering judgement call with real commercial consequences. Choosing a 6-DOF arm for a job a SCARA would do faster and cheaper is a costly mistake. Choosing a cobot for a heavy welding task is a safety risk. These decisions are made by engineers every day and they require exactly the knowledge covered in this curriculum.</p>
+  </div>
+
+  <div class="section-label"><span class="pill pill-mcq">✅ Quick Check</span><hr></div>
+  <div class="mcq-card">
+    <h3>Quick Check — Module 6</h3>
+    <div class="mcq-q" id="q1">
+      <p>1. A food packaging company needs to place chocolates into boxes at 120 items per minute. Which robot type is most suitable?</p>
+      <div class="mcq-options">
+        <label class="mcq-opt"><input type="radio" name="q1" value="a"> <span>Articulated 6-DOF arm — most flexible</span></label>
+        <label class="mcq-opt"><input type="radio" name="q1" value="b"> <span>Delta (parallel) robot — very high speed, light payload</span></label>
+        <label class="mcq-opt"><input type="radio" name="q1" value="c"> <span>Collaborative robot (cobot) — safe near humans</span></label>
+        <label class="mcq-opt"><input type="radio" name="q1" value="d"> <span>SCARA — good for flat surfaces</span></label>
+      </div>
+      <div class="mcq-feedback" id="q1-fb"></div>
+    </div>
+    <div class="mcq-q" id="q2">
+      <p>2. An operator manually loads parts into a machine that then automatically machines them. What level of automation is this?</p>
+      <div class="mcq-options">
+        <label class="mcq-opt"><input type="radio" name="q2" value="a"> <span>Fully automated</span></label>
+        <label class="mcq-opt"><input type="radio" name="q2" value="b"> <span>Intelligent / adaptive</span></label>
+        <label class="mcq-opt"><input type="radio" name="q2" value="c"> <span>Semi-automated</span></label>
+        <label class="mcq-opt"><input type="radio" name="q2" value="d"> <span>Manual</span></label>
+      </div>
+      <div class="mcq-feedback" id="q2-fb"></div>
+    </div>
+    <div class="mcq-q" id="q3">
+      <p>3. When designing an automation cell, which of these is the primary reason to consider the robot's reach envelope?</p>
+      <div class="mcq-options">
+        <label class="mcq-opt"><input type="radio" name="q3" value="a"> <span>To choose the correct servo motor size</span></label>
+        <label class="mcq-opt"><input type="radio" name="q3" value="b"> <span>To ensure the robot can physically access all required positions in the cell</span></label>
+        <label class="mcq-opt"><input type="radio" name="q3" value="c"> <span>To calculate how many parts per hour can be processed</span></label>
+        <label class="mcq-opt"><input type="radio" name="q3" value="d"> <span>To determine what safety fencing height is required</span></label>
+      </div>
+      <div class="mcq-feedback" id="q3-fb"></div>
+    </div>
+    <button class="check-btn" onclick="checkMCQ()">Check answers</button>
+    <div class="score-box" id="score-box"></div>
+  </div>
+
+  <div class="bottom-nav">
+    <a class="btn btn-outline" href="module-05.html">← Module 5</a>
+    <a class="btn btn-primary" href="module-07.html">Next: Module 7 →</a>
+  </div>
+</div>
+<script>
+  const answers={q1:'b',q2:'c',q3:'b'};
+  const feedback={
+    q1:{b:'Correct! Delta robots are purpose-built for high-speed, light-payload applications like food packaging.',wrong:'For 120 items/minute with light payloads, a delta robot is the best choice — it is the fastest robot architecture for this type of task.'},
+    q2:{c:'Correct! The human loads parts (manual step) but the machining is automatic — this is semi-automated.',wrong:'Semi-automated is correct: the human performs the loading step, and the machine handles the rest autonomously.'},
+    q3:{b:'Correct! The reach envelope defines what positions the robot can physically reach. If a required position is outside the envelope, the robot simply cannot perform the task.',wrong:'The reach envelope primarily determines whether the robot can physically access all positions in the cell. Without checking this first, the entire cell layout may be invalid.'}
+  };
+  function checkMCQ(){
+    let score=0;
+    ['q1','q2','q3'].forEach(q=>{
+      const sel=document.querySelector(`input[name="${q}"]:checked`);
+      const fb=document.getElementById(`${q}-fb`);
+      document.querySelectorAll(`input[name="${q}"]`).forEach(o=>o.closest('.mcq-opt').classList.remove('correct','wrong'));
+      if(!sel){fb.className='mcq-feedback show bad';fb.textContent='Please select an answer.';return;}
+      const v=sel.value,c=answers[q];
+      if(v===c){sel.closest('.mcq-opt').classList.add('correct');fb.className='mcq-feedback show ok';fb.textContent='✓ '+feedback[q][c];score++;}
+      else{sel.closest('.mcq-opt').classList.add('wrong');document.querySelector(`input[name="${q}"][value="${c}"]`).closest('.mcq-opt').classList.add('correct');fb.className='mcq-feedback show bad';fb.textContent='✗ '+feedback[q].wrong;}
+    });
+    const box=document.getElementById('score-box');
+    box.className='score-box show '+(score>=2?'pass':'fail');
+    box.textContent=`You scored ${score}/3. `+(score===3?'Excellent!':score===2?'Good — review the missed question.':'Review the theory and try again.');
+  }
+</script>
+<script src="worksheet.js"></script>
+</body>
+</html>

@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="curriculum-module" content="8">
+  <title>Module 8: Advanced Control &amp; Communication</title>
+  <style>
+    :root {
+      --bg: #f6f7f9;
+      --card: #fff;
+      --text: #1a1d26;
+      --muted: #5c6370;
+      --accent: #1e5a8a;
+      --border: #d8dde6;
+      --code-bg: #eef1f6;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 17px;
+      line-height: 1.55;
+      color: var(--text);
+      background: var(--bg);
+    }
+    .wrap {
+      max-width: 52rem;
+      margin: 0 auto;
+      padding: 1.25rem 1.25rem 3rem;
+    }
+    .top-nav {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.75rem 1rem;
+      padding: 0.75rem 0;
+      margin-bottom: 1.25rem;
+      border-bottom: 1px solid var(--border);
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+      font-size: 0.9rem;
+    }
+    .nav-title {
+      flex: 1 1 auto;
+      font-weight: 600;
+      color: var(--muted);
+      min-width: 12rem;
+    }
+    a.nav-link {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    a.nav-link:hover { text-decoration: underline; }
+    h1.page-title {
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+      font-size: 1.65rem;
+      font-weight: 700;
+      margin: 0 0 0.5rem;
+      line-height: 1.25;
+    }
+    p.lead {
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+      color: var(--muted);
+      margin: 0 0 1.5rem;
+      font-size: 0.95rem;
+    }
+    section.card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.25rem 1.5rem 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    }
+    section.card h2 {
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+      font-size: 1.15rem;
+      margin: 0 0 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid var(--accent);
+      color: var(--accent);
+    }
+    .card-inner {
+      font-family: Georgia, "Times New Roman", serif;
+    }
+    .card-inner h1, .card-inner h2, .card-inner h3, .card-inner h4 {
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+    }
+    .card-inner h1 { font-size: 1.35rem; }
+    .card-inner h2 { font-size: 1.15rem; border-bottom: none; color: var(--text); }
+    .card-inner h3 { font-size: 1.05rem; }
+    .card-inner h4 { font-size: 1rem; }
+    .card-inner code {
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 0.9em;
+      background: var(--code-bg);
+      padding: 0.1em 0.35em;
+      border-radius: 4px;
+    }
+    .card-inner pre {
+      background: var(--code-bg);
+      padding: 1rem;
+      overflow-x: auto;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+    }
+    .card-inner pre code {
+      background: none;
+      padding: 0;
+    }
+    .card-inner table {
+      border-collapse: collapse;
+      width: 100%;
+      font-size: 0.95rem;
+      margin: 1rem 0;
+    }
+    .card-inner th, .card-inner td {
+      border: 1px solid var(--border);
+      padding: 0.45rem 0.6rem;
+      text-align: left;
+      vertical-align: top;
+    }
+    .card-inner th {
+      background: #eef3f8;
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+      font-weight: 600;
+    }
+    ul.index-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+    }
+    ul.index-list li {
+      margin: 0.35rem 0;
+      padding: 0.5rem 0.65rem;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--card);
+    }
+    ul.index-list a {
+      color: var(--accent);
+      font-weight: 600;
+      text-decoration: none;
+    }
+    ul.index-list a:hover { text-decoration: underline; }
+    .index-meta {
+      display: block;
+      font-size: 0.85rem;
+      color: var(--muted);
+      font-weight: normal;
+      margin-top: 0.2rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <nav class="top-nav">
+  <a class="nav-link" href="index.html">All modules</a>
+  <a class="nav-link" href="module-07.html">← Previous</a>
+  <span class="nav-title">Module 8: Advanced Control &amp; Communication</span>
+  <a class="nav-link" href="module-09.html">Next →</a>
+</nav>
+<h1 class="page-title">Module 8: Advanced Control &amp; Communication</h1>
+<p class="lead">BTEC robot arm curriculum — one page per module. Work through sections in order.</p>
+<section class="card"><h2>Curriculum plan (from BTEC_Robot_Arm_Curriculum_Plan.md)</h2><div class="card-inner"><h2><strong>Module 8: Advanced Control &amp; Communication</strong></h2>
+<p><em>Level 4/5 - Building on Module 7</em></p>
+<h3>Learning Objectives Covered:</h3>
+<ul>
+<li>✅ <strong>Control and communication</strong> (Level 4/5)</li>
+<li>Describe serial protocol: baud rate, packet layout (headers, ID, length, instruction, parameters, checksum)</li>
+<li>Identify major contributors to latency: serial speed, per-servo status polling, timeouts, command queueing</li>
+<li>Justify design choices for timeouts, polling intervals, command queue limits</li>
+<li>✅ <strong>Feedback and monitoring</strong> (Level 4/5)</li>
+<li>Use live feedback (position, speed, load, voltage, temperature) to monitor system health</li>
+<li>Detect abnormal conditions (under-voltage, high temperature, unusually high load)</li>
+<li>Use moving/torque flags to reason about servo state and safety</li>
+</ul>
+<h3>Content:</h3>
+<ol>
+<li>
+<p><strong>Serial Communication Protocol</strong><br />
+   - What is serial communication?<br />
+   - Baud rate explained<br />
+   - Packet structure: headers, ID, length, instruction, parameters, checksum<br />
+   - How packets are constructed and parsed<br />
+   - Error detection (checksum)</p>
+</li>
+<li>
+<p><strong>System Latency</strong><br />
+   - What causes delays?<br />
+   - Serial speed impact<br />
+   - Status polling overhead<br />
+   - Timeout effects<br />
+   - Command queueing delays<br />
+   - Measuring and minimizing latency</p>
+</li>
+<li>
+<p><strong>Design Decisions</strong><br />
+   - Why specific timeout values?<br />
+   - Polling interval trade-offs<br />
+   - Command queue size considerations<br />
+   - Reliability vs. speed trade-offs</p>
+</li>
+<li>
+<p><strong>Advanced Monitoring</strong><br />
+   - Real-time feedback interpretation<br />
+   - Position monitoring<br />
+   - Speed monitoring<br />
+   - Load monitoring<br />
+   - Voltage monitoring<br />
+   - Temperature monitoring</p>
+</li>
+<li>
+<p><strong>Abnormal Condition Detection</strong><br />
+   - Under-voltage detection<br />
+   - Over-temperature detection<br />
+   - Overload detection<br />
+   - Using flags (moving, torque) for state reasoning<br />
+   - Safety implications</p>
+</li>
+</ol>
+<h3>Practical Activities:</h3>
+<ul>
+<li>Analyze serial packet structure</li>
+<li>Measure system latency</li>
+<li>Experiment with different polling intervals</li>
+<li>Monitor all feedback channels simultaneously</li>
+<li>Create a monitoring dashboard</li>
+<li>Write detection logic for abnormal conditions</li>
+<li>Test safety responses to abnormal conditions</li>
+<li>Document communication protocol</li>
+<li>Justify design choices in a report</li>
+</ul>
+<hr /></div></section>
+<section class="card"><h2>Theory & teaching notes</h2><div class="card-inner"><h1>Module 8: Advanced Control &amp; Communication</h1>
+<h2>Theory &amp; Teaching Notes</h2>
+<p><strong>Module Duration:</strong> 3-4 hours<br />
+<strong>Level:</strong> Advanced (Level 4/5)</p>
+<hr />
+<h2>Learning Objectives</h2>
+<p>By the end of this module, students will be able to:<br />
+- Understand serial communication protocol structure<br />
+- Identify sources of system latency<br />
+- Justify design choices for timeouts and polling<br />
+- Use advanced feedback monitoring<br />
+- Detect abnormal conditions<br />
+- Use flags for state reasoning and safety</p>
+<hr />
+<h2>1. Serial Communication Protocol</h2>
+<h3>What is Serial Communication?</h3>
+<p><strong>Serial communication</strong> sends data one bit at a time, sequentially.</p>
+<p><strong>Think of it like:</strong> Sending letters one at a time through a mail slot, rather than all at once.</p>
+<p><strong>Why serial?</strong><br />
+- Simple wiring (fewer wires)<br />
+- Works over distances<br />
+- Reliable<br />
+- Standard method</p>
+<h3>Baud Rate</h3>
+<p><strong>Baud rate</strong> = Speed of data transmission (bits per second)</p>
+<p><strong>Common rates:</strong><br />
+- 9600 baud = Slow but reliable<br />
+- 115200 baud = Fast but needs good wiring<br />
+- Higher = Faster communication</p>
+<p><strong>Trade-off:</strong><br />
+- Higher baud = Faster but more sensitive to interference<br />
+- Lower baud = Slower but more reliable</p>
+<h3>Packet Structure</h3>
+<p><strong>Packet</strong> = A unit of data sent over serial</p>
+<p><strong>Packet components:</strong></p>
+<ol>
+<li>
+<p><strong>Header</strong><br />
+   - Identifies start of packet<br />
+   - Usually specific bytes (e.g., 0xFF 0xFF)</p>
+</li>
+<li>
+<p><strong>ID</strong><br />
+   - Which servo this packet is for<br />
+   - Each servo has unique ID (1, 2, 3, etc.)</p>
+</li>
+<li>
+<p><strong>Length</strong><br />
+   - How much data follows<br />
+   - Helps receiver know when packet ends</p>
+</li>
+<li>
+<p><strong>Instruction</strong><br />
+   - What to do (read, write, move, etc.)<br />
+   - Command type</p>
+</li>
+<li>
+<p><strong>Parameters</strong><br />
+   - Data for the instruction<br />
+   - Position, speed, etc.</p>
+</li>
+<li>
+<p><strong>Checksum</strong><br />
+   - Error detection value<br />
+   - Calculated from other bytes<br />
+   - Receiver checks if data is correct</p>
+</li>
+</ol>
+<h3>Error Detection: Checksum</h3>
+<p><strong>Checksum</strong> = A value calculated from data to detect errors</p>
+<p><strong>How it works:</strong><br />
+1. Sender calculates checksum from data<br />
+2. Sender includes checksum in packet<br />
+3. Receiver calculates checksum from received data<br />
+4. Receiver compares calculated vs. received checksum<br />
+5. If they match = Data is correct<br />
+6. If they don't match = Error detected, ignore packet</p>
+<p><strong>Why important:</strong> Detects corrupted data</p>
+<hr />
+<h2>2. System Latency</h2>
+<h3>What is Latency?</h3>
+<p><strong>Latency</strong> = Delay between sending command and getting response</p>
+<p><strong>Why it matters:</strong><br />
+- Affects responsiveness<br />
+- Affects smoothness<br />
+- Affects control quality</p>
+<h3>Sources of Latency</h3>
+<h4>1. Serial Speed</h4>
+<p><strong>Impact:</strong> Slower baud rate = More latency</p>
+<p><strong>Example:</strong><br />
+- 9600 baud: ~10ms per packet<br />
+- 115200 baud: ~1ms per packet</p>
+<p><strong>Trade-off:</strong> Speed vs. reliability</p>
+<h4>2. Status Polling</h4>
+<p><strong>What it is:</strong> Regularly asking servos for status</p>
+<p><strong>Impact:</strong> <br />
+- More frequent polling = More latency (busy checking)<br />
+- Less frequent polling = Less responsive (don't know status quickly)</p>
+<p><strong>Example:</strong><br />
+- Poll every 10ms = Low latency but high overhead<br />
+- Poll every 100ms = Higher latency but lower overhead</p>
+<p><strong>Trade-off:</strong> Responsiveness vs. overhead</p>
+<h4>3. Timeouts</h4>
+<p><strong>What it is:</strong> How long to wait for response before giving up</p>
+<p><strong>Impact:</strong><br />
+- Short timeout = Faster failure detection but may timeout too early<br />
+- Long timeout = Slower failure detection but more reliable</p>
+<p><strong>Example:</strong><br />
+- 50ms timeout: May timeout on slow but valid responses<br />
+- 500ms timeout: Waits longer, detects failures slower</p>
+<p><strong>Trade-off:</strong> Speed vs. reliability</p>
+<h4>4. Command Queueing</h4>
+<p><strong>What it is:</strong> Commands waiting to be sent</p>
+<p><strong>Impact:</strong><br />
+- Long queue = Commands wait longer<br />
+- Short queue = May drop commands if full</p>
+<p><strong>Example:</strong><br />
+- Queue of 10 commands: Commands may wait<br />
+- Queue of 1 command: Immediate but may lose commands</p>
+<p><strong>Trade-off:</strong> Throughput vs. responsiveness</p>
+<h3>Measuring Latency</h3>
+<p><strong>How to measure:</strong><br />
+1. Send command at time T1<br />
+2. Receive response at time T2<br />
+3. Latency = T2 - T1</p>
+<p><strong>Typical values:</strong><br />
+- Good system: 10-50ms<br />
+- Acceptable: 50-100ms<br />
+- Poor: &gt;100ms</p>
+<hr />
+<h2>3. Design Decisions</h2>
+<h3>Timeout Values</h3>
+<p><strong>Why specific timeout values?</strong></p>
+<p><strong>Considerations:</strong><br />
+- <strong>Typical response time:</strong> How long do responses usually take?<br />
+- <strong>Worst case:</strong> What's the longest valid response?<br />
+- <strong>Error detection:</strong> How quickly to detect failures?<br />
+- <strong>System load:</strong> How busy is the system?</p>
+<p><strong>Example reasoning:</strong><br />
+- Typical response: 20ms<br />
+- Worst case: 100ms<br />
+- <strong>Timeout: 150ms</strong> (gives margin but not too long)</p>
+<p><strong>Too short:</strong> May timeout on valid responses<br />
+<strong>Too long:</strong> Slow to detect failures</p>
+<h3>Polling Intervals</h3>
+<p><strong>Why specific polling intervals?</strong></p>
+<p><strong>Considerations:</strong><br />
+- <strong>Update rate needed:</strong> How often do you need status?<br />
+- <strong>System load:</strong> Can system handle frequent polling?<br />
+- <strong>Responsiveness:</strong> How quickly to detect changes?</p>
+<p><strong>Example reasoning:</strong><br />
+- Need updates: Every 50ms for smooth control<br />
+- System can handle: Every 20ms<br />
+- <strong>Polling: Every 30ms</strong> (meets need with margin)</p>
+<p><strong>Too frequent:</strong> Wastes resources, increases latency<br />
+<strong>Too infrequent:</strong> Slow to detect changes</p>
+<h3>Command Queue Limits</h3>
+<p><strong>Why specific queue sizes?</strong></p>
+<p><strong>Considerations:</strong><br />
+- <strong>Command rate:</strong> How many commands per second?<br />
+- <strong>Processing rate:</strong> How fast can system process?<br />
+- <strong>Memory:</strong> How much memory available?</p>
+<p><strong>Example reasoning:</strong><br />
+- Command rate: 10 per second<br />
+- Processing rate: 20 per second<br />
+- <strong>Queue size: 5</strong> (handles bursts, not too large)</p>
+<p><strong>Too small:</strong> May drop commands<br />
+<strong>Too large:</strong> Uses memory, increases latency</p>
+<hr />
+<h2>4. Advanced Monitoring</h2>
+<h3>Real-Time Feedback</h3>
+<p><strong>Real-time</strong> = As it happens, immediately</p>
+<p><strong>Why monitor in real-time:</strong><br />
+- Detect problems quickly<br />
+- Ensure safety<br />
+- Optimize performance<br />
+- Understand system behavior</p>
+<h3>Position Monitoring</h3>
+<p><strong>What to monitor:</strong><br />
+- Current position of each joint<br />
+- Commanded vs. actual position<br />
+- Position errors<br />
+- Position trends</p>
+<p><strong>What to look for:</strong><br />
+- Large errors (servo not reaching position)<br />
+- Sudden changes (unexpected movement)<br />
+- Stuck positions (not moving)</p>
+<h3>Speed Monitoring</h3>
+<p><strong>What to monitor:</strong><br />
+- Current speed of each joint<br />
+- Speed commands vs. actual speed<br />
+- Speed variations</p>
+<p><strong>What to look for:</strong><br />
+- Too slow (may be stuck or overloaded)<br />
+- Too fast (may be unsafe)<br />
+- Erratic speed (may indicate problems)</p>
+<h3>Load Monitoring</h3>
+<p><strong>What to monitor:</strong><br />
+- Load percentage for each joint<br />
+- Load trends over time<br />
+- Load spikes</p>
+<p><strong>What to look for:</strong><br />
+- High load (approaching limits)<br />
+- Sudden increases (may be stuck)<br />
+- Consistently high (may be overloaded)</p>
+<h3>Voltage Monitoring</h3>
+<p><strong>What to monitor:</strong><br />
+- Voltage level<br />
+- Voltage stability<br />
+- Voltage drops</p>
+<p><strong>What to look for:</strong><br />
+- Low voltage (power problems)<br />
+- Voltage drops (power supply issues)<br />
+- Unstable voltage (connection problems)</p>
+<h3>Temperature Monitoring</h3>
+<p><strong>What to monitor:</strong><br />
+- Servo temperature<br />
+- Temperature trends<br />
+- Temperature spikes</p>
+<p><strong>What to look for:</strong><br />
+- High temperature (overheating)<br />
+- Rapid increases (may be stuck or overloaded)<br />
+- Consistently high (may need cooling)</p>
+<hr />
+<h2>5. Abnormal Condition Detection</h2>
+<h3>Under-Voltage Detection</h3>
+<p><strong>What it is:</strong> Voltage drops below safe level</p>
+<p><strong>Why dangerous:</strong><br />
+- Servos may not work properly<br />
+- May cause erratic behavior<br />
+- Can damage components</p>
+<p><strong>Detection:</strong><br />
+- Monitor voltage continuously<br />
+- Set threshold (e.g., &lt;11V for 12V system)<br />
+- Alert when below threshold</p>
+<p><strong>Response:</strong><br />
+- Stop robot immediately<br />
+- Alert operator<br />
+- Investigate power supply</p>
+<h3>Over-Temperature Detection</h3>
+<p><strong>What it is:</strong> Servo gets too hot</p>
+<p><strong>Why dangerous:</strong><br />
+- Can damage servo<br />
+- May cause failure<br />
+- Safety hazard</p>
+<p><strong>Detection:</strong><br />
+- Monitor temperature continuously<br />
+- Set threshold (e.g., &gt;70°C)<br />
+- Alert when above threshold</p>
+<p><strong>Response:</strong><br />
+- Reduce speed/load<br />
+- Stop if critical<br />
+- Allow cooling<br />
+- Investigate cause</p>
+<h3>Overload Detection</h3>
+<p><strong>What it is:</strong> Load exceeds safe limits</p>
+<p><strong>Why dangerous:</strong><br />
+- Can damage joints<br />
+- May cause failure<br />
+- Safety hazard</p>
+<p><strong>Detection:</strong><br />
+- Monitor load continuously<br />
+- Set threshold (e.g., &gt;90% of max)<br />
+- Alert when above threshold</p>
+<p><strong>Response:</strong><br />
+- Stop movement<br />
+- Reduce payload<br />
+- Investigate cause<br />
+- Check for obstructions</p>
+<h3>Using Flags for State Reasoning</h3>
+<p><strong>Flags</strong> = Status indicators (true/false)</p>
+<p><strong>Moving flag:</strong><br />
+- True = Servo is moving<br />
+- False = Servo is stopped<br />
+- Use to know when movement complete</p>
+<p><strong>Torque flag:</strong><br />
+- True = Torque enabled (can move)<br />
+- False = Torque disabled (safe)<br />
+- Use to know if servo can move</p>
+<p><strong>State reasoning:</strong><br />
+- Combine flags to understand state<br />
+- Example: Moving=false AND Torque=true = Ready but stopped<br />
+- Example: Moving=true = Currently moving<br />
+- Example: Torque=false = Safe, cannot move</p>
+<hr />
+<h2>6. Safety Implications</h2>
+<h3>Why Monitoring Matters for Safety</h3>
+<p><strong>Monitoring helps:</strong><br />
+- Detect problems before they become dangerous<br />
+- Prevent damage<br />
+- Ensure safe operation<br />
+- Protect operators</p>
+<h3>Fail-Safe Design</h3>
+<p><strong>Fail-safe</strong> = System fails to a safe state</p>
+<p><strong>Examples:</strong><br />
+- Communication loss → Stop robot<br />
+- Overload → Stop movement<br />
+- Overheat → Reduce speed or stop<br />
+- Low voltage → Stop robot</p>
+<p><strong>Design principle:</strong> Always fail to safest state</p>
+<hr />
+<h2>7. Summary</h2>
+<h3>Key Concepts</h3>
+<ol>
+<li><strong>Serial protocol</strong> uses packets with header, ID, length, instruction, parameters, checksum</li>
+<li><strong>Latency</strong> comes from serial speed, polling, timeouts, queueing</li>
+<li><strong>Design decisions</strong> balance speed, reliability, responsiveness</li>
+<li><strong>Monitoring</strong> provides real-time feedback on system health</li>
+<li><strong>Abnormal conditions</strong> must be detected and responded to</li>
+<li><strong>Flags</strong> help reason about servo state</li>
+<li><strong>Safety</strong> depends on proper monitoring and fail-safe design</li>
+</ol>
+<h3>Understanding Communication and Control</h3>
+<p>You should now understand:<br />
+- How serial communication works<br />
+- What causes latency<br />
+- How to make design decisions<br />
+- How to monitor system health<br />
+- How to detect problems<br />
+- How to ensure safety</p>
+<h3>Next Steps</h3>
+<p>After learning this theory, you will:<br />
+- Analyze serial packets<br />
+- Measure latency<br />
+- Experiment with polling intervals<br />
+- Monitor feedback channels<br />
+- Detect abnormal conditions<br />
+- Complete the Module 8 worksheet</p>
+<hr />
+<h2>Questions for Review</h2>
+<p>Before moving to the worksheet, make sure you can answer:</p>
+<ol>
+<li>What are the components of a serial packet?</li>
+<li>What is a checksum and why is it important?</li>
+<li>What are the main sources of latency?</li>
+<li>How do you choose timeout values?</li>
+<li>What should you monitor for system health?</li>
+<li>How do you detect abnormal conditions?</li>
+<li>How do flags help with state reasoning?</li>
+</ol>
+<hr />
+<p><strong>Remember:</strong> Understanding communication and control helps you optimize performance and ensure safety. Monitor your system and respond to problems quickly!</p></div></section>
+<section class="card"><h2>Student worksheet</h2><div class="card-inner"><h1>Module 8: Advanced Control &amp; Communication</h1>
+<h2>Student Worksheet</h2>
+<p><strong>Name:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_<br />
+<strong>Date:</strong> </em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>_<br />
+<strong>Group/Class:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>____</p>
+<hr />
+<h2>Part 1: Serial Communication Protocol</h2>
+<h3>Question 1: Protocol Basics</h3>
+<p>Answer the following:</p>
+<p>a) What is serial communication?</p>
+<hr />
+<p>b) What is baud rate?</p>
+<hr />
+<p>c) What baud rate does your system use? <strong><em>_</em></strong></p>
+<h3>Question 2: Packet Structure</h3>
+<p>Draw and label a serial packet structure showing:<br />
+- Header<br />
+- ID<br />
+- Length<br />
+- Instruction<br />
+- Parameters<br />
+- Checksum</p>
+<p>[Space for diagram]</p>
+<h3>Question 3: Error Detection</h3>
+<p>How does the checksum work for error detection?</p>
+<hr />
+<hr />
+<hr />
+<h2>Part 2: System Latency</h2>
+<h3>Question 4: Latency Sources</h3>
+<p>Identify sources of latency in the system:</p>
+<table>
+<thead>
+<tr>
+<th>Source</th>
+<th>Contribution to Latency</th>
+<th>How to Reduce?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Serial speed</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Status polling</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Timeouts</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Command queueing</td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h3>Question 5: Measuring Latency</h3>
+<p>Measure the latency in your system:</p>
+<p><strong>Test:</strong> Send command and measure time to response<br />
+<strong>Result:</strong> <strong><em>_</em></strong> milliseconds</p>
+<p><strong>Is this acceptable?</strong> Yes / No<br />
+<strong>Why?</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<hr />
+<h2>Part 3: Design Decisions</h2>
+<h3>Question 6: Timeout Values</h3>
+<p>Answer the following:</p>
+<p>a) What timeout values are used in your system?</p>
+<hr />
+<p>b) Why were these values chosen?</p>
+<hr />
+<p>c) What happens if timeout is too short?</p>
+<hr />
+<p>d) What happens if timeout is too long?</p>
+<hr />
+<h3>Question 7: Polling Intervals</h3>
+<p>Answer the following:</p>
+<p>a) How often is status polled?</p>
+<hr />
+<p>b) What are the trade-offs of different polling intervals?</p>
+<hr />
+<hr />
+<hr />
+<h2>Part 4: Advanced Monitoring</h2>
+<h3>Question 8: Real-Time Feedback</h3>
+<p>Monitor all feedback channels simultaneously for 30 seconds:</p>
+<table>
+<thead>
+<tr>
+<th>Time</th>
+<th>Position</th>
+<th>Speed</th>
+<th>Load</th>
+<th>Voltage</th>
+<th>Temperature</th>
+<th>Moving?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0s</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>5s</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>10s</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>15s</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>30s</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Observations:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<h3>Question 9: Abnormal Condition Detection</h3>
+<p>Design detection logic for abnormal conditions:</p>
+<p><strong>Under-voltage Detection:</strong><br />
+- Threshold: <strong><em>_</em></strong> V<br />
+- Action: <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<p><strong>Over-temperature Detection:</strong><br />
+- Threshold: <strong><em>_</em></strong> °C<br />
+- Action: <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<p><strong>Overload Detection:</strong><br />
+- Threshold: <strong><em>_</em></strong> %<br />
+- Action: <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<hr />
+<h2>Part 5: Safety Flags</h2>
+<h3>Question 10: Using Flags</h3>
+<p>Explain how to use moving and torque flags:</p>
+<p><strong>Moving Flag:</strong><br />
+- What it indicates: <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><br />
+- How to use it: <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong></strong></p>
+<p><strong>Torque Flag:</strong><br />
+- What it indicates: <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><br />
+- How to use it: <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong></strong></p>
+<h3>Question 11: State Reasoning</h3>
+<p>How can flags help reason about servo state and safety?</p>
+<hr />
+<hr />
+<hr />
+<hr />
+<h2>Part 6: Practical Exercise</h2>
+<h3>Exercise 1: Protocol Analysis</h3>
+<p>Analyze a serial packet:</p>
+<p><strong>Packet:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__<br />
+<strong>Breakdown:</strong><br />
+- Header: <strong><em>_</em></strong><br />
+- ID: <strong><em>_</em></strong><br />
+- Length: <strong><em>_</em></strong><br />
+- Instruction: <strong><em>_</em></strong><br />
+- Parameters: <strong><em>_</em></strong><br />
+- Checksum: <strong><em>_</em></strong></p>
+<p><strong>Is checksum correct?</strong> Yes / No</p>
+<h3>Exercise 2: Monitoring Dashboard</h3>
+<p>Create a simple monitoring dashboard showing:<br />
+- All feedback values<br />
+- Status flags<br />
+- Warning indicators</p>
+<p>[Space for dashboard design]</p>
+<hr />
+<h2>Part 7: Reflection</h2>
+<h3>Question 12: Understanding Communication</h3>
+<p>Answer the following:</p>
+<p>a) Why is understanding the communication protocol important?</p>
+<hr />
+<hr />
+<p>b) How does latency affect robot operation?</p>
+<hr />
+<hr />
+<hr />
+<h2>Self-Assessment Checklist</h2>
+<ul>
+<li>[ ] Understood serial protocol</li>
+<li>[ ] Identified latency sources</li>
+<li>[ ] Understood design decisions</li>
+<li>[ ] Monitored feedback channels</li>
+<li>[ ] Designed detection logic</li>
+<li>[ ] Used safety flags</li>
+<li>[ ] Analyzed protocol packets</li>
+<li>[ ] Written reflection</li>
+</ul>
+<p><strong>Student Signature:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_<br />
+<strong>Date:</strong> </em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><em><br />
+<strong>Instructor Signature:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_<br />
+<strong>Date:</strong> </em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong></em></p></div></section>
+<section class="card"><h2>Multiple choice questions</h2><div class="card-inner"><h1>Module 8: Advanced Control &amp; Communication</h1>
+<h2>Multiple Choice Questions</h2>
+<p><strong>Instructions:</strong> Choose the best answer for each question.</p>
+<hr />
+<p><strong>1. What is serial communication?</strong><br />
+   a) Parallel data transmission<br />
+   b) Sequential data transmission one bit at a time<br />
+   c) Wireless communication<br />
+   d) No communication</p>
+<p><strong>2. What is baud rate?</strong><br />
+   a) The speed of data transmission<br />
+   b) The robot's speed<br />
+   c) The robot's position<br />
+   d) The robot's weight</p>
+<p><strong>3. What is a checksum used for?</strong><br />
+   a) Error detection<br />
+   b) Speed control<br />
+   c) Position control<br />
+   d) Power supply</p>
+<p><strong>4. What contributes to system latency?</strong><br />
+   a) Serial speed, polling, timeouts, queueing<br />
+   b) The robot's color<br />
+   c) The robot's size<br />
+   d) The robot's cost</p>
+<p><strong>5. What happens if a timeout is too short?</strong><br />
+   a) Commands may be cancelled prematurely<br />
+   b) Nothing happens<br />
+   c) The robot moves faster<br />
+   d) The robot stops</p>
+<p><strong>6. What happens if a timeout is too long?</strong><br />
+   a) System may wait unnecessarily<br />
+   b) Nothing happens<br />
+   c) The robot moves faster<br />
+   d) The robot stops</p>
+<p><strong>7. What does the "moving flag" indicate?</strong><br />
+   a) Whether the servo is currently moving<br />
+   b) The servo's position<br />
+   c) The servo's speed setting<br />
+   d) The servo's temperature</p>
+<p><strong>8. What does the "torque flag" indicate?</strong><br />
+   a) Whether torque is enabled or disabled<br />
+   b) The servo's speed<br />
+   c) The servo's position<br />
+   d) The servo's temperature</p>
+<p><strong>9. How can flags help with safety?</strong><br />
+   a) By indicating servo state and enabling safety checks<br />
+   b) They don't help<br />
+   c) By making the robot faster<br />
+   d) By changing the robot's color</p>
+<p><strong>10. What is status polling?</strong><br />
+   a) Regularly checking servo status<br />
+   b) Stopping the robot<br />
+   c) Moving the robot<br />
+   d) Programming the robot</p>
+<hr />
+<h2>Answer Key</h2>
+<ol>
+<li><strong>b)</strong> Sequential data transmission one bit at a time</li>
+<li><strong>a)</strong> The speed of data transmission</li>
+<li><strong>a)</strong> Error detection</li>
+<li><strong>a)</strong> Serial speed, polling, timeouts, queueing</li>
+<li><strong>a)</strong> Commands may be cancelled prematurely</li>
+<li><strong>a)</strong> System may wait unnecessarily</li>
+<li><strong>a)</strong> Whether the servo is currently moving</li>
+<li><strong>a)</strong> Whether torque is enabled or disabled</li>
+<li><strong>a)</strong> By indicating servo state and enabling safety checks</li>
+<li><strong>a)</strong> Regularly checking servo status</li>
+</ol>
+<hr />
+<h2>Scoring Guide</h2>
+<ul>
+<li><strong>9-10 correct:</strong> Excellent understanding</li>
+<li><strong>7-8 correct:</strong> Good understanding</li>
+<li><strong>5-6 correct:</strong> Satisfactory understanding</li>
+<li><strong>Below 5 correct:</strong> Needs review</li>
+</ul></div></section>
+<section class="card"><h2>Assessment rubric</h2><div class="card-inner"><h1>Module 8: Advanced Control &amp; Communication</h1>
+<h2>Assessment Rubric</h2>
+<p><strong>Student Name:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_<br />
+<strong>Date:</strong> </em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>_<br />
+<strong>Assessor:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>____</p>
+<hr />
+<h2>Overall Assessment Criteria</h2>
+<table>
+<thead>
+<tr>
+<th>Criteria</th>
+<th>Excellent (4)</th>
+<th>Good (3)</th>
+<th>Satisfactory (2)</th>
+<th>Needs Improvement (1)</th>
+<th>Score</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Knowledge &amp; Understanding</strong></td>
+<td>Comprehensive understanding of protocol and communication</td>
+<td>Good understanding</td>
+<td>Basic understanding</td>
+<td>Limited understanding</td>
+<td>/4</td>
+</tr>
+<tr>
+<td><strong>Practical Skills</strong></td>
+<td>Accurate protocol analysis and monitoring</td>
+<td>Mostly accurate</td>
+<td>Basic skills demonstrated</td>
+<td>Struggles with tasks</td>
+<td>/4</td>
+</tr>
+<tr>
+<td><strong>Analysis &amp; Application</strong></td>
+<td>Clear analysis of latency and design decisions</td>
+<td>Good analysis</td>
+<td>Basic analysis</td>
+<td>Limited analysis</td>
+<td>/4</td>
+</tr>
+<tr>
+<td><strong>Documentation</strong></td>
+<td>Complete, accurate documentation</td>
+<td>Good documentation</td>
+<td>Basic documentation</td>
+<td>Incomplete documentation</td>
+<td>/4</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Total Score:</strong> /16</p>
+<hr />
+<h2>Detailed Marking Guide</h2>
+<h3>Part 1: Serial Protocol (20 marks)</h3>
+<ul>
+<li><strong>Question 1:</strong> 9 marks (3 per answer)</li>
+<li><strong>Question 2:</strong> 8 marks (packet diagram)</li>
+<li><strong>Question 3:</strong> 3 marks (checksum explanation)</li>
+</ul>
+<p><strong>Mark:</strong> /20</p>
+<hr />
+<h3>Part 2: System Latency (20 marks)</h3>
+<ul>
+<li><strong>Question 4:</strong> 12 marks (latency sources table)</li>
+<li><strong>Question 5:</strong> 8 marks (latency measurement)</li>
+</ul>
+<p><strong>Mark:</strong> /20</p>
+<hr />
+<h3>Part 3: Design Decisions (20 marks)</h3>
+<ul>
+<li><strong>Question 6:</strong> 12 marks (timeout analysis)</li>
+<li><strong>Question 7:</strong> 8 marks (polling intervals)</li>
+</ul>
+<p><strong>Mark:</strong> /20</p>
+<hr />
+<h3>Part 4: Advanced Monitoring (20 marks)</h3>
+<ul>
+<li><strong>Question 8:</strong> 12 marks (monitoring table)</li>
+<li><strong>Question 9:</strong> 8 marks (detection logic)</li>
+</ul>
+<p><strong>Mark:</strong> /20</p>
+<hr />
+<h3>Part 5: Safety Flags (10 marks)</h3>
+<ul>
+<li><strong>Question 10:</strong> 5 marks (flag usage)</li>
+<li><strong>Question 11:</strong> 5 marks (state reasoning)</li>
+</ul>
+<p><strong>Mark:</strong> /10</p>
+<hr />
+<h3>Part 6: Practical Exercise (15 marks)</h3>
+<ul>
+<li><strong>Exercise 1:</strong> 8 marks (protocol analysis)</li>
+<li><strong>Exercise 2:</strong> 7 marks (dashboard design)</li>
+</ul>
+<p><strong>Mark:</strong> /15</p>
+<hr />
+<h3>Part 7: Reflection (5 marks)</h3>
+<ul>
+<li><strong>Question 12:</strong> 5 marks</li>
+</ul>
+<p><strong>Mark:</strong> /5</p>
+<hr />
+<p><strong>Final Grade:</strong> <strong><em>_</em></strong>____ / 100</p>
+<p><strong>Assessor Comments:</strong></p>
+<hr />
+<hr />
+<p><strong>Assessor Signature:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_<br />
+<strong>Date:</strong> </em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>_</p></div></section>
+  </div>
+</body>
+</html>

@@ -1,0 +1,1345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Robot Arm — BTEC Learning Objectives Mapping</title>
+  <style>
+    :root {
+      --bg:           #F4F6FA;
+      --card:         #FFFFFF;
+      --border:       #D0D8E6;
+      --text:         #1C2333;
+      --muted:        #566080;
+      --primary:      #1B3F6E;
+      --primary-lt:   #E6EEF8;
+      --accent:       #C84A1E;
+      --l3:           #1D5BB5;
+      --l3-bg:        #EAF1FC;
+      --l3-bdr:       #A8C4EE;
+      --l45:          #6B2FA0;
+      --l45-bg:       #F0E9F9;
+      --l45-bdr:      #C4A4E4;
+      --mod:          #1B3F6E;
+      --app-txt:      #1E5E38;
+      --app-bg:       #E2F2EA;
+      --app-bdr:      #9FCDB5;
+      --divider:      #C0C8D8;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg:         #111722;
+        --card:       #192030;
+        --border:     #2A3448;
+        --text:       #DCE4F0;
+        --muted:      #8090B0;
+        --primary:    #5A9ADE;
+        --primary-lt: #162035;
+        --accent:     #E0703A;
+        --l3:         #5A98E8;
+        --l3-bg:      #131E30;
+        --l3-bdr:     #244070;
+        --l45:        #A880D8;
+        --l45-bg:     #1A0F28;
+        --l45-bdr:    #4A2878;
+        --mod:        #3870B8;
+        --app-txt:    #72C898;
+        --app-bg:     #0E2018;
+        --app-bdr:    #2A5A40;
+        --divider:    #2A3448;
+      }
+    }
+    :root[data-theme="light"] {
+      --bg:           #F4F6FA;
+      --card:         #FFFFFF;
+      --border:       #D0D8E6;
+      --text:         #1C2333;
+      --muted:        #566080;
+      --primary:      #1B3F6E;
+      --primary-lt:   #E6EEF8;
+      --accent:       #C84A1E;
+      --l3:           #1D5BB5;
+      --l3-bg:        #EAF1FC;
+      --l3-bdr:       #A8C4EE;
+      --l45:          #6B2FA0;
+      --l45-bg:       #F0E9F9;
+      --l45-bdr:      #C4A4E4;
+      --mod:          #1B3F6E;
+      --app-txt:      #1E5E38;
+      --app-bg:       #E2F2EA;
+      --app-bdr:      #9FCDB5;
+      --divider:      #C0C8D8;
+    }
+    :root[data-theme="dark"] {
+      --bg:         #111722;
+      --card:       #192030;
+      --border:     #2A3448;
+      --text:       #DCE4F0;
+      --muted:      #8090B0;
+      --primary:    #5A9ADE;
+      --primary-lt: #162035;
+      --accent:     #E0703A;
+      --l3:         #5A98E8;
+      --l3-bg:      #131E30;
+      --l3-bdr:     #244070;
+      --l45:        #A880D8;
+      --l45-bg:     #1A0F28;
+      --l45-bdr:    #4A2878;
+      --mod:        #3870B8;
+      --app-txt:    #72C898;
+      --app-bg:     #0E2018;
+      --app-bdr:    #2A5A40;
+      --divider:    #2A3448;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+      font-size: 15px;
+      line-height: 1.6;
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    /* ── Document header ── */
+    .doc-header {
+      background: var(--primary);
+      color: #fff;
+      padding: 2.25rem 2rem 1.75rem;
+    }
+    .doc-header-inner { max-width: 920px; margin: 0 auto; }
+    .eyebrow {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.5);
+      margin-bottom: 0.5rem;
+    }
+    .doc-header h1 {
+      font-family: Georgia, 'Times New Roman', serif;
+      font-size: 1.85rem;
+      font-weight: 400;
+      margin: 0 0 0.6rem;
+      line-height: 1.25;
+      text-wrap: balance;
+    }
+    .doc-header p {
+      margin: 0;
+      color: rgba(255,255,255,0.7);
+      font-size: 0.875rem;
+      max-width: 64ch;
+      line-height: 1.6;
+    }
+    .doc-meta {
+      display: flex;
+      gap: 2rem;
+      margin-top: 1.25rem;
+      flex-wrap: wrap;
+    }
+    .doc-meta-item { font-size: 0.78rem; color: rgba(255,255,255,0.55); }
+    .doc-meta-item strong { color: rgba(255,255,255,0.88); font-weight: 600; }
+
+    /* ── Legend bar ── */
+    .legend-bar {
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      padding: 0.7rem 2rem;
+    }
+    .legend-inner {
+      max-width: 920px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+      flex-wrap: wrap;
+    }
+    .legend-label {
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+    }
+    .legend-items { display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center; }
+    .legend-item { display: flex; align-items: center; gap: 0.4rem; font-size: 0.78rem; color: var(--muted); }
+
+    /* ── Main wrap ── */
+    .wrap { max-width: 920px; margin: 0 auto; padding: 1.75rem 1.5rem 4rem; }
+
+    /* ── Coverage matrix ── */
+    .matrix-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 2rem;
+    }
+    .matrix-card h2 {
+      font-family: Georgia, serif;
+      font-size: 0.95rem;
+      font-weight: 400;
+      color: var(--primary);
+      margin: 0 0 0.875rem;
+    }
+    .matrix-scroll { overflow-x: auto; }
+    .matrix-tbl {
+      border-collapse: collapse;
+      font-size: 0.72rem;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+    .matrix-tbl th, .matrix-tbl td {
+      padding: 0.28rem 0.5rem;
+      border: 1px solid var(--border);
+      text-align: center;
+    }
+    .matrix-tbl thead th {
+      background: var(--primary-lt);
+      color: var(--primary);
+      font-weight: 700;
+    }
+    .matrix-tbl th.row-hd {
+      text-align: left;
+      min-width: 160px;
+      white-space: normal;
+      font-weight: 500;
+      color: var(--text);
+      background: var(--card);
+    }
+    .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: var(--primary); }
+    .dot-l45 { background: var(--l45); }
+
+    /* ── BTEC sections ── */
+    .btec-section { margin-bottom: 2.25rem; }
+    .section-hd {
+      display: flex;
+      align-items: baseline;
+      gap: 0.8rem;
+      padding-bottom: 0.55rem;
+      border-bottom: 2px solid var(--primary);
+      margin-bottom: 0.9rem;
+    }
+    .section-num {
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: var(--accent);
+      text-transform: uppercase;
+      flex-shrink: 0;
+    }
+    .section-title {
+      font-family: Georgia, 'Times New Roman', serif;
+      font-size: 1.2rem;
+      font-weight: 400;
+      color: var(--primary);
+      margin: 0;
+      text-wrap: balance;
+    }
+
+    /* ── Level groups ── */
+    .level-group {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      margin-bottom: 0.6rem;
+    }
+    .level-hd {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      padding: 0.55rem 1rem;
+    }
+    .level-hd.l3  { background: var(--l3-bg);  border-bottom: 1px solid var(--l3-bdr);  }
+    .level-hd.l45 { background: var(--l45-bg); border-bottom: 1px solid var(--l45-bdr); }
+    .lvl-badge {
+      font-size: 0.62rem;
+      font-weight: 800;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      padding: 0.12em 0.55em;
+      border-radius: 3px;
+      flex-shrink: 0;
+    }
+    .l3  .lvl-badge { background: var(--l3);  color: #fff; }
+    .l45 .lvl-badge { background: var(--l45); color: #fff; }
+    .level-name { font-size: 0.78rem; font-weight: 500; }
+    .l3  .level-name { color: var(--l3);  }
+    .l45 .level-name { color: var(--l45); }
+
+    /* ── Objective rows ── */
+    .obj-tbl { width: 100%; border-collapse: collapse; background: var(--card); }
+    .obj-row { border-top: 1px solid var(--border); }
+    .obj-cell-text {
+      padding: 0.7rem 1rem;
+      vertical-align: top;
+      width: 52%;
+    }
+    .obj-topic {
+      font-weight: 600;
+      font-size: 0.85rem;
+      color: var(--text);
+      margin-bottom: 0.25rem;
+    }
+    .obj-bullets {
+      margin: 0.25rem 0 0;
+      padding-left: 1.1rem;
+      font-size: 0.78rem;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+    .obj-bullets li { margin-bottom: 0.18rem; }
+    .obj-cell-delivery {
+      padding: 0.7rem 1rem;
+      vertical-align: top;
+      width: 48%;
+      border-left: 1px solid var(--border);
+    }
+    .delivery-section { margin-bottom: 0.5rem; }
+    .delivery-section:last-child { margin-bottom: 0; }
+    .dlabel {
+      font-size: 0.63rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 0.28rem;
+    }
+    .chips { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+    .chip {
+      display: inline-block;
+      font-size: 0.68rem;
+      font-weight: 700;
+      padding: 0.15em 0.55em;
+      border-radius: 3px;
+      line-height: 1.45;
+      text-decoration: none;
+    }
+    .chip-mod {
+      background: var(--mod);
+      color: #fff;
+    }
+    .chip-mod:hover { opacity: 0.85; }
+    .chip-app {
+      background: var(--app-bg);
+      color: var(--app-txt);
+      border: 1px solid var(--app-bdr);
+    }
+
+    /* ── Footnote card ── */
+    .footnote {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.6;
+      margin-top: 2rem;
+    }
+    .footnote strong { color: var(--text); }
+
+    /* ── Responsive ── */
+    @media (max-width: 620px) {
+      .doc-header { padding: 1.5rem 1.25rem; }
+      .doc-header h1 { font-size: 1.4rem; }
+      .legend-bar { padding: 0.6rem 1.25rem; }
+      .wrap { padding: 1.25rem 1rem 3rem; }
+      .obj-tbl, .obj-tbl tbody { display: block; }
+      .obj-row { display: block; padding: 0.75rem 1rem; }
+      .obj-cell-text, .obj-cell-delivery {
+        display: block;
+        width: 100%;
+        padding: 0.2rem 0;
+        border: none;
+      }
+      .obj-cell-delivery {
+        margin-top: 0.5rem;
+        padding-top: 0.55rem;
+        border-top: 1px dashed var(--border);
+      }
+      .section-title { font-size: 1.05rem; }
+      .matrix-card { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<header class="doc-header">
+  <div class="doc-header-inner">
+    <p class="eyebrow">Pearson BTEC Engineering &mdash; Curriculum Alignment</p>
+    <h1>Robot Arm — BTEC Learning Objectives Mapping</h1>
+    <p>This document maps each BTEC-aligned learning objective to the specific curriculum module and application feature that delivers it. The robot arm is a single teaching platform spanning mechanical, electrical, control, software, automation, safety, and project units across both Level 3 National and Level 4/5 Higher National.</p>
+    <div class="doc-meta">
+      <div class="doc-meta-item"><strong>Platform</strong> Pearson BTEC National &amp; Higher National Engineering</div>
+      <div class="doc-meta-item"><strong>Modules</strong> 16 across Foundation, Intermediate, Advanced &amp; Project tiers</div>
+      <div class="doc-meta-item"><strong>Last updated</strong> August 2026</div>
+    </div>
+  </div>
+</header>
+
+<div class="legend-bar">
+  <div class="legend-inner">
+    <span class="legend-label">Key</span>
+    <div class="legend-items">
+      <span class="legend-item">
+        <span class="chip chip-mod" style="pointer-events:none;">MOD 01</span>
+        Curriculum module (click to open)
+      </span>
+      <span class="legend-item">
+        <span class="chip chip-app" style="pointer-events:none;">App: Tab Name</span>
+        Control app feature / screen
+      </span>
+      <span class="legend-item">
+        <span class="lvl-badge" style="background:var(--l3);color:#fff;font-size:0.62rem;font-weight:800;padding:0.12em 0.55em;border-radius:3px;">L3</span>
+        Level 3 National
+      </span>
+      <span class="legend-item">
+        <span class="lvl-badge" style="background:var(--l45);color:#fff;font-size:0.62rem;font-weight:800;padding:0.12em 0.55em;border-radius:3px;">L4/5</span>
+        Higher National
+      </span>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <!-- Coverage matrix -->
+  <div class="matrix-card">
+    <h2>Module coverage at a glance</h2>
+    <div class="matrix-scroll">
+      <table class="matrix-tbl">
+        <thead>
+          <tr>
+            <th class="row-hd">BTEC Topic Area</th>
+            <th>01</th><th>02</th><th>03</th><th>04</th><th>05</th><th>06</th>
+            <th>07</th><th>08</th><th>09</th><th>10</th><th>11</th><th>12</th>
+            <th>13</th><th>14</th><th>15</th><th>16</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="row-hd">1. Mechanical &amp; Mechatronic</td>
+            <td></td><td><span class="dot"></span></td><td></td><td></td><td><span class="dot"></span></td><td></td>
+            <td><span class="dot dot-l45"></span></td><td></td><td></td><td></td><td><span class="dot dot-l45"></span></td><td></td>
+            <td></td><td></td><td></td><td></td>
+          </tr>
+          <tr>
+            <td class="row-hd">2. Electrical, Electronic &amp; Control</td>
+            <td></td><td></td><td><span class="dot"></span></td><td></td><td></td><td></td>
+            <td></td><td><span class="dot dot-l45"></span></td><td></td><td><span class="dot dot-l45"></span></td><td></td><td></td>
+            <td></td><td></td><td></td><td></td>
+          </tr>
+          <tr>
+            <td class="row-hd">3. Software, Programming &amp; Automation</td>
+            <td></td><td></td><td></td><td><span class="dot"></span></td><td></td><td></td>
+            <td></td><td><span class="dot dot-l45"></span></td><td><span class="dot dot-l45"></span></td><td><span class="dot dot-l45"></span></td><td><span class="dot dot-l45"></span></td><td></td>
+            <td></td><td></td><td></td><td></td>
+          </tr>
+          <tr>
+            <td class="row-hd">4. Automation, Manufacturing &amp; Workflows</td>
+            <td></td><td></td><td></td><td></td><td></td><td><span class="dot"></span></td>
+            <td></td><td></td><td></td><td></td><td><span class="dot dot-l45"></span></td><td><span class="dot dot-l45"></span></td>
+            <td></td><td></td><td></td><td></td>
+          </tr>
+          <tr>
+            <td class="row-hd">5. Safety, Risk &amp; Compliance</td>
+            <td><span class="dot"></span></td><td></td><td></td><td></td><td></td><td></td>
+            <td></td><td></td><td></td><td></td><td></td><td></td>
+            <td><span class="dot dot-l45"></span></td><td></td><td></td><td></td>
+          </tr>
+          <tr>
+            <td class="row-hd">6. Project Work &amp; Professional Skills</td>
+            <td></td><td></td><td></td><td></td><td></td><td></td>
+            <td></td><td></td><td></td><td></td><td></td><td></td>
+            <td></td><td><span class="dot"></span></td><td><span class="dot"></span></td><td><span class="dot"></span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="font-size:0.72rem;color:var(--muted);margin:0.6rem 0 0;">
+      <span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--primary);vertical-align:middle;margin-right:4px;"></span>Primarily Level 3 &nbsp;&nbsp;
+      <span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--l45);vertical-align:middle;margin-right:4px;"></span>Primarily Level 4/5 (Higher National)
+    </p>
+  </div>
+
+
+  <!-- ══════════════════════════════════════════════════
+       SECTION 1 — MECHANICAL & MECHATRONIC PRINCIPLES
+  ══════════════════════════════════════════════════ -->
+  <div class="btec-section">
+    <div class="section-hd">
+      <span class="section-num">01</span>
+      <h2 class="section-title">Mechanical &amp; Mechatronic Principles</h2>
+    </div>
+
+    <!-- Level 3 -->
+    <div class="level-group">
+      <div class="level-hd l3">
+        <span class="lvl-badge">L3</span>
+        <span class="level-name">BTEC National Level 3 &mdash; Engineering Principles</span>
+      </div>
+      <table class="obj-tbl">
+        <tbody>
+
+          <tr class="obj-row">
+            <td class="obj-cell-text">
+              <p class="obj-topic">Linkages, levers and mechanisms</p>
+              <ul class="obj-bullets">
+                <li>Describe the arm as a multi-link mechanism with joints, links and degrees of freedom</li>
+                <li>Relate joint rotation angles to linear motion of the end effector</li>
+                <li>Interpret engineering diagrams or URDF-style descriptions of the arm</li>
+              </ul>
+            </td>
+            <td class="obj-cell-delivery">
+              <div class="delivery-section">
+                <p class="dlabel">Curriculum module</p>
+                <div class="chips">
+                  <a class="chip chip-mod" href="module-02.html">MOD 02 — Mechanical Fundamentals</a>
+                </div>
+              </div>
+              <div class="delivery-section">
+                <p class="dlabel">App features used</p>
+                <div class="chips">
+                  <span class="chip chip-app">App: 3D View</span>
+                  <span class="chip chip-app">App: Joint Control</span>
+                </div>
+              </div>
+            </td>
+          </tr>
+
+          <tr class="obj-row">
+            <td class="obj-cell-text">
+              <p class="obj-topic">Statics and forces</p>
+              <ul class="obj-bullets">
+                <li>Identify loads at each joint for different arm postures</li>
+                <li>Explain how joint torque limits and load readings constrain the safe working envelope</li>
+                <li>Describe the effect of changing payload mass and reach on joint loading</li>
+              </ul>
+            </td>
+            <td class="obj-cell-delivery">
+              <div class="delivery-section">
+                <p class="dlabel">Curriculum module</p>
+                <div class="chips">
+                  <a class="chip chip-mod" href="module-05.html">MOD 05 — Statics, Forces &amp; Load Analysis</a>
+                </div>
+              </div>
+              <div class="delivery-section">
+                <p class="dlabel">App features used</p>
+                <div class="chips">
+                  <span class="chip chip-app">App: Joint Control</span>
+                  <span class="chip chip-app">App: Load Readout</span>
+                </div>
+              </div>
+            </td>
+          </tr>
+
+          <tr class="obj-row">
+            <td class="obj-cell-text">
+              <p class="obj-topic">Materials and structure</p>
+              <ul class="obj-bullets">
+                <li>Explain why specific materials are used for links, joints, and base (stiffness vs. weight vs. cost)</li>
+                <li>Identify potential failure modes (bending, backlash, fatigue) and how design reduces risk</li>
+              </ul>
+            </td>
+            <td class="obj-cell-delivery">
+              <div class="delivery-section">
+                <p class="dlabel">Curriculum module</p>
+                <div class="chips">
+                  <a class="chip chip-mod" href="module-02.html">MOD 02 — Mechanical Fundamentals</a>
+                </div>
+              </div>
+              <div class="delivery-section">
+                <p class="dlabel">App features used</p>
+                <div class="chips">
+                  <span class="chip chip-app">App: 3D View</span>
+                </div>
+              </div>
+            </td>
+          </tr>
+
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Level 4/5 -->
+    <div class="level-group">
+      <div class="level-hd l45">
+        <span class="lvl-badge">L4/5</span>
+        <span class="level-name">Higher National Level 4/5 &mdash; Mechatronic Systems &amp; Kinematics</span>
+      </div>
+      <table class="obj-tbl">
+        <tbody>
+
+          <tr class="obj-row">
+            <td class="obj-cell-text">
+              <p class="obj-topic">Kinematics of mechanisms</p>
+              <ul class="obj-bullets">
+                <li>Use or derive forward kinematics (joint angles → XYZ position of end effector)</li>
+                <li>Work with homogeneous transformation matrices and coordinate frames for each link</li>
+                <li>Explain joint limits and singularities and how they affect reachable workspace</li>
+              </ul>
+            </td>
+            <td class="obj-cell-delivery">
+              <div class="delivery-section">
+                <p class="dlabel">Curriculum module</p>
+                <div class="chips">
+                  <a class="chip chip-mod" href="module-07.html">MOD 07 — Forward Kinematics &amp; Coordinate Systems</a>
+                </div>
+              </div>
+              <div class="delivery-section">
+                <p class="dlabel">App features used</p>
+                <div class="chips">
+                  <span class="chip chip-app">App: Kinematics Tab</span>
+                  <span class="chip chip-app">App: 3D View</span>
+                </div>
+              </div>
+            </td>
+          </tr>
+
+          <tr class="obj-row">
+            <td class="obj-cell-text">
+              <p class="obj-topic">Mechatronic system integration</p>
+              <ul class="obj-bullets">
+                <li>Describe the arm as a mechatronic system combining mechanics, actuators, sensors, controller and software</li>
+                <li>Analyse how mechanical design (e.g. backlash) and control strategy influence accuracy and repeatability</li>
+              </ul>
+            </td>
+            <td class="obj-cell-delivery">
+              <div class="delivery-section">
+                <p class="dlabel">Curriculum module</p>
+                <div class="chips">
+                  <a class="chip chip-mod" href="module-11.html">MOD 11 — Mechatronic System Integration</a>
+                </div>
+              </div>
+              <div class="delivery-section">
+                <p class="dlabel">App features used</p>
+                <div class="chips">
+                  <span class="chip chip-app">App: All Tabs</span>
+                </div>
+              </div>
+            </td>
+          </tr>
+
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════════════════
+       SECTION 2 — ELECTRICAL, ELECTRONIC & CONTROL
+  ══════════════════════════════════════════════════ -->
+  <div class="btec-section">
+    <div class="section-hd">
+      <span class="section-num">02</span>
+      <h2 class="section-title">Electrical, Electronic &amp; Control Systems</h2>
+    </div>
+
+    <div class="level-group">
+      <div class="level-hd l3">
+        <span class="lvl-badge">L3</span>
+        <span class="level-name">BTEC National Level 3 &mdash; Electrical &amp; Electronic Principles</span>
+      </div>
+      <table class="obj-tbl">
+        <tbody>
+
+          <tr class="obj-row">
+            <td class="obj-cell-text">
+              <p class="obj-topic">Basic electrical / electronic systems</p>
+              <ul class="obj-bullets">
+                <li>Identify key hardware: power supply, Raspberry Pi, serial bus, ST3215 servos</li>
+                <li>Interpret simple wiring diagrams for power, ground, and data daisy-chains</li>
+              </ul>
+            </td>
+            <td class="obj-cell-delivery">
+              <div class="delivery-section">
+                <p class="dlabel">Curriculum module</p>
+                <div class="chips">
+                  <a class="chip chip-mod" href="module-03.html">MOD 03 — Basic Electrical &amp; Electronic Systems</a>
+                </div>
+              </div>
+              <div class="delivery-section">
+                <p class="dlabel">App features used</p>
+                <div class="chips">
+                  <span class="chip chip-app">App: Connection Panel</span>
+                  <span class="chip chip-app">App: Joint Status</span>
+                </div>
+              </div>
+            </td>
+          </tr>
+
+          <tr class="obj-row">
+            <td class="obj-cell-text">
+              <p class="obj-topic">Open-loop and closed-loop control</p>
+              <ul class="obj-bullets">
+                <li>Distinguish between commanded position (open-loop from app) and servo's internal closed-loop control</li>
+                <li>Explain feedback available: position, speed, load, voltage, temperature, moving flag, torque on/off</li>
+              </ul>
+            </td>
+            <td class="obj-cell-delivery">
+              <div class="delivery-section">
+                <p class="dlabel">Curriculum modules</p>
+                <div class="chips">
+                  <a class="chip chip-mod" href="module-03.html">MOD 03</a>
+                  <a class="chip chip-mod" href="module-08.html">MOD 08 — Advanced Control &amp; Communication</a>
+                </div>
+              </div>
+              <div class="delivery-section">
+                <p class="dlabel">App features used</p>
+                <div class="chips">
+                  <span class="chip chip-app">App: Joint Status</span>
+                  <span class="chip chip-app">App: Pendant</span>
+                </div>
+              </div>
+            </td>
+          </tr>
+
+        </tbody>
+      </table>
+    </div>
+
+    <div class="level-group">
+      <div class="level-hd l45">
+        <span class="lvl-badge">L4/5</span>
+        <span class="level-name">Higher National Level 4/5 &mdash; Control Systems &amp; Communications</span>
+      </div>
+      <table class="obj-tbl">
+        <tbody>
+
+          <tr class="obj-row">
+            <td class="obj-cell-text">
+              <p class="obj-topic">Control and communication</p>
+              <ul class="obj-bullets">
+                <li>Describe the serial protocol: baud rate, packet layout (headers, ID, length, instruction, parameters, checksum)</li>
+                <li>Identify major contributors to latency: serial speed, status polling, timeouts, command queueing</li>
+                <li>Justify design choices for timeouts, polling intervals, and command queue limits</li>
+              </ul>
+            </td>
+            <td class="obj-cell-delivery">
+              <div class="delivery-section">
+                <p class="dlabel">Curriculum modules</p>
+                <div class="chips">
+                  <a class="chip chip-mod" href="module-08.html">MOD 08 — Advanced Control &amp; Communication</a>
+                  <a class="chip chip-mod" href="module-11.html">MOD 11</a>
+                </div>
+              </div>
+              <div class="delivery-section">
+                <p class="dlabel">App features used</p>
+                <div class="chips">
+                  <span class="chip chip-app">App: Settings</span>
+                  <span class="chip chip-app">App: Pendant</span>
+                </div>
+              </div>
+            </td>
+          </tr>
+
+          <tr class="obj-row">
+            <td class="obj-cell-text">
+              <p class="obj-topic">Feedback and monitoring</p>
+              <ul class="obj-bullets">
+                <li>Use live feedback (position, speed, load, voltage, temperature) to monitor system health</li>
+                <li>Detect abnormal conditions: under-voltage, high temperature, unusually high load</li>
+                <li>Use moving/torque flags to reason about servo state and safety</li>
+              </ul>
+            </td>
+            <td class="obj-cell-delivery">
+              <div class="delivery-section">
+                <p class="dlabel">Curriculum module</p>
+                <div class="chips">
+                  <a class="chip chip-mod" href="module-10.html">MOD 10 — Data Logging &amp; Diagnostics</a>
+                </div>
+              </div>
+              <div class="delivery-section">
+                <p class="dlabel">App features used</p>
+                <div class="chips">
+                  <span class="chip chip-app">App: Joint Status</span>
+                  <span class="chip chip-app">App: Live Telemetry</span>
+                </div>
+              </div>
+            </td>
+          </tr>
+
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════════════════
+       SECTION 3 — SOFTWARE, PROGRAMMING & AUTOMATION
+  ══════════════════════════════════════════════════ -->
+  <div class="btec-section">
+    <div class="section-hd">
+      <span class="section-num">03</span>
+      <h2 class="section-title">Software, Programming &amp; Automation</h2>
+    </div>
+
+    <div class="level-group">
+      <div class="level-hd l3">
+        <span class="lvl-badge">L3</span>
+        <span class="level-name">BTEC National Level 3 &mdash; Programming &amp; Human-Machine Interface</span>
+      </div>
+      <table class="obj-tbl">
+        <tbody>
+
+          <tr class="obj-row">
+            <td class="obj-cell-text">
+              <p class="obj-topic">Programming for motion control</p>
+              <ul class="obj-bullets">
+                <li>Command individual joint movements, store/recall/edit joint positions, build and run pick-and-place sequences</li>
+                <li>Understand the control loop: read status → decide → send commands → repeat</li>
+              </ul>
+            </td>
+            <td class="obj-cell-delivery">
+              <div class="delivery-section">
+                <p class="dlabel">Curriculum module</p>
+                <div class="chips">
+                  <a class="chip chip-mod" href="module-04.html">MOD 04 — Basic Software &amp; HMI</a>
+                </div>
+              </div>
+              <div class="delivery-section">
+                <p class="dlabel">App features used</p>
+                <div class="chips">
+                  <span class="chip chip-app">App: Blockly</span>
+                  <span class="chip chip-app">App: Pendant</span>
+                  <span class="chip chip-app">App: Stored Positions</span>
+                </div>
+              </div>
+            </td>
+          </tr>
+
+          <tr class="obj-row">
+            <td class="obj-cell-text">
+              <p class="obj-topic">Human–machine interface (HMI)</p>
+              <ul class="obj-bullets">
+                <li>Operate the pendant / UI safely: enable/disable torque, set speed and acceleration limits, jog joints, run/stop programs</li>
+                <li>Explain how UI actions become WebSocket commands and then servo commands</li>
+              </ul>
+            </td>
+            <td class="obj-cell-delivery">
+              <div class="delivery-section">
+                <p class="dlabel">Curriculum module</p>
+                <div class="chips">
+                  <a class="chip chip-mod" href="module-04.html">MOD 04 — Basic Software &amp; HMI</a>
+                </div>
+              </div>
+              <div class="delivery-section">
+                <p class="dlabel">App features used</p>
+                <div class="chips">
+                  <span class="chip chip-app">App: Pendant</span>
+                  <span class="chip chip-app">App: Settings</span>
+                </div>
+              </div>
+            </td>
+          </tr>
+
+        </tbody>
+      </table>
+    </div>
+
+    <div class="level-group">
+      <div class="level-hd l45">
+        <span class="lvl-badge">L4/5</span>
+        <span class="level-name">Higher National Level 4/5 &mdash; Software Architecture, Path Planning &amp; Diagnostics</span>
+      </div>
+      <table class="obj-tbl">
+        <tbody>
+
+          <tr class="obj-row">
+            <td class="obj-cell-text">
+              <p class="obj-topic">Application architecture and integration</p>
+              <ul class="obj-bullets">
+                <li>Describe the full software stack: Electron front-end, Node.js/WebSocket server on the Pi, ST3215 servo communication layer on shared serial bus</li>
+                <li>Modify or extend control logic: joint commands with speed/acceleration, coordinated multi-joint moves, status polling</li>
+              </ul>
+            </td>
+            <td class="obj-cell-delivery">
+              <div class="delivery-section">
+                <p class="dlabel">Curriculum modules</p>
+                <div class="chips">
+                  <a class="chip chip-mod" href="module-09.html">MOD 09 — Software Architecture &amp; Advanced Programming</a>
+                  <a class="chip chip-mod" href="module-11.html">MOD 11</a>
+                </div>
+              </div>
+              <div class="delivery-section">
+                <p class="dlabel">App features used</p>
+                <div class="chips">
+                  <span class="chip chip-app">App: G-Code Control</span>
+                  <span class="chip chip-app">App: All Tabs</span>
+                </div>
+              </div>
+            </td>
+          </tr>
+
+          <tr class="obj-row">
+            <td class="obj-cell-text">
+              <p class="obj-topic">Path planning and motion profiles</p>
+              <ul class="obj-bullets">
+                <li>Explain differences between joint-space control (commanding joint angles) and Cartesian-space goals</li>
+                <li>Analyse simple motion profiles using speed and acceleration settings and their effect on smoothness and mechanical stress</li>
+                <li>Evaluate trade-offs between speed, accuracy, and component wear</li>
+              </ul>
+            </td>
+            <td class="obj-cell-delivery">
+              <div class="delivery-section">
+                <p class="dlabel">Curriculum modules</p>
+                <div class="chips">
+                  <a class="chip chip-mod" href="module-08.html">MOD 08 — Advanced Control &amp; Communication</a>
+                  <a class="chip chip-mod" href="module-09.html">MOD 09</a>
+                </div>
+              </div>
+              <div class="delivery-section">
+                <p class="dlabel">App features used</p>
+                <div class="chips">
+                  <span class="chip chip-app">App: Pendant</span>
+                  <span class="chip chip-app">App: Settings</span>
+                  <span class="chip chip-app">App: G-Code Control</span>
+                </div>
+              </div>
+            </td>
+          </tr>
+
+          <tr class="obj-row">
+            <td class="obj-cell-text">
+              <p class="obj-topic">Data logging and diagnostics</p>
+              <ul class="obj-bullets">
+                <li>Capture logs of joint angles, loads, voltages, and errors over time</li>
+                <li>Diagnose issues: serial timeouts, invalid position data, power/voltage dips, overload conditions</li>
+                <li>Use log data to refine polling intervals and timeouts for reliability</li>
+              </ul>
+            </td>
+            <td class="obj-cell-delivery">
+              <div class="delivery-section">
+                <p class="dlabel">Curriculum module</p>
+                <div class="chips">
+                  <a class="chip chip-mod" href="module-10.html">MOD 10 — Data Logging &amp; Diagnostics</a>
+                </div>
+              </div>
+              <div class="delivery-section">
+                <p class="dlabel">App features used</p>
+                <div class="chips">
+                  <span class="chip chip-app">App: Joint Status</span>
+                  <span class="chip chip-app">App: Live Telemetry</span>
+                </div>
+              </div>
+            </td>
+          </tr>
+
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════════════════
+       SECTION 4 — AUTOMATION, MANUFACTURING & WORKFLOWS
+  ══════════════════════════════════════════════════ -->
+  <div class="btec-section">
+    <div class="section-hd">
+      <span class="section-num">04</span>
+      <h2 class="section-title">Automation, Manufacturing &amp; Workflows</h2>
+    </div>
+
+    <div class="level-group">
+      <div class="level-hd l3">
+        <span class="lvl-badge">L3</span>
+        <span class="level-name">BTEC National Level 3 &mdash; Industrial Automation &amp; Robotics Context</span>
+      </div>
+      <table class="obj-tbl">
+        <tbody>
+
+          <tr class="obj-row">
+            <td class="obj-cell-text">
+              <p class="obj-topic">Industrial context for robot arms</p>
+              <ul class="obj-bullets">
+                <li>Relate the educational arm to industrial uses: pick-and-place, assembly, welding and painting, inspection and sorting</li>
+                <li>Compare the arm's capabilities (reach, payload, repeatability, speed) to typical industrial manipulators</li>
+              </ul>
+            </td>
+            <td class="obj-cell-delivery">
+              <div class="delivery-section">
+                <p class="dlabel">Curriculum module</p>
+                <div class="chips">
+                  <a class="chip chip-mod" href="module-06.html">MOD 06 — Industrial Context &amp; Basic Automation</a>
+                </div>
+              </div>
+              <div class="delivery-section">
+                <p class="dlabel">App features used</p>
+                <div class="chips">
+                  <span class="chip chip-app">App: 3D View</span>
+                  <span class="chip chip-app">App: Stored Positions</span>
+                </div>
+              </div>
+            </td>
+          </tr>
+
+          <tr class="obj-row">
+            <td class="obj-cell-text">
+              <p class="obj-topic">Basic automated sequences</p>
+              <ul class="obj-bullets">
+                <li>Design and implement simple automated tasks: move between taught points, use dwell/wait steps, return to safe home pose</li>
+                <li>Explain how such sequences fit into wider automated processes</li>
+              </ul>
+            </td>
+            <td class="obj-cell-delivery">
+              <div class="delivery-section">
+                <p class="dlabel">Curriculum module</p>
+                <div class="chips">
+                  <a class="chip chip-mod" href="module-06.html">MOD 06 — Industrial Context &amp; Basic Automation</a>
+                </div>
+              </div>
+              <div class="delivery-section">
+                <p class="dlabel">App features used</p>
+                <div class="chips">
+                  <span class="chip chip-app">App: Stored Positions</span>
+                  <span class="chip chip-app">App: Blockly</span>
+                </div>
+              </div>
+            </td>
+          </tr>
+
+        </tbody>
+      </table>
+    </div>
+
+    <div class="level-group">
+      <div class="level-hd l45">
+        <span class="lvl-badge">L4/5</span>
+        <span class="level-name">Higher National Level 4/5 &mdash; Automation Cell Design &amp; System Integration</span>
+      </div>
+      <table class="obj-tbl">
+        <tbody>
+
+          <tr class="obj-row">
+            <td class="obj-cell-text">
+              <p class="obj-topic">Cell / workstation design</p>
+              <ul class="obj-bullets">
+                <li>Design a small automated cell: safe working envelope and guarding, part presentation, operator access and ergonomics</li>
+                <li>Estimate throughput and discuss bottlenecks and changeover times</li>
+              </ul>
+            </td>
+            <td class="obj-cell-delivery">
+              <div class="delivery-section">
+                <p class="dlabel">Curriculum module</p>
+                <div class="chips">
+                  <a class="chip chip-mod" href="module-12.html">MOD 12 — Automation Cell Design</a>
+                </div>
+              </div>
+              <div class="delivery-section">
+                <p class="dlabel">App features used</p>
+                <div class="chips">
+                  <span class="chip chip-app">App: Dead Zones</span>
+                  <span class="chip chip-app">App: G-Code Control</span>
+                </div>
+              </div>
+            </td>
+          </tr>
+
+          <tr class="obj-row">
+            <td class="obj-cell-text">
+              <p class="obj-topic">System integration concepts</p>
+              <ul class="obj-bullets">
+                <li>Outline how the robot could interface with conveyors, vision systems, PLCs, and safety systems</li>
+                <li>Describe at a conceptual level how signals and data would be exchanged</li>
+              </ul>
+            </td>
+            <td class="obj-cell-delivery">
+              <div class="delivery-section">
+                <p class="dlabel">Curriculum modules</p>
+                <div class="chips">
+                  <a class="chip chip-mod" href="module-11.html">MOD 11 — Mechatronic System Integration</a>
+                  <a class="chip chip-mod" href="module-12.html">MOD 12</a>
+                </div>
+              </div>
+              <div class="delivery-section">
+                <p class="dlabel">App features used</p>
+                <div class="chips">
+                  <span class="chip chip-app">App: All Tabs</span>
+                </div>
+              </div>
+            </td>
+          </tr>
+
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════════════════
+       SECTION 5 — SAFETY, RISK & COMPLIANCE
+  ══════════════════════════════════════════════════ -->
+  <div class="btec-section">
+    <div class="section-hd">
+      <span class="section-num">05</span>
+      <h2 class="section-title">Safety, Risk &amp; Compliance</h2>
+    </div>
+
+    <div class="level-group">
+      <div class="level-hd l3">
+        <span class="lvl-badge">L3</span>
+        <span class="level-name">BTEC National Level 3 &mdash; Health, Safety &amp; Risk Assessment</span>
+      </div>
+      <table class="obj-tbl">
+        <tbody>
+
+          <tr class="obj-row">
+            <td class="obj-cell-text">
+              <p class="obj-topic">Safe operation</p>
+              <ul class="obj-bullets">
+                <li>Identify key hazards: pinch and crush points, unexpected or rapid motion, electrical hazards</li>
+                <li>Follow safe operating procedures: enabling/disabling torque, keeping clear of the arm's envelope, using emergency stop</li>
+              </ul>
+            </td>
+            <td class="obj-cell-delivery">
+              <div class="delivery-section">
+                <p class="dlabel">Curriculum module</p>
+                <div class="chips">
+                  <a class="chip chip-mod" href="module-01.html">MOD 01 — Introduction &amp; Safety Fundamentals</a>
+                </div>
+              </div>
+              <div class="delivery-section">
+                <p class="dlabel">App features used</p>
+                <div class="chips">
+                  <span class="chip chip-app">App: 3D View</span>
+                  <span class="chip chip-app">App: Torque Enable/Disable</span>
+                  <span class="chip chip-app">App: Emergency Stop</span>
+                </div>
+              </div>
+            </td>
+          </tr>
+
+          <tr class="obj-row">
+            <td class="obj-cell-text">
+              <p class="obj-topic">Basic risk assessment</p>
+              <ul class="obj-bullets">
+                <li>Perform a simple risk assessment: identify hazards, assess likelihood and severity, propose control measures</li>
+                <li>Apply speed limits, supervision requirements, and workspace layout as control measures</li>
+              </ul>
+            </td>
+            <td class="obj-cell-delivery">
+              <div class="delivery-section">
+                <p class="dlabel">Curriculum module</p>
+                <div class="chips">
+                  <a class="chip chip-mod" href="module-01.html">MOD 01 — Introduction &amp; Safety Fundamentals</a>
+                </div>
+              </div>
+              <div class="delivery-section">
+                <p class="dlabel">App features used</p>
+                <div class="chips">
+                  <span class="chip chip-app">App: 3D View</span>
+                  <span class="chip chip-app">App: Settings (Speed/Accel Limits)</span>
+                </div>
+              </div>
+            </td>
+          </tr>
+
+        </tbody>
+      </table>
+    </div>
+
+    <div class="level-group">
+      <div class="level-hd l45">
+        <span class="lvl-badge">L4/5</span>
+        <span class="level-name">Higher National Level 4/5 &mdash; Standards, Regulations &amp; Design for Safety</span>
+      </div>
+      <table class="obj-tbl">
+        <tbody>
+
+          <tr class="obj-row">
+            <td class="obj-cell-text">
+              <p class="obj-topic">Standards and regulations awareness</p>
+              <ul class="obj-bullets">
+                <li>Recognise that industrial robot systems are subject to machinery and safety standards (e.g. ISO 10218)</li>
+                <li>Map typical safety requirements (safe stops, emergency stops, guarding, modes of operation) to the educational robot setup</li>
+              </ul>
+            </td>
+            <td class="obj-cell-delivery">
+              <div class="delivery-section">
+                <p class="dlabel">Curriculum module</p>
+                <div class="chips">
+                  <a class="chip chip-mod" href="module-13.html">MOD 13 — Safety Standards &amp; Design for Safety</a>
+                </div>
+              </div>
+              <div class="delivery-section">
+                <p class="dlabel">App features used</p>
+                <div class="chips">
+                  <span class="chip chip-app">App: Dead Zones</span>
+                  <span class="chip chip-app">App: Settings</span>
+                </div>
+              </div>
+            </td>
+          </tr>
+
+          <tr class="obj-row">
+            <td class="obj-cell-text">
+              <p class="obj-topic">Designing for safety</p>
+              <ul class="obj-bullets">
+                <li>Justify safety features in hardware and software: joint limits, speed/acceleration caps, torque on/off, conservative defaults on comms errors</li>
+                <li>Propose safe behaviours on loss of communication, power failure, and sensor anomalies</li>
+              </ul>
+            </td>
+            <td class="obj-cell-delivery">
+              <div class="delivery-section">
+                <p class="dlabel">Curriculum module</p>
+                <div class="chips">
+                  <a class="chip chip-mod" href="module-13.html">MOD 13 — Safety Standards &amp; Design for Safety</a>
+                </div>
+              </div>
+              <div class="delivery-section">
+                <p class="dlabel">App features used</p>
+                <div class="chips">
+                  <span class="chip chip-app">App: Dead Zones</span>
+                  <span class="chip chip-app">App: Settings</span>
+                  <span class="chip chip-app">App: Torque Enable/Disable</span>
+                </div>
+              </div>
+            </td>
+          </tr>
+
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════════════════
+       SECTION 6 — PROJECT WORK & PROFESSIONAL SKILLS
+  ══════════════════════════════════════════════════ -->
+  <div class="btec-section">
+    <div class="section-hd">
+      <span class="section-num">06</span>
+      <h2 class="section-title">Project Work, Documentation &amp; Professional Skills</h2>
+    </div>
+
+    <!-- Combined level group (both L3 and L4/5) -->
+    <div class="level-group">
+      <div class="level-hd" style="background: linear-gradient(90deg, var(--l3-bg) 50%, var(--l45-bg) 100%); border-bottom: 1px solid var(--border);">
+        <span class="lvl-badge" style="background: var(--l3); color: #fff;">L3</span>
+        <span class="lvl-badge" style="background: var(--l45); color: #fff;">L4/5</span>
+        <span class="level-name" style="color: var(--muted);">Applies across BTEC National and Higher National — Engineering Project Units</span>
+      </div>
+      <table class="obj-tbl">
+        <tbody>
+
+          <tr class="obj-row">
+            <td class="obj-cell-text">
+              <p class="obj-topic">Project planning and management</p>
+              <ul class="obj-bullets">
+                <li>Plan a robot-arm project: define aims and requirements, break work into tasks, produce and follow a simple schedule</li>
+                <li>Use engineering project phases, Gantt charts, specifications and risk registers</li>
+              </ul>
+            </td>
+            <td class="obj-cell-delivery">
+              <div class="delivery-section">
+                <p class="dlabel">Curriculum module</p>
+                <div class="chips">
+                  <a class="chip chip-mod" href="module-14.html">MOD 14 — Project Planning &amp; Management</a>
+                </div>
+              </div>
+              <div class="delivery-section">
+                <p class="dlabel">Activities</p>
+                <div class="chips">
+                  <span class="chip chip-app">Gantt Chart Templates</span>
+                  <span class="chip chip-app">Risk Register</span>
+                  <span class="chip chip-app">Specification Writing</span>
+                </div>
+              </div>
+            </td>
+          </tr>
+
+          <tr class="obj-row">
+            <td class="obj-cell-text">
+              <p class="obj-topic">Technical documentation</p>
+              <ul class="obj-bullets">
+                <li>Produce system block diagrams, wiring diagrams, and interface descriptions</li>
+                <li>Write kinematic/URDF descriptions of the arm</li>
+                <li>Create and maintain test plans, procedures, and results records</li>
+              </ul>
+            </td>
+            <td class="obj-cell-delivery">
+              <div class="delivery-section">
+                <p class="dlabel">Curriculum module</p>
+                <div class="chips">
+                  <a class="chip chip-mod" href="module-15.html">MOD 15 — Technical Documentation</a>
+                </div>
+              </div>
+              <div class="delivery-section">
+                <p class="dlabel">Activities</p>
+                <div class="chips">
+                  <span class="chip chip-app">Circuit Diagrams</span>
+                  <span class="chip chip-app">Annotated Code</span>
+                  <span class="chip chip-app">Test Records</span>
+                </div>
+              </div>
+            </td>
+          </tr>
+
+          <tr class="obj-row">
+            <td class="obj-cell-text">
+              <p class="obj-topic">Evaluation and reflection</p>
+              <ul class="obj-bullets">
+                <li>Evaluate how well the solution meets functional, performance, safety, and reliability requirements</li>
+                <li>Reflect on limitations and propose realistic improvements using the engineering design cycle</li>
+              </ul>
+            </td>
+            <td class="obj-cell-delivery">
+              <div class="delivery-section">
+                <p class="dlabel">Curriculum module</p>
+                <div class="chips">
+                  <a class="chip chip-mod" href="module-16.html">MOD 16 — Evaluation, Reflection &amp; Communication</a>
+                </div>
+              </div>
+              <div class="delivery-section">
+                <p class="dlabel">Activities</p>
+                <div class="chips">
+                  <span class="chip chip-app">Design Cycle Analysis</span>
+                  <span class="chip chip-app">Critical Evaluation</span>
+                </div>
+              </div>
+            </td>
+          </tr>
+
+          <tr class="obj-row">
+            <td class="obj-cell-text">
+              <p class="obj-topic">Communication skills</p>
+              <ul class="obj-bullets">
+                <li>Present the robot arm system and project outcomes to technical and non-technical audiences</li>
+                <li>Explain what the arm does and why it is useful, how it is operated safely, and how it supports progression to employment or further study</li>
+              </ul>
+            </td>
+            <td class="obj-cell-delivery">
+              <div class="delivery-section">
+                <p class="dlabel">Curriculum module</p>
+                <div class="chips">
+                  <a class="chip chip-mod" href="module-16.html">MOD 16 — Evaluation, Reflection &amp; Communication</a>
+                </div>
+              </div>
+              <div class="delivery-section">
+                <p class="dlabel">Activities</p>
+                <div class="chips">
+                  <span class="chip chip-app">Technical Presentations</span>
+                  <span class="chip chip-app">Audience-Adapted Explanations</span>
+                </div>
+              </div>
+            </td>
+          </tr>
+
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+
+  <!-- Footnote -->
+  <div class="footnote">
+    <strong>About this document:</strong> The Pearson BTEC National and Higher National Engineering specifications do not explicitly name "robotics" or "robot arms". This mapping identifies how the robot arm teaching platform can be used as a vehicle to deliver outcomes across multiple BTEC units covering mechanical principles, electrical and electronic systems, control systems, automation, safety, and engineering project management. Specific unit numbers will vary depending on the programme (National Extended Diploma, HNC, HND, etc.) — refer to the current Pearson specification for your qualification level. <strong>Module links above open directly into the interactive curriculum.</strong>
+  </div>
+
+</div>
+
+</body>
+</html>

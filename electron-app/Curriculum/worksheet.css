@@ -1,0 +1,140 @@
+/* Shared worksheet field styles, print button, and print layout */
+
+.worksheet-card .ws-field {
+  margin-bottom: 1rem;
+}
+
+.worksheet-card .ws-field label {
+  display: block;
+  font-size: 0.88rem;
+  font-weight: 600;
+  margin-bottom: 0.3rem;
+}
+
+.worksheet-card textarea,
+.worksheet-card input[type="text"],
+.worksheet-card input[type="number"] {
+  width: 100%;
+  border: 1px solid #c4b5fd;
+  border-radius: 6px;
+  padding: 0.45rem 0.65rem;
+  font-size: 0.9rem;
+  font-family: inherit;
+  background: rgba(255, 255, 255, 0.85);
+  box-sizing: border-box;
+  color: inherit;
+}
+
+.worksheet-card textarea {
+  resize: vertical;
+  min-height: 70px;
+}
+
+.worksheet-card table input[type="text"] {
+  min-width: 0;
+  padding: 0.3rem 0.4rem;
+  font-size: 0.85rem;
+}
+
+.worksheet-card .checklist {
+  list-style: none;
+  padding: 0;
+  margin: 0.75rem 0 1rem;
+}
+
+.worksheet-card .checklist li {
+  margin-bottom: 0.45rem;
+  font-size: 0.92rem;
+}
+
+.worksheet-card .checklist label {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.worksheet-card .checklist input[type="checkbox"] {
+  margin-top: 0.25rem;
+  flex-shrink: 0;
+}
+
+/* Modules 10–16 use section-card + worksheet-card together */
+.section-card.worksheet-card {
+  background: #faf5ff;
+  border-color: #e9d5ff;
+}
+
+.ws-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(124, 58, 237, 0.25);
+}
+
+.ws-print-btn {
+  display: inline-block;
+  padding: 0.5rem 1.1rem;
+  background: #7c3aed;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.ws-print-btn:hover {
+  background: #6d28d9;
+}
+
+.ws-save-note {
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+/* Print: show only the selected worksheet */
+@media print {
+  body.print-worksheet-only * {
+    visibility: hidden;
+  }
+
+  body.print-worksheet-only .worksheet-card.is-printing,
+  body.print-worksheet-only .worksheet-card.is-printing * {
+    visibility: visible;
+  }
+
+  body.print-worksheet-only .worksheet-card.is-printing {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    background: #fff !important;
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  body.print-worksheet-only .no-print,
+  body.print-worksheet-only .ws-actions {
+    display: none !important;
+    visibility: hidden !important;
+  }
+
+  body.print-worksheet-only .worksheet-card.is-printing textarea,
+  body.print-worksheet-only .worksheet-card.is-printing input[type="text"],
+  body.print-worksheet-only .worksheet-card.is-printing input[type="number"] {
+    border: 1px solid #999 !important;
+    background: #fff !important;
+    color: #000 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}

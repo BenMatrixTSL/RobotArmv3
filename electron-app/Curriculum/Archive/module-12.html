@@ -1,0 +1,1073 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="curriculum-module" content="12">
+  <title>Module 12: Automation Cell Design</title>
+  <style>
+    :root {
+      --bg: #f6f7f9;
+      --card: #fff;
+      --text: #1a1d26;
+      --muted: #5c6370;
+      --accent: #1e5a8a;
+      --border: #d8dde6;
+      --code-bg: #eef1f6;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 17px;
+      line-height: 1.55;
+      color: var(--text);
+      background: var(--bg);
+    }
+    .wrap {
+      max-width: 52rem;
+      margin: 0 auto;
+      padding: 1.25rem 1.25rem 3rem;
+    }
+    .top-nav {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.75rem 1rem;
+      padding: 0.75rem 0;
+      margin-bottom: 1.25rem;
+      border-bottom: 1px solid var(--border);
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+      font-size: 0.9rem;
+    }
+    .nav-title {
+      flex: 1 1 auto;
+      font-weight: 600;
+      color: var(--muted);
+      min-width: 12rem;
+    }
+    a.nav-link {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    a.nav-link:hover { text-decoration: underline; }
+    h1.page-title {
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+      font-size: 1.65rem;
+      font-weight: 700;
+      margin: 0 0 0.5rem;
+      line-height: 1.25;
+    }
+    p.lead {
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+      color: var(--muted);
+      margin: 0 0 1.5rem;
+      font-size: 0.95rem;
+    }
+    section.card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.25rem 1.5rem 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    }
+    section.card h2 {
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+      font-size: 1.15rem;
+      margin: 0 0 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid var(--accent);
+      color: var(--accent);
+    }
+    .card-inner {
+      font-family: Georgia, "Times New Roman", serif;
+    }
+    .card-inner h1, .card-inner h2, .card-inner h3, .card-inner h4 {
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+    }
+    .card-inner h1 { font-size: 1.35rem; }
+    .card-inner h2 { font-size: 1.15rem; border-bottom: none; color: var(--text); }
+    .card-inner h3 { font-size: 1.05rem; }
+    .card-inner h4 { font-size: 1rem; }
+    .card-inner code {
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 0.9em;
+      background: var(--code-bg);
+      padding: 0.1em 0.35em;
+      border-radius: 4px;
+    }
+    .card-inner pre {
+      background: var(--code-bg);
+      padding: 1rem;
+      overflow-x: auto;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+    }
+    .card-inner pre code {
+      background: none;
+      padding: 0;
+    }
+    .card-inner table {
+      border-collapse: collapse;
+      width: 100%;
+      font-size: 0.95rem;
+      margin: 1rem 0;
+    }
+    .card-inner th, .card-inner td {
+      border: 1px solid var(--border);
+      padding: 0.45rem 0.6rem;
+      text-align: left;
+      vertical-align: top;
+    }
+    .card-inner th {
+      background: #eef3f8;
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+      font-weight: 600;
+    }
+    ul.index-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+    }
+    ul.index-list li {
+      margin: 0.35rem 0;
+      padding: 0.5rem 0.65rem;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--card);
+    }
+    ul.index-list a {
+      color: var(--accent);
+      font-weight: 600;
+      text-decoration: none;
+    }
+    ul.index-list a:hover { text-decoration: underline; }
+    .index-meta {
+      display: block;
+      font-size: 0.85rem;
+      color: var(--muted);
+      font-weight: normal;
+      margin-top: 0.2rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <nav class="top-nav">
+  <a class="nav-link" href="index.html">All modules</a>
+  <a class="nav-link" href="module-11.html">← Previous</a>
+  <span class="nav-title">Module 12: Automation Cell Design</span>
+  <a class="nav-link" href="module-13.html">Next →</a>
+</nav>
+<h1 class="page-title">Module 12: Automation Cell Design</h1>
+<p class="lead">BTEC robot arm curriculum — one page per module. Work through sections in order.</p>
+<section class="card"><h2>Curriculum plan (from BTEC_Robot_Arm_Curriculum_Plan.md)</h2><div class="card-inner"><h2><strong>Module 12: Automation Cell Design</strong></h2>
+<p><em>Level 4/5 - Building on Module 11</em></p>
+<h3>Learning Objectives Covered:</h3>
+<ul>
+<li>✅ <strong>Cell/workstation design</strong> (Level 4/5)</li>
+<li>Design small automated "cell" around robot arm: safe working envelope, guarding, part presentation (jigs, fixtures, trays), operator access and ergonomics</li>
+<li>Estimate throughput and discuss bottlenecks and changeover times</li>
+<li>✅ <strong>System integration concepts</strong> (Level 4/5)</li>
+<li>Outline how robot could interface with: conveyors, vision systems, PLCs, safety systems</li>
+<li>Describe how signals and data would be exchanged</li>
+</ul>
+<h3>Content:</h3>
+<ol>
+<li>
+<p><strong>Cell Design Principles</strong><br />
+   - What is an automation cell?<br />
+   - Layout considerations<br />
+   - Safety requirements<br />
+   - Efficiency goals</p>
+</li>
+<li>
+<p><strong>Working Envelope &amp; Guarding</strong><br />
+   - Defining safe working envelope<br />
+   - Guarding options<br />
+   - Safety barriers<br />
+   - Access control</p>
+</li>
+<li>
+<p><strong>Part Presentation</strong><br />
+   - Jigs and fixtures<br />
+   - Trays and feeders<br />
+   - Part orientation<br />
+   - Presentation reliability</p>
+</li>
+<li>
+<p><strong>Ergonomics &amp; Access</strong><br />
+   - Operator access points<br />
+   - Ergonomic considerations<br />
+   - Maintenance access<br />
+   - Safety considerations</p>
+</li>
+<li>
+<p><strong>Throughput Analysis</strong><br />
+   - Cycle time calculation<br />
+   - Bottleneck identification<br />
+   - Changeover time impact<br />
+   - Optimization strategies</p>
+</li>
+<li>
+<p><strong>External System Integration</strong><br />
+   - Conveyor integration<br />
+   - Vision system integration<br />
+   - PLC integration<br />
+   - Safety system integration<br />
+   - Signal exchange protocols<br />
+   - Data exchange methods</p>
+</li>
+</ol>
+<h3>Practical Activities:</h3>
+<ul>
+<li>Design automation cell layout</li>
+<li>Create working envelope diagram</li>
+<li>Design part presentation system</li>
+<li>Calculate throughput</li>
+<li>Identify bottlenecks</li>
+<li>Design integration interfaces</li>
+<li>Create system integration diagram</li>
+<li>Document cell design</li>
+<li>Present cell design proposal</li>
+</ul>
+<hr /></div></section>
+<section class="card"><h2>Theory & teaching notes</h2><div class="card-inner"><h1>Module 12: Automation Cell Design</h1>
+<h2>Theory &amp; Teaching Notes</h2>
+<p><strong>Module Duration:</strong> 2-3 hours<br />
+<strong>Level:</strong> Advanced (Level 4/5)</p>
+<hr />
+<h2>Learning Objectives</h2>
+<p>By the end of this module, students will be able to:<br />
+- Understand automation cell design principles<br />
+- Design safe working envelopes and guarding<br />
+- Design part presentation systems<br />
+- Consider ergonomics and access<br />
+- Analyze throughput and bottlenecks<br />
+- Design system integration</p>
+<hr />
+<h2>1. Automation Cell Design Principles</h2>
+<h3>What is an Automation Cell?</h3>
+<p>An <strong>automation cell</strong> is a complete workstation that includes:<br />
+- Robot arm<br />
+- Part presentation (fixtures, trays)<br />
+- Safety systems (guards, emergency stops)<br />
+- Operator access points<br />
+- Integration with other systems</p>
+<p><strong>Think of it like:</strong> A complete, self-contained work area designed for automated operation.</p>
+<h3>Design Goals</h3>
+<p><strong>Key goals:</strong></p>
+<ol>
+<li>
+<p><strong>Safety</strong><br />
+   - Protect operators<br />
+   - Prevent accidents<br />
+   - Meet standards</p>
+</li>
+<li>
+<p><strong>Efficiency</strong><br />
+   - Maximize throughput<br />
+   - Minimize waste<br />
+   - Optimize layout</p>
+</li>
+<li>
+<p><strong>Reliability</strong><br />
+   - Consistent operation<br />
+   - Minimal downtime<br />
+   - Robust design</p>
+</li>
+<li>
+<p><strong>Flexibility</strong><br />
+   - Handle variations<br />
+   - Easy to modify<br />
+   - Adaptable</p>
+</li>
+</ol>
+<h3>Layout Considerations</h3>
+<p><strong>Factors to consider:</strong></p>
+<ol>
+<li>
+<p><strong>Workflow</strong><br />
+   - How parts flow through<br />
+   - Logical sequence<br />
+   - Minimize movement</p>
+</li>
+<li>
+<p><strong>Space</strong><br />
+   - Available space<br />
+   - Robot reach<br />
+   - Operator access<br />
+   - Maintenance access</p>
+</li>
+<li>
+<p><strong>Safety</strong><br />
+   - Guarding requirements<br />
+   - Emergency access<br />
+   - Clear zones</p>
+</li>
+</ol>
+<hr />
+<h2>2. Working Envelope &amp; Guarding</h2>
+<h3>Defining Working Envelope</h3>
+<p><strong>Working envelope</strong> = Space robot can reach</p>
+<p><strong>How to define:</strong></p>
+<ol>
+<li>
+<p><strong>Map robot reach</strong><br />
+   - Maximum reach in all directions<br />
+   - Include all configurations<br />
+   - Account for payload</p>
+</li>
+<li>
+<p><strong>Add safety margin</strong><br />
+   - Extra space for safety<br />
+   - Account for variations<br />
+   - Include end effector</p>
+</li>
+<li>
+<p><strong>Document boundaries</strong><br />
+   - Mark on floor<br />
+   - Visual indicators<br />
+   - Clear boundaries</p>
+</li>
+</ol>
+<h3>Guarding Options</h3>
+<p><strong>Types of guards:</strong></p>
+<ol>
+<li>
+<p><strong>Physical barriers</strong><br />
+   - Fences<br />
+   - Screens<br />
+   - Cages<br />
+   - <strong>Prevents access</strong></p>
+</li>
+<li>
+<p><strong>Light curtains</strong><br />
+   - Light beams<br />
+   - Detect intrusion<br />
+   - Stop robot<br />
+   - <strong>Detects and stops</strong></p>
+</li>
+<li>
+<p><strong>Pressure mats</strong><br />
+   - Detect presence<br />
+   - Stop robot<br />
+   - <strong>Detects and stops</strong></p>
+</li>
+<li>
+<p><strong>Interlocked gates</strong><br />
+   - Gates that stop robot when opened<br />
+   - <strong>Prevents access</strong></p>
+</li>
+</ol>
+<p><strong>Choosing guards:</strong><br />
+- Based on risk level<br />
+- Based on application<br />
+- Based on standards<br />
+- Based on budget</p>
+<h3>Safety Barriers</h3>
+<p><strong>Purpose:</strong> Physically prevent access to danger zone</p>
+<p><strong>Requirements:</strong><br />
+- Strong enough<br />
+- Proper height<br />
+- Secure mounting<br />
+- Clear visibility</p>
+<p><strong>Placement:</strong><br />
+- Around working envelope<br />
+- At access points<br />
+- Where needed for safety</p>
+<hr />
+<h2>3. Part Presentation</h2>
+<h3>Jigs and Fixtures</h3>
+<p><strong>What they are:</strong> Devices that hold parts in consistent positions</p>
+<p><strong>Purpose:</strong><br />
+- Present parts consistently<br />
+- Ensure correct orientation<br />
+- Enable reliable operation</p>
+<p><strong>Design considerations:</strong><br />
+- Part shape and size<br />
+- Orientation needed<br />
+- Accessibility<br />
+- Durability</p>
+<p><strong>Types:</strong><br />
+- <strong>Fixed fixtures:</strong> Hold parts in one place<br />
+- <strong>Rotary fixtures:</strong> Rotate parts<br />
+- <strong>Indexing fixtures:</strong> Move parts to positions</p>
+<h3>Trays and Feeders</h3>
+<p><strong>What they are:</strong> Systems that present parts to robot</p>
+<p><strong>Types:</strong></p>
+<ol>
+<li>
+<p><strong>Trays</strong><br />
+   - Parts in organized positions<br />
+   - Robot picks from tray<br />
+   - Simple and flexible</p>
+</li>
+<li>
+<p><strong>Vibratory feeders</strong><br />
+   - Parts fed automatically<br />
+   - Continuous supply<br />
+   - High throughput</p>
+</li>
+<li>
+<p><strong>Conveyor systems</strong><br />
+   - Parts move on conveyor<br />
+   - Robot picks from conveyor<br />
+   - Continuous flow</p>
+</li>
+</ol>
+<p><strong>Design considerations:</strong><br />
+- Part presentation rate<br />
+- Part orientation<br />
+- Reliability<br />
+- Maintenance</p>
+<h3>Part Orientation</h3>
+<p><strong>Why it matters:</strong><br />
+- Robot needs consistent orientation<br />
+- Enables reliable operation<br />
+- Reduces complexity</p>
+<p><strong>How to ensure:</strong><br />
+- Use fixtures<br />
+- Use feeders<br />
+- Use vision systems<br />
+- Design for orientation</p>
+<hr />
+<h2>4. Ergonomics &amp; Access</h2>
+<h3>Operator Access</h3>
+<p><strong>Why important:</strong><br />
+- Loading/unloading parts<br />
+- Setup and adjustment<br />
+- Monitoring operation<br />
+- Maintenance</p>
+<p><strong>Design considerations:</strong></p>
+<ol>
+<li>
+<p><strong>Access points</strong><br />
+   - Where operators need access<br />
+   - Safe entry/exit<br />
+   - Clear paths</p>
+</li>
+<li>
+<p><strong>Reach requirements</strong><br />
+   - Can operators reach needed areas?<br />
+   - Comfortable positions<br />
+   - Not straining</p>
+</li>
+<li>
+<p><strong>Visibility</strong><br />
+   - Can operators see operation?<br />
+   - Good lighting<br />
+   - Clear view</p>
+</li>
+</ol>
+<h3>Maintenance Access</h3>
+<p><strong>Why important:</strong><br />
+- Regular maintenance needed<br />
+- Repairs required<br />
+- Adjustments needed</p>
+<p><strong>Design considerations:</strong></p>
+<ol>
+<li>
+<p><strong>Access to components</strong><br />
+   - Can reach all parts?<br />
+   - Tools can fit?<br />
+   - Enough space?</p>
+</li>
+<li>
+<p><strong>Safety during maintenance</strong><br />
+   - Lockout procedures<br />
+   - Safe access<br />
+   - Clear procedures</p>
+</li>
+<li>
+<p><strong>Ease of maintenance</strong><br />
+   - Quick access<br />
+   - Easy procedures<br />
+   - Clear documentation</p>
+</li>
+</ol>
+<h3>Ergonomic Considerations</h3>
+<p><strong>Ergonomics</strong> = Designing for human comfort and efficiency</p>
+<p><strong>Considerations:</strong><br />
+- Working height<br />
+- Reach distances<br />
+- Force requirements<br />
+- Repetitive motions<br />
+- Awkward positions</p>
+<p><strong>Benefits:</strong><br />
+- Operator comfort<br />
+- Reduced fatigue<br />
+- Fewer injuries<br />
+- Better productivity</p>
+<hr />
+<h2>5. Throughput Analysis</h2>
+<h3>Cycle Time Calculation</h3>
+<p><strong>Cycle time</strong> = Time for one complete operation</p>
+<p><strong>Components:</strong></p>
+<ol>
+<li>
+<p><strong>Movement time</strong><br />
+   - Time to move between positions<br />
+   - Depends on speed and distance</p>
+</li>
+<li>
+<p><strong>Operation time</strong><br />
+   - Time for gripper to operate<br />
+   - Time for other operations<br />
+   - Dwell times</p>
+</li>
+<li>
+<p><strong>Wait time</strong><br />
+   - Waiting for parts<br />
+   - Waiting for other systems<br />
+   - Synchronization</p>
+</li>
+</ol>
+<p><strong>Total cycle time</strong> = Sum of all components</p>
+<p><strong>Example:</strong><br />
+- Move to pick: 2 seconds<br />
+- Pick operation: 0.5 seconds<br />
+- Move to place: 2 seconds<br />
+- Place operation: 0.5 seconds<br />
+- Return home: 1 second<br />
+- <strong>Total: 6 seconds</strong></p>
+<h3>Bottleneck Identification</h3>
+<p><strong>Bottleneck</strong> = Slowest part limiting overall speed</p>
+<p><strong>How to identify:</strong></p>
+<ol>
+<li>
+<p><strong>Measure each step</strong><br />
+   - Time each operation<br />
+   - Find slowest step</p>
+</li>
+<li>
+<p><strong>Analyze flow</strong><br />
+   - Where does system wait?<br />
+   - What limits throughput?</p>
+</li>
+<li>
+<p><strong>Identify bottlenecks</strong><br />
+   - Slowest operation<br />
+   - Constraining factor<br />
+   - Limiting resource</p>
+</li>
+</ol>
+<p><strong>Example:</strong><br />
+- Robot movement: 2 seconds<br />
+- Part presentation: 5 seconds ← <strong>Bottleneck!</strong><br />
+- Gripper operation: 0.5 seconds</p>
+<p><strong>Solution:</strong> Improve part presentation speed</p>
+<h3>Changeover Time</h3>
+<p><strong>Changeover</strong> = Time to switch between different tasks/products</p>
+<p><strong>Components:</strong><br />
+- Setup time<br />
+- Adjustment time<br />
+- Testing time<br />
+- Verification time</p>
+<p><strong>How to reduce:</strong><br />
+- Quick-change fixtures<br />
+- Pre-set positions<br />
+- Standardized procedures<br />
+- Good organization</p>
+<p><strong>Impact:</strong> Longer changeover = Less production time</p>
+<hr />
+<h2>6. System Integration</h2>
+<h3>Conveyor Integration</h3>
+<p><strong>How robot integrates with conveyor:</strong></p>
+<ol>
+<li>
+<p><strong>Synchronization</strong><br />
+   - Robot waits for parts<br />
+   - Parts arrive at right time<br />
+   - Coordinated timing</p>
+</li>
+<li>
+<p><strong>Communication</strong><br />
+   - Signals between systems<br />
+   - Part present signals<br />
+   - Ready signals</p>
+</li>
+<li>
+<p><strong>Positioning</strong><br />
+   - Parts in known positions<br />
+   - Consistent presentation<br />
+   - Reliable operation</p>
+</li>
+</ol>
+<h3>Vision System Integration</h3>
+<p><strong>How robot integrates with vision:</strong></p>
+<ol>
+<li>
+<p><strong>Part detection</strong><br />
+   - Vision finds parts<br />
+   - Reports positions<br />
+   - Robot picks based on vision</p>
+</li>
+<li>
+<p><strong>Quality inspection</strong><br />
+   - Vision checks parts<br />
+   - Reports results<br />
+   - Robot acts on results</p>
+</li>
+<li>
+<p><strong>Communication</strong><br />
+   - Vision sends data<br />
+   - Robot receives data<br />
+   - Coordinated operation</p>
+</li>
+</ol>
+<h3>PLC Integration</h3>
+<p><strong>PLC</strong> = Programmable Logic Controller</p>
+<p><strong>How robot integrates with PLC:</strong></p>
+<ol>
+<li>
+<p><strong>Coordination</strong><br />
+   - PLC coordinates systems<br />
+   - Robot responds to PLC<br />
+   - Synchronized operation</p>
+</li>
+<li>
+<p><strong>Signals</strong><br />
+   - Digital signals (on/off)<br />
+   - Analog signals (values)<br />
+   - Status signals</p>
+</li>
+<li>
+<p><strong>Control</strong><br />
+   - PLC can start/stop robot<br />
+   - Robot reports status<br />
+   - Coordinated control</p>
+</li>
+</ol>
+<h3>Safety System Integration</h3>
+<p><strong>How robot integrates with safety:</strong></p>
+<ol>
+<li>
+<p><strong>Emergency stops</strong><br />
+   - Connected to safety system<br />
+   - Stops all systems<br />
+   - Coordinated shutdown</p>
+</li>
+<li>
+<p><strong>Safety interlocks</strong><br />
+   - Guards connected<br />
+   - Access control<br />
+   - Safe operation</p>
+</li>
+<li>
+<p><strong>Monitoring</strong><br />
+   - Safety system monitors<br />
+   - Reports problems<br />
+   - Takes action</p>
+</li>
+</ol>
+<h3>Signal Exchange</h3>
+<p><strong>Types of signals:</strong></p>
+<ol>
+<li>
+<p><strong>Digital signals</strong><br />
+   - On/off<br />
+   - Simple<br />
+   - Reliable</p>
+</li>
+<li>
+<p><strong>Analog signals</strong><br />
+   - Continuous values<br />
+   - More information<br />
+   - More complex</p>
+</li>
+<li>
+<p><strong>Data communication</strong><br />
+   - Serial/network<br />
+   - Complex data<br />
+   - Flexible</p>
+</li>
+</ol>
+<hr />
+<h2>7. Summary</h2>
+<h3>Key Concepts</h3>
+<ol>
+<li><strong>Automation cell</strong> is complete workstation design</li>
+<li><strong>Working envelope</strong> defines robot reach area</li>
+<li><strong>Guarding</strong> protects operators</li>
+<li><strong>Part presentation</strong> ensures consistent operation</li>
+<li><strong>Ergonomics</strong> considers human factors</li>
+<li><strong>Throughput analysis</strong> optimizes production</li>
+<li><strong>System integration</strong> connects all components</li>
+</ol>
+<h3>Understanding Cell Design</h3>
+<p>You should now understand:<br />
+- Design principles for automation cells<br />
+- How to design safe systems<br />
+- How to present parts consistently<br />
+- How to consider human factors<br />
+- How to analyze throughput<br />
+- How to integrate systems</p>
+<h3>Next Steps</h3>
+<p>After learning this theory, you will:<br />
+- Design an automation cell<br />
+- Define working envelope<br />
+- Design guarding<br />
+- Design part presentation<br />
+- Analyze throughput<br />
+- Design system integration<br />
+- Complete the Module 12 worksheet</p>
+<hr />
+<h2>Questions for Review</h2>
+<p>Before moving to the worksheet, make sure you can answer:</p>
+<ol>
+<li>What is an automation cell?</li>
+<li>What are the design goals?</li>
+<li>How do you define working envelope?</li>
+<li>What are guarding options?</li>
+<li>Why is part presentation important?</li>
+<li>What is a bottleneck?</li>
+<li>How do systems integrate?</li>
+</ol>
+<hr />
+<p><strong>Remember:</strong> Good cell design considers safety, efficiency, and integration. Think about the complete system, not just the robot!</p></div></section>
+<section class="card"><h2>Student worksheet</h2><div class="card-inner"><h1>Module 12: Automation Cell Design</h1>
+<h2>Student Worksheet</h2>
+<p><strong>Name:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_<br />
+<strong>Date:</strong> </em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>_<br />
+<strong>Group/Class:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>____</p>
+<hr />
+<h2>Part 1: Cell Design Principles</h2>
+<h3>Question 1: What is an Automation Cell?</h3>
+<p>Define an automation cell:</p>
+<hr />
+<hr />
+<h3>Question 2: Design Considerations</h3>
+<p>List key design considerations:</p>
+<ol>
+<li>
+<hr />
+</li>
+<li>
+<hr />
+</li>
+<li>
+<hr />
+</li>
+<li>
+<hr />
+</li>
+</ol>
+<hr />
+<h2>Part 2: Working Envelope &amp; Guarding</h2>
+<h3>Question 3: Working Envelope Definition</h3>
+<p>Define and map the safe working envelope:</p>
+<p>[Space for diagram]</p>
+<p><strong>Dimensions:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<h3>Question 4: Guarding Options</h3>
+<p>Design guarding for your cell:</p>
+<p><strong>Type of guarding:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<p><strong>Location:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<p><strong>Why this approach?</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<hr />
+<h2>Part 3: Part Presentation</h2>
+<h3>Question 5: Jigs and Fixtures</h3>
+<p>Design jigs/fixtures for part presentation:</p>
+<p><strong>Description:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<p><strong>Drawing:</strong> [Space for sketch]</p>
+<p><strong>Why this design?</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<h3>Question 6: Part Orientation</h3>
+<p>How will parts be oriented?</p>
+<hr />
+<hr />
+<hr />
+<h2>Part 4: Ergonomics &amp; Access</h2>
+<h3>Question 7: Operator Access</h3>
+<p>Design operator access points:</p>
+<p><strong>Access points:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<p><strong>Safety considerations:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<h3>Question 8: Maintenance Access</h3>
+<p>Design maintenance access:</p>
+<p><strong>Access points:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<p><strong>Requirements:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<hr />
+<h2>Part 5: Throughput Analysis</h2>
+<h3>Question 9: Cycle Time Calculation</h3>
+<p>Calculate cycle time for your cell:</p>
+<p><strong>Sequence steps:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<p><strong>Time per step:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<p><strong>Total cycle time:</strong> <strong><em>_</em></strong> seconds</p>
+<h3>Question 10: Bottleneck Identification</h3>
+<p>Identify bottlenecks:</p>
+<p><strong>Bottlenecks:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<p><strong>How to address:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<h3>Question 11: Changeover Time</h3>
+<p>Estimate changeover time:</p>
+<p><strong>Changeover tasks:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<p><strong>Time required:</strong> <strong><em>_</em></strong> minutes</p>
+<hr />
+<h2>Part 6: System Integration</h2>
+<h3>Question 12: External Systems</h3>
+<p>Design integration with external systems:</p>
+<table>
+<thead>
+<tr>
+<th>System</th>
+<th>Integration Method</th>
+<th>Data/Signal Exchange</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Conveyor</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Vision System</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>PLC</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Safety System</td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>Part 7: Cell Design</h2>
+<h3>Exercise: Complete Cell Design</h3>
+<p>Create a complete cell design including:<br />
+- Layout diagram<br />
+- Working envelope<br />
+- Guarding<br />
+- Part presentation<br />
+- Access points<br />
+- Integration points</p>
+<p>[Space for complete design]</p>
+<hr />
+<h2>Part 8: Reflection</h2>
+<h3>Question 13: Cell Design</h3>
+<p>Answer the following:</p>
+<p>a) What was most challenging about cell design?</p>
+<hr />
+<hr />
+<p>b) How does cell design affect safety and efficiency?</p>
+<hr />
+<hr />
+<hr />
+<h2>Self-Assessment Checklist</h2>
+<ul>
+<li>[ ] Understood cell design principles</li>
+<li>[ ] Defined working envelope</li>
+<li>[ ] Designed guarding</li>
+<li>[ ] Designed part presentation</li>
+<li>[ ] Considered ergonomics</li>
+<li>[ ] Calculated throughput</li>
+<li>[ ] Identified bottlenecks</li>
+<li>[ ] Designed system integration</li>
+<li>[ ] Created complete cell design</li>
+<li>[ ] Written reflection</li>
+</ul>
+<p><strong>Student Signature:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_<br />
+<strong>Date:</strong> </em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><em><br />
+<strong>Instructor Signature:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_<br />
+<strong>Date:</strong> </em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong></em></p></div></section>
+<section class="card"><h2>Multiple choice questions</h2><div class="card-inner"><h1>Module 12: Automation Cell Design</h1>
+<h2>Multiple Choice Questions</h2>
+<p><strong>Instructions:</strong> Choose the best answer for each question.</p>
+<hr />
+<p><strong>1. What is an automation cell?</strong><br />
+   a) Just the robot<br />
+   b) A complete workstation with robot, fixtures, and safety systems<br />
+   c) The controller only<br />
+   d) The end effector</p>
+<p><strong>2. What is a working envelope?</strong><br />
+   a) The safe operating area<br />
+   b) The robot's speed<br />
+   c) The robot's weight<br />
+   d) The robot's cost</p>
+<p><strong>3. Why is guarding important?</strong><br />
+   a) To protect operators from hazards<br />
+   b) To make it look better<br />
+   c) To make it faster<br />
+   d) It's not important</p>
+<p><strong>4. What are jigs and fixtures used for?</strong><br />
+   a) To present parts in consistent positions<br />
+   b) To move the robot<br />
+   c) To power the robot<br />
+   d) To program the robot</p>
+<p><strong>5. What is cycle time?</strong><br />
+   a) Time for one complete operation<br />
+   b) The robot's age<br />
+   c) The number of joints<br />
+   d) The robot's speed</p>
+<p><strong>6. What is a bottleneck?</strong><br />
+   a) The slowest part limiting overall throughput<br />
+   b) The fastest part<br />
+   c) The robot's base<br />
+   d) The end effector</p>
+<p><strong>7. Why is operator access important?</strong><br />
+   a) For loading/unloading and maintenance<br />
+   b) It's not important<br />
+   c) To make it faster<br />
+   d) To change the color</p>
+<p><strong>8. What is changeover time?</strong><br />
+   a) Time to switch between different tasks/products<br />
+   b) The robot's speed<br />
+   c) The robot's position<br />
+   d) The robot's weight</p>
+<p><strong>9. How can a robot integrate with a conveyor?</strong><br />
+   a) Through signals and data exchange<br />
+   b) They can't integrate<br />
+   c) Only physically<br />
+   d) Only visually</p>
+<p><strong>10. Why is throughput analysis important?</strong><br />
+   a) To optimize production efficiency<br />
+   b) It's not important<br />
+   c) To make it slower<br />
+   d) To increase cost</p>
+<hr />
+<h2>Answer Key</h2>
+<ol>
+<li><strong>b)</strong> A complete workstation with robot, fixtures, and safety systems</li>
+<li><strong>a)</strong> The safe operating area</li>
+<li><strong>a)</strong> To protect operators from hazards</li>
+<li><strong>a)</strong> To present parts in consistent positions</li>
+<li><strong>a)</strong> Time for one complete operation</li>
+<li><strong>a)</strong> The slowest part limiting overall throughput</li>
+<li><strong>a)</strong> For loading/unloading and maintenance</li>
+<li><strong>a)</strong> Time to switch between different tasks/products</li>
+<li><strong>a)</strong> Through signals and data exchange</li>
+<li><strong>a)</strong> To optimize production efficiency</li>
+</ol>
+<hr />
+<h2>Scoring Guide</h2>
+<ul>
+<li><strong>9-10 correct:</strong> Excellent understanding</li>
+<li><strong>7-8 correct:</strong> Good understanding</li>
+<li><strong>5-6 correct:</strong> Satisfactory understanding</li>
+<li><strong>Below 5 correct:</strong> Needs review</li>
+</ul></div></section>
+<section class="card"><h2>Assessment rubric</h2><div class="card-inner"><h1>Module 12: Automation Cell Design</h1>
+<h2>Assessment Rubric</h2>
+<p><strong>Student Name:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_<br />
+<strong>Date:</strong> </em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>_<br />
+<strong>Assessor:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>____</p>
+<hr />
+<h2>Overall Assessment Criteria</h2>
+<table>
+<thead>
+<tr>
+<th>Criteria</th>
+<th>Excellent (4)</th>
+<th>Good (3)</th>
+<th>Satisfactory (2)</th>
+<th>Needs Improvement (1)</th>
+<th>Score</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Knowledge &amp; Understanding</strong></td>
+<td>Comprehensive understanding of cell design</td>
+<td>Good understanding</td>
+<td>Basic understanding</td>
+<td>Limited understanding</td>
+<td>/4</td>
+</tr>
+<tr>
+<td><strong>Design Skills</strong></td>
+<td>Well-designed, practical cell layout</td>
+<td>Good design</td>
+<td>Basic design</td>
+<td>Poor design</td>
+<td>/4</td>
+</tr>
+<tr>
+<td><strong>Analysis &amp; Application</strong></td>
+<td>Clear analysis of throughput and integration</td>
+<td>Good analysis</td>
+<td>Basic analysis</td>
+<td>Limited analysis</td>
+<td>/4</td>
+</tr>
+<tr>
+<td><strong>Documentation</strong></td>
+<td>Complete design documentation</td>
+<td>Good documentation</td>
+<td>Basic documentation</td>
+<td>Incomplete documentation</td>
+<td>/4</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Total Score:</strong> /16</p>
+<hr />
+<h2>Detailed Marking Guide</h2>
+<h3>Part 1: Principles (10 marks)</h3>
+<ul>
+<li><strong>Question 1:</strong> 5 marks</li>
+<li><strong>Question 2:</strong> 5 marks</li>
+</ul>
+<p><strong>Mark:</strong> /10</p>
+<hr />
+<h3>Part 2: Envelope &amp; Guarding (20 marks)</h3>
+<ul>
+<li><strong>Question 3:</strong> 10 marks (envelope definition)</li>
+<li><strong>Question 4:</strong> 10 marks (guarding design)</li>
+</ul>
+<p><strong>Mark:</strong> /20</p>
+<hr />
+<h3>Part 3: Part Presentation (15 marks)</h3>
+<ul>
+<li><strong>Question 5:</strong> 8 marks (jigs/fixtures)</li>
+<li><strong>Question 6:</strong> 7 marks (orientation)</li>
+</ul>
+<p><strong>Mark:</strong> /15</p>
+<hr />
+<h3>Part 4: Ergonomics (15 marks)</h3>
+<ul>
+<li><strong>Question 7:</strong> 8 marks (operator access)</li>
+<li><strong>Question 8:</strong> 7 marks (maintenance access)</li>
+</ul>
+<p><strong>Mark:</strong> /15</p>
+<hr />
+<h3>Part 5: Throughput (20 marks)</h3>
+<ul>
+<li><strong>Question 9:</strong> 7 marks (cycle time)</li>
+<li><strong>Question 10:</strong> 7 marks (bottlenecks)</li>
+<li><strong>Question 11:</strong> 6 marks (changeover)</li>
+</ul>
+<p><strong>Mark:</strong> /20</p>
+<hr />
+<h3>Part 6: Integration (10 marks)</h3>
+<ul>
+<li><strong>Question 12:</strong> 10 marks (integration table)</li>
+</ul>
+<p><strong>Mark:</strong> /10</p>
+<hr />
+<h3>Part 7: Complete Design (15 marks)</h3>
+<ul>
+<li><strong>Exercise:</strong> 15 marks (complete cell design)</li>
+</ul>
+<p><strong>Mark:</strong> /15</p>
+<hr />
+<h3>Part 8: Reflection (5 marks)</h3>
+<ul>
+<li><strong>Question 13:</strong> 5 marks</li>
+</ul>
+<p><strong>Mark:</strong> /5</p>
+<hr />
+<p><strong>Final Grade:</strong> <strong><em>_</em></strong>____ / 100</p>
+<p><strong>Assessor Comments:</strong></p>
+<hr />
+<hr />
+<p><strong>Assessor Signature:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_<br />
+<strong>Date:</strong> </em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>_</p></div></section>
+  </div>
+</body>
+</html>

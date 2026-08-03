@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Module 4 — Software &amp; HMI</title>
+  <style>
+    :root {
+      --bg: #f0f2f5;
+      --card: #fff;
+      --text: #1a1d26;
+      --muted: #5c6370;
+      --accent: #1e5a8a;
+      --accent-light: #e8f0f8;
+      --border: #d8dde6;
+      --green: #1a7a4a;
+      --green-light: #e8f5ee;
+      --green-border: #a3d9bc;
+      --orange: #b85c00;
+      --orange-light: #fdf0e0;
+      --orange-border: #f0c88a;
+      --red: #c0392b;
+      --red-light: #fdecea;
+      --red-border: #f5b7b1;
+      --purple: #6b21a8;
+      --purple-light: #f3e8ff;
+      --purple-border: #d8b4fe;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, sans-serif; font-size: 16px; line-height: 1.65; color: var(--text); background: var(--bg); }
+    .top-nav { background: var(--accent); color: #fff; display: flex; align-items: center; gap: 1rem; padding: 0.75rem 1.5rem; font-size: 0.9rem; }
+    .top-nav a { color: rgba(255,255,255,0.85); text-decoration: none; }
+    .top-nav a:hover { color: #fff; text-decoration: underline; }
+    .nav-center { flex: 1; text-align: center; font-weight: 600; }
+    .module-hero { background: var(--accent); color: #fff; padding: 2rem 1.5rem 2.5rem; text-align: center; }
+    .module-badge { display: inline-block; background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.35); border-radius: 20px; font-size: 0.78rem; font-weight: 600; padding: 0.25em 0.9em; letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 0.75rem; }
+    .module-hero h1 { margin: 0 0 0.5rem; font-size: 1.9rem; font-weight: 700; }
+    .module-hero p { margin: 0; opacity: 0.85; font-size: 1rem; }
+    .objectives { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.4rem; margin-top: 1rem; }
+    .obj { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); border-radius: 4px; font-size: 0.78rem; padding: 0.2em 0.7em; }
+    .wrap { max-width: 52rem; margin: 0 auto; padding: 1.75rem 1.25rem 4rem; }
+    .section-label { display: flex; align-items: center; gap: 0.6rem; margin: 2.25rem 0 0.75rem; }
+    .section-label .pill { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; padding: 0.3em 0.8em; border-radius: 20px; }
+    .pill-theory   { background: var(--accent-light); color: var(--accent); border: 1px solid #b3cde0; }
+    .pill-activity { background: var(--green-light); color: var(--green); border: 1px solid var(--green-border); }
+    .pill-worksheet{ background: var(--purple-light); color: var(--purple); border: 1px solid var(--purple-border); }
+    .pill-sowhat   { background: var(--orange-light); color: var(--orange); border: 1px solid var(--orange-border); }
+    .pill-mcq      { background: #fff8e1; color: #856404; border: 1px solid #f0d060; }
+    .section-label hr { flex: 1; border: none; border-top: 1px solid var(--border); }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 1.25rem 1.5rem; margin-bottom: 1.25rem; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+    .card h3 { margin: 0 0 0.75rem; font-size: 1.05rem; color: var(--accent); }
+    .card h4 { margin: 1rem 0 0.35rem; font-size: 0.95rem; }
+    .card p, .card ul, .card ol { margin: 0 0 0.75rem; }
+    .card ul, .card ol { padding-left: 1.35rem; }
+    .card li { margin-bottom: 0.3rem; }
+    .callout { border-radius: 8px; padding: 0.875rem 1rem; margin: 0.75rem 0; font-size: 0.93rem; display: flex; gap: 0.75rem; }
+    .callout-icon { font-size: 1.25rem; flex-shrink: 0; line-height: 1.4; }
+    .callout-body { flex: 1; }
+    .callout-info    { background: var(--accent-light); border: 1px solid #b3cde0; }
+    .callout-warning { background: var(--orange-light); border: 1px solid var(--orange-border); }
+    .callout-tip     { background: var(--green-light); border: 1px solid var(--green-border); }
+    .activity-card { background: var(--green-light); border: 1px solid var(--green-border); border-radius: 10px; padding: 1.25rem 1.5rem; margin-bottom: 1.25rem; }
+    .activity-card h3 { margin: 0 0 0.3rem; color: var(--green); font-size: 1.05rem; }
+    .activity-card .app-tab { display: inline-block; background: var(--green); color: #fff; font-size: 0.75rem; font-weight: 600; padding: 0.15em 0.6em; border-radius: 4px; margin-bottom: 0.75rem; margin-right: 0.35rem; }
+    .steps { list-style: none; padding: 0; margin: 0.5rem 0 0; counter-reset: step; }
+    .steps li { counter-increment: step; display: flex; gap: 0.85rem; margin-bottom: 0.75rem; align-items: flex-start; }
+    .steps li::before { content: counter(step); display: inline-flex; align-items: center; justify-content: center; min-width: 1.75rem; height: 1.75rem; background: var(--green); color: #fff; border-radius: 50%; font-weight: 700; font-size: 0.8rem; flex-shrink: 0; }
+    .steps li p { margin: 0; font-size: 0.93rem; padding-top: 0.2rem; }
+    .ui-ref { display: inline; background: #1a7a4a22; border: 1px solid var(--green-border); border-radius: 4px; font-size: 0.8rem; font-weight: 600; padding: 0.1em 0.45em; color: var(--green); }
+    .worksheet-card { background: var(--purple-light); border: 1px solid var(--purple-border); border-radius: 10px; padding: 1.25rem 1.5rem; margin-bottom: 1.25rem; }
+    .worksheet-card h3 { margin: 0 0 0.75rem; color: var(--purple); font-size: 1.05rem; }
+    .ws-field { margin-bottom: 1rem; }
+    .ws-field label { display: block; font-size: 0.88rem; font-weight: 600; margin-bottom: 0.3rem; }
+    .ws-field textarea { width: 100%; border: 1px solid var(--purple-border); border-radius: 6px; padding: 0.5rem 0.65rem; font-size: 0.9rem; font-family: inherit; resize: vertical; min-height: 70px; background: rgba(255,255,255,0.7); }
+    .ws-field input[type="text"] { width: 100%; border: 1px solid var(--purple-border); border-radius: 6px; padding: 0.45rem 0.65rem; font-size: 0.9rem; font-family: inherit; background: rgba(255,255,255,0.7); }
+    .ws-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; margin: 0.5rem 0 1rem; }
+    .ws-table th { background: rgba(107,33,168,0.12); padding: 0.4rem 0.6rem; text-align: left; border: 1px solid var(--purple-border); font-size: 0.8rem; }
+    .ws-table td { border: 1px solid var(--purple-border); padding: 0; }
+    .ws-table td input[type="text"] { width: 100%; border: none; background: transparent; padding: 0.4rem 0.5rem; font-size: 0.85rem; font-family: inherit; }
+    .sowhat-card { background: var(--orange-light); border: 1px solid var(--orange-border); border-radius: 10px; padding: 1.25rem 1.5rem; margin-bottom: 1.25rem; }
+    .sowhat-card h3 { margin: 0 0 0.5rem; color: var(--orange); font-size: 1.05rem; }
+    .sowhat-card p { margin: 0 0 0.5rem; font-size: 0.95rem; }
+    .mcq-card { background: #fff8e1; border: 1px solid #f0d060; border-radius: 10px; padding: 1.25rem 1.5rem; margin-bottom: 1.25rem; }
+    .mcq-card h3 { margin: 0 0 1rem; color: #856404; font-size: 1.05rem; }
+    .mcq-q { margin-bottom: 1.25rem; }
+    .mcq-q p { font-weight: 600; margin: 0 0 0.5rem; font-size: 0.95rem; }
+    .mcq-options { display: flex; flex-direction: column; gap: 0.35rem; }
+    .mcq-opt { display: flex; align-items: flex-start; gap: 0.6rem; padding: 0.45rem 0.7rem; border-radius: 6px; border: 1px solid #e8d030; background: rgba(255,255,255,0.55); cursor: pointer; font-size: 0.9rem; }
+    .mcq-opt:hover { background: rgba(255,255,255,0.85); }
+    .mcq-opt input { margin-top: 0.15rem; flex-shrink: 0; cursor: pointer; }
+    .mcq-opt.correct { background: var(--green-light); border-color: var(--green-border); }
+    .mcq-opt.wrong   { background: var(--red-light); border-color: var(--red-border); }
+    .mcq-feedback { font-size: 0.83rem; margin-top: 0.4rem; padding: 0.4rem 0.6rem; border-radius: 5px; display: none; }
+    .mcq-feedback.show { display: block; }
+    .mcq-feedback.ok  { background: var(--green-light); color: var(--green); border: 1px solid var(--green-border); }
+    .mcq-feedback.bad { background: var(--red-light); color: var(--red); border: 1px solid var(--red-border); }
+    .check-btn { display: inline-block; margin-top: 0.5rem; padding: 0.45rem 1.1rem; background: #856404; color: #fff; border: none; border-radius: 6px; font-size: 0.88rem; font-weight: 600; cursor: pointer; }
+    .check-btn:hover { background: #6b4e03; }
+    .score-box { margin-top: 1rem; padding: 0.75rem 1rem; border-radius: 8px; font-weight: 600; font-size: 0.93rem; display: none; }
+    .score-box.show { display: block; }
+    .score-box.pass { background: var(--green-light); color: var(--green); border: 1px solid var(--green-border); }
+    .score-box.fail { background: var(--red-light); color: var(--red); border: 1px solid var(--red-border); }
+    .todo-block { background: var(--red-light); border: 2px dashed var(--red); border-radius: 8px; padding: 1rem 1.25rem; margin: 0.75rem 0; color: var(--red); font-size: 0.9rem; }
+    .todo-block strong { display: block; margin-bottom: 0.25rem; }
+    .code-block { background: #1e2130; color: #cdd3e0; border-radius: 8px; padding: 1rem 1.25rem; font-family: Consolas, 'Courier New', monospace; font-size: 0.85rem; line-height: 1.55; overflow-x: auto; margin: 0.75rem 0; }
+    .code-block .kw { color: #89b4fa; }
+    .code-block .str { color: #a6e3a1; }
+    .code-block .cm { color: #6c7086; }
+    .code-block .num { color: #fab387; }
+    .hmi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin: 0.75rem 0; }
+    .hmi-item { background: var(--accent-light); border: 1px solid #b3cde0; border-radius: 8px; padding: 0.75rem 1rem; }
+    .hmi-item h5 { margin: 0 0 0.3rem; color: var(--accent); font-size: 0.88rem; }
+    .hmi-item p { margin: 0; font-size: 0.82rem; color: var(--muted); }
+    .bottom-nav { display: flex; justify-content: space-between; align-items: center; margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border); }
+    .btn { display: inline-block; padding: 0.55rem 1.25rem; border-radius: 7px; font-weight: 600; font-size: 0.9rem; text-decoration: none; border: none; cursor: pointer; }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-outline { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
+    .btn:hover { opacity: 0.88; }
+    @media (max-width: 480px) { .hmi-grid { grid-template-columns: 1fr; } }
+  </style>
+<link rel="stylesheet" href="worksheet.css">
+</head>
+<body>
+
+<nav class="top-nav">
+  <a href="index.html">← All Modules</a>
+  <span class="nav-center">Module 4 of 16</span>
+  <a href="module-05.html">Next: Module 5 →</a>
+</nav>
+
+<div class="module-hero">
+  <div class="module-badge">Foundation · Module 4</div>
+  <h1>Basic Software &amp; Human-Machine Interface</h1>
+  <p>Duration: 3–4 hours &nbsp;·&nbsp; Prerequisites: Modules 1 &amp; 3</p>
+  <div class="objectives">
+    <span class="obj">Explain what an HMI is</span>
+    <span class="obj">Use Pendant Control to move the arm</span>
+    <span class="obj">Create a Blockly program</span>
+    <span class="obj">Save and recall positions</span>
+    <span class="obj">Explain event-driven programming</span>
+  </div>
+</div>
+
+<div class="wrap">
+
+<!-- ══════════════════════════════════════════════════
+       SECTION 1 — WHAT IS AN HMI?
+  ═══════════════════════════════════════════════════ -->
+  <div class="section-label"><span class="pill pill-theory">📖 Theory</span><hr></div>
+
+  <div class="card">
+    <h3>4.1 — Human-Machine Interface (HMI)</h3>
+    <p>A <strong>Human-Machine Interface</strong> is any system through which a person interacts with and controls a machine. It is the boundary between human intention and machine action.</p>
+
+    <p>Good HMI design makes it easy to do the right thing and difficult to do the wrong thing. For a robot arm, the HMI must give the operator:</p>
+    <ul>
+      <li><strong>Control</strong> — ability to command movement</li>
+      <li><strong>Feedback</strong> — current state of the machine (angle, speed, temperature)</li>
+      <li><strong>Safety</strong> — clear stop controls, warnings, and status indicators</li>
+      <li><strong>Efficiency</strong> — common tasks achievable quickly without complex menus</li>
+    </ul>
+
+    <h4>The Robot Arm Control App as an HMI</h4>
+    <p>The application you are using is a custom-built HMI for this robot arm. It provides several different control modes, each suited to a different type of task:</p>
+
+    <div class="hmi-grid">
+      <div class="hmi-item">
+        <h5>Pendant Control</h5>
+        <p>Intuitive slider-based control. Good for manually positioning the arm or exploring the range of motion. Analogous to a traditional teach pendant in industry.</p>
+      </div>
+      <div class="hmi-item">
+        <h5>Visual Programming (Blockly)</h5>
+        <p>Drag-and-drop block-based programming. Good for beginners — no syntax to learn. Creates repeatable sequences without writing text code.</p>
+      </div>
+      <div class="hmi-item">
+        <h5>G-Code Control</h5>
+        <p>Text-based numeric program format, widely used in CNC machines. Good for precisely defined path sequences loaded from a file.</p>
+      </div>
+      <div class="hmi-item">
+        <h5>Joint Control</h5>
+        <p>Direct numerical control of individual joint angles. Good for precise single-joint movements and for monitoring real-time telemetry.</p>
+      </div>
+      <div class="hmi-item">
+        <h5>RAPID</h5>
+        <p>ABB RAPID-subset text scripting language. Good for students who need conditional logic or want preparation for real industrial robot programming.</p>
+      </div>
+    </div>
+
+    <div class="callout callout-info">
+      <span class="callout-icon">🤖</span>
+      <div class="callout-body">
+        <strong>RAPID Tab — Industrial Robot Language</strong></br>
+        The app includes a RAPID tab implementing an ABB RAPID subset — the same language used on real ABB industrial robots. Supported commands: <code>MoveJ</code>, <code>MoveAbsJ</code>, <code>MoveJOffs</code>, <code>MoveLXYZ</code>, <code>MoveLOffs</code>, <code>WaitTime</code>, <code>SetDO</code>, <code>Home</code>, <code>GripperOpen</code>, <code>GripperClose</code>, <code>PumpOn</code>, <code>PumpOff</code>. RAPID is more powerful than G-code for programs with conditional logic, and writing it is excellent preparation for real industry programming roles.
+      </div>
+    </div>
+
+    <div class="callout callout-info">
+      <span class="callout-icon">🏭</span>
+      <div class="callout-body">
+        <strong>Industrial HMI context</strong></br>
+        In industry, robot arms are typically programmed using a handheld teach pendant — a physical device with a joystick and display. Our application provides the same functionality as a software pendant, which is increasingly common on modern collaborative robots (cobots) that use tablet-based interfaces.
+      </div>
+    </div>
+
+    <div class="callout callout-tip">
+      <span class="callout-icon">📱</span>
+      <div class="callout-body">
+        <strong>Kiosk Mode — Robot Arm Touchscreen</strong></br>
+        In <em>kiosk mode</em> (the touchscreen pendant mounted on the arm itself), the app launches automatically and opens directly to the <strong>Pendant Control</strong> tab. This is why the Pendant Control interface uses large, touch-friendly buttons — the design decision is driven by the hardware it runs on. The same app running on a laptop shows all tabs and defaults to a different start screen.
+      </div>
+    </div>
+  </div>
+
+  <!-- ── ACTIVITY 4A ── -->
+  <div class="section-label"><span class="pill pill-activity">🔧 Software Activity</span><hr></div>
+
+  <div class="activity-card">
+    <h3>Activity 4A — Explore the HMI and move the arm with Pendant Control</h3>
+    <span class="app-tab">App tab: Pendant Control</span>
+    <span class="app-tab">App tab: 3D Visualisation</span>
+    <p style="font-size:0.9rem;margin:0 0 0.75rem;">In this activity you will use the Pendant Control tab to move each joint and observe the arm respond in both the real world and in the 3D visualisation. <strong>Check the workspace is clear before enabling torque.</strong></p>
+    <ol class="steps">
+      <li><p>In the <span class="ui-ref">Pendant Control</span> tab, note that movement is in <strong>Cartesian space</strong> (X, Y, Z in millimetres), not joint-angle space. The <strong>XY jog wheel</strong> moves the arm's tool tip in the horizontal plane; the <strong>Z Up / Z Down</strong> buttons move it vertically. Set the step size (in mm) before jogging.</p></li>
+      <li><p>Compare this to the <span class="ui-ref">Joint Control</span> tab — there, the step presets are <strong>in degrees</strong> (1°, 5°, 10°, 45°) and each button moves only one joint. The Pendant Control tab is intended for coarser, position-oriented movement; Joint Control is for fine single-joint tuning.</p></li>
+      <li><p>Ensure the arm is connected (Module 3, Activity 3A). Open the <span class="ui-ref">Pendant Control</span> tab. You should see a slider for each joint.</p></li>
+      <li><p>Open the <span class="ui-ref">3D Visualisation</span> tab in a second window or split your screen if possible, so you can watch both simultaneously.</p></li>
+      <li><p>Enable torque and clear the working envelope. Slowly drag the <strong>Joint 1 slider</strong> from its current position to +20° and back. Observe the base rotation on the real arm and in the 3D view.</p></li>
+      <li><p>Repeat for each joint in turn. Record the range of motion (minimum and maximum angle) for each joint in the worksheet table.</p></li>
+      <li><p>Find the <strong>speed control</strong> slider (or input) on the Pendant tab. Set speed to 20%. Move Joint 2 to its midpoint and note how the arm moves compared to 100% speed.</p></li>
+      <li><p>Set the arm to a position you find interesting. On the <span class="ui-ref">Stored Positions</span> tab, save this as position slot <strong>0</strong> with the label <code>Home</code>.</p></li>
+      <li><p>Move the arm to a different position. Then load position 0 and confirm the arm returns to <code>Home</code>.</p></li>
+    </ol>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════
+       SECTION 2 — PROGRAMMING CONCEPTS
+  ═══════════════════════════════════════════════════ -->
+  <div class="section-label"><span class="pill pill-theory">📖 Theory</span><hr></div>
+
+  <div class="card">
+    <h3>4.2 — Programming Concepts for Robot Control</h3>
+    <img src="images/sequential-event-flowchart.svg" alt="Sequential vs event-driven programming" style="width:100%;height:auto;display:block;border-radius:8px;margin:12px 0;">
+
+    <h4>Sequential execution</h4>
+    <p>Most robot programs execute instructions one at a time, in order. Move to position A, wait, move to position B, wait, repeat. This is called <strong>sequential execution</strong>. It is predictable and easy to reason about.</p>
+
+    <h4>Event-driven programming</h4>
+    <p>The control application itself is <strong>event-driven</strong> — it does nothing until something happens (a button click, a WebSocket message, a timer firing). Each event triggers a specific handler function. This is how modern graphical applications work.</p>
+
+    <div class="callout callout-info">
+      <span class="callout-icon">🖱️</span>
+      <div class="callout-body">
+        <strong>Example:</strong></br> When you click the "Connect" button, a <em>click event</em> fires. The application's event handler opens a WebSocket connection to the Raspberry Pi's IP address. When the connection opens, a <em>WebSocket open event</em> fires and the status indicator turns green. All of this happens through event handlers — not through a linear top-to-bottom program.
+      </div>
+    </div>
+
+    <h4>Variables and state</h4>
+    <p>A <strong>variable</strong> stores a value that can change. In robot control programs, variables track things like the current joint angle, the target position, the movement speed, and whether torque is enabled.</p>
+
+    <h4>Loops and repetition</h4>
+    <p>A <strong>loop</strong> repeats a block of instructions. Loops are used to:</p>
+    <ul>
+      <li>Repeatedly poll the servo status (the Pi's server loops every ~10 ms)</li>
+      <li>Repeat a pick-and-place cycle many times</li>
+      <li>Gradually step through a list of stored positions</li>
+    </ul>
+
+    <h4>Conditionals</h4>
+    <p>An <strong>if/else</strong> conditional lets a program make decisions. For example: <em>if</em> the load reading exceeds a threshold, <em>then</em> stop the motor. This is how safety limits are implemented in software.</p>
+  </div>
+
+  <!-- ── ACTIVITY 4B ── -->
+  <div class="section-label"><span class="pill pill-activity">🔧 Software Activity</span><hr></div>
+
+  <div class="activity-card">
+    <h3>Activity 4B — Create a program using Visual Programming (Blockly)</h3>
+    <span class="app-tab">App tab: Visual Programming</span>
+    <p style="font-size:0.9rem;margin:0 0 0.75rem;">Blockly lets you build programs by snapping blocks together — no typing required. In this activity you will create a simple pick-and-place sequence and run it on the arm.</p>
+    <ol class="steps">
+      <li><p>Navigate to the <span class="ui-ref">Visual Programming</span> tab. You should see a blank canvas and a palette of blocks on the left.</p></li>
+      <li><p>From the palette, drag a <strong>"Move to stored position"</strong> block onto the canvas. Set it to position <strong>0</strong> (your <code>Home</code> position from Activity 4A).</p></li>
+      <li><p>Add a <strong>"Wait"</strong> block below it and set the delay to <strong>1000 ms</strong> (1 second).</p></li>
+      <li><p>Save a second position on the arm (position slot <strong>1</strong>, label it <code>Pick</code>). Add a "Move to stored position" block set to <strong>1</strong>.</p></li>
+      <li><p>Add another Wait block (1000 ms), then a "Move to stored position" block set back to <strong>0</strong> (Home).</p></li>
+      <li><p>Your sequence is: Home → wait → Pick → wait → Home. Before running, ensure the workspace is clear, then click <strong>Run Program</strong>. Watch the arm execute the sequence.</p></li>
+      <li><p>Modify the program to repeat the Home → Pick cycle <strong>3 times</strong> using a <strong>Loop</strong> block. Run it again and verify it repeats correctly.</p></li>
+      <li><p>Use the <strong>Convert to G-Code</strong> button to export your Blockly sequence as a G-code file. Open the <span class="ui-ref">G-Code Control</span> tab and paste or load the exported code — you should be able to run the same sequence from the text file. This shows that all three text-based modes (G-Code, RAPID, and Blockly's export) describe the same motion.</p></li>
+      <li><p>Use the <strong>Convert to RAPID</strong> button to export the same sequence as a RAPID script. Compare the G-code and RAPID versions — note the differences in syntax while recognising that both describe the same physical movements.</p></li>
+    </ol>
+    <div class="callout callout-tip" style="margin-top:0.75rem;">
+      <span class="callout-icon">💾</span>
+      <div class="callout-body">Use the <strong>Save Program</strong> button to save your Blockly program. You can reload it later and continue from where you left off. Saved programs are stored locally on your PC.</div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════
+       SECTION 3 — HMI DESIGN PRINCIPLES
+  ═══════════════════════════════════════════════════ -->
+  <div class="section-label"><span class="pill pill-theory">📖 Theory</span><hr></div>
+
+  <div class="card">
+    <h3>4.3 — HMI Design Principles</h3>
+    <img src="images/iec60073-colours.svg" alt="IEC 60073 indicator colour standards" style="width:100%;height:auto;display:block;border-radius:8px;margin:12px 0;">
+    <p>A well-designed HMI reduces errors and makes operators more effective. Key principles include:</p>
+
+    <h4>Consistency</h4>
+    <p>Controls that do similar things should look and behave the same way. If "Start" is a green button in one screen, it should be green in every screen. Users build muscle memory — inconsistency breaks it.</p>
+
+    <h4>Feedback</h4>
+    <p>Every action should produce a visible response. Clicking "Connect" without seeing any status change is confusing — did it work? The application shows a colour-coded status indicator and a latency reading for this reason.</p>
+
+    <h4>Error prevention over error recovery</h4>
+    <p>It is better to stop a dangerous action from being possible than to deal with the consequences after it happens. The torque enable/disable flow is an example: the application requires the operator to explicitly enable torque rather than having it enabled by default.</p>
+
+    <h4>Minimise cognitive load</h4>
+    <p>Operators should not need to remember information from one screen to use another. Displaying the current joint angles on every tab (not just Joint Control) means the operator always knows the arm's state without switching tabs.</p>
+
+    <div class="callout callout-warning">
+      <span class="callout-icon">🎨</span>
+      <div class="callout-body">
+        <strong>Colour conventions in industrial HMI</strong></br>
+        Red = danger / fault / stop. </br>
+        Green = running / safe / go. </br>
+        Yellow/amber = caution / warning. </br>
+        Blue = information. </br>
+        These are standardised in IEC 60073. Using red for a "confirm" button or green for a "stop" button would violate this standard and could cause accidents.
+      </div>
+    </div>
+
+    <div class="callout callout-info">
+      <span class="callout-icon">📋</span>
+      <div class="callout-body">
+        <strong>Five Control Modes — HMI Comparison</strong></br>
+        The application offers five ways to control the arm, each targeting a different use case:
+        <ul style="margin:0.5rem 0 0;padding-left:1.2rem;">
+          <li><strong>Joint Control</strong> — direct per-joint jogging with step presets (1°, 5°, 10°, 45°). Best for fine positioning and diagnostics.</li>
+          <li><strong>Pendant Control</strong> — XY jog wheel and Z up/down buttons with step size in mm. Best for Cartesian-space jogging on the touchscreen.</li>
+          <li><strong>Visual Programming (Blockly)</strong> — drag-and-drop block programming. Best for beginners; no syntax required. Can export to G-Code or RAPID.</li>
+          <li><strong>G-Code Control</strong> — text-file motion programming using G0/G1/G28/G04/M30 etc. Best for precise, repeatable motion sequences. Includes a built-in cheat sheet.</li>
+          <li><strong>RAPID</strong> — ABB RAPID-subset text language. Best for students who need conditional logic or want experience with real industrial robot syntax.</li>
+        </ul>
+        When completing the HMI usability checklist, evaluate each mode on: <em>control</em> (can the user do what they need?), <em>feedback</em> (does the UI show the arm's current state?), <em>safety</em> (does it prevent dangerous commands?), and <em>efficiency</em> (how quickly can a task be programmed?).
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════
+       WORKSHEET
+  ═══════════════════════════════════════════════════ -->
+  <div class="section-label"><span class="pill pill-worksheet">📝 Worksheet</span><hr></div>
+
+  <div class="worksheet-card">
+    <h3>Worksheet 4 — HMI Exploration &amp; Programming</h3>
+
+    <div class="ws-field">
+      <label>1. Record the range of motion for each joint from Activity 4A:</label>
+    </div>
+    <table class="ws-table">
+      <thead>
+        <tr>
+          <th>Joint</th>
+          <th>Minimum angle (°)</th>
+          <th>Maximum angle (°)</th>
+          <th>Total range (°)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td><input type="text" value="Joint 1 (Base)"></td><td><input type="text" placeholder="°"></td><td><input type="text" placeholder="°"></td><td><input type="text" placeholder="°"></td></tr>
+        <tr><td><input type="text" value="Joint 2 (Shoulder)"></td><td><input type="text" placeholder="°"></td><td><input type="text" placeholder="°"></td><td><input type="text" placeholder="°"></td></tr>
+        <tr><td><input type="text" value="Joint 3 (Elbow)"></td><td><input type="text" placeholder="°"></td><td><input type="text" placeholder="°"></td><td><input type="text" placeholder="°"></td></tr>
+        <tr><td><input type="text" value="Joint 4 (Wrist)"></td><td><input type="text" placeholder="°"></td><td><input type="text" placeholder="°"></td><td><input type="text" placeholder="°"></td></tr>
+        <tr><td><input type="text" value="Joint 5 (Wrist Pitch)"></td><td><input type="text" placeholder="°"></td><td><input type="text" placeholder="°"></td><td><input type="text" placeholder="°"></td></tr>
+        <tr><td><input type="text" value="Joint 6 (Wrist Roll)"></td><td><input type="text" placeholder="°"></td><td><input type="text" placeholder="°"></td><td><input type="text" placeholder="°"></td></tr>
+      </tbody>
+    </table>
+
+    <div class="ws-field">
+      <label>2. In the Pendant Control tab, what happened to the arm's movement when you reduced speed to 20%? How did it feel different from 100%?</label>
+      <textarea placeholder="At 100% speed, the arm... At 20% speed, the arm..."></textarea>
+    </div>
+
+    <div class="ws-field">
+      <label>3. Describe the sequence of blocks in your Blockly program from Activity 4B (the looping version):</label>
+      <textarea placeholder="1. Move to position 0 (Home)&#10;2. Wait 1000 ms&#10;3. ..."></textarea>
+    </div>
+
+    <div class="ws-field">
+      <label>4. What is the difference between sequential and event-driven programming? Give one example of each from the robot arm application.</label>
+      <textarea placeholder="Sequential: ...&#10;Event-driven: ..."></textarea>
+    </div>
+
+    <div class="ws-field">
+      <label>5. List three features of the Robot Arm application that you think are good HMI design, and explain why for each.</label>
+      <textarea style="min-height:100px;" placeholder="1. Feature: ... Why it's good: ...&#10;2. Feature: ... Why it's good: ...&#10;3. Feature: ... Why it's good: ..."></textarea>
+    </div>
+
+    <div class="ws-field">
+      <label>6. List one feature you think could be improved in the application's HMI design. What would you change, and why?</label>
+      <textarea placeholder="Feature to improve: ...&#10;My proposed change: ...&#10;Why this would be better: ..."></textarea>
+    </div>
+
+    <div class="ws-field">
+      <label>7. The IEC 60073 standard specifies colour meanings for industrial controls. Why does a standard like this matter for safety? What could go wrong if each manufacturer used different colour conventions?</label>
+      <textarea placeholder="Standards matter because... If each manufacturer used different colours..."></textarea>
+    </div>
+
+    <div class="ws-field">
+      <label>8. Extension: The Stored Positions feature allows up to 100 positions to be saved. Design a pick-and-place sequence (on paper or in Blockly) that sorts objects into two locations based on a condition. Describe your logic here.</label>
+      <textarea style="min-height:110px;" placeholder="Describe your sorting sequence: what positions you would define, what the loop logic would be, and how a conditional (if/else) would work in your program..."></textarea>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════
+       SO WHAT?
+  ═══════════════════════════════════════════════════ -->
+  <div class="section-label"><span class="pill pill-sowhat">💭 So What?</span><hr></div>
+
+  <div class="sowhat-card">
+    <h3>Why does this matter?</h3>
+    <p>You have just done what robotics engineers do every day: used a software interface to teach a robot a sequence of movements, then had it repeat that sequence automatically. The difference between your Blockly program and an industrial robot's program is mainly scale and complexity, not concept.</p>
+    <p>The pendant control method you used is functionally identical to how industrial robots are programmed by operators on factory floors worldwide — they jog each joint to a position, save it, and build up a sequence. The Blockly visual programming environment bridges the gap between that hands-on teaching approach and writing structured code.</p>
+    <p>HMI design is a discipline in its own right. Poor interfaces have caused industrial accidents — the Three Mile Island nuclear incident is partly attributed to confusing control room layout and indicator design. The principles you reviewed (feedback, consistency, error prevention) are not aesthetic preferences; they have measurable effects on operator performance and error rates.</p>
+    <p>As you progress to later modules — particularly G-code programming (Module 9) and system integration (Module 11) — you will see how the software layers build on top of what you have used today.</p>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════
+       MCQ
+  ═══════════════════════════════════════════════════ -->
+  <div class="section-label"><span class="pill pill-mcq">✅ Quick Check</span><hr></div>
+
+  <div class="mcq-card" id="mcq-section">
+    <h3>Quick Check — Module 4</h3>
+
+    <div class="mcq-q" id="q1">
+      <p>1. Which HMI design principle is violated when an application shows a red button labelled "Start"?</p>
+      <div class="mcq-options">
+        <label class="mcq-opt"><input type="radio" name="q1" value="a"> <span>Minimise cognitive load — too much information on one screen</span></label>
+        <label class="mcq-opt"><input type="radio" name="q1" value="b"> <span>Colour convention — red is standardised to mean danger or stop, not start</span></label>
+        <label class="mcq-opt"><input type="radio" name="q1" value="c"> <span>Feedback — buttons should not have labels</span></label>
+        <label class="mcq-opt"><input type="radio" name="q1" value="d"> <span>Consistency — the button should be a slider, not a button</span></label>
+      </div>
+      <div class="mcq-feedback" id="q1-fb"></div>
+    </div>
+
+    <div class="mcq-q" id="q2">
+      <p>2. In the Blockly program you created, what type of programming structure did you use to repeat the Home → Pick cycle?</p>
+      <div class="mcq-options">
+        <label class="mcq-opt"><input type="radio" name="q2" value="a"> <span>A conditional (if/else) — it checks whether to repeat</span></label>
+        <label class="mcq-opt"><input type="radio" name="q2" value="b"> <span>A variable — it stores how many times to run</span></label>
+        <label class="mcq-opt"><input type="radio" name="q2" value="c"> <span>A loop — it repeats a block of instructions a set number of times</span></label>
+        <label class="mcq-opt"><input type="radio" name="q2" value="d"> <span>An event handler — it runs when a button is clicked</span></label>
+      </div>
+      <div class="mcq-feedback" id="q2-fb"></div>
+    </div>
+
+    <div class="mcq-q" id="q3">
+      <p>3. The robot arm application is described as "event-driven". What does this mean?</p>
+      <div class="mcq-options">
+        <label class="mcq-opt"><input type="radio" name="q3" value="a"> <span>The application runs through its code from top to bottom in a fixed sequence</span></label>
+        <label class="mcq-opt"><input type="radio" name="q3" value="b"> <span>The application does nothing until something happens (a click, a message, a timer), then runs the corresponding handler</span></label>
+        <label class="mcq-opt"><input type="radio" name="q3" value="c"> <span>The application generates random events to test the arm</span></label>
+        <label class="mcq-opt"><input type="radio" name="q3" value="d"> <span>The application is controlled entirely by the Raspberry Pi, not by user input</span></label>
+      </div>
+      <div class="mcq-feedback" id="q3-fb"></div>
+    </div>
+
+    <button class="check-btn" onclick="checkMCQ()">Check answers</button>
+    <div class="score-box" id="score-box"></div>
+  </div>
+
+  <div class="bottom-nav">
+    <a class="btn btn-outline" href="module-03.html">← Module 3</a>
+    <a class="btn btn-primary" href="module-05.html">Next: Module 5 →</a>
+  </div>
+
+</div>
+
+<script>
+  const answers = { q1: 'b', q2: 'c', q3: 'b' };
+  const feedback = {
+    q1: { b: 'Correct! IEC 60073 standardises red to mean danger, stop, or fault. Using red for "Start" violates this convention and could cause an operator to hesitate or make the wrong action under pressure.', wrong: 'The specific issue here is the colour convention. IEC 60073 standardises control colours — red = danger/stop, green = running/go. A red "Start" button conflicts with this standard.' },
+    q2: { c: 'Correct! A loop repeats a block of instructions. In Blockly, the "repeat N times" block or "while" block is used to cycle the Home → Pick sequence.', wrong: 'The structure that repeats instructions is a loop. A conditional checks a condition and branches, but does not inherently repeat.' },
+    q3: { b: 'Correct! Event-driven programs wait for events (user input, network messages, timers) and respond by running the appropriate handler. They do not execute a fixed sequence from start to finish.', wrong: 'Event-driven means the program responds to events rather than running top-to-bottom. It is the dominant model for interactive software like graphical applications.' }
+  };
+
+  function checkMCQ() {
+    let score = 0;
+    ['q1','q2','q3'].forEach(q => {
+      const selected = document.querySelector(`input[name="${q}"]:checked`);
+      const fb = document.getElementById(`${q}-fb`);
+      const opts = document.querySelectorAll(`input[name="${q}"]`);
+      opts.forEach(o => o.closest('.mcq-opt').classList.remove('correct','wrong'));
+      if (!selected) { fb.className = 'mcq-feedback show bad'; fb.textContent = 'Please select an answer.'; return; }
+      const val = selected.value;
+      const correct = answers[q];
+      if (val === correct) {
+        selected.closest('.mcq-opt').classList.add('correct');
+        fb.className = 'mcq-feedback show ok';
+        fb.textContent = '✓ ' + feedback[q][correct];
+        score++;
+      } else {
+        selected.closest('.mcq-opt').classList.add('wrong');
+        document.querySelector(`input[name="${q}"][value="${correct}"]`).closest('.mcq-opt').classList.add('correct');
+        fb.className = 'mcq-feedback show bad';
+        fb.textContent = '✗ ' + feedback[q].wrong;
+      }
+    });
+    const box = document.getElementById('score-box');
+    box.className = 'score-box show ' + (score >= 2 ? 'pass' : 'fail');
+    box.textContent = `You scored ${score}/3. ` + (score === 3 ? 'Excellent — full marks!' : score === 2 ? 'Good — review the question you missed.' : 'Review the theory sections and try again.');
+  }
+</script>
+<script src="worksheet.js"></script>
+</body>
+</html>

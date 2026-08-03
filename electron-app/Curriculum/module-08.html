@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Module 8 — Advanced Control &amp; Communication</title>
+  <style>
+    :root { --bg:#f0f2f5;--card:#fff;--text:#1a1d26;--muted:#5c6370;--accent:#1e5a8a;--accent-light:#e8f0f8;--border:#d8dde6;--green:#1a7a4a;--green-light:#e8f5ee;--green-border:#a3d9bc;--orange:#b85c00;--orange-light:#fdf0e0;--orange-border:#f0c88a;--red:#c0392b;--red-light:#fdecea;--red-border:#f5b7b1;--purple:#6b21a8;--purple-light:#f3e8ff;--purple-border:#d8b4fe; }
+    *{box-sizing:border-box} body{margin:0;font-family:system-ui,-apple-system,Segoe UI,sans-serif;font-size:16px;line-height:1.65;color:var(--text);background:var(--bg)}
+    .top-nav{background:var(--accent);color:#fff;display:flex;align-items:center;gap:1rem;padding:.75rem 1.5rem;font-size:.9rem} .top-nav a{color:rgba(255,255,255,.85);text-decoration:none} .top-nav a:hover{color:#fff;text-decoration:underline} .nav-center{flex:1;text-align:center;font-weight:600}
+    .module-hero{background:var(--accent);color:#fff;padding:2rem 1.5rem 2.5rem;text-align:center} .module-badge{display:inline-block;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35);border-radius:20px;font-size:.78rem;font-weight:600;padding:.25em .9em;letter-spacing:.05em;text-transform:uppercase;margin-bottom:.75rem} .module-hero h1{margin:0 0 .5rem;font-size:1.9rem;font-weight:700} .module-hero p{margin:0;opacity:.85;font-size:1rem} .objectives{display:flex;flex-wrap:wrap;justify-content:center;gap:.4rem;margin-top:1rem} .obj{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);border-radius:4px;font-size:.78rem;padding:.2em .7em}
+    .wrap{max-width:52rem;margin:0 auto;padding:1.75rem 1.25rem 4rem}
+    .section-label{display:flex;align-items:center;gap:.6rem;margin:2.25rem 0 .75rem} .section-label .pill{display:inline-flex;align-items:center;gap:.35rem;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:.3em .8em;border-radius:20px} .pill-theory{background:var(--accent-light);color:var(--accent);border:1px solid #b3cde0} .pill-activity{background:var(--green-light);color:var(--green);border:1px solid var(--green-border)} .pill-worksheet{background:var(--purple-light);color:var(--purple);border:1px solid var(--purple-border)} .pill-sowhat{background:var(--orange-light);color:var(--orange);border:1px solid var(--orange-border)} .pill-mcq{background:#fff8e1;color:#856404;border:1px solid #f0d060} .section-label hr{flex:1;border:none;border-top:1px solid var(--border)}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1.25rem 1.5rem;margin-bottom:1.25rem;box-shadow:0 1px 3px rgba(0,0,0,.04)} .card h3{margin:0 0 .75rem;font-size:1.05rem;color:var(--accent)} .card h4{margin:1rem 0 .35rem;font-size:.95rem} .card p,.card ul,.card ol{margin:0 0 .75rem} .card ul,.card ol{padding-left:1.35rem} .card li{margin-bottom:.3rem}
+    .callout{border-radius:8px;padding:.875rem 1rem;margin:.75rem 0;font-size:.93rem;display:flex;gap:.75rem} .callout-icon{font-size:1.25rem;flex-shrink:0;line-height:1.4} .callout-body{flex:1} .callout-info{background:var(--accent-light);border:1px solid #b3cde0} .callout-warning{background:var(--orange-light);border:1px solid var(--orange-border)} .callout-tip{background:var(--green-light);border:1px solid var(--green-border)}
+    .activity-card{background:var(--green-light);border:1px solid var(--green-border);border-radius:10px;padding:1.25rem 1.5rem;margin-bottom:1.25rem} .activity-card h3{margin:0 0 .3rem;color:var(--green);font-size:1.05rem} .activity-card .app-tab{display:inline-block;background:var(--green);color:#fff;font-size:.75rem;font-weight:600;padding:.15em .6em;border-radius:4px;margin-bottom:.75rem;margin-right:.35rem} .steps{list-style:none;padding:0;margin:.5rem 0 0;counter-reset:step} .steps li{counter-increment:step;display:flex;gap:.85rem;margin-bottom:.75rem;align-items:flex-start} .steps li::before{content:counter(step);display:inline-flex;align-items:center;justify-content:center;min-width:1.75rem;height:1.75rem;background:var(--green);color:#fff;border-radius:50%;font-weight:700;font-size:.8rem;flex-shrink:0} .steps li p{margin:0;font-size:.93rem;padding-top:.2rem} .ui-ref{display:inline;background:#1a7a4a22;border:1px solid var(--green-border);border-radius:4px;font-size:.8rem;font-weight:600;padding:.1em .45em;color:var(--green)}
+    .worksheet-card{background:var(--purple-light);border:1px solid var(--purple-border);border-radius:10px;padding:1.25rem 1.5rem;margin-bottom:1.25rem} .worksheet-card h3{margin:0 0 .75rem;color:var(--purple);font-size:1.05rem} .ws-field{margin-bottom:1rem} .ws-field label{display:block;font-size:.88rem;font-weight:600;margin-bottom:.3rem} .ws-field textarea{width:100%;border:1px solid var(--purple-border);border-radius:6px;padding:.5rem .65rem;font-size:.9rem;font-family:inherit;resize:vertical;min-height:70px;background:rgba(255,255,255,.7)} .ws-field input[type=text]{width:100%;border:1px solid var(--purple-border);border-radius:6px;padding:.45rem .65rem;font-size:.9rem;font-family:inherit;background:rgba(255,255,255,.7)}
+    .sowhat-card{background:var(--orange-light);border:1px solid var(--orange-border);border-radius:10px;padding:1.25rem 1.5rem;margin-bottom:1.25rem} .sowhat-card h3{margin:0 0 .5rem;color:var(--orange);font-size:1.05rem} .sowhat-card p{margin:0 0 .5rem;font-size:.95rem}
+    .mcq-card{background:#fff8e1;border:1px solid #f0d060;border-radius:10px;padding:1.25rem 1.5rem;margin-bottom:1.25rem} .mcq-card h3{margin:0 0 1rem;color:#856404;font-size:1.05rem} .mcq-q{margin-bottom:1.25rem} .mcq-q p{font-weight:600;margin:0 0 .5rem;font-size:.95rem} .mcq-options{display:flex;flex-direction:column;gap:.35rem} .mcq-opt{display:flex;align-items:flex-start;gap:.6rem;padding:.45rem .7rem;border-radius:6px;border:1px solid #e8d030;background:rgba(255,255,255,.55);cursor:pointer;font-size:.9rem} .mcq-opt:hover{background:rgba(255,255,255,.85)} .mcq-opt input{margin-top:.15rem;flex-shrink:0;cursor:pointer} .mcq-opt.correct{background:var(--green-light);border-color:var(--green-border)} .mcq-opt.wrong{background:var(--red-light);border-color:var(--red-border)} .mcq-feedback{font-size:.83rem;margin-top:.4rem;padding:.4rem .6rem;border-radius:5px;display:none} .mcq-feedback.show{display:block} .mcq-feedback.ok{background:var(--green-light);color:var(--green);border:1px solid var(--green-border)} .mcq-feedback.bad{background:var(--red-light);color:var(--red);border:1px solid var(--red-border)} .check-btn{display:inline-block;margin-top:.5rem;padding:.45rem 1.1rem;background:#856404;color:#fff;border:none;border-radius:6px;font-size:.88rem;font-weight:600;cursor:pointer} .score-box{margin-top:1rem;padding:.75rem 1rem;border-radius:8px;font-weight:600;font-size:.93rem;display:none} .score-box.show{display:block} .score-box.pass{background:var(--green-light);color:var(--green);border:1px solid var(--green-border)} .score-box.fail{background:var(--red-light);color:var(--red);border:1px solid var(--red-border)}
+    .pid-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.75rem;margin:.75rem 0} .pid-card{border-radius:8px;padding:.85rem 1rem;text-align:center} .pid-card h5{margin:0 0 .35rem;font-size:1rem} .pid-card p{margin:0;font-size:.8rem} .pid-p{background:#dbeafe;border:1px solid #93c5fd} .pid-i{background:#dcfce7;border:1px solid #86efac} .pid-d{background:#fef3c7;border:1px solid #fcd34d}
+    .bottom-nav{display:flex;justify-content:space-between;align-items:center;margin-top:2rem;padding-top:1.5rem;border-top:1px solid var(--border)} .btn{display:inline-block;padding:.55rem 1.25rem;border-radius:7px;font-weight:600;font-size:.9rem;text-decoration:none;border:none;cursor:pointer} .btn-primary{background:var(--accent);color:#fff} .btn-outline{background:transparent;color:var(--accent);border:1px solid var(--accent)} .btn:hover{opacity:.88}
+    @media(max-width:480px){.pid-row{grid-template-columns:1fr}}
+  </style>
+<link rel="stylesheet" href="worksheet.css">
+</head>
+<body>
+<nav class="top-nav">
+  <a href="index.html">← All Modules</a>
+  <span class="nav-center">Module 8 of 16</span>
+  <a href="module-09.html">Next: Module 9 →</a>
+</nav>
+<div class="module-hero">
+  <div class="module-badge">Intermediate · Module 8</div>
+  <h1>Advanced Control &amp; Communication</h1>
+  <p>Duration: 3–4 hours &nbsp;·&nbsp; Prerequisites: Modules 3, 5, 7</p>
+  <div class="objectives">
+    <span class="obj">Explain P, I, and D terms in a PID controller</span>
+    <span class="obj">Observe the effect of speed on movement quality</span>
+    <span class="obj">Describe the full communication stack</span>
+    <span class="obj">Explain path interpolation</span>
+  </div>
+</div>
+<div class="wrap">
+
+<div class="section-label"><span class="pill pill-theory">📖 Theory</span><hr></div>
+  <div class="card">
+    <h3>8.1 — PID Control in Depth</h3>
+    <img src="images/pid-block.svg" alt="PID control block diagram" style="width:100%;height:auto;display:block;border-radius:8px;margin:12px 0;">
+    <p>In Module 3 you learned that the servos use PID control internally. Here we examine what each term actually does and how tuning PID gains affects system behaviour.</p>
+    <div class="pid-row">
+      <div class="pid-card pid-p">
+        <h5>P — Proportional</h5>
+        <p>Output is proportional to current error. Large error → large correction. Too high: oscillation. Too low: slow response and steady-state offset.</p>
+      </div>
+      <div class="pid-card pid-i">
+        <h5>I — Integral</h5>
+        <p>Accumulates past error over time. Eliminates the steady-state offset that P alone cannot correct. Too high: slow oscillation and windup.</p>
+      </div>
+      <div class="pid-card pid-d">
+        <h5>D — Derivative</h5>
+        <p>Reacts to the rate of change of error. Damps oscillation and improves settling. Too high: amplifies sensor noise, jerky motion.</p>
+      </div>
+    </div>
+    <div class="callout callout-info">
+      <span class="callout-icon">🎛️</span>
+      <div class="callout-body"><strong>Tuning in practice:</strong></br> Start with P only (I and D at zero) and increase until the system oscillates. Then reduce P slightly. Add D to damp the oscillation. Finally add I to eliminate offset. This is Ziegler-Nichols method — widely used as a starting point.</div>
+    </div>
+    <h4>Why does the servo need PID at all?</h4>
+    <p>Without PID, if you command a servo to move to 90° it would apply full motor power until it gets there — then overshoot past 90°, reverse, overshoot again, and oscillate indefinitely. The PID controller continuously reduces power as the joint approaches the target, stopping it smoothly at the correct angle.</p>
+  </div>
+
+  <div class="card">
+    <h3>8.2 — Path Interpolation</h3>
+    <img src="images/path-interpolation.svg" alt="Path interpolation types" style="width:100%;height:auto;display:block;border-radius:8px;margin:12px 0;">
+    <p>Moving from Position A to Position B in joint space is simple: command each joint to its new angle. But this produces a curved path in Cartesian space — the end effector does not move in a straight line.</p>
+    <p>For applications requiring a straight tool path (e.g. welding or cutting), <strong>linear interpolation (LINTERP)</strong> is needed. The controller splits the move into many small steps, recalculating joint angles at each step so the end effector moves in a straight line.</p>
+    <ul>
+      <li><strong>Joint interpolation</strong> — simple, each joint moves at its own rate. Produces curved Cartesian path. Fast.</li>
+      <li><strong>Linear interpolation</strong> — end effector moves in a straight line. Requires kinematics calculation at every step. Slower.</li>
+      <li><strong>Circular interpolation</strong> — end effector follows an arc. Used in CNC and welding. Complex.</li>
+    </ul>
+    <div class="callout callout-tip">
+      <span class="callout-icon">🛤️</span>
+      <div class="callout-body">The Raspberry Pi server in our system supports linear path interpolation — you can see this in the G-Code control tab, where linear moves (G01 commands) are translated into step-by-step interpolated joint movements.</div>
+    </div>
+    <div class="callout callout-info">
+      <span class="callout-icon">⏱️</span>
+      <div class="callout-body">
+        <strong>Communication Latency Chain</strong></br>
+        A command travels through several stages, each adding latency: <strong>App UI event</strong> → <strong>WebSocket send</strong> → <strong>TCP/IP over network (~1–5 ms on LAN)</strong> → <strong>Server on Pi</strong> (parses command, queues serial write) → <strong>UART serial write</strong> → <strong>Servo internal PID loop</strong> (runs at ~50 Hz, ~20 ms cycle). Crucially, PID runs <em>inside the ST3215 servo IC</em> — not in the app or server. This means the servo actively holds its target position even if the network drops temporarily.
+      </div>
+    </div>
+    <div class="callout callout-info">
+      <span class="callout-icon">🔢</span>
+      <div class="callout-body">
+        <strong>Speed Units — Steps vs Degrees</strong></br>
+        Speed is expressed differently depending on which part of the system you are working in. The <strong>Blockly</strong> blocks use <strong>degrees per second</strong>. The <strong>G-code F parameter</strong> (feed rate) is in <strong>steps per second</strong>. The conversion ratio is <strong>11.37 steps per degree</strong>, so a G-code command of <code>F1137</code> is approximately 100°/sec. When comparing speeds across the two languages, always convert to a common unit first.
+      </div>
+    </div>
+    <div class="callout callout-info">
+      <span class="callout-icon">📡</span>
+      <div class="callout-body">
+        <strong>Push vs Poll — Why the Display is Smooth</strong></br>
+        Most web applications use <em>polling</em> — the browser repeatedly asks "any updates?" every few seconds. The robot arm app uses <em>push</em> — the server broadcasts a status update automatically after every servo bus poll (~50 times per second / every 20 ms). This means the Joint Control telemetry updates in real time without the app needing to ask. If the server stops sending for more than 400 ms, the app falls back to polling automatically. To observe this live: open Electron's developer tools (Ctrl+Shift+I), go to the Network tab, and filter by WebSocket — you can watch the JSON status stream arrive continuously.
+      </div>
+    </div>
+  </div>
+
+  <div class="section-label"><span class="pill pill-activity">🔧 Software Activity</span><hr></div>
+  <div class="activity-card">
+    <h3>Activity 8A — Observe control behaviour at different speeds</h3>
+    <span class="app-tab">App tab: Pendant Control</span>
+    <span class="app-tab">App tab: Joint Control</span>
+    <img src="images/speed-overshoot.svg" alt="Speed effect on position response" style="width:100%;height:auto;display:block;border-radius:8px;margin:12px 0;">
+    <ol class="steps">
+      <li><p>Set the arm to a starting position (e.g. all joints at 0°). In <span class="ui-ref">Pendant Control</span>, set speed to <strong>10%</strong>. Command Joint 2 to move from 0° to 60°. Watch the 3D view and observe how smoothly it moves. Note whether there is any overshoot past 60°.</p></li>
+      <li><p>Return to 0°. Repeat the same 0°→60° move at <strong>50% speed</strong>. Then again at <strong>100% speed</strong>. For each, note whether the joint overshoots its target and how long it takes to settle.</p></li>
+      <li><p>In <span class="ui-ref">Joint Control</span>, watch the live angle reading as a joint moves. At 100% speed, does the angle reading overshoot and then come back? Record what you observe.</p></li>
+      <li><p>Now check the <strong>update interval</strong> in <span class="ui-ref">Settings</span>. Halve the update interval (i.e. poll twice as often). Repeat the 100% speed test — does the feedback look different? Record your observation.</p></li>
+      <li><p>Open the <span class="ui-ref">Settings</span> tab and find <strong>Movement Mode</strong>. Switch between <strong>PTP (Point-to-Point)</strong> and <strong>Linear Cartesian</strong>. In PTP mode, all joints move to their targets simultaneously, producing a curved path through Cartesian space. In Linear Cartesian mode, the server computes intermediate waypoints so the tool tip moves in a straight line.</p></li>
+      <li><p>Command the same two-pose move (e.g. Home → a position with the arm extended) in both PTP and Linear Cartesian mode. Enable the <strong>End-Effector Trace</strong> overlay in 3D Visualisation to see the path difference. In which mode is the path straighter? Note the speed difference — Linear Cartesian is typically slower because of the additional computation.</p></li>
+    </ol>
+  </div>
+
+  <div class="section-label"><span class="pill pill-worksheet">📝 Worksheet</span><hr></div>
+  <div class="worksheet-card">
+    <h3>Worksheet 8 — Control &amp; Communication</h3>
+    <div class="ws-field">
+      <label>1. Describe what you observed at 10%, 50%, and 100% speed for the 0°→60° move on Joint 2:</label>
+      <textarea placeholder="10%: ...&#10;50%: ...&#10;100%: ..."></textarea>
+    </div>
+    <div class="ws-field">
+      <label>2. Did the joint overshoot at high speed? If so, explain this in terms of PID control — which term is responsible for reducing overshoot?</label>
+      <textarea placeholder="Overshoot at high speed occurs because... The ___ (P/I/D) term reduces overshoot by..."></textarea>
+    </div>
+    <div class="ws-field">
+      <label>3. Explain in your own words the difference between joint interpolation and linear interpolation. Give one application where each would be the better choice.</label>
+      <textarea placeholder="Joint interpolation: ... best for...&#10;Linear interpolation: ... best for..."></textarea>
+    </div>
+    <div class="ws-field">
+      <label>4. The full communication path for a move command goes: App → WebSocket → Pi → Serial bus → Servo. At each step, describe what form the data takes and any key parameters (e.g. JSON, angle value, servo ID).</label>
+      <textarea placeholder="App: click 'Move to 60°' → generates JSON message {joint:2, angle:60, speed:50}&#10;WebSocket: transmits JSON over TCP to port 8080&#10;Pi: receives JSON, parses it, formats ST3215 serial packet...&#10;Serial bus: ...&#10;Servo: ..."></textarea>
+    </div>
+    <div class="ws-field">
+      <label>5. If the D (derivative) gain is set too high, what would you expect to see in the arm's motion? Why?</label>
+      <input type="text" placeholder="Too high D gain would cause... because D reacts to...">
+    </div>
+    <div class="ws-field">
+      <label>6. Extension: The Raspberry Pi polls each servo at a set interval. If the interval is 100 ms, what is the maximum frequency at which position updates are received? Could this cause problems for high-speed moves?</label>
+      <textarea placeholder="100 ms interval = ___ Hz update rate. For a fast move this could cause... because..."></textarea>
+    </div>
+  </div>
+
+  <div class="section-label"><span class="pill pill-sowhat">💭 So What?</span><hr></div>
+  <div class="sowhat-card">
+    <h3>Why does this matter?</h3>
+    <p>PID control is everywhere: thermostats, aircraft autopilots, cruise control, hard drive heads, injection moulding machines. Understanding what each term does and how to tune it is one of the most practically useful skills in control engineering. A poorly tuned PID loop wastes energy, damages hardware, and produces inconsistent results. A well-tuned loop is nearly invisible — it just works.</p>
+    <p>Path interpolation matters the moment you need the robot to do something more precise than "move from here to there." In welding, the difference between joint interpolation and linear interpolation is the difference between a good weld and a scrapped part. The fact that the communication stack supports this — all the way down to the Raspberry Pi calculating intermediate points and sending them over the serial bus — reflects how industrial robot control systems work at a fundamental level.</p>
+  </div>
+
+  <div class="section-label"><span class="pill pill-mcq">✅ Quick Check</span><hr></div>
+  <div class="mcq-card">
+    <h3>Quick Check — Module 8</h3>
+    <div class="mcq-q" id="q1">
+      <p>1. A joint oscillates around its target position and never fully settles. Which PID gain adjustment is most likely to fix this?</p>
+      <div class="mcq-options">
+        <label class="mcq-opt"><input type="radio" name="q1" value="a"> <span>Increase P — it will push the joint harder to the target</span></label>
+        <label class="mcq-opt"><input type="radio" name="q1" value="b"> <span>Decrease P and increase D — reduce the driving force and add damping</span></label>
+        <label class="mcq-opt"><input type="radio" name="q1" value="c"> <span>Increase I — accumulated error will eventually force it to stop</span></label>
+        <label class="mcq-opt"><input type="radio" name="q1" value="d"> <span>Remove D entirely — derivative gain causes oscillation</span></label>
+      </div>
+      <div class="mcq-feedback" id="q1-fb"></div>
+    </div>
+    <div class="mcq-q" id="q2">
+      <p>2. A robot is cutting a straight slot in a flat sheet. Which interpolation mode should be used?</p>
+      <div class="mcq-options">
+        <label class="mcq-opt"><input type="radio" name="q2" value="a"> <span>Joint interpolation — simplest to program</span></label>
+        <label class="mcq-opt"><input type="radio" name="q2" value="b"> <span>Linear interpolation — ensures the tool travels in a straight line</span></label>
+        <label class="mcq-opt"><input type="radio" name="q2" value="c"> <span>Circular interpolation — cuts produce curved paths anyway</span></label>
+        <label class="mcq-opt"><input type="radio" name="q2" value="d"> <span>No interpolation — command the start and end points only</span></label>
+      </div>
+      <div class="mcq-feedback" id="q2-fb"></div>
+    </div>
+    <div class="mcq-q" id="q3">
+      <p>3. The I (integral) term in a PID controller is specifically needed to eliminate which of these problems?</p>
+      <div class="mcq-options">
+        <label class="mcq-opt"><input type="radio" name="q3" value="a"> <span>Oscillation at high speed</span></label>
+        <label class="mcq-opt"><input type="radio" name="q3" value="b"> <span>Steady-state error — a small remaining offset that P alone cannot correct</span></label>
+        <label class="mcq-opt"><input type="radio" name="q3" value="c"> <span>Sensor noise amplification</span></label>
+        <label class="mcq-opt"><input type="radio" name="q3" value="d"> <span>Overshoot on fast moves</span></label>
+      </div>
+      <div class="mcq-feedback" id="q3-fb"></div>
+    </div>
+    <button class="check-btn" onclick="checkMCQ()">Check answers</button>
+    <div class="score-box" id="score-box"></div>
+  </div>
+
+  <div class="bottom-nav">
+    <a class="btn btn-outline" href="module-07.html">← Module 7</a>
+    <a class="btn btn-primary" href="module-09.html">Next: Module 9 →</a>
+  </div>
+</div>
+<script>
+  const answers={q1:'b',q2:'b',q3:'b'};
+  const feedback={
+    q1:{b:'Correct! Oscillation is often caused by too much P (driving too hard) without enough D (damping). Reducing P and adding D settles the response.',wrong:'Oscillation is a sign of too much P and not enough damping. Reduce P and increase D to damp the oscillation.'},
+    q2:{b:'Correct! Linear interpolation keeps the tool on a straight Cartesian path — essential for cutting slots, welding seams, or any straight-line tool motion.',wrong:'Linear interpolation is required for a straight-line tool path. Joint interpolation produces a curved path in Cartesian space, which would produce a curved slot.'},
+    q3:{b:'Correct! The I term accumulates error over time. Even a tiny residual error grows the I contribution until the controller corrects it — eliminating steady-state offset.',wrong:'The I term eliminates steady-state error — the small offset that remains even after P has settled. D addresses noise/overshoot; P drives the initial response.'}
+  };
+  function checkMCQ(){
+    let score=0;
+    ['q1','q2','q3'].forEach(q=>{
+      const sel=document.querySelector(`input[name="${q}"]:checked`);
+      const fb=document.getElementById(`${q}-fb`);
+      document.querySelectorAll(`input[name="${q}"]`).forEach(o=>o.closest('.mcq-opt').classList.remove('correct','wrong'));
+      if(!sel){fb.className='mcq-feedback show bad';fb.textContent='Please select an answer.';return;}
+      const v=sel.value,c=answers[q];
+      if(v===c){sel.closest('.mcq-opt').classList.add('correct');fb.className='mcq-feedback show ok';fb.textContent='✓ '+feedback[q][c];score++;}
+      else{sel.closest('.mcq-opt').classList.add('wrong');document.querySelector(`input[name="${q}"][value="${c}"]`).closest('.mcq-opt').classList.add('correct');fb.className='mcq-feedback show bad';fb.textContent='✗ '+feedback[q].wrong;}
+    });
+    const box=document.getElementById('score-box');
+    box.className='score-box show '+(score>=2?'pass':'fail');
+    box.textContent=`You scored ${score}/3. `+(score===3?'Excellent!':score===2?'Good — review the missed question.':'Review the theory and try again.');
+  }
+</script>
+<script src="worksheet.js"></script>
+</body>
+</html>

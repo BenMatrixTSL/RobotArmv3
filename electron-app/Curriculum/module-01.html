@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Module 1 — Introduction &amp; Safety</title>
+  <style>
+    :root {
+      --bg: #f0f2f5;
+      --card: #fff;
+      --text: #1a1d26;
+      --muted: #5c6370;
+      --accent: #1e5a8a;
+      --accent-light: #e8f0f8;
+      --border: #d8dde6;
+      --green: #1a7a4a;
+      --green-light: #e8f5ee;
+      --green-border: #a3d9bc;
+      --orange: #b85c00;
+      --orange-light: #fdf0e0;
+      --orange-border: #f0c88a;
+      --red: #c0392b;
+      --red-light: #fdecea;
+      --red-border: #f5b7b1;
+      --purple: #6b21a8;
+      --purple-light: #f3e8ff;
+      --purple-border: #d8b4fe;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, sans-serif; font-size: 16px; line-height: 1.65; color: var(--text); background: var(--bg); }
+
+    /* ?? Nav ?? */
+    .top-nav { background: var(--accent); color: #fff; display: flex; align-items: center; gap: 1rem; padding: 0.75rem 1.5rem; font-size: 0.9rem; }
+    .top-nav a { color: rgba(255,255,255,0.85); text-decoration: none; }
+    .top-nav a:hover { color: #fff; text-decoration: underline; }
+    .nav-center { flex: 1; text-align: center; font-weight: 600; }
+
+    /* ?? Hero ?? */
+    .module-hero { background: var(--accent); color: #fff; padding: 2rem 1.5rem 2.5rem; text-align: center; }
+    .module-badge { display: inline-block; background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.35); border-radius: 20px; font-size: 0.78rem; font-weight: 600; padding: 0.25em 0.9em; letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 0.75rem; }
+    .module-hero h1 { margin: 0 0 0.5rem; font-size: 1.9rem; font-weight: 700; }
+    .module-hero p { margin: 0; opacity: 0.85; font-size: 1rem; }
+    .objectives { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.4rem; margin-top: 1rem; }
+    .obj { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); border-radius: 4px; font-size: 0.78rem; padding: 0.2em 0.7em; }
+
+    /* ?? Layout ?? */
+    .wrap { max-width: 52rem; margin: 0 auto; padding: 1.75rem 1.25rem 4rem; }
+
+    /* ?? Section labels ?? */
+    .section-label { display: flex; align-items: center; gap: 0.6rem; margin: 2.25rem 0 0.75rem; }
+    .section-label .pill { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; padding: 0.3em 0.8em; border-radius: 20px; }
+    .pill-theory  { background: var(--accent-light); color: var(--accent); border: 1px solid #b3cde0; }
+    .pill-activity{ background: var(--green-light); color: var(--green); border: 1px solid var(--green-border); }
+    .pill-worksheet { background: var(--purple-light); color: var(--purple); border: 1px solid var(--purple-border); }
+    .pill-sowhat  { background: var(--orange-light); color: var(--orange); border: 1px solid var(--orange-border); }
+    .pill-mcq     { background: #fff8e1; color: #856404; border: 1px solid #f0d060; }
+    .section-label hr { flex: 1; border: none; border-top: 1px solid var(--border); }
+
+    /* ?? Cards ?? */
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 1.25rem 1.5rem; margin-bottom: 1.25rem; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+    .card h3 { margin: 0 0 0.75rem; font-size: 1.05rem; color: var(--accent); }
+    .card h4 { margin: 1rem 0 0.35rem; font-size: 0.95rem; }
+    .card p, .card ul, .card ol { margin: 0 0 0.75rem; }
+    .card ul, .card ol { padding-left: 1.35rem; }
+    .card li { margin-bottom: 0.25rem; }
+
+    /* ?? Callout ?? */
+    .callout { border-radius: 8px; padding: 0.875rem 1rem 0.875rem 1rem; margin: 0.75rem 0; font-size: 0.93rem; display: flex; gap: 0.75rem; }
+    .callout-icon { font-size: 1.25rem; flex-shrink: 0; line-height: 1.4; }
+    .callout-body { flex: 1; }
+    .callout-info { background: var(--accent-light); border: 1px solid #b3cde0; }
+    .callout-warning { background: var(--orange-light); border: 1px solid var(--orange-border); }
+    .callout-danger { background: var(--red-light); border: 1px solid var(--red-border); }
+    .callout-tip { background: var(--green-light); border: 1px solid var(--green-border); }
+
+    /* ?? Activity steps ?? */
+    .activity-card { background: var(--green-light); border: 1px solid var(--green-border); border-radius: 10px; padding: 1.25rem 1.5rem; margin-bottom: 1.25rem; }
+    .activity-card h3 { margin: 0 0 0.3rem; color: var(--green); font-size: 1.05rem; }
+    .activity-card .app-tab { display: inline-block; background: var(--green); color: #fff; font-size: 0.75rem; font-weight: 600; padding: 0.15em 0.6em; border-radius: 4px; margin-bottom: 0.75rem; }
+    .steps { list-style: none; padding: 0; margin: 0.5rem 0 0; counter-reset: step; }
+    .steps li { counter-increment: step; display: flex; gap: 0.85rem; margin-bottom: 0.75rem; align-items: flex-start; }
+    .steps li::before { content: counter(step); display: inline-flex; align-items: center; justify-content: center; min-width: 1.75rem; height: 1.75rem; background: var(--green); color: #fff; border-radius: 50%; font-weight: 700; font-size: 0.8rem; flex-shrink: 0; }
+    .steps li p { margin: 0; font-size: 0.93rem; padding-top: 0.2rem; }
+    .ui-ref { display: inline; background: #1a7a4a22; border: 1px solid var(--green-border); border-radius: 4px; font-size: 0.8rem; font-weight: 600; padding: 0.1em 0.45em; color: var(--green); }
+
+    /* ?? Worksheet ?? */
+    .worksheet-card { background: var(--purple-light); border: 1px solid var(--purple-border); border-radius: 10px; padding: 1.25rem 1.5rem; margin-bottom: 1.25rem; }
+    .worksheet-card h3 { margin: 0 0 0.75rem; color: var(--purple); font-size: 1.05rem; }
+    .ws-field { margin-bottom: 1rem; }
+    .ws-field label { display: block; font-size: 0.88rem; font-weight: 600; margin-bottom: 0.3rem; }
+    .ws-field textarea { width: 100%; border: 1px solid var(--purple-border); border-radius: 6px; padding: 0.5rem 0.65rem; font-size: 0.9rem; font-family: inherit; resize: vertical; min-height: 70px; background: rgba(255,255,255,0.7); }
+    .ws-field input[type="text"] { width: 100%; border: 1px solid var(--purple-border); border-radius: 6px; padding: 0.45rem 0.65rem; font-size: 0.9rem; font-family: inherit; background: rgba(255,255,255,0.7); }
+    .ws-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; margin: 0.5rem 0 1rem; }
+    .ws-table th { background: rgba(107,33,168,0.12); padding: 0.4rem 0.6rem; text-align: left; border: 1px solid var(--purple-border); font-size: 0.8rem; }
+    .ws-table td { border: 1px solid var(--purple-border); padding: 0; }
+    .ws-table td input[type="text"] { width: 100%; border: none; background: transparent; padding: 0.4rem 0.5rem; font-size: 0.85rem; font-family: inherit; }
+    .ws-table td input[type="text"]:focus { outline: 2px solid var(--purple); outline-offset: -2px; }
+
+    /* ?? So What ?? */
+    .sowhat-card { background: var(--orange-light); border: 1px solid var(--orange-border); border-radius: 10px; padding: 1.25rem 1.5rem; margin-bottom: 1.25rem; }
+    .sowhat-card h3 { margin: 0 0 0.5rem; color: var(--orange); font-size: 1.05rem; }
+    .sowhat-card p { margin: 0 0 0.5rem; font-size: 0.95rem; }
+
+    /* ?? MCQ ?? */
+    .mcq-card { background: #fff8e1; border: 1px solid #f0d060; border-radius: 10px; padding: 1.25rem 1.5rem; margin-bottom: 1.25rem; }
+    .mcq-card h3 { margin: 0 0 1rem; color: #856404; font-size: 1.05rem; }
+    .mcq-q { margin-bottom: 1.25rem; }
+    .mcq-q p { font-weight: 600; margin: 0 0 0.5rem; font-size: 0.95rem; }
+    .mcq-options { display: flex; flex-direction: column; gap: 0.35rem; }
+    .mcq-opt { display: flex; align-items: flex-start; gap: 0.6rem; padding: 0.45rem 0.7rem; border-radius: 6px; border: 1px solid #e8d030; background: rgba(255,255,255,0.55); cursor: pointer; font-size: 0.9rem; transition: background 0.1s; }
+    .mcq-opt:hover { background: rgba(255,255,255,0.85); }
+    .mcq-opt input { margin-top: 0.15rem; flex-shrink: 0; cursor: pointer; }
+    .mcq-opt.correct { background: var(--green-light); border-color: var(--green-border); }
+    .mcq-opt.wrong   { background: var(--red-light); border-color: var(--red-border); }
+    .mcq-feedback { font-size: 0.83rem; margin-top: 0.4rem; padding: 0.4rem 0.6rem; border-radius: 5px; display: none; }
+    .mcq-feedback.show { display: block; }
+    .mcq-feedback.ok { background: var(--green-light); color: var(--green); border: 1px solid var(--green-border); }
+    .mcq-feedback.bad { background: var(--red-light); color: var(--red); border: 1px solid var(--red-border); }
+    .check-btn { display: inline-block; margin-top: 0.5rem; padding: 0.45rem 1.1rem; background: #856404; color: #fff; border: none; border-radius: 6px; font-size: 0.88rem; font-weight: 600; cursor: pointer; }
+    .check-btn:hover { background: #6b4e03; }
+    .score-box { margin-top: 1rem; padding: 0.75rem 1rem; border-radius: 8px; font-weight: 600; font-size: 0.93rem; display: none; }
+    .score-box.show { display: block; }
+    .score-box.pass { background: var(--green-light); color: var(--green); border: 1px solid var(--green-border); }
+    .score-box.fail { background: var(--red-light); color: var(--red); border: 1px solid var(--red-border); }
+
+    /* ?? Risk table ?? */
+    .risk-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; margin: 0.75rem 0; }
+    .risk-table th { background: #eef3f8; padding: 0.45rem 0.6rem; text-align: left; border: 1px solid var(--border); }
+    .risk-table td { border: 1px solid var(--border); padding: 0.4rem 0.6rem; vertical-align: top; }
+    .risk-high { background: #fdecea; color: var(--red); font-weight: 600; }
+    .risk-med  { background: #fdf0e0; color: var(--orange); font-weight: 600; }
+    .risk-low  { background: var(--green-light); color: var(--green); font-weight: 600; }
+
+    /* ?? TODO ?? */
+    .todo-block { background: var(--red-light); border: 2px dashed var(--red); border-radius: 8px; padding: 1rem 1.25rem; margin: 0.75rem 0; color: var(--red); font-size: 0.9rem; }
+    .todo-block strong { display: block; margin-bottom: 0.25rem; }
+
+    kbd { background: #eef1f6; border: 1px solid var(--border); border-radius: 4px; font-family: Consolas, monospace; font-size: 0.8rem; padding: 0.1em 0.4em; }
+
+    /* ?? Bottom nav ?? */
+    .bottom-nav { display: flex; justify-content: space-between; align-items: center; margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border); }
+    .btn { display: inline-block; padding: 0.55rem 1.25rem; border-radius: 7px; font-weight: 600; font-size: 0.9rem; text-decoration: none; border: none; cursor: pointer; }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-outline { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
+    .btn:hover { opacity: 0.88; }
+  </style>
+<link rel="stylesheet" href="worksheet.css">
+</head>
+<body>
+
+<nav class="top-nav">
+  <a href="index.html">← All Modules</a>
+  <span class="nav-center">Module 1 of 16</span>
+  <a href="module-02.html">Next: Module 2 →</a>
+</nav>
+
+<div class="module-hero">
+  <div class="module-badge">Foundation · Module 1</div>
+  <h1>Introduction &amp; Safety Fundamentals</h1>
+  <p>Duration: 2–3 hours &nbsp;·&nbsp; Prerequisites: None</p>
+  <div class="objectives">
+    <span class="obj">Identify robot arm hazards</span>
+    <span class="obj">Perform a basic risk assessment</span>
+    <span class="obj">Follow safe operating procedures</span>
+    <span class="obj">Use the 3D visualisation tab</span>
+    <span class="obj">Read the LED status strip</span>
+    <span class="obj">Take and release arm control</span>
+  </div>
+</div>
+
+<div class="wrap">
+
+<!-- ??????????????????????????????????????????????????
+       SECTION 1: THEORY — WHAT IS A ROBOT ARM?
+  ??????????????????????????????????????????????????? -->
+  <div class="section-label"><span class="pill pill-theory">📖 Theory</span><hr></div>
+
+  <div class="card">
+    <h3>1.1 — What is a Robot Arm?</h3>
+    <img src="images/anatomy.svg" alt="Robot arm anatomy diagram" style="width:100%;height:auto;display:block;border-radius:8px;margin:12px 0;">
+    <p>A <strong>robot arm</strong> (also called a robotic manipulator) is a mechanical device that can move and position objects in three-dimensional space. Unlike a human arm, it follows instructions exactly — it will not stop if you get in the way.</p>
+
+    <h4>Key parts of any robot arm:</h4>
+    <ul>
+      <li><strong>Base</strong> — the fixed mounting point (like your shoulder socket)</li>
+      <li><strong>Links</strong> — the rigid sections that connect one joint to the next (like your upper arm and forearm)</li>
+      <li><strong>Joints</strong> — the connection points that allow rotation (like your elbow and wrist)</li>
+      <li><strong>End Effector</strong> — the tool at the tip of the arm that does the actual work (like your hand)</li>
+    </ul>
+
+    <div class="callout callout-info">
+      <span class="callout-icon">🔩</span>
+      <div class="callout-body">
+        <strong>Degrees of Freedom (DoF)</strong></br>
+        Each joint gives the arm one extra degree of freedom — one more independent way to move. Our robot arm has 6 joints, meaning it has 6 degrees of freedom. More DoF = more flexible, but also more complex to control.
+      </div>
+    </div>
+
+    <h4>Where are robot arms used?</h4>
+    <ul>
+      <li><strong>Pick-and-place</strong> — moving components along a production line</li>
+      <li><strong>Welding &amp; painting</strong> — consistent, repeatable finishing</li>
+      <li><strong>Assembly</strong> — inserting screws, placing circuit boards</li>
+      <li><strong>Inspection</strong> — holding a camera over a product</li>
+      <li><strong>Surgery assistance</strong> — precise movements inside the body</li>
+    </ul>
+  </div>
+
+  <!-- ?? SOFTWARE ACTIVITY 1 ?? -->
+  <div class="section-label"><span class="pill pill-activity">🔧 Software Activity</span><hr></div>
+
+  <div class="activity-card">
+    <h3>Activity 1A — Explore the arm structure in 3D</h3>
+    <span class="app-tab">App tab: 3D Visualisation</span>
+    <p style="font-size:0.9rem;margin:0 0 0.75rem;">Open the Robot Arm Control Application and navigate to the <strong>3D Visualisation</strong> tab. You should see a rendered model of the arm.</p>
+    <ol class="steps">
+      <li><p>Launch the Robot Arm application on your PC (or run it from the robot arm touchscreen).</p></li>
+      <li><p>Click the <span class="ui-ref">3D Visualisation</span> tab in the top navigation bar.</p></li>
+      <li><p>Use your mouse to rotate the view: <strong>left-click + drag</strong> to orbit, <strong>scroll wheel</strong> to zoom, <strong>right-click + drag</strong> to pan.</p></li>
+      <li><p>Count the number of visible <strong>joints</strong> (pivot points shown as cylinders or spheres) in the model. Write this number in the worksheet below.</p></li>
+      <li><p>Count the number of <strong>links</strong> (the rigid segments between joints). Write this too.</p></li>
+      <li><p>Look at the <strong>end effector</strong> at the tip of the arm. Note its shape and what it might be used for.</p></li>
+      <li><p>In the toolbar above the 3D view, enable the <span class="ui-ref">Movement Envelope</span> overlay. You should see a sphere or volume appear around the arm showing the full space it can reach. This is the working envelope — never enter this volume with torque enabled.</p></li>
+      <li><p>Enable the <span class="ui-ref">End-Effector Trace</span> overlay, then use the simulation mode sliders (bottom of the 3D view panel) to sweep a joint angle. Watch the trace plot the path the tool tip would follow. This overlay will be used in later modules to visualise planned paths.</p></li>
+    </ol>
+  </div>
+
+  <!-- ??????????????????????????????????????????????????
+       SECTION 2: THEORY — SAFETY
+  ??????????????????????????????????????????????????? -->
+  <div class="section-label"><span class="pill pill-theory">📖 Theory</span><hr></div>
+
+  <div class="card">
+    <h3>1.2 — Why Safety is the First Priority</h3>
+    <img src="images/estop-flowchart.svg" alt="Emergency stop procedure flowchart" style="width:100%;height:auto;display:block;border-radius:8px;margin:12px 0;">
+    <p>Robot arms are designed to move with force and speed. They do not have built-in awareness of people nearby. A servo motor can generate significant torque — enough to cause a crush injury. Electrical hazards also exist around the power supply and wiring.</p>
+
+    <div class="callout callout-danger">
+      <span class="callout-icon">⚠️</span>
+      <div class="callout-body">
+        <strong>The robot will not stop for you.</strong></br>
+        Unlike a person, a robot arm executes its programmed motion regardless of what is in the way. Never assume it will detect your presence and stop.
+      </div>
+    </div>
+
+    <h4>The three main hazard categories:</h4>
+    <ul>
+      <li><strong>Pinch and crush points</strong> — gaps between moving links and joints that can trap fingers or hands</li>
+      <li><strong>Unexpected or rapid motion</strong> — the arm moving suddenly when you are too close, or faster than expected after a speed change</li>
+      <li><strong>Electrical hazards</strong> — exposed connections, damaged cables, or operating near liquids</li>
+    </ul>
+
+    <h4>The working envelope</h4>
+    <p>The <strong>working envelope</strong> is the full volume of space the arm can reach. <strong>Never enter the working envelope while the arm has torque enabled.</strong> Even if the arm appears to be stationary, a signal could cause it to move at any time.</p>
+
+    <h4>Enabling and disabling torque</h4>
+    <p>Each joint is driven by a servo motor. <strong>Torque</strong> is the rotational force that moves the joint. When torque is <em>disabled</em>, the joints can be moved freely by hand and the arm is safe to approach. When torque is <em>enabled</em>, the arm is under active control and must be treated as live machinery.</p>
+
+    <div class="callout callout-info">
+      <span class="callout-icon">💡</span>
+      <div class="callout-body">
+        <strong>LED Status Strip</strong></br>
+        The arm has a coloured LED strip that shows its current state at a glance. Always check the strip colour before approaching the arm. <strong>grey</strong> = torque disabled (safe to approach), <strong>solid green</strong> = connected and ready, <strong>red</strong> = fault or error, <strong>flashing orange</strong> = thermal overtemperature fault, <strong>yellow comet animation</strong> = arm is actively moving.
+      </div>
+    </div>
+
+    <div class="callout callout-warning">
+      <span class="callout-icon">🔐</span>
+      <div class="callout-body">
+        <strong>Control Session — Software Lockout</strong></br>
+        Only one computer can send movement commands to the arm at a time. Before issuing any movement, press <strong>Take Control</strong> in the <span class="ui-ref">Connection</span> tab. This is the software equivalent of a physical lockout/tagout — other users can observe the arm's status but cannot move it until you release control. Always press <strong>Release Control</strong> when you have finished, and release control before approaching the arm.
+      </div>
+    </div>
+
+    <div class="callout callout-warning">
+      <span class="callout-icon">⚠️</span>
+      <div class="callout-body">
+        <strong>Emergency Stop procedure</strong></br>
+        If the arm moves unexpectedly, or someone is at risk: <strong>stop the program immediately</strong> using the application's stop control, then power down the arm. Investigate before restarting. Never restart without understanding why the unexpected motion occurred.
+      </div>
+    </div>
+  </div>
+
+  <!-- ?? SOFTWARE ACTIVITY 2 ?? -->
+  <div class="section-label"><span class="pill pill-activity">🔧 Software Activity</span><hr></div>
+
+  <div class="activity-card">
+    <h3>Activity 1B — Locate the safety controls in the app</h3>
+    <span class="app-tab">App tab: Joint Control</span>
+    <p style="font-size:0.9rem;margin:0 0 0.75rem;">Before ever moving the arm, you must be able to find and use the torque controls. Do this activity with the arm <strong>powered but stationary</strong> and everyone clear of the working envelope.</p>
+    <ol class="steps">
+      <li><p>Navigate to the <span class="ui-ref">Joint Control</span> tab.</p></li>
+      <li><p>Find the <strong>Torque Enable / Disable</strong> toggle or button. Do <em>not</em> click it yet — just locate it and note where it is in the worksheet.</p></li>
+      <li><p>With the arm powered and everyone clear, click <strong>Disable Torque</strong>. Gently move Joint 1 (the base rotation joint) by hand a few degrees. Notice how it moves freely.</p></li>
+      <li><p>Click <strong>Enable Torque</strong> and immediately step back outside the working envelope. The arm may return to its programmed position.</p></li>
+      <li><p>Practice this disable → check clear → enable sequence three times until it feels natural.</p></li>
+      <li><p>Navigate to the <span class="ui-ref">Pendant Control</span> tab. Locate the large red <strong>E-Stop</strong> button. On the robot arm touchscreen (pendant mode), this is the primary emergency stop. Note that E-stop buttons also appear in the <span class="ui-ref">Joint Control</span> tab — familiarise yourself with both locations.</p></li>
+    </ol>
+    <div class="callout callout-tip" style="margin-top:0.75rem;">
+      <span class="callout-icon">💡</span>
+      <div class="callout-body">This disable → approach → enable workflow is the correct way to manually reposition or inspect the arm. Always confirm that everyone is clear <em>before</em> re-enabling torque.</div>
+    </div>
+  </div>
+
+  <!-- ??????????????????????????????????????????????????
+       SECTION 3: THEORY — RISK ASSESSMENT
+  ??????????????????????????????????????????????????? -->
+  <div class="section-label"><span class="pill pill-theory">📖 Theory</span><hr></div>
+
+  <div class="card">
+    <h3>1.3 — Risk Assessment</h3>
+    <img src="images/risk-matrix.svg" alt="Risk assessment matrix" style="width:100%;height:auto;display:block;border-radius:8px;margin:12px 0;">
+    <p>A <strong>risk assessment</strong> is a structured process for identifying what could go wrong and deciding how to reduce those risks to an acceptable level before starting work. It is a legal requirement in most industrial settings and good practice everywhere.</p>
+
+    <h4>The five steps:</h4>
+    <ol>
+      <li><strong>Identify the hazards</strong> — what could cause harm?</li>
+      <li><strong>Decide who might be harmed</strong> — operators, bystanders, visitors?</li>
+      <li><strong>Evaluate the risk</strong> — how likely is harm, and how severe?</li>
+      <li><strong>Record and implement control measures</strong> — what will you do to reduce risk?</li>
+      <li><strong>Review and update</strong> — does anything change the risk level over time?</li>
+    </ol>
+
+    <h4>Risk rating matrix</h4>
+    <p>Risk is assessed as a combination of <strong>Likelihood</strong> (how often it could happen) and <strong>Severity</strong> (how bad the harm would be):</p>
+
+    <table class="risk-table">
+      <thead>
+        <tr><th>Likelihood →<br>Severity ↓</th><th>Low</th><th>Medium</th><th>High</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>High</strong></td><td class="risk-med">MEDIUM</td><td class="risk-high">HIGH</td><td class="risk-high">HIGH</td></tr>
+        <tr><td><strong>Medium</strong></td><td class="risk-low">LOW</td><td class="risk-med">MEDIUM</td><td class="risk-high">HIGH</td></tr>
+        <tr><td><strong>Low</strong></td><td class="risk-low">LOW</td><td class="risk-low">LOW</td><td class="risk-med">MEDIUM</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout callout-info">
+      <span class="callout-icon">💡</span>
+      <div class="callout-body">
+        <strong>Example for robot arm operation:</strong></br>
+        Pinch injury at a joint: Severity = High, Likelihood = Medium ? HIGH risk. </br>Control measures: keep clear of joints, set low speed limit, supervise at all times.
+      </div>
+    </div>
+  </div>
+
+  <!-- ??????????????????????????????????????????????????
+       WORKSHEET
+  ??????????????????????????????????????????????????? -->
+  <div class="section-label"><span class="pill pill-worksheet">📋 Worksheet</span><hr></div>
+
+  <div class="worksheet-card">
+    <h3>Worksheet 1 — Observations &amp; Risk Assessment</h3>
+
+    <p style="font-size:0.88rem;margin:0 0 1rem;color:var(--purple);">Complete all sections using your observations from the software activities and from inspecting the physical arm.</p>
+
+    <div class="ws-field">
+      <label>1. From Activity 1A — How many joints did you count on the 3D model?</label>
+      <input type="text" placeholder="e.g. 6 joints">
+    </div>
+
+    <div class="ws-field">
+      <label>2. From Activity 1A — How many links (rigid segments) did you count?</label>
+      <input type="text" placeholder="e.g. 6 links">
+    </div>
+
+    <div class="ws-field">
+      <label>3. What is the Degrees of Freedom (DoF) of the arm? (DoF = number of joints)</label>
+      <input type="text" placeholder="e.g. 6 DoF">
+    </div>
+
+    <div class="ws-field">
+      <label>4. Describe where you found the Torque Enable/Disable control in the app:</label>
+      <input type="text" placeholder="e.g. Joint Control tab, in the header area above the joint cards">
+    </div>
+
+    <div class="ws-field">
+      <label>5. What colour is the LED strip when the arm has torque disabled and is safe to approach? What colour indicates it is actively moving?</label>
+      <input type="text" placeholder="Safe to approach: ___ / Moving: ___">
+    </div>
+
+    <div class="ws-field">
+      <label>6. In your own words, why is it important to disable torque before manually adjusting the arm?</label>
+      <textarea placeholder="Write 1–2 sentences..."></textarea>
+    </div>
+
+    <div class="ws-field">
+      <label>7. Complete this risk assessment for operating the robot arm in your classroom:</label>
+    </div>
+
+    <table class="ws-table">
+      <thead>
+        <tr>
+          <th style="width:22%">Hazard</th>
+          <th style="width:16%">Likelihood<br>(L/M/H)</th>
+          <th style="width:16%">Severity<br>(L/M/H)</th>
+          <th style="width:14%">Risk Level</th>
+          <th style="width:32%">Control measure</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><input type="text" value="Pinch at joint"></td>
+          <td><input type="text" placeholder="M"></td>
+          <td><input type="text" placeholder="H"></td>
+          <td><input type="text" placeholder="Medium"></td>
+          <td><input type="text" placeholder="Keep clear, low speed..."></td>
+        </tr>
+        <tr>
+          <td><input type="text" placeholder="Your hazard 2"></td>
+          <td><input type="text" placeholder="L/M/H"></td>
+          <td><input type="text" placeholder="L/M/H"></td>
+          <td><input type="text" placeholder=""></td>
+          <td><input type="text" placeholder="Control measure..."></td>
+        </tr>
+        <tr>
+          <td><input type="text" placeholder="Your hazard 3"></td>
+          <td><input type="text" placeholder="L/M/H"></td>
+          <td><input type="text" placeholder="L/M/H"></td>
+          <td><input type="text" placeholder=""></td>
+          <td><input type="text" placeholder="Control measure..."></td>
+        </tr>
+        <tr>
+          <td><input type="text" placeholder="Your hazard 4"></td>
+          <td><input type="text" placeholder="L/M/H"></td>
+          <td><input type="text" placeholder="L/M/H"></td>
+          <td><input type="text" placeholder=""></td>
+          <td><input type="text" placeholder="Control measure..."></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="ws-field">
+      <label>8. What PPE is required when operating the robot arm in this lab? List at least three items.</label>
+      <textarea placeholder="1. Safety glasses&#10;2. &#10;3. "></textarea>
+    </div>
+
+    <div class="ws-field">
+      <label>9. Extension: Compare the working envelope of our arm with one industrial robot you have researched. How do the safety requirements differ?</label>
+      <textarea style="min-height:90px;" placeholder="Research an industrial arm (e.g. KUKA KR6, Universal Robots UR5) and compare..."></textarea>
+    </div>
+  </div>
+
+  <!-- ??????????????????????????????????????????????????
+       SO WHAT?
+  ??????????????????????????????????????????????????? -->
+  <div class="section-label"><span class="pill pill-sowhat">💡 So What?</span><hr></div>
+
+  <div class="sowhat-card">
+    <h3>Why does this matter?</h3>
+    <p>Every serious robotics accident in industry happened because someone made an assumption — that the arm was off, that it would stop in time, that no one was in the way. The procedures in this module exist because of real incidents.</p>
+    <p>The software application you are using gives you direct control over a real machine. Every time you open it, the same rules apply: <strong>check the workspace is clear, know where the stop control is, and never assume the arm is safe just because it looks still.</strong></p>
+    <p>As you progress through this curriculum, the tasks become more complex. The safety fundamentals from Module 1 remain constant. Professionals in robotics cells rehearse emergency procedures regularly — not because accidents are likely, but because when they happen they happen fast.</p>
+  </div>
+
+  <!-- ??????????????????????????????????????????????????
+       MCQ
+  ??????????????????????????????????????????????????? -->
+  <div class="section-label"><span class="pill pill-mcq">✅ Quick Check</span><hr></div>
+
+  <div class="mcq-card" id="mcq-section">
+    <h3>Quick Check — Module 1</h3>
+
+    <!-- Q1 -->
+    <div class="mcq-q" id="q1">
+      <p>1. A robot arm has 5 joints. How many degrees of freedom does it have?</p>
+      <div class="mcq-options">
+        <label class="mcq-opt"><input type="radio" name="q1" value="a"> <span>4 — one fewer than the number of joints</span></label>
+        <label class="mcq-opt"><input type="radio" name="q1" value="b"> <span>5 — one degree of freedom per joint</span></label>
+        <label class="mcq-opt"><input type="radio" name="q1" value="c"> <span>10 — two per joint because each can rotate both ways</span></label>
+        <label class="mcq-opt"><input type="radio" name="q1" value="d"> <span>It depends on the type of gripper fitted</span></label>
+      </div>
+      <div class="mcq-feedback" id="q1-fb"></div>
+    </div>
+
+    <!-- Q2 -->
+    <div class="mcq-q" id="q2">
+      <p>2. You are adjusting a cable near the arm. The arm is powered on but has not been programmed to move. What is the correct action?</p>
+      <div class="mcq-options">
+        <label class="mcq-opt"><input type="radio" name="q2" value="a"> <span>Work quickly — the arm is unlikely to move on its own</span></label>
+        <label class="mcq-opt"><input type="radio" name="q2" value="b"> <span>Ask a colleague to watch the arm while you work</span></label>
+        <label class="mcq-opt"><input type="radio" name="q2" value="c"> <span>Disable torque first, then carry out the work, then re-enable torque from outside the envelope</span></label>
+        <label class="mcq-opt"><input type="radio" name="q2" value="d"> <span>Power off the entire lab before touching anything</span></label>
+      </div>
+      <div class="mcq-feedback" id="q2-fb"></div>
+    </div>
+
+    <!-- Q3 -->
+    <div class="mcq-q" id="q3">
+      <p>3. In a risk matrix, a hazard with <strong>High</strong> severity and <strong>Low</strong> likelihood is rated as:</p>
+      <div class="mcq-options">
+        <label class="mcq-opt"><input type="radio" name="q3" value="a"> <span>Low risk — because it is unlikely to happen</span></label>
+        <label class="mcq-opt"><input type="radio" name="q3" value="b"> <span>Medium risk — severity and likelihood together give a medium rating</span></label>
+        <label class="mcq-opt"><input type="radio" name="q3" value="c"> <span>High risk — any high-severity hazard is automatically high risk</span></label>
+        <label class="mcq-opt"><input type="radio" name="q3" value="d"> <span>Not a risk — only likely hazards count</span></label>
+      </div>
+      <div class="mcq-feedback" id="q3-fb"></div>
+    </div>
+
+    <button class="check-btn" onclick="checkMCQ()">Check answers</button>
+    <div class="score-box" id="score-box"></div>
+  </div>
+
+  <div class="bottom-nav">
+    <a class="btn btn-outline" href="index.html">← All Modules</a>
+    <a class="btn btn-primary" href="module-02.html">Next: Module 2 →</a>
+  </div>
+
+</div>
+
+<script>
+  const answers = { q1: 'b', q2: 'c', q3: 'b' };
+  const feedback = {
+    q1: { b: 'Correct! Each joint provides exactly one degree of freedom. 5 joints = 5 DoF.', wrong: 'Not quite. Count one DoF per joint — 5 joints gives 5 degrees of freedom.' },
+    q2: { c: 'Correct! Disable torque ? work ? re-enable from outside the envelope. This is the safe sequence every time.', wrong: 'Not safe. The arm could receive a command at any moment. Always disable torque before entering the working envelope.' },
+    q3: { b: 'Correct! High severity + Low likelihood = Medium risk. The high consequence means it cannot be ignored, but the low likelihood keeps it out of the highest category.', wrong: 'Check the risk matrix again. Severity and likelihood both contribute — a Low likelihood hazard is not automatically Low or High risk just because of one factor.' }
+  };
+
+  function checkMCQ() {
+    let score = 0;
+    ['q1','q2','q3'].forEach(q => {
+      const selected = document.querySelector(`input[name="${q}"]:checked`);
+      const fb = document.getElementById(`${q}-fb`);
+      const opts = document.querySelectorAll(`input[name="${q}"]`);
+      opts.forEach(o => o.closest('.mcq-opt').classList.remove('correct','wrong'));
+      if (!selected) { fb.className = 'mcq-feedback show bad'; fb.textContent = 'Please select an answer.'; return; }
+      const val = selected.value;
+      const correct = answers[q];
+      if (val === correct) {
+        selected.closest('.mcq-opt').classList.add('correct');
+        fb.className = 'mcq-feedback show ok';
+        fb.textContent = '✅ ' + feedback[q][correct];
+        score++;
+      } else {
+        selected.closest('.mcq-opt').classList.add('wrong');
+        document.querySelector(`input[name="${q}"][value="${correct}"]`).closest('.mcq-opt').classList.add('correct');
+        fb.className = 'mcq-feedback show bad';
+        fb.textContent = '❌ ' + feedback[q].wrong;
+      }
+    });
+    const box = document.getElementById('score-box');
+    box.className = 'score-box show ' + (score >= 2 ? 'pass' : 'fail');
+    box.textContent = `You scored ${score}/3. ` + (score === 3 ? 'Excellent — full marks!' : score === 2 ? 'Good — review the question you missed.' : 'Review the theory sections and try again.');
+  }
+</script>
+
+<script src="worksheet.js"></script>
+</body>
+</html>

@@ -1,0 +1,1388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="curriculum-module" content="4">
+  <title>Module 4: Basic Software &amp; Human-Machine Interface</title>
+  <style>
+    :root {
+      --bg: #f6f7f9;
+      --card: #fff;
+      --text: #1a1d26;
+      --muted: #5c6370;
+      --accent: #1e5a8a;
+      --border: #d8dde6;
+      --code-bg: #eef1f6;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 17px;
+      line-height: 1.55;
+      color: var(--text);
+      background: var(--bg);
+    }
+    .wrap {
+      max-width: 52rem;
+      margin: 0 auto;
+      padding: 1.25rem 1.25rem 3rem;
+    }
+    .top-nav {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.75rem 1rem;
+      padding: 0.75rem 0;
+      margin-bottom: 1.25rem;
+      border-bottom: 1px solid var(--border);
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+      font-size: 0.9rem;
+    }
+    .nav-title {
+      flex: 1 1 auto;
+      font-weight: 600;
+      color: var(--muted);
+      min-width: 12rem;
+    }
+    a.nav-link {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    a.nav-link:hover { text-decoration: underline; }
+    h1.page-title {
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+      font-size: 1.65rem;
+      font-weight: 700;
+      margin: 0 0 0.5rem;
+      line-height: 1.25;
+    }
+    p.lead {
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+      color: var(--muted);
+      margin: 0 0 1.5rem;
+      font-size: 0.95rem;
+    }
+    section.card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.25rem 1.5rem 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    }
+    section.card h2 {
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+      font-size: 1.15rem;
+      margin: 0 0 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid var(--accent);
+      color: var(--accent);
+    }
+    .card-inner {
+      font-family: Georgia, "Times New Roman", serif;
+    }
+    .card-inner h1, .card-inner h2, .card-inner h3, .card-inner h4 {
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+    }
+    .card-inner h1 { font-size: 1.35rem; }
+    .card-inner h2 { font-size: 1.15rem; border-bottom: none; color: var(--text); }
+    .card-inner h3 { font-size: 1.05rem; }
+    .card-inner h4 { font-size: 1rem; }
+    .card-inner code {
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 0.9em;
+      background: var(--code-bg);
+      padding: 0.1em 0.35em;
+      border-radius: 4px;
+    }
+    .card-inner pre {
+      background: var(--code-bg);
+      padding: 1rem;
+      overflow-x: auto;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+    }
+    .card-inner pre code {
+      background: none;
+      padding: 0;
+    }
+    .card-inner table {
+      border-collapse: collapse;
+      width: 100%;
+      font-size: 0.95rem;
+      margin: 1rem 0;
+    }
+    .card-inner th, .card-inner td {
+      border: 1px solid var(--border);
+      padding: 0.45rem 0.6rem;
+      text-align: left;
+      vertical-align: top;
+    }
+    .card-inner th {
+      background: #eef3f8;
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+      font-weight: 600;
+    }
+    ul.index-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+    }
+    ul.index-list li {
+      margin: 0.35rem 0;
+      padding: 0.5rem 0.65rem;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--card);
+    }
+    ul.index-list a {
+      color: var(--accent);
+      font-weight: 600;
+      text-decoration: none;
+    }
+    ul.index-list a:hover { text-decoration: underline; }
+    .index-meta {
+      display: block;
+      font-size: 0.85rem;
+      color: var(--muted);
+      font-weight: normal;
+      margin-top: 0.2rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <nav class="top-nav">
+  <a class="nav-link" href="index.html">All modules</a>
+  <a class="nav-link" href="module-03.html">← Previous</a>
+  <span class="nav-title">Module 4: Basic Software &amp; Human-Machine Interface</span>
+  <a class="nav-link" href="module-05.html">Next →</a>
+</nav>
+<h1 class="page-title">Module 4: Basic Software &amp; Human-Machine Interface</h1>
+<p class="lead">BTEC robot arm curriculum — one page per module. Work through sections in order.</p>
+<section class="card"><h2>Curriculum plan (from BTEC_Robot_Arm_Curriculum_Plan.md)</h2><div class="card-inner"><h2><strong>Module 4: Basic Software &amp; Human-Machine Interface</strong></h2>
+<p><em>Building on Module 3</em></p>
+<h3>Learning Objectives Covered:</h3>
+<ul>
+<li>✅ <strong>Programming for motion control</strong> (Level 3)</li>
+<li>Use Electron app/Blockly interface to command individual joint movements</li>
+<li>Store, recall, and edit joint positions</li>
+<li>Build and run simple motion sequences (pick-and-place)</li>
+<li>Understand control loop concept: read status → decide → send commands → repeat</li>
+<li>✅ <strong>Human-machine interface (HMI)</strong> (Level 3)</li>
+<li>Operate pendant/UI safely: enable/disable torque, set speed/acceleration limits, jog joints, run/stop programs</li>
+<li>Explain how UI actions become WebSocket commands and then servo commands</li>
+</ul>
+<h3>Content:</h3>
+<ol>
+<li>
+<p><strong>Introduction to the Control Software</strong><br />
+   - Overview of the Electron app interface<br />
+   - Understanding the main screen layout<br />
+   - Navigation basics</p>
+</li>
+<li>
+<p><strong>Basic Operations</strong><br />
+   - Enabling and disabling torque (safely)<br />
+   - Setting speed limits<br />
+   - Setting acceleration limits<br />
+   - Understanding why limits matter</p>
+</li>
+<li>
+<p><strong>Joint Control</strong><br />
+   - Jogging individual joints<br />
+   - Reading joint positions<br />
+   - Moving to specific positions<br />
+   - Understanding joint limits</p>
+</li>
+<li>
+<p><strong>Position Teaching</strong><br />
+   - Storing joint positions<br />
+   - Recalling stored positions<br />
+   - Editing positions<br />
+   - Creating a position library</p>
+</li>
+<li>
+<p><strong>Simple Motion Sequences</strong><br />
+   - Building a sequence of movements<br />
+   - Pick-and-place example<br />
+   - Running sequences<br />
+   - Stopping sequences safely</p>
+</li>
+<li>
+<p><strong>Understanding the Control Loop</strong><br />
+   - What is a control loop?<br />
+   - Read status → decide → send commands → repeat<br />
+   - How the software implements this<br />
+   - Timing considerations</p>
+</li>
+<li>
+<p><strong>How Commands Flow</strong><br />
+   - UI action (slider, button, block)<br />
+   - WebSocket communication<br />
+   - Servo command generation<br />
+   - Feedback return path</p>
+</li>
+</ol>
+<h3>Practical Activities:</h3>
+<ul>
+<li>Complete UI familiarization exercises</li>
+<li>Set up safe operating parameters</li>
+<li>Teach 5 different positions</li>
+<li>Create a simple pick-and-place sequence</li>
+<li>Run sequence and observe behavior</li>
+<li>Draw a flowchart showing command flow from UI to servo</li>
+<li>Document the control loop concept</li>
+</ul>
+<hr /></div></section>
+<section class="card"><h2>Theory & teaching notes</h2><div class="card-inner"><h1>Module 4: Basic Software &amp; Human-Machine Interface</h1>
+<h2>Theory &amp; Teaching Notes</h2>
+<p><strong>Module Duration:</strong> 2-3 hours<br />
+<strong>Level:</strong> Foundation (Level 3)</p>
+<hr />
+<h2>Learning Objectives</h2>
+<p>By the end of this module, students will be able to:<br />
+- Use the control software interface safely<br />
+- Command individual joint movements<br />
+- Store and recall positions<br />
+- Create and run motion sequences<br />
+- Understand the control loop concept<br />
+- Explain how commands flow from UI to servos</p>
+<hr />
+<h2>1. Introduction to Control Software</h2>
+<h3>What is the Control Software?</h3>
+<p>The <strong>control software</strong> is the program that lets you operate the robot arm. It's like the "remote control" for the robot.</p>
+<h3>Electron App</h3>
+<p><strong>Electron</strong> is a framework that lets developers create desktop applications using web technologies.</p>
+<p><strong>Why Electron?</strong><br />
+- Works on different computers (Windows, Mac, Linux)<br />
+- Easy to update<br />
+- Can have a nice user interface<br />
+- Connects to the robot easily</p>
+<h3>Main Screen Layout</h3>
+<p>The software typically has:</p>
+<ol>
+<li>
+<p><strong>Joint Control Area</strong><br />
+   - Sliders or buttons for each joint<br />
+   - Shows current position<br />
+   - Allows manual control</p>
+</li>
+<li>
+<p><strong>Position Library</strong><br />
+   - List of saved positions<br />
+   - Can store, recall, edit positions</p>
+</li>
+<li>
+<p><strong>Sequence Builder</strong><br />
+   - Create motion sequences<br />
+   - Add waypoints<br />
+   - Set timing</p>
+</li>
+<li>
+<p><strong>Status Display</strong><br />
+   - Shows feedback from servos<br />
+   - Displays errors<br />
+   - Shows system status</p>
+</li>
+<li>
+<p><strong>Control Buttons</strong><br />
+   - Enable/disable torque<br />
+   - Start/stop sequences<br />
+   - Emergency stop</p>
+</li>
+</ol>
+<hr />
+<h2>2. Basic Operations</h2>
+<h3>Enabling and Disabling Torque</h3>
+<p><strong>Torque</strong> = The rotational force that makes joints move</p>
+<p><strong>Disabling Torque:</strong><br />
+- Prevents accidental movement<br />
+- Allows safe manual positioning<br />
+- Should be done when:<br />
+  - Setting up<br />
+  - Teaching positions<br />
+  - Making adjustments<br />
+  - Not in use</p>
+<p><strong>Enabling Torque:</strong><br />
+- Allows robot to move<br />
+- Should only be done when:<br />
+  - Ready to operate<br />
+  - Workspace is clear<br />
+  - Know how to stop<br />
+  - Supervised</p>
+<p><strong>How to do it safely:</strong><br />
+1. Check workspace is clear<br />
+2. Check you know how to stop<br />
+3. Enable torque slowly<br />
+4. Test movement carefully<br />
+5. Monitor constantly</p>
+<h3>Setting Speed Limits</h3>
+<p><strong>Speed limit</strong> = Maximum speed the robot can move</p>
+<p><strong>Why set limits:</strong><br />
+- Safety (slower = safer)<br />
+- Control (easier to monitor)<br />
+- Accuracy (slower = more accurate)<br />
+- Reduce wear</p>
+<p><strong>How to set:</strong><br />
+- Use slider or input box<br />
+- Start with low speed (e.g., 30%)<br />
+- Increase gradually if safe<br />
+- Never exceed safe limits</p>
+<p><strong>Typical range:</strong> 10% to 100%</p>
+<h3>Setting Acceleration Limits</h3>
+<p><strong>Acceleration limit</strong> = How quickly speed can change</p>
+<p><strong>Why set limits:</strong><br />
+- Prevents sudden movements<br />
+- Reduces mechanical stress<br />
+- Improves smoothness<br />
+- Better control</p>
+<p><strong>How to set:</strong><br />
+- Use slider or input box<br />
+- Start with low acceleration<br />
+- Increase gradually<br />
+- Balance smoothness vs. speed</p>
+<p><strong>Typical range:</strong> 10% to 100%</p>
+<hr />
+<h2>3. Joint Control</h2>
+<h3>Jogging Joints</h3>
+<p><strong>Jogging</strong> = Manually moving one joint at a time</p>
+<p><strong>How to jog:</strong><br />
+1. Select the joint you want to move<br />
+2. Use slider or buttons to move it<br />
+3. Watch the position change<br />
+4. Stop when at desired position</p>
+<p><strong>Why jog:</strong><br />
+- Precise positioning<br />
+- Teaching positions<br />
+- Testing movement<br />
+- Safe, controlled movement</p>
+<h3>Reading Joint Positions</h3>
+<p><strong>Position</strong> = Current angle of the joint</p>
+<p><strong>Displayed as:</strong><br />
+- Degrees (°)<br />
+- Sometimes as percentage<br />
+- Or as encoder counts</p>
+<p><strong>Why it matters:</strong><br />
+- Know where robot is<br />
+- Teach accurate positions<br />
+- Verify movements<br />
+- Troubleshoot problems</p>
+<h3>Joint Limits</h3>
+<p><strong>Joint limits</strong> = Minimum and maximum angles</p>
+<p><strong>Why they exist:</strong><br />
+- Prevent damage<br />
+- Stay in safe range<br />
+- Avoid collisions<br />
+- Protect mechanisms</p>
+<p><strong>What happens if you exceed limits:</strong><br />
+- Software prevents movement<br />
+- Or movement stops at limit<br />
+- Warning message<br />
+- Safety feature</p>
+<hr />
+<h2>4. Position Teaching</h2>
+<h3>What is Teaching?</h3>
+<p><strong>Teaching</strong> = Moving robot to a position and saving it</p>
+<p><strong>Why teach positions:</strong><br />
+- Create position library<br />
+- Use in sequences<br />
+- Return to same place<br />
+- Repeat operations</p>
+<h3>Storing Positions</h3>
+<p><strong>How to store:</strong><br />
+1. Move robot to desired position (by jogging)<br />
+2. Click "Store" or "Save Position"<br />
+3. Give it a name<br />
+4. Position is saved</p>
+<p><strong>Good position names:</strong><br />
+- Descriptive: "Pick Position", "Place Position"<br />
+- Clear: "Home", "Position 1"<br />
+- Meaningful: "Above Box", "Over Conveyor"</p>
+<h3>Recalling Positions</h3>
+<p><strong>How to recall:</strong><br />
+1. Select position from list<br />
+2. Click "Move To" or "Recall"<br />
+3. Robot moves to that position</p>
+<p><strong>Why recall:</strong><br />
+- Repeat movements<br />
+- Use in sequences<br />
+- Return to known positions<br />
+- Consistency</p>
+<h3>Editing Positions</h3>
+<p><strong>How to edit:</strong><br />
+1. Select position from list<br />
+2. Click "Edit"<br />
+3. Modify joint angles<br />
+4. Save changes</p>
+<p><strong>When to edit:</strong><br />
+- Fine-tune positions<br />
+- Adjust for changes<br />
+- Correct errors<br />
+- Optimize movements</p>
+<hr />
+<h2>5. Motion Sequences</h2>
+<h3>What is a Sequence?</h3>
+<p>A <strong>sequence</strong> is a series of positions executed in order.</p>
+<p><strong>Example sequence:</strong><br />
+1. Move to Position A (pick position)<br />
+2. Wait 1 second<br />
+3. Move to Position B (place position)<br />
+4. Wait 1 second<br />
+5. Return to Home</p>
+<h3>Building a Sequence</h3>
+<p><strong>Steps to build:</strong></p>
+<ol>
+<li>
+<p><strong>Plan the sequence</strong><br />
+   - What positions are needed?<br />
+   - What order?<br />
+   - Any waits needed?</p>
+</li>
+<li>
+<p><strong>Teach positions</strong><br />
+   - Move to each position<br />
+   - Store each one<br />
+   - Name them clearly</p>
+</li>
+<li>
+<p><strong>Add to sequence</strong><br />
+   - Select position<br />
+   - Add to sequence<br />
+   - Set timing if needed</p>
+</li>
+<li>
+<p><strong>Add dwell/wait</strong><br />
+   - Insert wait steps<br />
+   - Set wait time<br />
+   - Allows gripper to operate, etc.</p>
+</li>
+<li>
+<p><strong>Test sequence</strong><br />
+   - Run slowly first<br />
+   - Check each step<br />
+   - Adjust if needed</p>
+</li>
+</ol>
+<h3>Dwell/Wait Steps</h3>
+<p><strong>Dwell</strong> = A pause in the sequence</p>
+<p><strong>Why use dwell:</strong><br />
+- Allow gripper to close/open<br />
+- Wait for part to settle<br />
+- Ensure operation completes<br />
+- Safety pause</p>
+<p><strong>How to add:</strong><br />
+- Insert "Wait" step<br />
+- Set time (e.g., 1 second)<br />
+- Position in sequence</p>
+<h3>Home Position</h3>
+<p><strong>Home position</strong> = A safe starting/return position</p>
+<p><strong>Characteristics:</strong><br />
+- Safe (no collisions)<br />
+- Easy to reach<br />
+- Known position<br />
+- Good starting point</p>
+<p><strong>Why important:</strong><br />
+- Consistent starting point<br />
+- Safe return position<br />
+- Easy to find<br />
+- Reference point</p>
+<hr />
+<h2>6. Running Sequences</h2>
+<h3>Starting a Sequence</h3>
+<p><strong>How to start:</strong><br />
+1. Check workspace is clear<br />
+2. Check robot is ready<br />
+3. Select sequence<br />
+4. Click "Run" or "Start"<br />
+5. Monitor movement</p>
+<p><strong>Before starting:</strong><br />
+- Workspace clear?<br />
+- Speed limits set?<br />
+- Emergency stop ready?<br />
+- Supervised?</p>
+<h3>Stopping a Sequence</h3>
+<p><strong>Normal stop:</strong><br />
+- Click "Stop" button<br />
+- Robot stops at next waypoint<br />
+- Or stops immediately (depends on software)</p>
+<p><strong>Emergency stop:</strong><br />
+- Press emergency stop button<br />
+- Immediate stop<br />
+- Use if unsafe</p>
+<p><strong>After stopping:</strong><br />
+- Check robot position<br />
+- Check for problems<br />
+- Don't restart immediately<br />
+- Understand why stopped</p>
+<hr />
+<h2>7. Understanding the Control Loop</h2>
+<h3>What is a Control Loop?</h3>
+<p>A <strong>control loop</strong> is a repeating cycle that controls the robot.</p>
+<h3>The Control Loop Steps</h3>
+<p><strong>Step 1: Read Status</strong><br />
+- Read feedback from servos<br />
+- Get current positions<br />
+- Check for errors<br />
+- Monitor system state</p>
+<p><strong>Step 2: Decide</strong><br />
+- What should happen next?<br />
+- Compare desired vs. actual<br />
+- Calculate needed movement<br />
+- Check safety conditions</p>
+<p><strong>Step 3: Send Commands</strong><br />
+- Send movement commands<br />
+- Update positions<br />
+- Control speed/acceleration<br />
+- Manage sequences</p>
+<p><strong>Step 4: Repeat</strong><br />
+- Go back to Step 1<br />
+- Continue cycle<br />
+- Keep controlling</p>
+<h3>Visual Representation</h3>
+<pre><code>┌─────────────┐
+│ Read Status │
+└──────┬──────┘
+       │
+       ▼
+┌─────────────┐
+│   Decide    │
+└──────┬──────┘
+       │
+       ▼
+┌─────────────┐
+│Send Commands│
+└──────┬──────┘
+       │
+       └──────┐
+              │
+              ▼
+         (Repeat)
+</code></pre>
+<h3>Why It Matters</h3>
+<p><strong>The control loop:</strong><br />
+- Keeps robot under control<br />
+- Responds to changes<br />
+- Maintains accuracy<br />
+- Enables automation</p>
+<p><strong>Timing:</strong><br />
+- Loop runs many times per second<br />
+- Fast enough for smooth control<br />
+- Slow enough to process everything</p>
+<hr />
+<h2>8. Command Flow: From UI to Servo</h2>
+<h3>How Commands Travel</h3>
+<p><strong>Step 1: User Action</strong><br />
+- You move a slider<br />
+- Or click a button<br />
+- Or run a sequence</p>
+<p><strong>Step 2: UI Processing</strong><br />
+- Software processes your action<br />
+- Converts to command<br />
+- Prepares to send</p>
+<p><strong>Step 3: WebSocket Communication</strong><br />
+- Command sent via WebSocket<br />
+- Real-time communication<br />
+- Goes to server (Raspberry Pi)</p>
+<p><strong>Step 4: Server Processing</strong><br />
+- Server receives command<br />
+- Processes it<br />
+- Converts to servo command</p>
+<p><strong>Step 5: Serial Communication</strong><br />
+- Command sent via serial bus<br />
+- Goes to specific servo<br />
+- Servo receives command</p>
+<p><strong>Step 6: Servo Execution</strong><br />
+- Servo processes command<br />
+- Moves to position<br />
+- Uses internal control loop</p>
+<p><strong>Step 7: Feedback Return</strong><br />
+- Servo sends feedback<br />
+- Back through serial bus<br />
+- To server<br />
+- To UI<br />
+- Displayed to you</p>
+<h3>Visual Flow</h3>
+<pre><code>You → UI → WebSocket → Server → Serial → Servo
+                                              │
+                                              ▼
+You ← UI ← WebSocket ← Server ← Serial ← Feedback
+</code></pre>
+<h3>Why Understand This?</h3>
+<p><strong>Understanding command flow helps you:</strong><br />
+- Troubleshoot problems<br />
+- Understand delays<br />
+- Know where errors occur<br />
+- Optimize performance</p>
+<hr />
+<h2>9. Practical Tips</h2>
+<h3>Safe Operation</h3>
+<ol>
+<li>
+<p><strong>Always check before starting</strong><br />
+   - Workspace clear?<br />
+   - Speed limits set?<br />
+   - Emergency stop ready?</p>
+</li>
+<li>
+<p><strong>Start slow</strong><br />
+   - Low speed first<br />
+   - Test movements<br />
+   - Increase gradually</p>
+</li>
+<li>
+<p><strong>Monitor constantly</strong><br />
+   - Watch robot movement<br />
+   - Check feedback<br />
+   - Be ready to stop</p>
+</li>
+<li>
+<p><strong>Use limits</strong><br />
+   - Speed limits<br />
+   - Acceleration limits<br />
+   - Joint limits</p>
+</li>
+</ol>
+<h3>Efficient Operation</h3>
+<ol>
+<li>
+<p><strong>Organize positions</strong><br />
+   - Use clear names<br />
+   - Group related positions<br />
+   - Document purposes</p>
+</li>
+<li>
+<p><strong>Test sequences</strong><br />
+   - Test slowly first<br />
+   - Check each step<br />
+   - Verify timing</p>
+</li>
+<li>
+<p><strong>Save your work</strong><br />
+   - Save positions<br />
+   - Save sequences<br />
+   - Backup files</p>
+</li>
+</ol>
+<hr />
+<h2>10. Summary</h2>
+<h3>Key Concepts</h3>
+<ol>
+<li><strong>Control software</strong> lets you operate the robot</li>
+<li><strong>Torque enable/disable</strong> controls when robot can move</li>
+<li><strong>Speed and acceleration limits</strong> ensure safe operation</li>
+<li><strong>Jogging</strong> allows manual joint control</li>
+<li><strong>Teaching</strong> saves positions for later use</li>
+<li><strong>Sequences</strong> automate movements</li>
+<li><strong>Control loop</strong> continuously controls the robot</li>
+<li><strong>Command flow</strong> goes from UI through server to servos</li>
+</ol>
+<h3>Understanding Your Software</h3>
+<p>You should now understand:<br />
+- How to use the interface safely<br />
+- How to control joints<br />
+- How to teach positions<br />
+- How to create sequences<br />
+- How commands flow through the system</p>
+<h3>Next Steps</h3>
+<p>After learning this theory, you will:<br />
+- Practice using the software<br />
+- Teach positions<br />
+- Create sequences<br />
+- Understand the control loop<br />
+- Complete the Module 4 worksheet</p>
+<hr />
+<h2>Questions for Review</h2>
+<p>Before moving to the worksheet, make sure you can answer:</p>
+<ol>
+<li>What is the control software used for?</li>
+<li>Why should you set speed limits?</li>
+<li>What is jogging?</li>
+<li>How do you teach a position?</li>
+<li>What is a motion sequence?</li>
+<li>What are the steps in a control loop?</li>
+<li>How does a command flow from UI to servo?</li>
+</ol>
+<hr />
+<p><strong>Remember:</strong> Practice makes perfect. Start slowly, be safe, and gradually build your skills with the software.</p></div></section>
+<section class="card"><h2>Student worksheet</h2><div class="card-inner"><h1>Module 4: Basic Software &amp; Human-Machine Interface</h1>
+<h2>Student Worksheet</h2>
+<p><strong>Name:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_<br />
+<strong>Date:</strong> </em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>_<br />
+<strong>Group/Class:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>____</p>
+<hr />
+<h2>Part 1: Introduction to Control Software</h2>
+<h3>Question 1: Software Interface Overview</h3>
+<p>Complete the following about the Electron app interface:</p>
+<p>a) What are the main sections/areas of the interface?<br />
+   1. <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_<br />
+   2. </em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><em><br />
+   3. <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_<br />
+   4. </em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong></em></p>
+<p>b) How do you navigate between different functions?</p>
+<hr />
+<h3>Question 2: Basic Operations</h3>
+<p>Answer the following:</p>
+<p>a) Where is the torque enable/disable control located?</p>
+<hr />
+<p>b) Where can you set speed limits?</p>
+<hr />
+<p>c) Where can you set acceleration limits?</p>
+<hr />
+<p>d) Why are these limits important?</p>
+<hr />
+<hr />
+<hr />
+<h2>Part 2: Joint Control</h2>
+<h3>Question 3: Jogging Joints</h3>
+<p>Complete the following exercises:</p>
+<p><strong>Exercise A:</strong> Jog Joint 1 (Base) to the left<br />
+- Commanded position: <strong><em>_</em></strong><br />
+- Actual position (from feedback): <strong><em>_</em></strong></p>
+<p><strong>Exercise B:</strong> Jog Joint 2 (Shoulder) upward<br />
+- Commanded position: <strong><em>_</em></strong><br />
+- Actual position (from feedback): <strong><em>_</em></strong></p>
+<p><strong>Exercise C:</strong> Jog Joint 3 (Elbow) to bend<br />
+- Commanded position: <strong><em>_</em></strong><br />
+- Actual position (from feedback): <strong><em>_</em></strong></p>
+<h3>Question 4: Joint Limits</h3>
+<p>Answer the following:</p>
+<p>a) What are the joint limits for each joint?</p>
+<table>
+<thead>
+<tr>
+<th>Joint</th>
+<th>Minimum Limit</th>
+<th>Maximum Limit</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Joint 1</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Joint 2</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Joint 3</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Joint 4</td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p>b) What happens if you try to move beyond these limits?</p>
+<hr />
+<hr />
+<h2>Part 3: Position Teaching</h2>
+<h3>Question 5: Storing Positions</h3>
+<p>Teach and store 5 different positions:</p>
+<table>
+<thead>
+<tr>
+<th>Position Name</th>
+<th>Joint 1</th>
+<th>Joint 2</th>
+<th>Joint 3</th>
+<th>Joint 4</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Home</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Position 1</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Position 2</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Position 3</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Position 4</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h3>Question 6: Recalling and Editing Positions</h3>
+<p>Complete the following:</p>
+<p>a) How do you recall a stored position?</p>
+<hr />
+<p>b) How do you edit a stored position?</p>
+<hr />
+<p>c) Practice: Recall "Home" position and verify the robot moves there.<br />
+<strong>Did it work correctly?</strong> Yes / No<br />
+<strong>Notes:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<hr />
+<h2>Part 4: Motion Sequences</h2>
+<h3>Question 7: Building a Sequence</h3>
+<p>Create a simple pick-and-place sequence:</p>
+<p><strong>Step 1:</strong> Move to position: <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_<br />
+<strong>Step 2:</strong> Wait/dwell time: </em></strong><strong><em>_ seconds<br />
+<strong>Step 3:</strong> Move to position: </em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>_<br />
+<strong>Step 4:</strong> Wait/dwell time: <strong><em>_</em></strong> seconds<br />
+<strong>Step 5:</strong> Return to home position</p>
+<p><strong>Sequence description:</strong></p>
+<hr />
+<hr />
+<h3>Question 8: Running Sequences</h3>
+<p>Answer the following:</p>
+<p>a) How do you start a sequence?</p>
+<hr />
+<p>b) How do you stop a sequence safely?</p>
+<hr />
+<p>c) What should you check before running a sequence?</p>
+<hr />
+<hr />
+<hr />
+<h2>Part 5: Understanding the Control Loop</h2>
+<h3>Question 9: Control Loop Concept</h3>
+<p>Draw a flowchart showing the control loop:</p>
+<p><strong>Steps:</strong><br />
+1. Read status from servos<br />
+2. Decide what to do<br />
+3. Send commands to servos<br />
+4. Repeat</p>
+<p>[Space for flowchart]</p>
+<h3>Question 10: Control Loop Timing</h3>
+<p>Answer the following:</p>
+<p>a) How often does the control loop run? (approximately)</p>
+<hr />
+<p>b) Why is timing important in the control loop?</p>
+<hr />
+<hr />
+<p>c) What happens if the loop runs too slowly?</p>
+<hr />
+<hr />
+<h2>Part 6: Command Flow</h2>
+<h3>Question 11: From UI to Servo</h3>
+<p>Trace how a command flows from the user interface to the servo:</p>
+<p><strong>Step 1:</strong> User action (e.g., moving a slider)<br />
+<strong>What happens:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<p><strong>Step 2:</strong> WebSocket communication<br />
+<strong>What happens:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<p><strong>Step 3:</strong> Servo command generation<br />
+<strong>What happens:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<p><strong>Step 4:</strong> Feedback return<br />
+<strong>What happens:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<h3>Question 12: Command Flow Diagram</h3>
+<p>Draw a diagram showing the complete command flow:</p>
+<p>[Space for diagram]</p>
+<hr />
+<h2>Part 7: Practical Exercise</h2>
+<h3>Exercise 1: Complete Operation Sequence</h3>
+<p>Complete this full sequence:</p>
+<ol>
+<li>[ ] Enable torque safely</li>
+<li>[ ] Set speed limit to 50%</li>
+<li>[ ] Set acceleration limit to 30%</li>
+<li>[ ] Jog each joint individually</li>
+<li>[ ] Teach 3 positions</li>
+<li>[ ] Create a simple sequence using those positions</li>
+<li>[ ] Run the sequence</li>
+<li>[ ] Stop the sequence safely</li>
+<li>[ ] Disable torque</li>
+<li>[ ] Return to home position</li>
+</ol>
+<p><strong>Time taken:</strong> <strong><em>_</em></strong> minutes<br />
+<strong>Any problems encountered:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<hr />
+<h3>Exercise 2: Control Loop Observation</h3>
+<p>While running a sequence, observe the control loop:</p>
+<ul>
+<li>How often does the position update? <strong><em>_</em></strong></li>
+<li>Can you see the feedback being read? Yes / No</li>
+<li>Can you see commands being sent? Yes / No</li>
+</ul>
+<p><strong>Observations:</strong></p>
+<hr />
+<hr />
+<hr />
+<h2>Part 8: Reflection</h2>
+<h3>Question 13: Understanding Software and HMI</h3>
+<p>Answer the following:</p>
+<p>a) Why is it important to understand how the software works?</p>
+<hr />
+<hr />
+<p>b) How does understanding the control loop help you use the robot arm?</p>
+<hr />
+<hr />
+<p>c) What was the most challenging part of using the software?</p>
+<hr />
+<hr />
+<hr />
+<h2>Self-Assessment Checklist</h2>
+<p>Before submitting, check that you have:</p>
+<ul>
+<li>[ ] Familiarized yourself with the software interface</li>
+<li>[ ] Set speed and acceleration limits safely</li>
+<li>[ ] Jogged all joints individually</li>
+<li>[ ] Taught and stored at least 5 positions</li>
+<li>[ ] Recalled and edited positions</li>
+<li>[ ] Created a motion sequence</li>
+<li>[ ] Run and stopped a sequence safely</li>
+<li>[ ] Understood the control loop concept</li>
+<li>[ ] Traced command flow from UI to servo</li>
+<li>[ ] Completed practical exercises</li>
+<li>[ ] Written reflection answers</li>
+</ul>
+<p><strong>Student Signature:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_<br />
+<strong>Date:</strong> </em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><em><br />
+<strong>Instructor Signature:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_<br />
+<strong>Date:</strong> </em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong></em></p></div></section>
+<section class="card"><h2>Multiple choice questions</h2><div class="card-inner"><h1>Module 4: Basic Software &amp; Human-Machine Interface</h1>
+<h2>Multiple Choice Questions</h2>
+<p><strong>Instructions:</strong> Choose the best answer for each question. Circle or highlight your choice.</p>
+<hr />
+<h2>Section A: Software Interface</h2>
+<p><strong>1. What is the Electron app used for?</strong><br />
+   a) To power the robot<br />
+   b) To control and program the robot arm<br />
+   c) To build the robot<br />
+   d) To paint the robot</p>
+<p><strong>2. Before operating the robot arm, what should you do first?</strong><br />
+   a) Start moving it immediately<br />
+   b) Enable torque and set speed/acceleration limits<br />
+   c) Remove all safety guards<br />
+   d) Increase speed to maximum</p>
+<p><strong>3. What is the purpose of setting speed limits?</strong><br />
+   a) To make the robot slower<br />
+   b) To ensure safe operation and prevent damage<br />
+   c) To save electricity<br />
+   d) To make it look better</p>
+<p><strong>4. What is the purpose of setting acceleration limits?</strong><br />
+   a) To prevent sudden movements and reduce mechanical stress<br />
+   b) To make the robot faster<br />
+   c) To save space<br />
+   d) To reduce cost</p>
+<hr />
+<h2>Section B: Joint Control</h2>
+<p><strong>5. What does "jogging" a joint mean?</strong><br />
+   a) Running with the robot<br />
+   b) Manually moving a single joint to a specific position<br />
+   c) Stopping the robot<br />
+   d) Programming the robot</p>
+<p><strong>6. What are joint limits?</strong><br />
+   a) The maximum speed a joint can move<br />
+   b) The minimum and maximum angles a joint can reach<br />
+   c) The number of joints<br />
+   d) The weight of joints</p>
+<p><strong>7. What happens if you try to move a joint beyond its limits?</strong><br />
+   a) The robot breaks<br />
+   b) The movement is prevented or limited by the software<br />
+   c) Nothing happens<br />
+   d) The robot moves faster</p>
+<p><strong>8. Why is it important to know joint limits?</strong><br />
+   a) To avoid damaging the robot<br />
+   b) To make it move faster<br />
+   c) To save electricity<br />
+   d) It's not important</p>
+<hr />
+<h2>Section C: Position Teaching</h2>
+<p><strong>9. What does "teaching" a position mean?</strong><br />
+   a) Learning about positions<br />
+   b) Moving the robot to a position and storing it for later use<br />
+   c) Deleting positions<br />
+   d) Moving positions</p>
+<p><strong>10. How do you store a position?</strong><br />
+   a) By moving the robot and clicking a save/store button<br />
+   b) By turning off the robot<br />
+   c) By moving it randomly<br />
+   d) By programming it</p>
+<p><strong>11. How do you recall a stored position?</strong><br />
+   a) By selecting it from a list and commanding the robot to move there<br />
+   b) By moving the robot manually<br />
+   c) By restarting the software<br />
+   d) By deleting it</p>
+<p><strong>12. Can you edit a stored position?</strong><br />
+   a) No, positions cannot be changed<br />
+   b) Yes, by modifying the stored values<br />
+   c) Only by deleting and recreating<br />
+   d) Only by moving the robot</p>
+<hr />
+<h2>Section D: Motion Sequences</h2>
+<p><strong>13. What is a motion sequence?</strong><br />
+   a) A series of stored positions executed in order<br />
+   b) A single position<br />
+   c) The robot stopping<br />
+   d) The robot moving randomly</p>
+<p><strong>14. What is a "dwell" or "wait" step in a sequence?</strong><br />
+   a) A pause for a specified time<br />
+   b) Moving faster<br />
+   c) Stopping permanently<br />
+   d) Moving backward</p>
+<p><strong>15. What is a "home" position?</strong><br />
+   a) A safe starting/return position<br />
+   b) The robot's base<br />
+   c) The end effector<br />
+   d) The controller</p>
+<p><strong>16. How do you start a sequence?</strong><br />
+   a) By clicking a "run" or "start" button<br />
+   b) By turning off the robot<br />
+   c) By moving it manually<br />
+   d) By deleting it</p>
+<p><strong>17. How do you stop a sequence safely?</strong><br />
+   a) By using a stop button or emergency stop<br />
+   b) By unplugging the robot<br />
+   c) By hitting the robot<br />
+   d) By waiting for it to finish</p>
+<hr />
+<h2>Section E: Control Loop</h2>
+<p><strong>18. What is a control loop?</strong><br />
+   a) A circle the robot moves in<br />
+   b) A repeating cycle: read status → decide → send commands → repeat<br />
+   c) A single command<br />
+   d) The robot stopping</p>
+<p><strong>19. What is the first step in a control loop?</strong><br />
+   a) Send commands<br />
+   b) Read status from servos<br />
+   c) Decide what to do<br />
+   d) Stop the robot</p>
+<p><strong>20. Why is timing important in a control loop?</strong><br />
+   a) To make it look good<br />
+   b) To ensure smooth operation and responsiveness<br />
+   c) To save electricity<br />
+   d) It's not important</p>
+<hr />
+<h2>Section F: Command Flow</h2>
+<p><strong>21. When you move a slider in the UI, what happens next?</strong><br />
+   a) The robot moves immediately<br />
+   b) The command is sent via WebSocket to the server<br />
+   c) Nothing happens<br />
+   d) The robot stops</p>
+<p><strong>22. What is WebSocket used for?</strong><br />
+   a) To provide power<br />
+   b) To enable real-time communication between UI and server<br />
+   c) To hold the robot together<br />
+   d) To make it faster</p>
+<p><strong>23. How does a UI action become a servo command?</strong><br />
+   a) UI → WebSocket → Server → Servo command<br />
+   b) Direct connection<br />
+   c) Through the power supply<br />
+   d) It doesn't</p>
+<p><strong>24. What happens after a command is sent to a servo?</strong><br />
+   a) Nothing<br />
+   b) Feedback is returned showing the servo's status<br />
+   c) The robot stops<br />
+   d) The command is deleted</p>
+<hr />
+<h2>Answer Key</h2>
+<ol>
+<li><strong>b)</strong> To control and program the robot arm</li>
+<li><strong>b)</strong> Enable torque and set speed/acceleration limits</li>
+<li><strong>b)</strong> To ensure safe operation and prevent damage</li>
+<li><strong>a)</strong> To prevent sudden movements and reduce mechanical stress</li>
+<li><strong>b)</strong> Manually moving a single joint to a specific position</li>
+<li><strong>b)</strong> The minimum and maximum angles a joint can reach</li>
+<li><strong>b)</strong> The movement is prevented or limited by the software</li>
+<li><strong>a)</strong> To avoid damaging the robot</li>
+<li><strong>b)</strong> Moving the robot to a position and storing it for later use</li>
+<li><strong>a)</strong> By moving the robot and clicking a save/store button</li>
+<li><strong>a)</strong> By selecting it from a list and commanding the robot to move there</li>
+<li><strong>b)</strong> Yes, by modifying the stored values</li>
+<li><strong>a)</strong> A series of stored positions executed in order</li>
+<li><strong>a)</strong> A pause for a specified time</li>
+<li><strong>a)</strong> A safe starting/return position</li>
+<li><strong>a)</strong> By clicking a "run" or "start" button</li>
+<li><strong>a)</strong> By using a stop button or emergency stop</li>
+<li><strong>b)</strong> A repeating cycle: read status → decide → send commands → repeat</li>
+<li><strong>b)</strong> Read status from servos</li>
+<li><strong>b)</strong> To ensure smooth operation and responsiveness</li>
+<li><strong>b)</strong> The command is sent via WebSocket to the server</li>
+<li><strong>b)</strong> To enable real-time communication between UI and server</li>
+<li><strong>a)</strong> UI → WebSocket → Server → Servo command</li>
+<li><strong>b)</strong> Feedback is returned showing the servo's status</li>
+</ol>
+<hr />
+<h2>Scoring Guide</h2>
+<ul>
+<li><strong>22-24 correct:</strong> Excellent understanding</li>
+<li><strong>18-21 correct:</strong> Good understanding</li>
+<li><strong>14-17 correct:</strong> Satisfactory understanding</li>
+<li><strong>Below 14 correct:</strong> Needs review of module content</li>
+</ul></div></section>
+<section class="card"><h2>Assessment rubric</h2><div class="card-inner"><h1>Module 4: Basic Software &amp; Human-Machine Interface</h1>
+<h2>Assessment Rubric</h2>
+<p><strong>Student Name:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_<br />
+<strong>Date:</strong> </em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>_<br />
+<strong>Assessor:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>____</p>
+<hr />
+<h2>Overall Assessment Criteria</h2>
+<table>
+<thead>
+<tr>
+<th>Criteria</th>
+<th>Excellent (4)</th>
+<th>Good (3)</th>
+<th>Satisfactory (2)</th>
+<th>Needs Improvement (1)</th>
+<th>Score</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Knowledge &amp; Understanding</strong></td>
+<td>Comprehensive understanding of software interface and control concepts</td>
+<td>Good understanding with minor gaps</td>
+<td>Basic understanding evident but some confusion</td>
+<td>Limited understanding, significant gaps</td>
+<td>/4</td>
+</tr>
+<tr>
+<td><strong>Practical Skills</strong></td>
+<td>Consistently operates software correctly and safely</td>
+<td>Operates software correctly most of the time</td>
+<td>Basic operation but needs guidance</td>
+<td>Struggles with software operation</td>
+<td>/4</td>
+</tr>
+<tr>
+<td><strong>Analysis &amp; Application</strong></td>
+<td>Clear understanding of control loop and command flow</td>
+<td>Good understanding with minor gaps</td>
+<td>Basic understanding of concepts</td>
+<td>Limited understanding</td>
+<td>/4</td>
+</tr>
+<tr>
+<td><strong>Documentation</strong></td>
+<td>Complete, accurate documentation of all exercises</td>
+<td>Good documentation with minor omissions</td>
+<td>Basic documentation completed</td>
+<td>Incomplete documentation</td>
+<td>/4</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Total Score:</strong> /16</p>
+<hr />
+<h2>Detailed Marking Guide</h2>
+<h3>Part 1: Introduction to Control Software (15 marks)</h3>
+<h4>Question 1: Software Interface Overview (8 marks)</h4>
+<ul>
+<li><strong>2 marks per section:</strong> Accurate identification of main sections</li>
+<li><strong>2 marks:</strong> Clear explanation of navigation</li>
+</ul>
+<h4>Question 2: Basic Operations (7 marks)</h4>
+<ul>
+<li><strong>1.5 marks per answer:</strong> Complete and correct answers</li>
+<li><strong>1 mark:</strong> Partially correct</li>
+<li><strong>0 marks:</strong> No answer</li>
+</ul>
+<p><strong>Mark:</strong> /15</p>
+<hr />
+<h3>Part 2: Joint Control (20 marks)</h3>
+<h4>Question 3: Jogging Joints (12 marks)</h4>
+<ul>
+<li><strong>4 marks per exercise:</strong> Accurate jogging with correct position readings</li>
+<li><strong>2 marks per exercise:</strong> Jogged but incorrect readings</li>
+<li><strong>0 marks:</strong> Not attempted</li>
+</ul>
+<h4>Question 4: Joint Limits (8 marks)</h4>
+<ul>
+<li><strong>4 marks:</strong> Complete and accurate joint limits table</li>
+<li><strong>2 marks:</strong> Mostly complete table</li>
+<li><strong>1 mark:</strong> Basic attempt</li>
+<li>
+<p><strong>0 marks:</strong> No answer</p>
+</li>
+<li>
+<p><strong>4 marks:</strong> Clear explanation of what happens beyond limits</p>
+</li>
+</ul>
+<p><strong>Mark:</strong> /20</p>
+<hr />
+<h3>Part 3: Position Teaching (20 marks)</h3>
+<h4>Question 5: Storing Positions (12 marks)</h4>
+<ul>
+<li><strong>2 marks per position:</strong> Complete position data with description</li>
+<li><strong>1 mark per position:</strong> Position stored but missing description</li>
+<li><strong>0 marks:</strong> Not attempted</li>
+</ul>
+<h4>Question 6: Recalling and Editing Positions (8 marks)</h4>
+<ul>
+<li><strong>3 marks:</strong> Clear explanation of recalling positions</li>
+<li><strong>3 marks:</strong> Clear explanation of editing positions</li>
+<li><strong>2 marks:</strong> Successful practice exercise</li>
+</ul>
+<p><strong>Mark:</strong> /20</p>
+<hr />
+<h3>Part 4: Motion Sequences (20 marks)</h3>
+<h4>Question 7: Building a Sequence (12 marks)</h4>
+<ul>
+<li><strong>12 marks:</strong> Complete sequence with all steps, clear description</li>
+<li><strong>8 marks:</strong> Sequence created but missing some details</li>
+<li><strong>4 marks:</strong> Basic sequence attempted</li>
+<li><strong>0 marks:</strong> Not attempted</li>
+</ul>
+<h4>Question 8: Running Sequences (8 marks)</h4>
+<ul>
+<li><strong>3 marks per answer:</strong> Complete and correct answers</li>
+<li><strong>2 marks per answer:</strong> Mostly correct</li>
+<li><strong>1 mark per answer:</strong> Basic understanding</li>
+<li><strong>0 marks:</strong> No answer</li>
+</ul>
+<p><strong>Mark:</strong> /20</p>
+<hr />
+<h3>Part 5: Understanding the Control Loop (15 marks)</h3>
+<h4>Question 9: Control Loop Concept (8 marks)</h4>
+<ul>
+<li><strong>8 marks:</strong> Complete, accurate flowchart showing all steps</li>
+<li><strong>6 marks:</strong> Mostly complete flowchart</li>
+<li><strong>4 marks:</strong> Basic flowchart but missing elements</li>
+<li><strong>0 marks:</strong> No flowchart</li>
+</ul>
+<h4>Question 10: Control Loop Timing (7 marks)</h4>
+<ul>
+<li><strong>2 marks:</strong> Correct timing estimate</li>
+<li><strong>2.5 marks:</strong> Clear explanation of timing importance</li>
+<li><strong>2.5 marks:</strong> Clear explanation of slow loop consequences</li>
+</ul>
+<p><strong>Mark:</strong> /15</p>
+<hr />
+<h3>Part 6: Command Flow (15 marks)</h3>
+<h4>Question 11: From UI to Servo (10 marks)</h4>
+<ul>
+<li><strong>2.5 marks per step:</strong> Clear and accurate description of each step</li>
+<li><strong>1.5 marks per step:</strong> Mostly correct but missing detail</li>
+<li><strong>0.5 marks per step:</strong> Attempted but incorrect</li>
+<li><strong>0 marks:</strong> No answer</li>
+</ul>
+<h4>Question 12: Command Flow Diagram (5 marks)</h4>
+<ul>
+<li><strong>5 marks:</strong> Complete, accurate diagram</li>
+<li><strong>3 marks:</strong> Mostly complete diagram</li>
+<li><strong>1 mark:</strong> Basic diagram</li>
+<li><strong>0 marks:</strong> No diagram</li>
+</ul>
+<p><strong>Mark:</strong> /15</p>
+<hr />
+<h3>Part 7: Practical Exercise (25 marks)</h3>
+<h4>Exercise 1: Complete Operation Sequence (15 marks)</h4>
+<ul>
+<li><strong>15 marks:</strong> All steps completed correctly and safely</li>
+<li><strong>12 marks:</strong> Most steps completed correctly</li>
+<li><strong>8 marks:</strong> Basic completion but missing steps</li>
+<li><strong>4 marks:</strong> Incomplete attempt</li>
+<li><strong>0 marks:</strong> Not attempted</li>
+</ul>
+<h4>Exercise 2: Control Loop Observation (10 marks)</h4>
+<ul>
+<li><strong>10 marks:</strong> Complete observations with accurate measurements</li>
+<li><strong>7 marks:</strong> Good observations but missing some details</li>
+<li><strong>4 marks:</strong> Basic observations</li>
+<li><strong>0 marks:</strong> Not attempted</li>
+</ul>
+<p><strong>Mark:</strong> /25</p>
+<hr />
+<h3>Part 8: Reflection (10 marks)</h3>
+<h4>Question 13: Understanding Software and HMI (10 marks)</h4>
+<ul>
+<li><strong>4 marks per answer:</strong> Thoughtful, well-explained answers</li>
+<li><strong>3 marks per answer:</strong> Good answers showing understanding</li>
+<li><strong>2 marks per answer:</strong> Basic answers</li>
+<li><strong>1 mark per answer:</strong> Limited answers</li>
+<li><strong>0 marks:</strong> No answer</li>
+</ul>
+<p><strong>Note:</strong> Only 2-3 questions may be marked, adjust marks accordingly.</p>
+<p><strong>Mark:</strong> /10</p>
+<hr />
+<h2>Overall Performance Levels</h2>
+<h3>Excellent (85-100%)</h3>
+<ul>
+<li>Comprehensive understanding of software interface and control concepts</li>
+<li>Consistently operates software correctly and safely</li>
+<li>Clear understanding of control loop and command flow</li>
+<li>Complete, accurate documentation</li>
+<li>All practical exercises completed to high standard</li>
+</ul>
+<h3>Good (70-84%)</h3>
+<ul>
+<li>Good understanding with minor gaps</li>
+<li>Operates software correctly most of the time</li>
+<li>Good understanding with minor gaps</li>
+<li>Good documentation with minor omissions</li>
+<li>Most practical exercises completed well</li>
+</ul>
+<h3>Satisfactory (55-69%)</h3>
+<ul>
+<li>Basic understanding evident but some confusion</li>
+<li>Basic operation but needs guidance</li>
+<li>Basic understanding of concepts</li>
+<li>Basic documentation completed</li>
+<li>Practical exercises completed but may lack detail</li>
+</ul>
+<h3>Needs Improvement (Below 55%)</h3>
+<ul>
+<li>Limited understanding, significant gaps</li>
+<li>Struggles with software operation</li>
+<li>Limited understanding</li>
+<li>Incomplete documentation</li>
+<li>Practical exercises incomplete or not attempted</li>
+</ul>
+<hr />
+<h2>Feedback Section</h2>
+<h3>Strengths:</h3>
+<hr />
+<hr />
+<hr />
+<h3>Areas for Improvement:</h3>
+<hr />
+<hr />
+<hr />
+<h3>Action Plan:</h3>
+<hr />
+<hr />
+<hr />
+<h3>Next Steps:</h3>
+<hr />
+<hr />
+<hr />
+<p><strong>Final Grade:</strong> <strong><em>_</em></strong>____ / 100</p>
+<p><strong>Assessor Comments:</strong></p>
+<hr />
+<hr />
+<hr />
+<p><strong>Assessor Signature:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_<br />
+<strong>Date:</strong> </em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>_</p></div></section>
+  </div>
+</body>
+</html>

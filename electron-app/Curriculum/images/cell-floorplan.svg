@@ -1,0 +1,80 @@
+<svg viewBox="0 0 520 460" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, sans-serif">
+  <rect width="520" height="460" fill="#f8fafc" rx="8"/>
+  <text x="260" y="24" text-anchor="middle" font-size="15" font-weight="700" fill="#1e293b">Robot Work Cell — Floor Plan (Top View)</text>
+  <text x="260" y="40" text-anchor="middle" font-size="11" fill="#64748b">Showing operating envelope, dead zones, pick/place stations, and safety boundary</text>
+
+  <!-- Safety fence / cell boundary -->
+  <rect x="40" y="55" width="440" height="360" rx="6" fill="none" stroke="#ef4444" stroke-width="3" stroke-dasharray="10,5"/>
+  <text x="260" y="72" text-anchor="middle" font-size="11" fill="#ef4444" font-weight="700">SAFETY BOUNDARY — Do not enter when arm is powered</text>
+
+  <!-- Entry gate -->
+  <rect x="220" y="409" width="80" height="8" rx="2" fill="#f8fafc"/>
+  <line x1="220" y1="413" x2="220" y2="413" stroke="#ef4444" stroke-width="3"/>
+  <line x1="300" y1="413" x2="300" y2="413" stroke="#ef4444" stroke-width="3"/>
+  <text x="260" y="428" text-anchor="middle" font-size="10" fill="#ef4444">Entry / E-Stop</text>
+
+  <!-- Full reachable workspace (max reach circle) -->
+  <circle cx="240" cy="230" r="155" fill="#fef2f2" stroke="#fca5a5" stroke-width="1.5" stroke-dasharray="5,3"/>
+  <text x="380" y="100" font-size="9" fill="#fca5a5">Max reach</text>
+  <text x="380" y="112" font-size="9" fill="#fca5a5">(unrestricted)</text>
+
+  <!-- Allowed operating envelope (software limits) -->
+  <path d="M 240,230 L 240,80 A 150,150 0 0,1 390,230 Z" fill="#fef9c3" fill-opacity="0.7" stroke="#f59e0b" stroke-width="2"/>
+  <text x="340" y="185" font-size="9" fill="#92400e" font-weight="600">Operating</text>
+  <text x="340" y="197" font-size="9" fill="#92400e" font-weight="600">Envelope</text>
+  <text x="340" y="209" font-size="9" fill="#92400e">(software</text>
+  <text x="340" y="221" font-size="9" fill="#92400e">limits)</text>
+
+  <!-- Dead zone (behind robot) -->
+  <path d="M 240,230 L 240,80 A 150,150 0 0,0 90,230 Z" fill="#fee2e2" fill-opacity="0.7" stroke="#dc2626" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <text x="120" y="185" font-size="9" fill="#dc2626" font-weight="600">DEAD</text>
+  <text x="120" y="197" font-size="9" fill="#dc2626" font-weight="600">ZONE</text>
+  <text x="120" y="209" font-size="9" fill="#dc2626">(cables /</text>
+  <text x="120" y="221" font-size="9" fill="#dc2626">electronics)</text>
+
+  <!-- Robot base (top view — circle) -->
+  <circle cx="240" cy="230" r="22" fill="#334155" stroke="#1e293b" stroke-width="2"/>
+  <circle cx="240" cy="230" r="10" fill="#64748b"/>
+  <text x="240" y="234" text-anchor="middle" font-size="9" fill="white" font-weight="700">ARM</text>
+
+  <!-- Pick station -->
+  <rect x="320" y="105" width="70" height="50" rx="6" fill="#eff6ff" stroke="#3b82f6" stroke-width="2"/>
+  <text x="355" y="127" text-anchor="middle" font-size="10" font-weight="700" fill="#1d4ed8">PICK</text>
+  <text x="355" y="141" text-anchor="middle" font-size="9" fill="#3b82f6">Station A</text>
+  <!-- Pick marker dot -->
+  <circle cx="325" cy="155" r="6" fill="#3b82f6"/>
+  <text x="326" y="170" text-anchor="middle" font-size="9" fill="#3b82f6">P1</text>
+
+  <!-- Place station -->
+  <rect x="330" y="270" width="70" height="50" rx="6" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+  <text x="365" y="292" text-anchor="middle" font-size="10" font-weight="700" fill="#166534">PLACE</text>
+  <text x="365" y="306" text-anchor="middle" font-size="9" fill="#16a34a">Station B</text>
+  <circle cx="335" cy="270" r="6" fill="#16a34a"/>
+  <text x="336" y="285" text-anchor="middle" font-size="9" fill="#16a34a">P2</text>
+
+  <!-- Home position marker -->
+  <circle cx="240" cy="110" r="8" fill="#7c3aed" stroke="#6d28d9" stroke-width="1.5"/>
+  <text x="240" y="97" text-anchor="middle" font-size="10" fill="#7c3aed" font-weight="700">HOME</text>
+
+  <!-- Bench / workbench edge -->
+  <rect x="40" y="55" width="440" height="14" rx="4" fill="#94a3b8" fill-opacity="0.4"/>
+  <text x="260" y="79" text-anchor="middle" font-size="9" fill="#475569">Bench edge / wall</text>
+
+  <!-- Dimension arrows -->
+  <line x1="240" y1="390" x2="390" y2="390" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="315" y="403" text-anchor="middle" font-size="10" fill="#64748b">~300 mm reach</text>
+
+  <!-- North arrow -->
+  <text x="480" y="78" font-size="16" fill="#475569">↑</text>
+  <text x="480" y="92" font-size="9" fill="#64748b">View</text>
+
+  <!-- Legend -->
+  <rect x="42" y="340" width="160" height="70" rx="6" fill="white" stroke="#e2e8f0" stroke-width="1"/>
+  <text x="122" y="356" text-anchor="middle" font-size="10" font-weight="700" fill="#1e293b">Legend</text>
+  <rect x="50" y="362" width="12" height="8" rx="2" fill="#fef9c3" stroke="#f59e0b" stroke-width="1"/>
+  <text x="68" y="371" font-size="9" fill="#64748b">Operating envelope</text>
+  <rect x="50" y="376" width="12" height="8" rx="2" fill="#fee2e2" stroke="#dc2626" stroke-width="1"/>
+  <text x="68" y="385" font-size="9" fill="#64748b">Dead zone</text>
+  <line x1="50" y1="396" x2="62" y2="396" stroke="#ef4444" stroke-width="2" stroke-dasharray="4,2"/>
+  <text x="68" y="399" font-size="9" fill="#64748b">Safety boundary</text>
+</svg>

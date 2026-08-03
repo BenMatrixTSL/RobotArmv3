@@ -1,0 +1,90 @@
+<svg viewBox="0 0 540 360" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, sans-serif">
+  <rect width="540" height="360" fill="#f8fafc" rx="8"/>
+  <text x="270" y="22" text-anchor="middle" font-size="14" font-weight="700" fill="#1e293b">Homogeneous Transformation Matrix (4×4)</text>
+  <text x="270" y="38" text-anchor="middle" font-size="10" fill="#64748b">Encodes both rotation (3×3 sub-matrix) and translation (3×1 vector) in one compact form</text>
+
+  <!-- Matrix bracket left -->
+  <path d="M 55,58 L 45,58 L 45,218 L 55,218" stroke="#1e293b" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <!-- Matrix bracket right -->
+  <path d="M 285,58 L 295,58 L 295,218 L 285,218" stroke="#1e293b" stroke-width="3" fill="none" stroke-linecap="round"/>
+
+  <!-- Rotation sub-matrix background (3×3) -->
+  <rect x="55" y="58" width="168" height="160" rx="0" fill="#eff6ff" opacity="0.7"/>
+  <!-- Translation sub-matrix background (3×1) -->
+  <rect x="223" y="58" width="62" height="160" rx="0" fill="#f0fdf4" opacity="0.7"/>
+  <!-- Bottom row background -->
+  <rect x="55" y="218" width="230" height="40" rx="0" fill="#faf5ff" opacity="0.7"/>
+
+  <!-- Row and column borders -->
+  <line x1="55"  y1="98"  x2="295" y2="98"  stroke="#e2e8f0" stroke-width="1"/>
+  <line x1="55"  y1="138" x2="295" y2="138" stroke="#e2e8f0" stroke-width="1"/>
+  <line x1="55"  y1="178" x2="295" y2="178" stroke="#e2e8f0" stroke-width="1"/>
+  <line x1="55"  y1="218" x2="295" y2="218" stroke="#e2e8f0" stroke-width="1"/>
+  <line x1="223" y1="58"  x2="223" y2="258" stroke="#e2e8f0" stroke-width="1"/>
+
+  <!-- Matrix values — Row 1 -->
+  <text x="90"  y="84" text-anchor="middle" font-size="15" font-weight="700" fill="#1d4ed8">r₁₁</text>
+  <text x="140" y="84" text-anchor="middle" font-size="15" font-weight="700" fill="#1d4ed8">r₁₂</text>
+  <text x="190" y="84" text-anchor="middle" font-size="15" font-weight="700" fill="#1d4ed8">r₁₃</text>
+  <text x="254" y="84" text-anchor="middle" font-size="15" font-weight="700" fill="#15803d">tₓ</text>
+  <!-- Row 2 -->
+  <text x="90"  y="124" text-anchor="middle" font-size="15" font-weight="700" fill="#1d4ed8">r₂₁</text>
+  <text x="140" y="124" text-anchor="middle" font-size="15" font-weight="700" fill="#1d4ed8">r₂₂</text>
+  <text x="190" y="124" text-anchor="middle" font-size="15" font-weight="700" fill="#1d4ed8">r₂₃</text>
+  <text x="254" y="124" text-anchor="middle" font-size="15" font-weight="700" fill="#15803d">t_y</text>
+  <!-- Row 3 -->
+  <text x="90"  y="164" text-anchor="middle" font-size="15" font-weight="700" fill="#1d4ed8">r₃₁</text>
+  <text x="140" y="164" text-anchor="middle" font-size="15" font-weight="700" fill="#1d4ed8">r₃₂</text>
+  <text x="190" y="164" text-anchor="middle" font-size="15" font-weight="700" fill="#1d4ed8">r₃₃</text>
+  <text x="254" y="164" text-anchor="middle" font-size="15" font-weight="700" fill="#15803d">t_z</text>
+  <!-- Row 4 (perspective / scale) -->
+  <text x="90"  y="244" text-anchor="middle" font-size="15" font-weight="700" fill="#7c3aed">0</text>
+  <text x="140" y="244" text-anchor="middle" font-size="15" font-weight="700" fill="#7c3aed">0</text>
+  <text x="190" y="244" text-anchor="middle" font-size="15" font-weight="700" fill="#7c3aed">0</text>
+  <text x="254" y="244" text-anchor="middle" font-size="15" font-weight="700" fill="#7c3aed">1</text>
+
+  <!-- Sub-matrix labels with braces -->
+  <!-- Rotation label -->
+  <rect x="56" y="60" width="164" height="156" rx="0" fill="none" stroke="#3b82f6" stroke-width="2" stroke-dasharray="5,3"/>
+  <text x="138" y="276" text-anchor="middle" font-size="12" font-weight="700" fill="#3b82f6">3×3 Rotation</text>
+  <text x="138" y="290" text-anchor="middle" font-size="10" fill="#64748b">Encodes orientation</text>
+  <text x="138" y="302" text-anchor="middle" font-size="9" fill="#64748b">(roll, pitch, yaw of the frame)</text>
+
+  <!-- Translation label -->
+  <rect x="223" y="60" width="60" height="156" rx="0" fill="none" stroke="#16a34a" stroke-width="2" stroke-dasharray="5,3"/>
+  <text x="253" y="276" text-anchor="middle" font-size="12" font-weight="700" fill="#16a34a">3×1 Trans.</text>
+  <text x="253" y="290" text-anchor="middle" font-size="10" fill="#64748b">Position</text>
+  <text x="253" y="302" text-anchor="middle" font-size="9" fill="#64748b">(X, Y, Z offset)</text>
+
+  <!-- Bottom row label -->
+  <text x="157" y="276" text-anchor="middle" font-size="0" fill="none"/>
+  <rect x="56" y="220" width="230" height="36" rx="0" fill="none" stroke="#7c3aed" stroke-width="1.5" stroke-dasharray="5,3"/>
+  <text x="157" y="340" text-anchor="middle" font-size="11" font-weight="700" fill="#7c3aed">Bottom row [0 0 0 1] — perspective row (always fixed)</text>
+
+  <!-- Right-side formula box -->
+  <rect x="312" y="58" width="220" height="240" rx="8" fill="white" stroke="#e2e8f0" stroke-width="1.5"/>
+  <text x="422" y="78" text-anchor="middle" font-size="11" font-weight="700" fill="#1e293b">How it is built (2D example):</text>
+
+  <!-- 2D rotation -->
+  <text x="318" y="100" font-size="10" fill="#1d4ed8" font-weight="600">Rotation by angle θ:</text>
+  <text x="318" y="116" font-size="10" fill="#64748b">r₁₁=cos θ   r₁₂=−sin θ</text>
+  <text x="318" y="130" font-size="10" fill="#64748b">r₂₁=sin θ   r₂₂= cos θ</text>
+
+  <line x1="318" y1="140" x2="526" y2="140" stroke="#f1f5f9" stroke-width="1"/>
+
+  <text x="318" y="157" font-size="10" fill="#15803d" font-weight="600">Translation (link length L):</text>
+  <text x="318" y="173" font-size="10" fill="#64748b">tₓ = L · cos θ</text>
+  <text x="318" y="187" font-size="10" fill="#64748b">t_y = L · sin θ</text>
+
+  <line x1="318" y1="197" x2="526" y2="197" stroke="#f1f5f9" stroke-width="1"/>
+
+  <text x="318" y="214" font-size="10" fill="#7c3aed" font-weight="600">Chain multiply for full arm:</text>
+  <text x="318" y="230" font-size="10" fill="#64748b">T_total = T₀₁ × T₁₂ × T₂₃</text>
+  <text x="318" y="244" font-size="9"  fill="#64748b">Each Tᵢⱼ is one 4×4 matrix</text>
+  <text x="318" y="258" font-size="9"  fill="#64748b">for one joint-to-joint transform.</text>
+  <text x="318" y="274" font-size="9"  fill="#64748b">Result gives the end-effector</text>
+  <text x="318" y="286" font-size="9"  fill="#64748b">pose in the world frame.</text>
+
+  <text x="422" y="318" text-anchor="middle" font-size="9" fill="#64748b">This is the mathematical backbone of all</text>
+  <text x="422" y="330" text-anchor="middle" font-size="9" fill="#64748b">forward and inverse kinematics solvers.</text>
+</svg>

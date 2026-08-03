@@ -1,0 +1,1277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="curriculum-module" content="3">
+  <title>Module 3: Basic Electrical &amp; Electronic Systems</title>
+  <style>
+    :root {
+      --bg: #f6f7f9;
+      --card: #fff;
+      --text: #1a1d26;
+      --muted: #5c6370;
+      --accent: #1e5a8a;
+      --border: #d8dde6;
+      --code-bg: #eef1f6;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 17px;
+      line-height: 1.55;
+      color: var(--text);
+      background: var(--bg);
+    }
+    .wrap {
+      max-width: 52rem;
+      margin: 0 auto;
+      padding: 1.25rem 1.25rem 3rem;
+    }
+    .top-nav {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.75rem 1rem;
+      padding: 0.75rem 0;
+      margin-bottom: 1.25rem;
+      border-bottom: 1px solid var(--border);
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+      font-size: 0.9rem;
+    }
+    .nav-title {
+      flex: 1 1 auto;
+      font-weight: 600;
+      color: var(--muted);
+      min-width: 12rem;
+    }
+    a.nav-link {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    a.nav-link:hover { text-decoration: underline; }
+    h1.page-title {
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+      font-size: 1.65rem;
+      font-weight: 700;
+      margin: 0 0 0.5rem;
+      line-height: 1.25;
+    }
+    p.lead {
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+      color: var(--muted);
+      margin: 0 0 1.5rem;
+      font-size: 0.95rem;
+    }
+    section.card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.25rem 1.5rem 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    }
+    section.card h2 {
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+      font-size: 1.15rem;
+      margin: 0 0 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid var(--accent);
+      color: var(--accent);
+    }
+    .card-inner {
+      font-family: Georgia, "Times New Roman", serif;
+    }
+    .card-inner h1, .card-inner h2, .card-inner h3, .card-inner h4 {
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+    }
+    .card-inner h1 { font-size: 1.35rem; }
+    .card-inner h2 { font-size: 1.15rem; border-bottom: none; color: var(--text); }
+    .card-inner h3 { font-size: 1.05rem; }
+    .card-inner h4 { font-size: 1rem; }
+    .card-inner code {
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 0.9em;
+      background: var(--code-bg);
+      padding: 0.1em 0.35em;
+      border-radius: 4px;
+    }
+    .card-inner pre {
+      background: var(--code-bg);
+      padding: 1rem;
+      overflow-x: auto;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+    }
+    .card-inner pre code {
+      background: none;
+      padding: 0;
+    }
+    .card-inner table {
+      border-collapse: collapse;
+      width: 100%;
+      font-size: 0.95rem;
+      margin: 1rem 0;
+    }
+    .card-inner th, .card-inner td {
+      border: 1px solid var(--border);
+      padding: 0.45rem 0.6rem;
+      text-align: left;
+      vertical-align: top;
+    }
+    .card-inner th {
+      background: #eef3f8;
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+      font-weight: 600;
+    }
+    ul.index-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+    }
+    ul.index-list li {
+      margin: 0.35rem 0;
+      padding: 0.5rem 0.65rem;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--card);
+    }
+    ul.index-list a {
+      color: var(--accent);
+      font-weight: 600;
+      text-decoration: none;
+    }
+    ul.index-list a:hover { text-decoration: underline; }
+    .index-meta {
+      display: block;
+      font-size: 0.85rem;
+      color: var(--muted);
+      font-weight: normal;
+      margin-top: 0.2rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <nav class="top-nav">
+  <a class="nav-link" href="index.html">All modules</a>
+  <a class="nav-link" href="module-02.html">← Previous</a>
+  <span class="nav-title">Module 3: Basic Electrical &amp; Electronic Systems</span>
+  <a class="nav-link" href="module-04.html">Next →</a>
+</nav>
+<h1 class="page-title">Module 3: Basic Electrical &amp; Electronic Systems</h1>
+<p class="lead">BTEC robot arm curriculum — one page per module. Work through sections in order.</p>
+<section class="card"><h2>Curriculum plan (from BTEC_Robot_Arm_Curriculum_Plan.md)</h2><div class="card-inner"><h2><strong>Module 3: Basic Electrical &amp; Electronic Systems</strong></h2>
+<p><em>Building on Module 2</em></p>
+<h3>Learning Objectives Covered:</h3>
+<ul>
+<li>✅ <strong>Basic electrical/electronic systems</strong> (Level 3)</li>
+<li>Identify key hardware: power supply, Raspberry Pi, serial bus, ST3215 servos</li>
+<li>Interpret simple wiring diagrams for power, ground, and data daisy-chains</li>
+<li>✅ <strong>Open-loop and closed-loop control</strong> (Level 3)</li>
+<li>Distinguish between commanded position (open-loop) and servo's internal closed-loop control</li>
+<li>Explain feedback available: position, speed, load, voltage, temperature, moving flag, torque on/off</li>
+</ul>
+<h3>Content:</h3>
+<ol>
+<li>
+<p><strong>Electrical Components</strong><br />
+   - Power supply: what it does and why it matters<br />
+   - Raspberry Pi: the brain of the system<br />
+   - Serial bus: how components communicate<br />
+   - ST3215 servos: what they are and how they work</p>
+</li>
+<li>
+<p><strong>Wiring Basics</strong><br />
+   - Power connections (positive, negative, ground)<br />
+   - Data connections (serial communication)<br />
+   - Daisy-chain wiring explained<br />
+   - Reading simple wiring diagrams</p>
+</li>
+<li>
+<p><strong>Control Concepts</strong><br />
+   - What is open-loop control?<br />
+   - What is closed-loop control?<br />
+   - How servos use feedback internally<br />
+   - Understanding the difference between commanded and actual position</p>
+</li>
+<li>
+<p><strong>Servo Feedback</strong><br />
+   - What information servos provide<br />
+   - Position feedback<br />
+   - Speed feedback<br />
+   - Load feedback<br />
+   - Voltage and temperature monitoring<br />
+   - Status flags (moving, torque on/off)</p>
+</li>
+</ol>
+<h3>Practical Activities:</h3>
+<ul>
+<li>Identify all electrical components in the system</li>
+<li>Trace power and data connections</li>
+<li>Draw a simple wiring diagram</li>
+<li>Use software to read servo feedback values</li>
+<li>Compare commanded vs. actual positions</li>
+<li>Document the electrical system</li>
+</ul>
+<hr /></div></section>
+<section class="card"><h2>Theory & teaching notes</h2><div class="card-inner"><h1>Module 3: Basic Electrical &amp; Electronic Systems</h1>
+<h2>Theory &amp; Teaching Notes</h2>
+<p><strong>Module Duration:</strong> 2-3 hours<br />
+<strong>Level:</strong> Foundation (Level 3)</p>
+<hr />
+<h2>Learning Objectives</h2>
+<p>By the end of this module, students will be able to:<br />
+- Identify key electrical components in robot arm systems<br />
+- Understand power and data connections<br />
+- Distinguish between open-loop and closed-loop control<br />
+- Understand servo feedback<br />
+- Interpret simple wiring diagrams</p>
+<hr />
+<h2>1. Electrical Components Overview</h2>
+<h3>The Robot Arm Electrical System</h3>
+<p>A robot arm needs electricity to work. The electrical system includes:</p>
+<ol>
+<li><strong>Power Supply</strong> - Provides electricity</li>
+<li><strong>Controller</strong> (Raspberry Pi) - The brain</li>
+<li><strong>Communication Bus</strong> - How components talk</li>
+<li><strong>Servos</strong> - The muscles that move joints</li>
+</ol>
+<hr />
+<h2>2. Power Supply</h2>
+<h3>What is a Power Supply?</h3>
+<p>A <strong>power supply</strong> converts electricity from the wall outlet (AC) into the type of electricity the robot needs (DC).</p>
+<h3>Power Supply Specifications</h3>
+<p><strong>Voltage:</strong> Usually 5V, 12V, or 24V DC<br />
+- <strong>What it means:</strong> The "pressure" of electricity<br />
+- <strong>Why it matters:</strong> Components need the right voltage</p>
+<p><strong>Current:</strong> Measured in Amperes (A) or milliamperes (mA)<br />
+- <strong>What it means:</strong> The "flow" of electricity<br />
+- <strong>Why it matters:</strong> Must provide enough current for all components</p>
+<p><strong>Power:</strong> Voltage × Current = Power (Watts)<br />
+- <strong>Example:</strong> 12V × 5A = 60W</p>
+<h3>Why Stable Power Matters</h3>
+<p><strong>Unstable power causes:</strong><br />
+- Servos to move erratically<br />
+- Controller to reset<br />
+- Communication errors<br />
+- Damage to components</p>
+<p><strong>Good power supply:</strong><br />
+- Provides steady voltage<br />
+- Handles load changes<br />
+- Has safety features<br />
+- Reliable</p>
+<hr />
+<h2>3. Raspberry Pi (Controller)</h2>
+<h3>What is a Raspberry Pi?</h3>
+<p><strong>Raspberry Pi</strong> is a small, affordable computer that acts as the "brain" of the robot arm.</p>
+<h3>What It Does</h3>
+<ol>
+<li><strong>Runs software</strong> - Controls the robot</li>
+<li><strong>Processes commands</strong> - Understands what you want</li>
+<li><strong>Communicates</strong> - Talks to servos and user interface</li>
+<li><strong>Monitors</strong> - Watches feedback from servos</li>
+</ol>
+<h3>Why Raspberry Pi?</h3>
+<ul>
+<li><strong>Small</strong> - Fits in the robot</li>
+<li><strong>Affordable</strong> - Low cost</li>
+<li><strong>Powerful</strong> - Can run complex software</li>
+<li><strong>Flexible</strong> - Can be programmed</li>
+</ul>
+<hr />
+<h2>4. Serial Bus Communication</h2>
+<h3>What is Serial Communication?</h3>
+<p><strong>Serial communication</strong> sends data one bit at a time, one after another (like a line of people).</p>
+<p><strong>Why serial?</strong><br />
+- Simple wiring<br />
+- Reliable<br />
+- Works over distances<br />
+- Standard method</p>
+<h3>Baud Rate</h3>
+<p><strong>Baud rate</strong> = Speed of data transmission (bits per second)</p>
+<p><strong>Common rates:</strong> 9600, 115200, etc.</p>
+<p><strong>Higher baud rate = faster communication</strong><br />
+- But needs better wiring<br />
+- More sensitive to interference</p>
+<h3>Daisy-Chain Wiring</h3>
+<p><strong>Daisy-chain</strong> = Components connected in a line, one after another</p>
+<p><strong>How it works:</strong></p>
+<pre><code>Power Supply → Servo 1 → Servo 2 → Servo 3 → Servo 4
+</code></pre>
+<p><strong>Advantages:</strong><br />
+- Simple wiring<br />
+- Fewer connections<br />
+- Easier to add/remove servos</p>
+<p><strong>Disadvantages:</strong><br />
+- If one servo fails, others might be affected<br />
+- Need to address each servo individually</p>
+<hr />
+<h2>5. ST3215 Servos</h2>
+<h3>What are Servos?</h3>
+<p><strong>Servos</strong> are motors with built-in control that can move to specific positions.</p>
+<h3>ST3215 Servo Features</h3>
+<ul>
+<li><strong>Position control</strong> - Move to exact angles</li>
+<li><strong>Feedback</strong> - Report their position</li>
+<li><strong>Load sensing</strong> - Know how much force they're using</li>
+<li><strong>Temperature monitoring</strong> - Know if they're overheating</li>
+</ul>
+<h3>How Servos Work</h3>
+<ol>
+<li><strong>Receive command</strong> - "Move to 45°"</li>
+<li><strong>Move motor</strong> - Rotates toward position</li>
+<li><strong>Check position</strong> - Uses sensor to see where it is</li>
+<li><strong>Adjust</strong> - Moves until at correct position</li>
+<li><strong>Report</strong> - Sends back current position</li>
+</ol>
+<hr />
+<h2>6. Wiring Basics</h2>
+<h3>Power Connections</h3>
+<p><strong>Three main types:</strong></p>
+<ol>
+<li>
+<p><strong>Positive (VCC, +)</strong><br />
+   - The "supply" wire<br />
+   - Usually red<br />
+   - Carries power TO components</p>
+</li>
+<li>
+<p><strong>Negative (VSS, -)</strong><br />
+   - The "return" wire<br />
+   - Usually black<br />
+   - Completes the circuit</p>
+</li>
+<li>
+<p><strong>Ground (GND)</strong><br />
+   - Safety reference point<br />
+   - Usually green or bare<br />
+   - Prevents electrical shock</p>
+</li>
+</ol>
+<p><strong>Important:</strong> <br />
+- Positive and negative complete the power circuit<br />
+- Ground is for safety<br />
+- Don't confuse them!</p>
+<h3>Data Connections</h3>
+<p><strong>Data wires</strong> carry information (not power):<br />
+- Usually separate from power wires<br />
+- Can be twisted pairs (reduces interference)<br />
+- Connect in daisy-chain</p>
+<h3>Reading Wiring Diagrams</h3>
+<p><strong>Wiring diagrams</strong> show:<br />
+- What connects to what<br />
+- Wire colors<br />
+- Connection points<br />
+- Power flow</p>
+<p><strong>Basic symbols:</strong><br />
+- Lines = wires<br />
+- Circles = connection points<br />
+- Labels = component names<br />
+- Colors = wire colors</p>
+<hr />
+<h2>7. Control Concepts</h2>
+<h3>Open-Loop Control</h3>
+<p><strong>Open-loop</strong> = Control without checking if it worked</p>
+<p><strong>How it works:</strong><br />
+1. Send command: "Move to 45°"<br />
+2. Hope it gets there<br />
+3. Don't check if it actually did</p>
+<p><strong>Example:</strong> Telling someone to turn left, but not checking if they did.</p>
+<p><strong>Characteristics:</strong><br />
+- Simple<br />
+- Fast<br />
+- But... no feedback<br />
+- Can be inaccurate</p>
+<p><strong>In robot arm:</strong> From app's perspective, you send a command and hope the servo receives it.</p>
+<h3>Closed-Loop Control</h3>
+<p><strong>Closed-loop</strong> = Control WITH checking and adjusting</p>
+<p><strong>How it works:</strong><br />
+1. Send command: "Move to 45°"<br />
+2. Check actual position<br />
+3. Compare to desired position<br />
+4. Adjust if needed<br />
+5. Repeat until correct</p>
+<p><strong>Example:</strong> Telling someone to turn left, watching them, and correcting if they don't turn enough.</p>
+<p><strong>Characteristics:</strong><br />
+- More complex<br />
+- Slower<br />
+- But... accurate<br />
+- Self-correcting</p>
+<p><strong>In robot arm:</strong> Inside the servo, it continuously checks position and adjusts.</p>
+<h3>Both Types in Robot Arm</h3>
+<p><strong>The system uses BOTH:</strong></p>
+<ol>
+<li><strong>App → Servo</strong> = Open-loop (command sent, hope it arrives)</li>
+<li><strong>Inside Servo</strong> = Closed-loop (servo checks and adjusts position)</li>
+</ol>
+<p><strong>Why this design?</strong><br />
+- App doesn't need to constantly check (simpler)<br />
+- Servo handles accuracy internally (better control)</p>
+<hr />
+<h2>8. Servo Feedback</h2>
+<h3>What is Feedback?</h3>
+<p><strong>Feedback</strong> = Information about what's actually happening</p>
+<p><strong>Why it matters:</strong> You can't control what you can't measure.</p>
+<h3>Types of Feedback from ST3215 Servos</h3>
+<h4>1. Present Position</h4>
+<ul>
+<li><strong>What it is:</strong> Current angle of the servo</li>
+<li><strong>Why useful:</strong> Know where servo actually is</li>
+<li><strong>Example:</strong> "Servo is at 42.5°"</li>
+</ul>
+<h4>2. Speed</h4>
+<ul>
+<li><strong>What it is:</strong> How fast servo is moving</li>
+<li><strong>Why useful:</strong> Monitor movement</li>
+<li><strong>Example:</strong> "Moving at 50°/second"</li>
+</ul>
+<h4>3. Load</h4>
+<ul>
+<li><strong>What it is:</strong> How much force/torque servo is using</li>
+<li><strong>Why useful:</strong> Detect overload, know if stuck</li>
+<li><strong>Example:</strong> "Using 80% of maximum torque"</li>
+</ul>
+<h4>4. Voltage</h4>
+<ul>
+<li><strong>What it is:</strong> Electrical power level</li>
+<li><strong>Why useful:</strong> Detect power problems</li>
+<li><strong>Example:</strong> "Receiving 11.8V" (should be 12V)</li>
+</ul>
+<h4>5. Temperature</h4>
+<ul>
+<li><strong>What it is:</strong> How hot the servo is</li>
+<li><strong>Why useful:</strong> Prevent overheating damage</li>
+<li><strong>Example:</strong> "Temperature is 45°C"</li>
+</ul>
+<h4>6. Moving Flag</h4>
+<ul>
+<li><strong>What it is:</strong> Is servo currently moving? (Yes/No)</li>
+<li><strong>Why useful:</strong> Know when movement is complete</li>
+<li><strong>Example:</strong> "Moving = True"</li>
+</ul>
+<h4>7. Torque On/Off Flag</h4>
+<ul>
+<li><strong>What it is:</strong> Is motor enabled? (Yes/No)</li>
+<li><strong>Why useful:</strong> Know if servo can move</li>
+<li><strong>Example:</strong> "Torque = On"</li>
+</ul>
+<h3>Using Feedback</h3>
+<p><strong>Feedback helps you:</strong><br />
+- Monitor system health<br />
+- Detect problems early<br />
+- Verify commands worked<br />
+- Optimize performance<br />
+- Ensure safety</p>
+<p><strong>Example:</strong> If load is very high, something might be stuck or overloaded.</p>
+<hr />
+<h2>9. Commanded vs. Actual Position</h2>
+<h3>Why They Might Differ</h3>
+<p><strong>Commanded position</strong> = Where you told it to go<br />
+<strong>Actual position</strong> = Where it actually is</p>
+<p><strong>They might differ because:</strong></p>
+<ol>
+<li>
+<p><strong>Servo hasn't finished moving yet</strong><br />
+   - Still moving to position<br />
+   - Check "moving flag"</p>
+</li>
+<li>
+<p><strong>Mechanical play (backlash)</strong><br />
+   - Gears have small gaps<br />
+   - Causes small errors</p>
+</li>
+<li>
+<p><strong>Load</strong><br />
+   - Heavy load might prevent reaching exact position<br />
+   - Servo might not have enough torque</p>
+</li>
+<li>
+<p><strong>Wear</strong><br />
+   - Over time, accuracy decreases<br />
+   - Needs calibration</p>
+</li>
+</ol>
+<p><strong>Normal difference:</strong> Usually very small (&lt; 1°)</p>
+<p><strong>Large difference:</strong> Indicates a problem</p>
+<hr />
+<h2>10. Practical Understanding</h2>
+<h3>Identifying Components</h3>
+<p>When looking at a robot arm system, you should identify:</p>
+<ol>
+<li>
+<p><strong>Power supply</strong><br />
+   - Where is it?<br />
+   - What voltage/current?<br />
+   - Is it connected properly?</p>
+</li>
+<li>
+<p><strong>Raspberry Pi</strong><br />
+   - Where is it?<br />
+   - Is it powered?<br />
+   - Is it communicating?</p>
+</li>
+<li>
+<p><strong>Serial bus</strong><br />
+   - How are servos connected?<br />
+   - Is wiring secure?<br />
+   - Any damage?</p>
+</li>
+<li>
+<p><strong>Servos</strong><br />
+   - How many?<br />
+   - Are they all connected?<br />
+   - Are they receiving power?</p>
+</li>
+</ol>
+<h3>Reading Feedback</h3>
+<p>You should be able to:<br />
+- Read position feedback<br />
+- Monitor load<br />
+- Check voltage<br />
+- Watch temperature<br />
+- Use flags to understand state</p>
+<hr />
+<h2>11. Summary</h2>
+<h3>Key Concepts</h3>
+<ol>
+<li><strong>Power supply</strong> provides electricity to the system</li>
+<li><strong>Raspberry Pi</strong> is the controller/brain</li>
+<li><strong>Serial bus</strong> allows communication</li>
+<li><strong>Servos</strong> are the motors that move joints</li>
+<li><strong>Open-loop</strong> = command without checking</li>
+<li><strong>Closed-loop</strong> = command with checking and adjusting</li>
+<li><strong>Feedback</strong> tells you what's actually happening</li>
+<li><strong>Wiring</strong> connects everything together</li>
+</ol>
+<h3>Understanding Your System</h3>
+<p>You should now understand:<br />
+- What each electrical component does<br />
+- How power flows<br />
+- How data flows<br />
+- How control works<br />
+- What feedback tells you</p>
+<h3>Next Steps</h3>
+<p>After learning this theory, you will:<br />
+- Identify components in your system<br />
+- Trace wiring connections<br />
+- Read servo feedback<br />
+- Compare commanded vs. actual positions<br />
+- Complete the Module 3 worksheet</p>
+<hr />
+<h2>Questions for Review</h2>
+<p>Before moving to the worksheet, make sure you can answer:</p>
+<ol>
+<li>What does the power supply do?</li>
+<li>What is the Raspberry Pi's role?</li>
+<li>What is serial communication?</li>
+<li>What is the difference between open-loop and closed-loop control?</li>
+<li>What feedback does a servo provide?</li>
+<li>Why might commanded and actual positions differ?</li>
+<li>What is daisy-chain wiring?</li>
+</ol>
+<hr />
+<p><strong>Remember:</strong> Understanding the electrical system helps you troubleshoot problems and operate the robot safely. Always be careful with electricity!</p></div></section>
+<section class="card"><h2>Student worksheet</h2><div class="card-inner"><h1>Module 3: Basic Electrical &amp; Electronic Systems</h1>
+<h2>Student Worksheet</h2>
+<p><strong>Name:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_<br />
+<strong>Date:</strong> </em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>_<br />
+<strong>Group/Class:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>____</p>
+<hr />
+<h2>Part 1: Electrical Components</h2>
+<h3>Question 1: Component Identification</h3>
+<p>Identify the key hardware components in the robot arm system:</p>
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th>What It Does</th>
+<th>Why It's Important</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Power Supply</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Raspberry Pi</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Serial Bus</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>ST3215 Servos</td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h3>Question 2: Power Supply</h3>
+<p>Answer the following about the power supply:</p>
+<p>a) What voltage does the power supply provide? <strong><em>_</em></strong></p>
+<p>b) What is the maximum current it can provide? <strong><em>_</em></strong></p>
+<p>c) Why is a stable power supply important?</p>
+<hr />
+<hr />
+<hr />
+<h2>Part 2: Wiring Basics</h2>
+<h3>Question 3: Power Connections</h3>
+<p>Complete the following:</p>
+<p>a) What are the three main types of power connections?<br />
+   1. <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_ (positive)<br />
+   2. </em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>_ (negative)<br />
+   3. <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>____ (ground)</p>
+<p>b) What is the difference between ground and negative?</p>
+<hr />
+<hr />
+<h3>Question 4: Data Connections</h3>
+<p>Answer the following:</p>
+<p>a) What type of communication does the serial bus use?</p>
+<hr />
+<p>b) What does "daisy-chain" wiring mean?</p>
+<hr />
+<hr />
+<p>c) Draw a simple diagram showing how servos are connected in a daisy-chain:</p>
+<p>[Space for diagram]</p>
+<hr />
+<h2>Part 3: Control Concepts</h2>
+<h3>Question 5: Open-Loop vs Closed-Loop Control</h3>
+<p>Complete the comparison table:</p>
+<table>
+<thead>
+<tr>
+<th>Aspect</th>
+<th>Open-Loop Control</th>
+<th>Closed-Loop Control</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Uses feedback?</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Example in robot arm</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Advantages</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Disadvantages</td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h3>Question 6: Control in the Robot Arm System</h3>
+<p>Answer the following:</p>
+<p>a) From the app's perspective, is commanding a position open-loop or closed-loop? Why?</p>
+<hr />
+<hr />
+<p>b) Inside the servo, is the control open-loop or closed-loop? Why?</p>
+<hr />
+<hr />
+<hr />
+<h2>Part 4: Servo Feedback</h2>
+<h3>Question 7: Feedback Types</h3>
+<p>List all the types of feedback available from the ST3215 servos:</p>
+<ol>
+<li>
+<hr />
+</li>
+<li>
+<hr />
+</li>
+<li>
+<hr />
+</li>
+<li>
+<hr />
+</li>
+<li>
+<hr />
+</li>
+<li>
+<hr />
+</li>
+<li>
+<hr />
+</li>
+</ol>
+<h3>Question 8: Using Feedback</h3>
+<p>For each type of feedback, explain what it tells you:</p>
+<table>
+<thead>
+<tr>
+<th>Feedback Type</th>
+<th>What It Tells You</th>
+<th>Why It's Useful</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Present Position</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Speed</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Load</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Voltage</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Temperature</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Moving Flag</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Torque On/Off</td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>Part 5: Practical Exercise</h2>
+<h3>Exercise 1: Component Identification</h3>
+<p>Complete this checklist:</p>
+<ul>
+<li>[ ] Located power supply</li>
+<li>[ ] Identified power supply specifications</li>
+<li>[ ] Located Raspberry Pi</li>
+<li>[ ] Identified serial bus connections</li>
+<li>[ ] Counted number of servos</li>
+<li>[ ] Traced power connections</li>
+<li>[ ] Traced data connections</li>
+<li>[ ] Documented findings</li>
+</ul>
+<p><strong>Notes:</strong></p>
+<hr />
+<hr />
+<hr />
+<h3>Exercise 2: Reading Servo Feedback</h3>
+<p>Use the software to read feedback from each servo and complete the table:</p>
+<table>
+<thead>
+<tr>
+<th>Servo ID</th>
+<th>Position</th>
+<th>Speed</th>
+<th>Load</th>
+<th>Voltage</th>
+<th>Temperature</th>
+<th>Moving?</th>
+<th>Torque On?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>2</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>3</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>4</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Observations:</strong></p>
+<hr />
+<hr />
+<h3>Exercise 3: Commanded vs Actual Position</h3>
+<p>Move a servo to a specific position and compare:</p>
+<p><strong>Commanded Position:</strong> <strong><em>_</em></strong><br />
+<strong>Actual Position (from feedback):</strong> <strong><em>_</em></strong><br />
+<strong>Difference:</strong> <strong><em>_</em></strong></p>
+<p><strong>Why might there be a difference?</strong></p>
+<hr />
+<hr />
+<hr />
+<h2>Part 6: Wiring Diagram</h2>
+<h3>Exercise 4: Create a Simple Wiring Diagram</h3>
+<p>Draw a wiring diagram showing:<br />
+- Power supply<br />
+- Raspberry Pi<br />
+- Serial bus connections<br />
+- All servos connected in daisy-chain<br />
+- Power connections (positive, negative, ground)<br />
+- Data connections</p>
+<p>[Space for diagram]</p>
+<p><strong>Label all components clearly.</strong></p>
+<hr />
+<h2>Part 7: Reflection</h2>
+<h3>Question 9: Understanding Electrical Systems</h3>
+<p>Answer the following:</p>
+<p>a) Why is it important to understand the electrical system?</p>
+<hr />
+<hr />
+<p>b) How does feedback help you operate the robot arm safely?</p>
+<hr />
+<hr />
+<p>c) What would happen if the power supply failed?</p>
+<hr />
+<hr />
+<hr />
+<h2>Self-Assessment Checklist</h2>
+<p>Before submitting, check that you have:</p>
+<ul>
+<li>[ ] Identified all electrical components</li>
+<li>[ ] Understood power and data connections</li>
+<li>[ ] Understood open-loop vs closed-loop control</li>
+<li>[ ] Identified all feedback types</li>
+<li>[ ] Read feedback from servos</li>
+<li>[ ] Compared commanded vs actual positions</li>
+<li>[ ] Created a wiring diagram</li>
+<li>[ ] Written reflection answers</li>
+</ul>
+<p><strong>Student Signature:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_<br />
+<strong>Date:</strong> </em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><em><br />
+<strong>Instructor Signature:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_<br />
+<strong>Date:</strong> </em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong></em></p></div></section>
+<section class="card"><h2>Multiple choice questions</h2><div class="card-inner"><h1>Module 3: Basic Electrical &amp; Electronic Systems</h1>
+<h2>Multiple Choice Questions</h2>
+<p><strong>Instructions:</strong> Choose the best answer for each question. Circle or highlight your choice.</p>
+<hr />
+<h2>Section A: Electrical Components</h2>
+<p><strong>1. What is the main purpose of the power supply in a robot arm system?</strong><br />
+   a) To control the robot's movements<br />
+   b) To provide electrical power to all components<br />
+   c) To program the robot<br />
+   d) To make the robot look good</p>
+<p><strong>2. What is the Raspberry Pi's role in the robot arm system?</strong><br />
+   a) To provide power<br />
+   b) To act as the controller/brain of the system<br />
+   c) To move the joints<br />
+   d) To hold the robot together</p>
+<p><strong>3. What is a serial bus used for?</strong><br />
+   a) To provide power<br />
+   b) To allow communication between components<br />
+   c) To hold the robot together<br />
+   d) To make the robot faster</p>
+<p><strong>4. What are ST3215 servos?</strong><br />
+   a) The power supply<br />
+   b) The motors that move the robot arm joints<br />
+   c) The controller<br />
+   d) The wiring</p>
+<hr />
+<h2>Section B: Wiring Basics</h2>
+<p><strong>5. What are the three main types of power connections?</strong><br />
+   a) Red, blue, green<br />
+   b) Positive, negative, ground<br />
+   c) Up, down, sideways<br />
+   d) Fast, slow, medium</p>
+<p><strong>6. What is "daisy-chain" wiring?</strong><br />
+   a) Connecting components in a series, one after another<br />
+   b) Connecting all components to one central point<br />
+   c) Using flower-shaped connectors<br />
+   d) Random connections</p>
+<p><strong>7. In a daisy-chain, how are servos typically connected?</strong><br />
+   a) Each servo connects directly to the Raspberry Pi<br />
+   b) Servos connect to each other in a chain, sharing the data line<br />
+   c) Servos don't need to be connected<br />
+   d) Only the first servo is connected</p>
+<p><strong>8. What is the difference between ground and negative?</strong><br />
+   a) There is no difference<br />
+   b) Ground is a reference point, negative is the return path<br />
+   c) Ground is positive, negative is ground<br />
+   d) They are the same thing</p>
+<hr />
+<h2>Section C: Control Concepts</h2>
+<p><strong>9. What is open-loop control?</strong><br />
+   a) Control that uses feedback to adjust<br />
+   b) Control that does not use feedback<br />
+   c) Control that only works in circles<br />
+   d) Control that is always open</p>
+<p><strong>10. What is closed-loop control?</strong><br />
+   a) Control that uses feedback to adjust<br />
+   b) Control that does not use feedback<br />
+   c) Control that is always closed<br />
+   d) Control that only works in straight lines</p>
+<p><strong>11. From the app's perspective, commanding a position is:</strong><br />
+   a) Closed-loop control<br />
+   b) Open-loop control (command sent without checking if it was received)<br />
+   c) Both open and closed loop<br />
+   d) Neither open nor closed loop</p>
+<p><strong>12. Inside the servo, the control is:</strong><br />
+   a) Open-loop only<br />
+   b) Closed-loop (uses position feedback to reach target)<br />
+   c) No control at all<br />
+   d) Random control</p>
+<hr />
+<h2>Section D: Servo Feedback</h2>
+<p><strong>13. What feedback does a servo provide about its position?</strong><br />
+   a) Present position<br />
+   b) Future position<br />
+   c) Past position only<br />
+   d) No position feedback</p>
+<p><strong>14. What does the "load" feedback tell you?</strong><br />
+   a) How much the servo weighs<br />
+   b) How much force/torque the servo is experiencing<br />
+   c) How fast the servo is moving<br />
+   d) The servo's temperature</p>
+<p><strong>15. What does the "voltage" feedback tell you?</strong><br />
+   a) How fast the servo is moving<br />
+   b) The electrical power level supplied to the servo<br />
+   c) The servo's position<br />
+   d) The servo's temperature</p>
+<p><strong>16. What does the "temperature" feedback tell you?</strong><br />
+   a) The room temperature<br />
+   b) How hot the servo is getting<br />
+   c) The servo's speed<br />
+   d) The servo's position</p>
+<p><strong>17. What does the "moving flag" indicate?</strong><br />
+   a) Whether the servo is currently moving<br />
+   b) The servo's color<br />
+   c) The servo's position<br />
+   d) The servo's speed setting</p>
+<p><strong>18. What does "torque on/off" indicate?</strong><br />
+   a) Whether the servo motor is enabled or disabled<br />
+   b) The servo's speed<br />
+   c) The servo's position<br />
+   d) The servo's temperature</p>
+<hr />
+<h2>Section E: Practical Application</h2>
+<p><strong>19. Why might there be a difference between commanded position and actual position?</strong><br />
+   a) The servo is broken<br />
+   b) Mechanical play, load, or the servo hasn't finished moving yet<br />
+   c) There should never be a difference<br />
+   d) The software is wrong</p>
+<p><strong>20. Why is feedback important for safe operation?</strong><br />
+   a) It makes the robot look better<br />
+   b) It allows monitoring of system health and detection of problems<br />
+   c) It makes the robot faster<br />
+   d) It's not important</p>
+<hr />
+<h2>Answer Key</h2>
+<ol>
+<li><strong>b)</strong> To provide electrical power to all components</li>
+<li><strong>b)</strong> To act as the controller/brain of the system</li>
+<li><strong>b)</strong> To allow communication between components</li>
+<li><strong>b)</strong> The motors that move the robot arm joints</li>
+<li><strong>b)</strong> Positive, negative, ground</li>
+<li><strong>a)</strong> Connecting components in a series, one after another</li>
+<li><strong>b)</strong> Servos connect to each other in a chain, sharing the data line</li>
+<li><strong>b)</strong> Ground is a reference point, negative is the return path</li>
+<li><strong>b)</strong> Control that does not use feedback</li>
+<li><strong>a)</strong> Control that uses feedback to adjust</li>
+<li><strong>b)</strong> Open-loop control (command sent without checking if it was received)</li>
+<li><strong>b)</strong> Closed-loop (uses position feedback to reach target)</li>
+<li><strong>a)</strong> Present position</li>
+<li><strong>b)</strong> How much force/torque the servo is experiencing</li>
+<li><strong>b)</strong> The electrical power level supplied to the servo</li>
+<li><strong>b)</strong> How hot the servo is getting</li>
+<li><strong>a)</strong> Whether the servo is currently moving</li>
+<li><strong>a)</strong> Whether the servo motor is enabled or disabled</li>
+<li><strong>b)</strong> Mechanical play, load, or the servo hasn't finished moving yet</li>
+<li><strong>b)</strong> It allows monitoring of system health and detection of problems</li>
+</ol>
+<hr />
+<h2>Scoring Guide</h2>
+<ul>
+<li><strong>18-20 correct:</strong> Excellent understanding</li>
+<li><strong>15-17 correct:</strong> Good understanding</li>
+<li><strong>12-14 correct:</strong> Satisfactory understanding</li>
+<li><strong>Below 12 correct:</strong> Needs review of module content</li>
+</ul></div></section>
+<section class="card"><h2>Assessment rubric</h2><div class="card-inner"><h1>Module 3: Basic Electrical &amp; Electronic Systems</h1>
+<h2>Assessment Rubric</h2>
+<p><strong>Student Name:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_<br />
+<strong>Date:</strong> </em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>_<br />
+<strong>Assessor:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>____</p>
+<hr />
+<h2>Overall Assessment Criteria</h2>
+<table>
+<thead>
+<tr>
+<th>Criteria</th>
+<th>Excellent (4)</th>
+<th>Good (3)</th>
+<th>Satisfactory (2)</th>
+<th>Needs Improvement (1)</th>
+<th>Score</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Knowledge &amp; Understanding</strong></td>
+<td>Comprehensive understanding of electrical components and control concepts</td>
+<td>Good understanding with minor gaps</td>
+<td>Basic understanding evident but some confusion</td>
+<td>Limited understanding, significant gaps</td>
+<td>/4</td>
+</tr>
+<tr>
+<td><strong>Practical Skills</strong></td>
+<td>Accurate identification and measurement of all components and feedback</td>
+<td>Mostly accurate identification and measurement</td>
+<td>Basic identification with some errors</td>
+<td>Struggles with identification and measurement</td>
+<td>/4</td>
+</tr>
+<tr>
+<td><strong>Analysis &amp; Application</strong></td>
+<td>Clear analysis of control systems and feedback interpretation</td>
+<td>Good analysis with minor gaps</td>
+<td>Basic analysis completed</td>
+<td>Limited or incorrect analysis</td>
+<td>/4</td>
+</tr>
+<tr>
+<td><strong>Documentation</strong></td>
+<td>Complete, accurate wiring diagram and well-organized documentation</td>
+<td>Good documentation with minor omissions</td>
+<td>Basic documentation completed</td>
+<td>Incomplete or disorganized documentation</td>
+<td>/4</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Total Score:</strong> /16</p>
+<hr />
+<h2>Detailed Marking Guide</h2>
+<h3>Part 1: Electrical Components (20 marks)</h3>
+<h4>Question 1: Component Identification (16 marks)</h4>
+<ul>
+<li><strong>4 marks per component:</strong> Complete and accurate description of function and importance</li>
+<li><strong>3 marks per component:</strong> Good description but missing some detail</li>
+<li><strong>2 marks per component:</strong> Basic description</li>
+<li><strong>1 mark per component:</strong> Attempted but incorrect</li>
+<li><strong>0 marks:</strong> No answer</li>
+</ul>
+<h4>Question 2: Power Supply (4 marks)</h4>
+<ul>
+<li><strong>1 mark:</strong> Correct voltage</li>
+<li><strong>1 mark:</strong> Correct current</li>
+<li><strong>2 marks:</strong> Clear explanation of importance</li>
+</ul>
+<p><strong>Mark:</strong> /20</p>
+<hr />
+<h3>Part 2: Wiring Basics (20 marks)</h3>
+<h4>Question 3: Power Connections (8 marks)</h4>
+<ul>
+<li><strong>3 marks:</strong> All three connections correct</li>
+<li><strong>2 marks:</strong> Two connections correct</li>
+<li><strong>1 mark:</strong> One connection correct</li>
+<li><strong>0 marks:</strong> No answer</li>
+</ul>
+<p><strong>Correct answers:</strong><br />
+1. Positive/VCC<br />
+2. Negative/VSS<br />
+3. Ground/GND</p>
+<ul>
+<li><strong>5 marks:</strong> Clear explanation of difference between ground and negative</li>
+</ul>
+<h4>Question 4: Data Connections (12 marks)</h4>
+<ul>
+<li><strong>3 marks:</strong> Correct communication type (serial)</li>
+<li><strong>4 marks:</strong> Clear explanation of daisy-chain</li>
+<li><strong>5 marks:</strong> Accurate diagram showing daisy-chain connections</li>
+</ul>
+<p><strong>Mark:</strong> /20</p>
+<hr />
+<h3>Part 3: Control Concepts (20 marks)</h3>
+<h4>Question 5: Open-Loop vs Closed-Loop (12 marks)</h4>
+<ul>
+<li><strong>3 marks per row:</strong> Complete and accurate comparison</li>
+<li><strong>2 marks per row:</strong> Mostly correct but missing detail</li>
+<li><strong>1 mark per row:</strong> Basic understanding shown</li>
+<li><strong>0 marks:</strong> No answer</li>
+</ul>
+<h4>Question 6: Control in Robot Arm (8 marks)</h4>
+<ul>
+<li><strong>4 marks per answer:</strong> Clear and correct explanation</li>
+<li><strong>3 marks per answer:</strong> Mostly correct explanation</li>
+<li><strong>2 marks per answer:</strong> Basic understanding shown</li>
+<li><strong>0 marks:</strong> No answer</li>
+</ul>
+<p><strong>Mark:</strong> /20</p>
+<hr />
+<h3>Part 4: Servo Feedback (15 marks)</h3>
+<h4>Question 7: Feedback Types (7 marks)</h4>
+<ul>
+<li><strong>1 mark per feedback type:</strong> All 7 types listed correctly</li>
+<li><strong>Partial marks:</strong> For each correct type listed</li>
+</ul>
+<p><strong>Correct answers:</strong><br />
+1. Present Position<br />
+2. Speed<br />
+3. Load<br />
+4. Voltage<br />
+5. Temperature<br />
+6. Moving Flag<br />
+7. Torque On/Off</p>
+<h4>Question 8: Using Feedback (8 marks)</h4>
+<ul>
+<li><strong>1-1.5 marks per row:</strong> Accurate description of what feedback tells you and why useful</li>
+<li><strong>Partial marks:</strong> For partially correct answers</li>
+</ul>
+<p><strong>Mark:</strong> /15</p>
+<hr />
+<h3>Part 5: Practical Exercise (25 marks)</h3>
+<h4>Exercise 1: Component Identification (8 marks)</h4>
+<ul>
+<li><strong>8 marks:</strong> All checklist items completed, detailed notes</li>
+<li><strong>6 marks:</strong> Most items completed, some notes</li>
+<li><strong>4 marks:</strong> Basic completion, minimal notes</li>
+<li><strong>2 marks:</strong> Incomplete checklist</li>
+<li><strong>0 marks:</strong> Not attempted</li>
+</ul>
+<h4>Exercise 2: Reading Servo Feedback (10 marks)</h4>
+<ul>
+<li><strong>10 marks:</strong> Complete table with accurate readings and thoughtful observations</li>
+<li><strong>7 marks:</strong> Mostly complete table, some observations</li>
+<li><strong>4 marks:</strong> Basic table completed</li>
+<li><strong>2 marks:</strong> Incomplete table</li>
+<li><strong>0 marks:</strong> Not attempted</li>
+</ul>
+<h4>Exercise 3: Commanded vs Actual Position (7 marks)</h4>
+<ul>
+<li><strong>3 marks:</strong> Accurate comparison</li>
+<li><strong>4 marks:</strong> Thoughtful explanation of difference</li>
+</ul>
+<p><strong>Mark:</strong> /25</p>
+<hr />
+<h3>Part 6: Wiring Diagram (10 marks)</h3>
+<h4>Exercise 4: Create Wiring Diagram (10 marks)</h4>
+<ul>
+<li><strong>10 marks:</strong> Complete, accurate diagram with all components clearly labeled</li>
+<li><strong>7 marks:</strong> Mostly complete diagram, minor omissions</li>
+<li><strong>4 marks:</strong> Basic diagram but missing key elements</li>
+<li><strong>2 marks:</strong> Incomplete or unclear diagram</li>
+<li><strong>0 marks:</strong> No diagram</li>
+</ul>
+<p><strong>Mark:</strong> /10</p>
+<hr />
+<h3>Part 7: Reflection (10 marks)</h3>
+<h4>Question 9: Understanding Electrical Systems (10 marks)</h4>
+<ul>
+<li><strong>4 marks per answer:</strong> Thoughtful, well-explained answers showing deep understanding</li>
+<li><strong>3 marks per answer:</strong> Good answers showing understanding</li>
+<li><strong>2 marks per answer:</strong> Basic answers, some understanding</li>
+<li><strong>1 mark per answer:</strong> Limited answers, little understanding</li>
+<li><strong>0 marks:</strong> No answer</li>
+</ul>
+<p><strong>Note:</strong> Only 2-3 questions may be marked, adjust marks accordingly.</p>
+<p><strong>Mark:</strong> /10</p>
+<hr />
+<h2>Overall Performance Levels</h2>
+<h3>Excellent (85-100%)</h3>
+<ul>
+<li>Comprehensive understanding of all electrical concepts</li>
+<li>Accurate identification and measurement of all components</li>
+<li>Clear analysis of control systems and feedback</li>
+<li>Complete, accurate wiring diagram</li>
+<li>All practical exercises completed to high standard</li>
+</ul>
+<h3>Good (70-84%)</h3>
+<ul>
+<li>Good understanding with minor gaps</li>
+<li>Mostly accurate identification and measurement</li>
+<li>Good analysis with minor gaps</li>
+<li>Good wiring diagram with minor omissions</li>
+<li>Most practical exercises completed well</li>
+</ul>
+<h3>Satisfactory (55-69%)</h3>
+<ul>
+<li>Basic understanding evident but some confusion</li>
+<li>Basic identification with some errors</li>
+<li>Basic analysis completed</li>
+<li>Basic wiring diagram completed</li>
+<li>Practical exercises completed but may lack detail</li>
+</ul>
+<h3>Needs Improvement (Below 55%)</h3>
+<ul>
+<li>Limited understanding, significant gaps</li>
+<li>Struggles with identification and measurement</li>
+<li>Limited or incorrect analysis</li>
+<li>Incomplete or incorrect wiring diagram</li>
+<li>Practical exercises incomplete or not attempted</li>
+</ul>
+<hr />
+<h2>Feedback Section</h2>
+<h3>Strengths:</h3>
+<hr />
+<hr />
+<hr />
+<h3>Areas for Improvement:</h3>
+<hr />
+<hr />
+<hr />
+<h3>Action Plan:</h3>
+<hr />
+<hr />
+<hr />
+<h3>Next Steps:</h3>
+<hr />
+<hr />
+<hr />
+<p><strong>Final Grade:</strong> <strong><em>_</em></strong>____ / 100</p>
+<p><strong>Assessor Comments:</strong></p>
+<hr />
+<hr />
+<hr />
+<p><strong>Assessor Signature:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_<br />
+<strong>Date:</strong> </em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>_</p></div></section>
+  </div>
+</body>
+</html>

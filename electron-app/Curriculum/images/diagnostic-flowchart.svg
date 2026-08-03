@@ -1,0 +1,77 @@
+<svg viewBox="0 0 480 520" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, sans-serif">
+  <defs>
+    <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 Z" fill="#475569"/>
+    </marker>
+    <marker id="arr-g" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 Z" fill="#16a34a"/>
+    </marker>
+    <marker id="arr-r" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 Z" fill="#dc2626"/>
+    </marker>
+  </defs>
+  <rect width="480" height="520" fill="#f8fafc" rx="8"/>
+  <text x="240" y="26" text-anchor="middle" font-size="15" font-weight="700" fill="#1e293b">Diagnostic Flowchart</text>
+  <text x="240" y="42" text-anchor="middle" font-size="11" fill="#64748b">Symptom → Hypothesis → Test → Conclusion</text>
+
+  <!-- Step 1: Observe Symptom -->
+  <rect x="130" y="58" width="220" height="44" rx="8" fill="#fef3c7" stroke="#d97706" stroke-width="2"/>
+  <text x="240" y="78" text-anchor="middle" font-size="12" font-weight="700" fill="#92400e">1. Observe Symptom</text>
+  <text x="240" y="93" text-anchor="middle" font-size="10" fill="#92400e">What exactly is going wrong?</text>
+
+  <line x1="240" y1="102" x2="240" y2="124" stroke="#475569" stroke-width="2" marker-end="url(#arr)"/>
+
+  <!-- Step 2: Describe clearly -->
+  <rect x="130" y="124" width="220" height="44" rx="8" fill="#eff6ff" stroke="#3b82f6" stroke-width="2"/>
+  <text x="240" y="144" text-anchor="middle" font-size="12" font-weight="700" fill="#1d4ed8">2. Describe Precisely</text>
+  <text x="240" y="159" text-anchor="middle" font-size="10" fill="#1d4ed8">When? Which joint? What changed?</text>
+
+  <line x1="240" y1="168" x2="240" y2="190" stroke="#475569" stroke-width="2" marker-end="url(#arr)"/>
+
+  <!-- Step 3: Form Hypothesis -->
+  <rect x="130" y="190" width="220" height="44" rx="8" fill="#faf5ff" stroke="#7c3aed" stroke-width="2"/>
+  <text x="240" y="210" text-anchor="middle" font-size="12" font-weight="700" fill="#6d28d9">3. Form Hypothesis</text>
+  <text x="240" y="225" text-anchor="middle" font-size="10" fill="#7c3aed">What is the likely cause? List 1–3.</text>
+
+  <line x1="240" y1="234" x2="240" y2="256" stroke="#475569" stroke-width="2" marker-end="url(#arr)"/>
+
+  <!-- Step 4: Design Test -->
+  <rect x="130" y="256" width="220" height="44" rx="8" fill="#fff7ed" stroke="#ea580c" stroke-width="2"/>
+  <text x="240" y="276" text-anchor="middle" font-size="12" font-weight="700" fill="#c2410c">4. Design &amp; Run Test</text>
+  <text x="240" y="291" text-anchor="middle" font-size="10" fill="#ea580c">Change one variable at a time</text>
+
+  <line x1="240" y1="300" x2="240" y2="322" stroke="#475569" stroke-width="2" marker-end="url(#arr)"/>
+
+  <!-- Decision diamond -->
+  <polygon points="240,322 330,360 240,398 150,360" fill="#e2e8f0" stroke="#94a3b8" stroke-width="2"/>
+  <text x="240" y="356" text-anchor="middle" font-size="11" font-weight="700" fill="#1e293b">Hypothesis</text>
+  <text x="240" y="370" text-anchor="middle" font-size="11" font-weight="700" fill="#1e293b">confirmed?</text>
+
+  <!-- Yes branch -->
+  <line x1="330" y1="360" x2="400" y2="360" stroke="#16a34a" stroke-width="2" marker-end="url(#arr-g)"/>
+  <text x="360" y="352" text-anchor="middle" font-size="11" fill="#16a34a" font-weight="700">YES</text>
+  <rect x="400" y="338" width="66" height="44" rx="6" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+  <text x="433" y="356" text-anchor="middle" font-size="10" font-weight="700" fill="#166534">Apply</text>
+  <text x="433" y="370" text-anchor="middle" font-size="10" fill="#166534">Fix</text>
+
+  <!-- No branch -->
+  <line x1="150" y1="360" x2="80" y2="360" stroke="#dc2626" stroke-width="2" marker-end="url(#arr-r)"/>
+  <text x="118" y="352" text-anchor="middle" font-size="11" fill="#dc2626" font-weight="700">NO</text>
+  <!-- Loop back up -->
+  <line x1="80" y1="360" x2="80" y2="210" stroke="#dc2626" stroke-width="2"/>
+  <line x1="80" y1="210" x2="130" y2="210" stroke="#dc2626" stroke-width="2" marker-end="url(#arr-r)"/>
+  <text x="60" y="285" text-anchor="middle" font-size="10" fill="#dc2626" font-weight="700" transform="rotate(-90,60,285)">Try next hypothesis</text>
+
+  <!-- Step 5: Document Conclusion -->
+  <line x1="433" y1="382" x2="433" y2="420" stroke="#16a34a" stroke-width="2"/>
+  <line x1="240" y1="420" x2="433" y2="420" stroke="#16a34a" stroke-width="2"/>
+  <line x1="240" y1="398" x2="240" y2="420" stroke="#16a34a" stroke-width="2"/>
+  <line x1="240" y1="420" x2="240" y2="440" stroke="#475569" stroke-width="2" marker-end="url(#arr)"/>
+
+  <rect x="130" y="440" width="220" height="52" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+  <text x="240" y="460" text-anchor="middle" font-size="12" font-weight="700" fill="#166534">5. Document &amp; Verify</text>
+  <text x="240" y="475" text-anchor="middle" font-size="10" fill="#166534">Record fix, test again to confirm</text>
+  <text x="240" y="488" text-anchor="middle" font-size="10" fill="#16a34a">fault is fully resolved</text>
+
+  <text x="240" y="512" text-anchor="middle" font-size="10" fill="#64748b">Change one variable per test — multiple changes make it impossible to identify the cause</text>
+</svg>

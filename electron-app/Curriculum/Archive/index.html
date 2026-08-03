@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  
+  <title>Robot Arm Curriculum — Index</title>
+  <style>
+    :root {
+      --bg: #f6f7f9;
+      --card: #fff;
+      --text: #1a1d26;
+      --muted: #5c6370;
+      --accent: #1e5a8a;
+      --border: #d8dde6;
+      --code-bg: #eef1f6;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 17px;
+      line-height: 1.55;
+      color: var(--text);
+      background: var(--bg);
+    }
+    .wrap {
+      max-width: 52rem;
+      margin: 0 auto;
+      padding: 1.25rem 1.25rem 3rem;
+    }
+    .top-nav {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.75rem 1rem;
+      padding: 0.75rem 0;
+      margin-bottom: 1.25rem;
+      border-bottom: 1px solid var(--border);
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+      font-size: 0.9rem;
+    }
+    .nav-title {
+      flex: 1 1 auto;
+      font-weight: 600;
+      color: var(--muted);
+      min-width: 12rem;
+    }
+    a.nav-link {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    a.nav-link:hover { text-decoration: underline; }
+    h1.page-title {
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+      font-size: 1.65rem;
+      font-weight: 700;
+      margin: 0 0 0.5rem;
+      line-height: 1.25;
+    }
+    p.lead {
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+      color: var(--muted);
+      margin: 0 0 1.5rem;
+      font-size: 0.95rem;
+    }
+    section.card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.25rem 1.5rem 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    }
+    section.card h2 {
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+      font-size: 1.15rem;
+      margin: 0 0 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid var(--accent);
+      color: var(--accent);
+    }
+    .card-inner {
+      font-family: Georgia, "Times New Roman", serif;
+    }
+    .card-inner h1, .card-inner h2, .card-inner h3, .card-inner h4 {
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+    }
+    .card-inner h1 { font-size: 1.35rem; }
+    .card-inner h2 { font-size: 1.15rem; border-bottom: none; color: var(--text); }
+    .card-inner h3 { font-size: 1.05rem; }
+    .card-inner h4 { font-size: 1rem; }
+    .card-inner code {
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 0.9em;
+      background: var(--code-bg);
+      padding: 0.1em 0.35em;
+      border-radius: 4px;
+    }
+    .card-inner pre {
+      background: var(--code-bg);
+      padding: 1rem;
+      overflow-x: auto;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+    }
+    .card-inner pre code {
+      background: none;
+      padding: 0;
+    }
+    .card-inner table {
+      border-collapse: collapse;
+      width: 100%;
+      font-size: 0.95rem;
+      margin: 1rem 0;
+    }
+    .card-inner th, .card-inner td {
+      border: 1px solid var(--border);
+      padding: 0.45rem 0.6rem;
+      text-align: left;
+      vertical-align: top;
+    }
+    .card-inner th {
+      background: #eef3f8;
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+      font-weight: 600;
+    }
+    ul.index-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+    }
+    ul.index-list li {
+      margin: 0.35rem 0;
+      padding: 0.5rem 0.65rem;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--card);
+    }
+    ul.index-list a {
+      color: var(--accent);
+      font-weight: 600;
+      text-decoration: none;
+    }
+    ul.index-list a:hover { text-decoration: underline; }
+    .index-meta {
+      display: block;
+      font-size: 0.85rem;
+      color: var(--muted);
+      font-weight: normal;
+      margin-top: 0.2rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <nav class="top-nav">
+  <span class="nav-title">Robot Arm BTEC Curriculum</span>
+</nav>
+<h1 class="page-title">Curriculum (HTML)</h1>
+<p class="lead">Step-by-step modules aligned with <code>Firmware/BTEC Specs</code>. Each page pulls together the curriculum plan excerpt, theory notes, student worksheet, MCQs, and rubric.</p>
+<section class="card">
+  <h2>Modules</h2>
+  <ul class="index-list">
+    <li><a href="module-01.html">Module 1: Introduction &amp; Safety Fundamentals<span class="index-meta">Open module → theory, worksheet, MCQ, rubric</span></a></li>
+<li><a href="module-02.html">Module 2: Mechanical Fundamentals<span class="index-meta">Open module → theory, worksheet, MCQ, rubric</span></a></li>
+<li><a href="module-03.html">Module 3: Basic Electrical &amp; Electronic Systems<span class="index-meta">Open module → theory, worksheet, MCQ, rubric</span></a></li>
+<li><a href="module-04.html">Module 4: Basic Software &amp; Human-Machine Interface<span class="index-meta">Open module → theory, worksheet, MCQ, rubric</span></a></li>
+<li><a href="module-05.html">Module 5: Statics, Forces &amp; Load Analysis<span class="index-meta">Open module → theory, worksheet, MCQ, rubric</span></a></li>
+<li><a href="module-06.html">Module 6: Industrial Context &amp; Basic Automation<span class="index-meta">Open module → theory, worksheet, MCQ, rubric</span></a></li>
+<li><a href="module-07.html">Module 7: Forward Kinematics &amp; Coordinate Systems<span class="index-meta">Open module → theory, worksheet, MCQ, rubric</span></a></li>
+<li><a href="module-08.html">Module 8: Advanced Control &amp; Communication<span class="index-meta">Open module → theory, worksheet, MCQ, rubric</span></a></li>
+<li><a href="module-09.html">Module 9: Software Architecture &amp; Advanced Programming<span class="index-meta">Open module → theory, worksheet, MCQ, rubric</span></a></li>
+<li><a href="module-10.html">Module 10: Data Logging &amp; Diagnostics<span class="index-meta">Open module → theory, worksheet, MCQ, rubric</span></a></li>
+<li><a href="module-11.html">Module 11: Mechatronic System Integration<span class="index-meta">Open module → theory, worksheet, MCQ, rubric</span></a></li>
+<li><a href="module-12.html">Module 12: Automation Cell Design<span class="index-meta">Open module → theory, worksheet, MCQ, rubric</span></a></li>
+<li><a href="module-13.html">Module 13: Safety Standards &amp; Design for Safety<span class="index-meta">Open module → theory, worksheet, MCQ, rubric</span></a></li>
+<li><a href="module-14.html">Module 14: Project Planning &amp; Management<span class="index-meta">Open module → theory, worksheet, MCQ, rubric</span></a></li>
+<li><a href="module-15.html">Module 15: Technical Documentation<span class="index-meta">Open module → theory, worksheet, MCQ, rubric</span></a></li>
+<li><a href="module-16.html">Module 16: Evaluation, Reflection &amp; Communication<span class="index-meta">Open module → theory, worksheet, MCQ, rubric</span></a></li>
+  </ul>
+</section>
+<section class="card">
+  <h2>Source files</h2>
+  <div class="card-inner">
+    <p>Markdown originals live in <code>Firmware/BTEC Specs/Module_Materials</code> and <code>BTEC_Robot_Arm_Curriculum_Plan.md</code>. Rebuild pages by running:</p>
+    <pre><code>python Curriculum/build_curriculum.py</code></pre>
+  </div>
+</section>
+  </div>
+</body>
+</html>

@@ -1,0 +1,1099 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="curriculum-module" content="10">
+  <title>Module 10: Data Logging &amp; Diagnostics</title>
+  <style>
+    :root {
+      --bg: #f6f7f9;
+      --card: #fff;
+      --text: #1a1d26;
+      --muted: #5c6370;
+      --accent: #1e5a8a;
+      --border: #d8dde6;
+      --code-bg: #eef1f6;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 17px;
+      line-height: 1.55;
+      color: var(--text);
+      background: var(--bg);
+    }
+    .wrap {
+      max-width: 52rem;
+      margin: 0 auto;
+      padding: 1.25rem 1.25rem 3rem;
+    }
+    .top-nav {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.75rem 1rem;
+      padding: 0.75rem 0;
+      margin-bottom: 1.25rem;
+      border-bottom: 1px solid var(--border);
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+      font-size: 0.9rem;
+    }
+    .nav-title {
+      flex: 1 1 auto;
+      font-weight: 600;
+      color: var(--muted);
+      min-width: 12rem;
+    }
+    a.nav-link {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    a.nav-link:hover { text-decoration: underline; }
+    h1.page-title {
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+      font-size: 1.65rem;
+      font-weight: 700;
+      margin: 0 0 0.5rem;
+      line-height: 1.25;
+    }
+    p.lead {
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+      color: var(--muted);
+      margin: 0 0 1.5rem;
+      font-size: 0.95rem;
+    }
+    section.card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.25rem 1.5rem 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    }
+    section.card h2 {
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+      font-size: 1.15rem;
+      margin: 0 0 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid var(--accent);
+      color: var(--accent);
+    }
+    .card-inner {
+      font-family: Georgia, "Times New Roman", serif;
+    }
+    .card-inner h1, .card-inner h2, .card-inner h3, .card-inner h4 {
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+    }
+    .card-inner h1 { font-size: 1.35rem; }
+    .card-inner h2 { font-size: 1.15rem; border-bottom: none; color: var(--text); }
+    .card-inner h3 { font-size: 1.05rem; }
+    .card-inner h4 { font-size: 1rem; }
+    .card-inner code {
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 0.9em;
+      background: var(--code-bg);
+      padding: 0.1em 0.35em;
+      border-radius: 4px;
+    }
+    .card-inner pre {
+      background: var(--code-bg);
+      padding: 1rem;
+      overflow-x: auto;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+    }
+    .card-inner pre code {
+      background: none;
+      padding: 0;
+    }
+    .card-inner table {
+      border-collapse: collapse;
+      width: 100%;
+      font-size: 0.95rem;
+      margin: 1rem 0;
+    }
+    .card-inner th, .card-inner td {
+      border: 1px solid var(--border);
+      padding: 0.45rem 0.6rem;
+      text-align: left;
+      vertical-align: top;
+    }
+    .card-inner th {
+      background: #eef3f8;
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+      font-weight: 600;
+    }
+    ul.index-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+    }
+    ul.index-list li {
+      margin: 0.35rem 0;
+      padding: 0.5rem 0.65rem;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--card);
+    }
+    ul.index-list a {
+      color: var(--accent);
+      font-weight: 600;
+      text-decoration: none;
+    }
+    ul.index-list a:hover { text-decoration: underline; }
+    .index-meta {
+      display: block;
+      font-size: 0.85rem;
+      color: var(--muted);
+      font-weight: normal;
+      margin-top: 0.2rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <nav class="top-nav">
+  <a class="nav-link" href="index.html">All modules</a>
+  <a class="nav-link" href="module-09.html">← Previous</a>
+  <span class="nav-title">Module 10: Data Logging &amp; Diagnostics</span>
+  <a class="nav-link" href="module-11.html">Next →</a>
+</nav>
+<h1 class="page-title">Module 10: Data Logging &amp; Diagnostics</h1>
+<p class="lead">BTEC robot arm curriculum — one page per module. Work through sections in order.</p>
+<section class="card"><h2>Curriculum plan (from BTEC_Robot_Arm_Curriculum_Plan.md)</h2><div class="card-inner"><h2><strong>Module 10: Data Logging &amp; Diagnostics</strong></h2>
+<p><em>Level 4/5 - Building on Module 9</em></p>
+<h3>Learning Objectives Covered:</h3>
+<ul>
+<li>✅ <strong>Data logging and diagnostics</strong> (Level 4/5)</li>
+<li>Capture logs of joint angles, loads, voltages, and errors over time</li>
+<li>Diagnose issues: serial timeouts, invalid position data, power/voltage dips, overload conditions</li>
+<li>Use log data to refine polling intervals and timeouts for reliability</li>
+</ul>
+<h3>Content:</h3>
+<ol>
+<li>
+<p><strong>Data Logging Basics</strong><br />
+   - Why log data?<br />
+   - What data to capture<br />
+   - Logging frequency considerations<br />
+   - Storage formats<br />
+   - File management</p>
+</li>
+<li>
+<p><strong>Capturing System Data</strong><br />
+   - Joint angles over time<br />
+   - Load readings over time<br />
+   - Voltage readings over time<br />
+   - Error events<br />
+   - Timestamping data</p>
+</li>
+<li>
+<p><strong>Diagnostic Techniques</strong><br />
+   - Analyzing log files<br />
+   - Identifying patterns<br />
+   - Finding anomalies<br />
+   - Correlating events</p>
+</li>
+<li>
+<p><strong>Common Issues</strong><br />
+   - Serial timeouts: causes and solutions<br />
+   - Invalid position data: detection and handling<br />
+   - Power/voltage dips: identification and prevention<br />
+   - Overload conditions: detection and response</p>
+</li>
+<li>
+<p><strong>System Optimization</strong><br />
+   - Using logs to optimize polling intervals<br />
+   - Adjusting timeouts based on data<br />
+   - Improving reliability<br />
+   - Performance tuning</p>
+</li>
+</ol>
+<h3>Practical Activities:</h3>
+<ul>
+<li>Set up data logging system</li>
+<li>Capture data during normal operation</li>
+<li>Capture data during error conditions</li>
+<li>Analyze log files</li>
+<li>Diagnose simulated problems</li>
+<li>Refine system parameters based on logs</li>
+<li>Create diagnostic report</li>
+<li>Document logging procedures</li>
+</ul>
+<hr /></div></section>
+<section class="card"><h2>Theory & teaching notes</h2><div class="card-inner"><h1>Module 10: Data Logging &amp; Diagnostics</h1>
+<h2>Theory &amp; Teaching Notes</h2>
+<p><strong>Module Duration:</strong> 2-3 hours<br />
+<strong>Level:</strong> Advanced (Level 4/5)</p>
+<hr />
+<h2>Learning Objectives</h2>
+<p>By the end of this module, students will be able to:<br />
+- Understand why data logging is important<br />
+- Set up data logging systems<br />
+- Capture system data over time<br />
+- Analyze log files to diagnose issues<br />
+- Use logs to optimize system parameters<br />
+- Identify common problems from logs</p>
+<hr />
+<h2>1. Data Logging Basics</h2>
+<h3>Why Log Data?</h3>
+<p><strong>Data logging</strong> = Recording system information over time</p>
+<p><strong>Why it's important:</strong></p>
+<ol>
+<li>
+<p><strong>Diagnosis</strong><br />
+   - Understand what happened<br />
+   - Identify problems<br />
+   - Find root causes</p>
+</li>
+<li>
+<p><strong>Optimization</strong><br />
+   - See system behavior<br />
+   - Identify bottlenecks<br />
+   - Improve performance</p>
+</li>
+<li>
+<p><strong>Documentation</strong><br />
+   - Record system operation<br />
+   - Track changes over time<br />
+   - Provide evidence</p>
+</li>
+<li>
+<p><strong>Prevention</strong><br />
+   - Detect trends<br />
+   - Predict problems<br />
+   - Prevent failures</p>
+</li>
+</ol>
+<h3>What Data to Capture</h3>
+<p><strong>Essential data:</strong></p>
+<ol>
+<li>
+<p><strong>Joint angles</strong><br />
+   - Current position of each joint<br />
+   - Over time<br />
+   - Shows movement patterns</p>
+</li>
+<li>
+<p><strong>Load readings</strong><br />
+   - Torque/load on each joint<br />
+   - Over time<br />
+   - Shows stress patterns</p>
+</li>
+<li>
+<p><strong>Voltages</strong><br />
+   - Power supply voltage<br />
+   - Over time<br />
+   - Shows power stability</p>
+</li>
+<li>
+<p><strong>Errors</strong><br />
+   - When errors occur<br />
+   - What type of error<br />
+   - Error frequency</p>
+</li>
+<li>
+<p><strong>Timestamps</strong><br />
+   - When each event occurred<br />
+   - Allows correlation<br />
+   - Essential for analysis</p>
+</li>
+</ol>
+<p><strong>Additional useful data:</strong><br />
+- Speed readings<br />
+- Temperature readings<br />
+- Communication status<br />
+- Command history</p>
+<h3>Logging Frequency Considerations</h3>
+<p><strong>How often to log?</strong></p>
+<p><strong>Factors to consider:</strong></p>
+<ol>
+<li>
+<p><strong>System activity</strong><br />
+   - Active movement? → Log more frequently<br />
+   - Idle? → Log less frequently</p>
+</li>
+<li>
+<p><strong>Storage capacity</strong><br />
+   - More frequent = More data = More storage needed<br />
+   - Balance frequency with storage</p>
+</li>
+<li>
+<p><strong>Analysis needs</strong><br />
+   - Need detailed data? → Log frequently<br />
+   - General trends? → Log less frequently</p>
+</li>
+</ol>
+<p><strong>Typical frequencies:</strong><br />
+- <strong>High frequency:</strong> 10-50ms (detailed analysis)<br />
+- <strong>Medium frequency:</strong> 100-500ms (general monitoring)<br />
+- <strong>Low frequency:</strong> 1-5 seconds (trends only)</p>
+<h3>Storage Formats</h3>
+<p><strong>Common formats:</strong></p>
+<ol>
+<li>
+<p><strong>CSV (Comma-Separated Values)</strong><br />
+   - Simple text format<br />
+   - Easy to read<br />
+   - Works with Excel<br />
+   - Good for beginners</p>
+</li>
+<li>
+<p><strong>JSON (JavaScript Object Notation)</strong><br />
+   - Structured format<br />
+   - Easy to parse programmatically<br />
+   - Good for software analysis</p>
+</li>
+<li>
+<p><strong>Binary formats</strong><br />
+   - Compact<br />
+   - Fast to write/read<br />
+   - Requires special tools</p>
+</li>
+</ol>
+<p><strong>Choose based on:</strong><br />
+- How you'll analyze data<br />
+- What tools you have<br />
+- Storage requirements</p>
+<hr />
+<h2>2. Capturing System Data</h2>
+<h3>Joint Angles Over Time</h3>
+<p><strong>What to capture:</strong><br />
+- Angle of each joint<br />
+- At regular intervals<br />
+- With timestamps</p>
+<p><strong>Why useful:</strong><br />
+- See movement patterns<br />
+- Identify unusual movements<br />
+- Verify sequences<br />
+- Debug positioning</p>
+<p><strong>Example log:</strong></p>
+<pre><code>Time, Joint1, Joint2, Joint3, Joint4
+0.000, 0.0, 0.0, 0.0, 0.0
+0.100, 5.2, 2.1, -1.5, 0.0
+0.200, 10.5, 4.3, -3.0, 0.0
+</code></pre>
+<h3>Load Readings Over Time</h3>
+<p><strong>What to capture:</strong><br />
+- Load percentage for each joint<br />
+- At regular intervals<br />
+- With timestamps</p>
+<p><strong>Why useful:</strong><br />
+- Identify overload conditions<br />
+- See stress patterns<br />
+- Optimize movements<br />
+- Prevent damage</p>
+<p><strong>Example log:</strong></p>
+<pre><code>Time, ShoulderLoad, ElbowLoad, WristLoad
+0.000, 25, 15, 10
+0.100, 45, 30, 12
+0.200, 60, 45, 15
+</code></pre>
+<h3>Voltage Readings Over Time</h3>
+<p><strong>What to capture:</strong><br />
+- Power supply voltage<br />
+- At regular intervals<br />
+- With timestamps</p>
+<p><strong>Why useful:</strong><br />
+- Detect power problems<br />
+- Identify voltage drops<br />
+- Monitor power stability<br />
+- Prevent failures</p>
+<p><strong>Example log:</strong></p>
+<pre><code>Time, Voltage
+0.000, 12.1
+0.100, 12.0
+0.200, 11.9
+0.300, 11.8  &lt;- Voltage drop detected!
+</code></pre>
+<h3>Error Events</h3>
+<p><strong>What to capture:</strong><br />
+- When error occurred<br />
+- Error type<br />
+- Error details<br />
+- System state at error</p>
+<p><strong>Why useful:</strong><br />
+- Understand failures<br />
+- Identify patterns<br />
+- Debug problems<br />
+- Improve reliability</p>
+<p><strong>Example log:</strong></p>
+<pre><code>Time, ErrorType, Details
+1.250, TIMEOUT, Servo 2 did not respond
+2.500, OVERLOAD, Shoulder load exceeded 90%
+3.750, INVALID_POSITION, Commanded position out of range
+</code></pre>
+<h3>Timestamping Data</h3>
+<p><strong>Why timestamps matter:</strong><br />
+- Correlate events<br />
+- Understand timing<br />
+- See sequences<br />
+- Analyze patterns</p>
+<p><strong>Format:</strong><br />
+- Absolute time (e.g., 2024-01-15 14:30:25.123)<br />
+- Relative time (e.g., 0.000, 0.100, 0.200)<br />
+- Both (absolute + relative)</p>
+<hr />
+<h2>3. Diagnostic Techniques</h2>
+<h3>Analyzing Log Files</h3>
+<p><strong>Steps to analyze:</strong></p>
+<ol>
+<li>
+<p><strong>Load the log file</strong><br />
+   - Open in appropriate tool<br />
+   - Verify data loaded correctly<br />
+   - Check format</p>
+</li>
+<li>
+<p><strong>Visualize the data</strong><br />
+   - Create graphs<br />
+   - Plot over time<br />
+   - Compare different signals</p>
+</li>
+<li>
+<p><strong>Look for patterns</strong><br />
+   - Trends<br />
+   - Cycles<br />
+   - Anomalies<br />
+   - Correlations</p>
+</li>
+<li>
+<p><strong>Identify issues</strong><br />
+   - Unusual values<br />
+   - Errors<br />
+   - Problems<br />
+   - Failures</p>
+</li>
+</ol>
+<h3>Identifying Patterns</h3>
+<p><strong>Common patterns:</strong></p>
+<ol>
+<li>
+<p><strong>Cyclic patterns</strong><br />
+   - Regular repetition<br />
+   - Indicates normal operation<br />
+   - Example: Pick-and-place cycle</p>
+</li>
+<li>
+<p><strong>Trends</strong><br />
+   - Gradual changes<br />
+   - May indicate problems<br />
+   - Example: Gradual voltage drop</p>
+</li>
+<li>
+<p><strong>Spikes</strong><br />
+   - Sudden changes<br />
+   - May indicate problems<br />
+   - Example: Sudden load spike</p>
+</li>
+<li>
+<p><strong>Correlations</strong><br />
+   - Related changes<br />
+   - Help understand causes<br />
+   - Example: Load increases when speed increases</p>
+</li>
+</ol>
+<h3>Finding Anomalies</h3>
+<p><strong>What to look for:</strong></p>
+<ol>
+<li>
+<p><strong>Unexpected values</strong><br />
+   - Values outside normal range<br />
+   - Impossible values<br />
+   - Invalid data</p>
+</li>
+<li>
+<p><strong>Missing data</strong><br />
+   - Gaps in logging<br />
+   - Missing timestamps<br />
+   - Incomplete records</p>
+</li>
+<li>
+<p><strong>Errors</strong><br />
+   - Error messages<br />
+   - Failed operations<br />
+   - Timeouts</p>
+</li>
+<li>
+<p><strong>Unusual patterns</strong><br />
+   - Different from normal<br />
+   - Unexpected behavior<br />
+   - Problems</p>
+</li>
+</ol>
+<h3>Correlating Events</h3>
+<p><strong>Why correlation matters:</strong><br />
+- Understand relationships<br />
+- Find root causes<br />
+- See sequences of events</p>
+<p><strong>How to correlate:</strong><br />
+- Look at timestamps<br />
+- Compare different signals<br />
+- See what happened before/after<br />
+- Identify sequences</p>
+<p><strong>Example:</strong><br />
+- Voltage drops → Servo errors → System stops<br />
+- High load → Temperature increases → Overheat protection</p>
+<hr />
+<h2>4. Common Issues</h2>
+<h3>Serial Timeouts</h3>
+<p><strong>What it is:</strong> Communication takes too long, timeout occurs</p>
+<p><strong>Causes:</strong><br />
+- Slow serial speed<br />
+- Busy system<br />
+- Servo problems<br />
+- Wiring issues</p>
+<p><strong>Detection in logs:</strong><br />
+- Timeout errors<br />
+- Missing responses<br />
+- Delayed responses</p>
+<p><strong>Solutions:</strong><br />
+- Increase timeout (if valid but slow)<br />
+- Check wiring<br />
+- Reduce system load<br />
+- Increase serial speed (if wiring allows)</p>
+<h3>Invalid Position Data</h3>
+<p><strong>What it is:</strong> Position values that don't make sense</p>
+<p><strong>Causes:</strong><br />
+- Communication errors<br />
+- Sensor problems<br />
+- Servo malfunction<br />
+- Data corruption</p>
+<p><strong>Detection in logs:</strong><br />
+- Positions outside valid range<br />
+- Sudden jumps in position<br />
+- Impossible values</p>
+<p><strong>Solutions:</strong><br />
+- Check communication<br />
+- Verify sensors<br />
+- Check servo health<br />
+- Add validation</p>
+<h3>Power/Voltage Dips</h3>
+<p><strong>What it is:</strong> Voltage drops below normal</p>
+<p><strong>Causes:</strong><br />
+- Power supply problems<br />
+- High current draw<br />
+- Poor connections<br />
+- Insufficient power supply</p>
+<p><strong>Detection in logs:</strong><br />
+- Voltage readings below threshold<br />
+- Sudden drops<br />
+- Gradual decreases</p>
+<p><strong>Solutions:</strong><br />
+- Check power supply<br />
+- Reduce load<br />
+- Check connections<br />
+- Upgrade power supply if needed</p>
+<h3>Overload Conditions</h3>
+<p><strong>What it is:</strong> Load exceeds safe limits</p>
+<p><strong>Causes:</strong><br />
+- Too heavy payload<br />
+- Extended reach<br />
+- Obstructions<br />
+- Servo problems</p>
+<p><strong>Detection in logs:</strong><br />
+- Load readings above threshold<br />
+- Sustained high loads<br />
+- Load spikes</p>
+<p><strong>Solutions:</strong><br />
+- Reduce payload<br />
+- Reduce reach<br />
+- Check for obstructions<br />
+- Verify servo operation</p>
+<hr />
+<h2>5. System Optimization</h2>
+<h3>Using Logs to Optimize Polling Intervals</h3>
+<p><strong>Process:</strong></p>
+<ol>
+<li>
+<p><strong>Log current polling interval</strong><br />
+   - Record what interval you're using<br />
+   - Log response times<br />
+   - Log system load</p>
+</li>
+<li>
+<p><strong>Try different intervals</strong><br />
+   - Test faster polling<br />
+   - Test slower polling<br />
+   - Measure results</p>
+</li>
+<li>
+<p><strong>Analyze logs</strong><br />
+   - Compare response times<br />
+   - Compare system load<br />
+   - Find optimal balance</p>
+</li>
+<li>
+<p><strong>Choose optimal interval</strong><br />
+   - Balance responsiveness and load<br />
+   - Meet requirements<br />
+   - Optimize performance</p>
+</li>
+</ol>
+<p><strong>Example:</strong><br />
+- Current: 50ms polling<br />
+- Test: 30ms (faster) → Better responsiveness but higher load<br />
+- Test: 100ms (slower) → Lower load but slower response<br />
+- Optimal: 40ms (balance)</p>
+<h3>Adjusting Timeouts Based on Data</h3>
+<p><strong>Process:</strong></p>
+<ol>
+<li>
+<p><strong>Log timeout occurrences</strong><br />
+   - When do timeouts occur?<br />
+   - What's typical response time?<br />
+   - What's worst-case response time?</p>
+</li>
+<li>
+<p><strong>Analyze data</strong><br />
+   - Typical response: 20ms<br />
+   - Worst case: 80ms<br />
+   - Current timeout: 50ms (too short!)</p>
+</li>
+<li>
+<p><strong>Adjust timeout</strong><br />
+   - Set to 120ms (gives margin)<br />
+   - Test and verify<br />
+   - Monitor results</p>
+</li>
+</ol>
+<h3>Improving Reliability</h3>
+<p><strong>Using logs to improve reliability:</strong></p>
+<ol>
+<li>
+<p><strong>Identify failure patterns</strong><br />
+   - When do failures occur?<br />
+   - What causes them?<br />
+   - Can they be prevented?</p>
+</li>
+<li>
+<p><strong>Make improvements</strong><br />
+   - Fix root causes<br />
+   - Add safeguards<br />
+   - Improve error handling</p>
+</li>
+<li>
+<p><strong>Verify improvements</strong><br />
+   - Log after changes<br />
+   - Compare before/after<br />
+   - Confirm improvement</p>
+</li>
+</ol>
+<hr />
+<h2>6. Summary</h2>
+<h3>Key Concepts</h3>
+<ol>
+<li><strong>Data logging</strong> records system information over time</li>
+<li><strong>Essential data</strong> includes positions, loads, voltages, errors</li>
+<li><strong>Logging frequency</strong> balances detail with storage</li>
+<li><strong>Log analysis</strong> helps diagnose problems</li>
+<li><strong>Common issues</strong> include timeouts, invalid data, voltage dips, overloads</li>
+<li><strong>Logs help optimize</strong> polling intervals, timeouts, and reliability</li>
+</ol>
+<h3>Understanding Data Logging</h3>
+<p>You should now understand:<br />
+- Why logging is important<br />
+- What data to capture<br />
+- How to analyze logs<br />
+- How to identify problems<br />
+- How to optimize using logs</p>
+<h3>Next Steps</h3>
+<p>After learning this theory, you will:<br />
+- Set up data logging<br />
+- Capture system data<br />
+- Analyze log files<br />
+- Diagnose problems<br />
+- Optimize parameters<br />
+- Complete the Module 10 worksheet</p>
+<hr />
+<h2>Questions for Review</h2>
+<p>Before moving to the worksheet, make sure you can answer:</p>
+<ol>
+<li>Why is data logging important?</li>
+<li>What data should you capture?</li>
+<li>How do you choose logging frequency?</li>
+<li>How do you analyze log files?</li>
+<li>What are common issues to look for?</li>
+<li>How do logs help optimize the system?</li>
+<li>How do you correlate events in logs?</li>
+</ol>
+<hr />
+<p><strong>Remember:</strong> Data logging is your window into system behavior. Use it to understand, diagnose, and optimize your robot arm system!</p></div></section>
+<section class="card"><h2>Student worksheet</h2><div class="card-inner"><h1>Module 10: Data Logging &amp; Diagnostics</h1>
+<h2>Student Worksheet</h2>
+<p><strong>Name:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_<br />
+<strong>Date:</strong> </em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>_<br />
+<strong>Group/Class:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>____</p>
+<hr />
+<h2>Part 1: Data Logging Basics</h2>
+<h3>Question 1: Why Log Data?</h3>
+<p>Explain why data logging is important:</p>
+<hr />
+<hr />
+<h3>Question 2: What to Log</h3>
+<p>List the data you should capture:</p>
+<ol>
+<li>
+<hr />
+</li>
+<li>
+<hr />
+</li>
+<li>
+<hr />
+</li>
+<li>
+<hr />
+</li>
+<li>
+<hr />
+</li>
+</ol>
+<h3>Question 3: Logging Frequency</h3>
+<p>What logging frequency would you use and why?</p>
+<hr />
+<hr />
+<hr />
+<h2>Part 2: Capturing System Data</h2>
+<h3>Question 4: Data Capture Setup</h3>
+<p>Set up data logging and capture data for 60 seconds:</p>
+<table>
+<thead>
+<tr>
+<th>Time</th>
+<th>Joint Angles</th>
+<th>Loads</th>
+<th>Voltages</th>
+<th>Errors</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0s</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>10s</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>20s</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>30s</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>60s</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h3>Question 5: Timestamping</h3>
+<p>Why is timestamping important?</p>
+<hr />
+<hr />
+<h2>Part 3: Diagnostic Techniques</h2>
+<h3>Question 6: Analyzing Logs</h3>
+<p>Analyze your log file and identify:</p>
+<p><strong>Patterns:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<p><strong>Anomalies:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<p><strong>Correlations:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<h3>Question 7: Issue Detection</h3>
+<p>From your logs, identify any issues:</p>
+<table>
+<thead>
+<tr>
+<th>Issue</th>
+<th>When It Occurred</th>
+<th>Possible Cause</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>Part 4: Common Issues</h2>
+<h3>Question 8: Serial Timeouts</h3>
+<p>Document serial timeout issues:</p>
+<p><strong>When did they occur?</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<p><strong>Possible causes:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<p><strong>Solutions:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<h3>Question 9: Invalid Position Data</h3>
+<p>Document invalid position data:</p>
+<p><strong>When did it occur?</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<p><strong>Possible causes:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<p><strong>Solutions:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<h3>Question 10: Power/Voltage Dips</h3>
+<p>Document voltage issues:</p>
+<p><strong>When did they occur?</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<p><strong>Possible causes:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<p><strong>Solutions:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<h3>Question 11: Overload Conditions</h3>
+<p>Document overload conditions:</p>
+<p><strong>When did they occur?</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<p><strong>Possible causes:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<p><strong>Solutions:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<hr />
+<h2>Part 5: System Optimization</h2>
+<h3>Question 12: Optimizing Polling Intervals</h3>
+<p>Based on your logs, recommend polling intervals:</p>
+<p><strong>Current interval:</strong> <strong><em>_</em></strong> ms<br />
+<strong>Recommended interval:</strong> <strong><em>_</em></strong> ms<br />
+<strong>Reason:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<h3>Question 13: Optimizing Timeouts</h3>
+<p>Based on your logs, recommend timeout values:</p>
+<p><strong>Current timeout:</strong> <strong><em>_</em></strong> ms<br />
+<strong>Recommended timeout:</strong> <strong><em>_</em></strong> ms<br />
+<strong>Reason:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<hr />
+<h2>Part 6: Practical Exercise</h2>
+<h3>Exercise 1: Diagnostic Report</h3>
+<p>Create a diagnostic report:</p>
+<p>[Space for report]</p>
+<h3>Exercise 2: Parameter Refinement</h3>
+<p>Refine system parameters based on log analysis:</p>
+<p><strong>Changes made:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<p><strong>Results:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<hr />
+<h2>Part 7: Reflection</h2>
+<h3>Question 14: Understanding Diagnostics</h3>
+<p>Answer the following:</p>
+<p>a) How does data logging help diagnose problems?</p>
+<hr />
+<hr />
+<p>b) What was the most useful diagnostic technique?</p>
+<hr />
+<hr />
+<hr />
+<h2>Self-Assessment Checklist</h2>
+<ul>
+<li>[ ] Understood data logging basics</li>
+<li>[ ] Set up data logging</li>
+<li>[ ] Captured system data</li>
+<li>[ ] Analyzed log files</li>
+<li>[ ] Identified issues</li>
+<li>[ ] Diagnosed problems</li>
+<li>[ ] Optimized parameters</li>
+<li>[ ] Written reflection</li>
+</ul>
+<p><strong>Student Signature:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_<br />
+<strong>Date:</strong> </em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><em><br />
+<strong>Instructor Signature:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_<br />
+<strong>Date:</strong> </em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong></em></p></div></section>
+<section class="card"><h2>Multiple choice questions</h2><div class="card-inner"><h1>Module 10: Data Logging &amp; Diagnostics</h1>
+<h2>Multiple Choice Questions</h2>
+<p><strong>Instructions:</strong> Choose the best answer for each question.</p>
+<hr />
+<p><strong>1. Why is data logging important?</strong><br />
+   a) It's not important<br />
+   b) To diagnose problems and optimize performance<br />
+   c) To make the robot faster<br />
+   d) To change the robot's color</p>
+<p><strong>2. What data should be logged?</strong><br />
+   a) Only position<br />
+   b) Joint angles, loads, voltages, errors<br />
+   c) Only speed<br />
+   d) Only temperature</p>
+<p><strong>3. Why is timestamping important?</strong><br />
+   a) It's not important<br />
+   b) To correlate events and understand timing<br />
+   c) To make logs smaller<br />
+   d) To make logs bigger</p>
+<p><strong>4. What is a serial timeout?</strong><br />
+   a) When communication takes too long<br />
+   b) When the robot moves too fast<br />
+   c) When the robot stops<br />
+   d) When data is invalid</p>
+<p><strong>5. What causes invalid position data?</strong><br />
+   a) Communication errors or sensor issues<br />
+   b) The robot moving<br />
+   c) The robot stopping<br />
+   d) Normal operation</p>
+<p><strong>6. What indicates a power/voltage dip?</strong><br />
+   a) Sudden drop in voltage readings<br />
+   b) Increase in voltage<br />
+   c) Constant voltage<br />
+   d) No voltage</p>
+<p><strong>7. What indicates an overload condition?</strong><br />
+   a) High load readings<br />
+   b) Low load readings<br />
+   c) No load<br />
+   d) Constant load</p>
+<p><strong>8. How can logs help optimize polling intervals?</strong><br />
+   a) They can't help<br />
+   b) By showing response times and system behavior<br />
+   c) By making it faster<br />
+   d) By making it slower</p>
+<p><strong>9. How can logs help optimize timeouts?</strong><br />
+   a) They can't help<br />
+   b) By showing typical response times<br />
+   c) By making timeouts longer<br />
+   d) By removing timeouts</p>
+<p><strong>10. What is the purpose of diagnostic analysis?</strong><br />
+   a) To waste time<br />
+   b) To identify problems and improve reliability<br />
+   c) To make the robot faster<br />
+   d) To change settings randomly</p>
+<hr />
+<h2>Answer Key</h2>
+<ol>
+<li><strong>b)</strong> To diagnose problems and optimize performance</li>
+<li><strong>b)</strong> Joint angles, loads, voltages, errors</li>
+<li><strong>b)</strong> To correlate events and understand timing</li>
+<li><strong>a)</strong> When communication takes too long</li>
+<li><strong>a)</strong> Communication errors or sensor issues</li>
+<li><strong>a)</strong> Sudden drop in voltage readings</li>
+<li><strong>a)</strong> High load readings</li>
+<li><strong>b)</strong> By showing response times and system behavior</li>
+<li><strong>b)</strong> By showing typical response times</li>
+<li><strong>b)</strong> To identify problems and improve reliability</li>
+</ol>
+<hr />
+<h2>Scoring Guide</h2>
+<ul>
+<li><strong>9-10 correct:</strong> Excellent understanding</li>
+<li><strong>7-8 correct:</strong> Good understanding</li>
+<li><strong>5-6 correct:</strong> Satisfactory understanding</li>
+<li><strong>Below 5 correct:</strong> Needs review</li>
+</ul></div></section>
+<section class="card"><h2>Assessment rubric</h2><div class="card-inner"><h1>Module 10: Data Logging &amp; Diagnostics</h1>
+<h2>Assessment Rubric</h2>
+<p><strong>Student Name:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_<br />
+<strong>Date:</strong> </em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>_<br />
+<strong>Assessor:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>____</p>
+<hr />
+<h2>Overall Assessment Criteria</h2>
+<table>
+<thead>
+<tr>
+<th>Criteria</th>
+<th>Excellent (4)</th>
+<th>Good (3)</th>
+<th>Satisfactory (2)</th>
+<th>Needs Improvement (1)</th>
+<th>Score</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Knowledge &amp; Understanding</strong></td>
+<td>Comprehensive understanding of logging and diagnostics</td>
+<td>Good understanding</td>
+<td>Basic understanding</td>
+<td>Limited understanding</td>
+<td>/4</td>
+</tr>
+<tr>
+<td><strong>Practical Skills</strong></td>
+<td>Successfully logs data and diagnoses issues</td>
+<td>Mostly successful</td>
+<td>Basic skills</td>
+<td>Struggles with tasks</td>
+<td>/4</td>
+</tr>
+<tr>
+<td><strong>Analysis &amp; Application</strong></td>
+<td>Clear analysis and optimization</td>
+<td>Good analysis</td>
+<td>Basic analysis</td>
+<td>Limited analysis</td>
+<td>/4</td>
+</tr>
+<tr>
+<td><strong>Documentation</strong></td>
+<td>Complete diagnostic reports</td>
+<td>Good documentation</td>
+<td>Basic documentation</td>
+<td>Incomplete documentation</td>
+<td>/4</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Total Score:</strong> /16</p>
+<hr />
+<h2>Detailed Marking Guide</h2>
+<h3>Part 1: Basics (15 marks)</h3>
+<ul>
+<li><strong>Question 1:</strong> 5 marks</li>
+<li><strong>Question 2:</strong> 5 marks</li>
+<li><strong>Question 3:</strong> 5 marks</li>
+</ul>
+<p><strong>Mark:</strong> /15</p>
+<hr />
+<h3>Part 2: Data Capture (20 marks)</h3>
+<ul>
+<li><strong>Question 4:</strong> 12 marks (data table)</li>
+<li><strong>Question 5:</strong> 8 marks (timestamping)</li>
+</ul>
+<p><strong>Mark:</strong> /20</p>
+<hr />
+<h3>Part 3: Diagnostics (20 marks)</h3>
+<ul>
+<li><strong>Question 6:</strong> 10 marks (log analysis)</li>
+<li><strong>Question 7:</strong> 10 marks (issue detection)</li>
+</ul>
+<p><strong>Mark:</strong> /20</p>
+<hr />
+<h3>Part 4: Common Issues (25 marks)</h3>
+<ul>
+<li><strong>Question 8:</strong> 6 marks (timeouts)</li>
+<li><strong>Question 9:</strong> 6 marks (position data)</li>
+<li><strong>Question 10:</strong> 6 marks (voltage)</li>
+<li><strong>Question 11:</strong> 7 marks (overload)</li>
+</ul>
+<p><strong>Mark:</strong> /25</p>
+<hr />
+<h3>Part 5: Optimization (15 marks)</h3>
+<ul>
+<li><strong>Question 12:</strong> 7 marks (polling)</li>
+<li><strong>Question 13:</strong> 8 marks (timeouts)</li>
+</ul>
+<p><strong>Mark:</strong> /15</p>
+<hr />
+<h3>Part 6: Practical (15 marks)</h3>
+<ul>
+<li><strong>Exercise 1:</strong> 8 marks (diagnostic report)</li>
+<li><strong>Exercise 2:</strong> 7 marks (parameter refinement)</li>
+</ul>
+<p><strong>Mark:</strong> /15</p>
+<hr />
+<h3>Part 7: Reflection (5 marks)</h3>
+<ul>
+<li><strong>Question 14:</strong> 5 marks</li>
+</ul>
+<p><strong>Mark:</strong> /5</p>
+<hr />
+<p><strong>Final Grade:</strong> <strong><em>_</em></strong>____ / 100</p>
+<p><strong>Assessor Comments:</strong></p>
+<hr />
+<hr />
+<p><strong>Assessor Signature:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_<br />
+<strong>Date:</strong> </em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>_</p></div></section>
+  </div>
+</body>
+</html>

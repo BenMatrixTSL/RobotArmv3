@@ -1,0 +1,448 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   viewBox="0 0 520 375.75757"
+   font-family="system-ui, sans-serif"
+   version="1.1"
+   id="svg34"
+   sodipodi:docname="iec60073-colours.svg"
+   width="520"
+   height="375.75757"
+   inkscape:version="1.3.2 (091e20e, 2023-11-25, custom)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs34" />
+  <sodipodi:namedview
+     id="namedview34"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:zoom="2.2846154"
+     inkscape:cx="269.62963"
+     inkscape:cy="200.69024"
+     inkscape:window-width="1920"
+     inkscape:window-height="1057"
+     inkscape:window-x="-8"
+     inkscape:window-y="1072"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg34" />
+  <rect
+     width="520"
+     height="375.75757"
+     fill="#f8fafc"
+     rx="8"
+     id="rect1"
+     x="0"
+     y="0"
+     style="stroke-width:1" />
+  <text
+     x="260"
+     y="24"
+     text-anchor="middle"
+     font-size="15px"
+     font-weight="700"
+     fill="#1e293b"
+     id="text1">IEC 60073 — Indicator Colour Standards</text>
+  <text
+     x="260"
+     y="40"
+     text-anchor="middle"
+     font-size="11px"
+     fill="#64748b"
+     id="text2">Colours used on HMI panels, buttons and indicator lights have standardised meanings</text>
+  <!-- Headers -->
+  <rect
+     x="20"
+     y="52"
+     width="80"
+     height="28"
+     rx="4"
+     fill="#334155"
+     id="rect2" />
+  <text
+     x="60"
+     y="70"
+     text-anchor="middle"
+     font-size="11px"
+     font-weight="700"
+     fill="#ffffff"
+     id="text3">Colour</text>
+  <rect
+     x="108"
+     y="52"
+     width="120"
+     height="28"
+     rx="4"
+     fill="#334155"
+     id="rect3" />
+  <text
+     x="168"
+     y="70"
+     text-anchor="middle"
+     font-size="11px"
+     font-weight="700"
+     fill="#ffffff"
+     id="text4">Meaning</text>
+  <rect
+     x="236"
+     y="52"
+     width="150"
+     height="28"
+     rx="4"
+     fill="#334155"
+     id="rect4" />
+  <text
+     x="311"
+     y="70"
+     text-anchor="middle"
+     font-size="11px"
+     font-weight="700"
+     fill="#ffffff"
+     id="text5">HMI Example</text>
+  <rect
+     x="394"
+     y="52"
+     width="106"
+     height="28"
+     rx="4"
+     fill="#334155"
+     id="rect5" />
+  <text
+     x="447"
+     y="70"
+     text-anchor="middle"
+     font-size="11px"
+     font-weight="700"
+     fill="#ffffff"
+     id="text6">Robot arm use</text>
+  <!-- Row data -->
+  <!-- RED -->
+  <circle
+     cx="60"
+     cy="108"
+     r="22"
+     fill="#dc2626"
+     stroke="#991b1b"
+     stroke-width="2"
+     id="circle6" />
+  <text
+     x="60"
+     y="113"
+     text-anchor="middle"
+     font-size="10px"
+     font-weight="700"
+     fill="#ffffff"
+     id="text7">RED</text>
+  <rect
+     x="100"
+     y="88"
+     width="399.42761"
+     height="40"
+     rx="0"
+     fill="#ffffff"
+     stroke="#f1f5f9"
+     stroke-width="1"
+     id="rect7" />
+  <text
+     x="168"
+     y="105"
+     text-anchor="middle"
+     font-size="11px"
+     fill="#dc2626"
+     font-weight="600"
+     id="text8">Danger / Fault</text>
+  <text
+     x="168"
+     y="120"
+     text-anchor="middle"
+     font-size="10px"
+     fill="#64748b"
+     id="text9">Abnormal condition</text>
+  <text
+     x="311"
+     y="108"
+     text-anchor="middle"
+     font-size="10px"
+     fill="#1e293b"
+     id="text10">Emergency stop button</text>
+  <text
+     x="447"
+     y="108"
+     text-anchor="middle"
+     font-size="10px"
+     fill="#64748b"
+     id="text11">Fault indicator light</text>
+  <!-- YELLOW / AMBER -->
+  <circle
+     cx="60"
+     cy="168"
+     r="22"
+     fill="#f59e0b"
+     stroke="#d97706"
+     stroke-width="2"
+     id="circle11" />
+  <text
+     x="60"
+     y="173"
+     text-anchor="middle"
+     font-size="9px"
+     font-weight="700"
+     fill="#ffffff"
+     id="text12">AMBER</text>
+  <rect
+     x="100"
+     y="148"
+     width="398.9899"
+     height="40"
+     rx="0"
+     fill="#f8fafc"
+     stroke="#f1f5f9"
+     stroke-width="0.999999"
+     id="rect12" />
+  <text
+     x="168"
+     y="165"
+     text-anchor="middle"
+     font-size="11px"
+     fill="#d97706"
+     font-weight="600"
+     id="text13">Warning</text>
+  <text
+     x="168"
+     y="180"
+     text-anchor="middle"
+     font-size="10px"
+     fill="#64748b"
+     id="text14">Caution needed</text>
+  <text
+     x="311"
+     y="168"
+     text-anchor="middle"
+     font-size="10px"
+     fill="#1e293b"
+     id="text15">Low battery / high temp light</text>
+  <text
+     x="447"
+     y="168"
+     text-anchor="middle"
+     font-size="10px"
+     fill="#64748b"
+     id="text16">Load % warning</text>
+  <!-- GREEN -->
+  <circle
+     cx="60"
+     cy="228"
+     r="22"
+     fill="#16a34a"
+     stroke="#15803d"
+     stroke-width="2"
+     id="circle16" />
+  <text
+     x="60"
+     y="233"
+     text-anchor="middle"
+     font-size="10px"
+     font-weight="700"
+     fill="#ffffff"
+     id="text17">GREEN</text>
+  <rect
+     x="100"
+     y="208"
+     width="398.55219"
+     height="40"
+     rx="0"
+     fill="#ffffff"
+     stroke="#f1f5f9"
+     stroke-width="0.999996"
+     id="rect17" />
+  <text
+     x="168"
+     y="225"
+     text-anchor="middle"
+     font-size="11px"
+     fill="#166534"
+     font-weight="600"
+     id="text18">Safe / Normal</text>
+  <text
+     x="168"
+     y="240"
+     text-anchor="middle"
+     font-size="10px"
+     fill="#64748b"
+     id="text19">System ready, OK</text>
+  <text
+     x="311"
+     y="228"
+     text-anchor="middle"
+     font-size="10px"
+     fill="#1e293b"
+     id="text20">Start / Run button</text>
+  <text
+     x="447"
+     y="228"
+     text-anchor="middle"
+     font-size="10px"
+     fill="#64748b"
+     id="text21">Connected indicator</text>
+  <!-- BLUE -->
+  <circle
+     cx="60"
+     cy="288"
+     r="22"
+     fill="#3b82f6"
+     stroke="#1d4ed8"
+     stroke-width="2"
+     id="circle21" />
+  <text
+     x="60"
+     y="293"
+     text-anchor="middle"
+     font-size="10px"
+     font-weight="700"
+     fill="#ffffff"
+     id="text22">BLUE</text>
+  <rect
+     x="100"
+     y="268"
+     width="399.42761"
+     height="40"
+     rx="0"
+     fill="#f8fafc"
+     stroke="#f1f5f9"
+     stroke-width="1"
+     id="rect22" />
+  <text
+     x="168"
+     y="285"
+     text-anchor="middle"
+     font-size="11px"
+     fill="#1d4ed8"
+     font-weight="600"
+     id="text23">Mandatory / Info</text>
+  <text
+     x="168"
+     y="300"
+     text-anchor="middle"
+     font-size="10px"
+     fill="#64748b"
+     id="text24">Action required</text>
+  <text
+     x="311"
+     y="288"
+     text-anchor="middle"
+     font-size="10px"
+     fill="#1e293b"
+     id="text25">Reset button, mode indicator</text>
+  <text
+     x="447"
+     y="288"
+     text-anchor="middle"
+     font-size="10px"
+     fill="#64748b"
+     id="text26">Manual mode active</text>
+  <!-- WHITE / UNCOLOURED -->
+  <circle
+     cx="60"
+     cy="340"
+     r="22"
+     fill="#ffffff"
+     stroke="#94a3b8"
+     stroke-width="2"
+     id="circle26" />
+  <text
+     x="60"
+     y="338"
+     text-anchor="middle"
+     font-size="9px"
+     font-weight="700"
+     fill="#475569"
+     id="text27">WHITE</text>
+  <text
+     x="60"
+     y="350"
+     text-anchor="middle"
+     font-size="8px"
+     fill="#64748b"
+     id="text28">/GREY</text>
+  <rect
+     x="100"
+     y="326"
+     width="399.42761"
+     height="30"
+     rx="0"
+     fill="#ffffff"
+     stroke="#f1f5f9"
+     stroke-width="1"
+     id="rect28" />
+  <text
+     x="168"
+     y="343"
+     text-anchor="middle"
+     font-size="11px"
+     fill="#475569"
+     font-weight="600"
+     id="text29">General / Neutral</text>
+  <text
+     x="311"
+     y="343"
+     text-anchor="middle"
+     font-size="10px"
+     fill="#1e293b"
+     id="text30">General indicators, power on</text>
+  <text
+     x="447"
+     y="343"
+     text-anchor="middle"
+     font-size="10px"
+     fill="#64748b"
+     id="text31">Status light (idle)</text>
+  <!-- Dividers -->
+  <line
+     x1="20"
+     y1="80"
+     x2="500"
+     y2="80"
+     stroke="#e2e8f0"
+     stroke-width="1.5"
+     id="line31" />
+  <line
+     x1="100"
+     y1="52"
+     x2="100"
+     y2="352"
+     stroke="#e2e8f0"
+     stroke-width="1"
+     id="line32" />
+  <line
+     x1="227.99998"
+     y1="51.999996"
+     x2="227.99998"
+     y2="355.06396"
+     stroke="#e2e8f0"
+     stroke-width="1"
+     id="line33" />
+  <line
+     x1="386"
+     y1="52"
+     x2="386"
+     y2="355.50168"
+     stroke="#e2e8f0"
+     stroke-width="1"
+     id="line34" />
+  <rect
+     x="20"
+     y="52.000004"
+     width="480"
+     height="315.7576"
+     fill="none"
+     stroke="#e2e8f0"
+     stroke-width="1.5"
+     rx="4"
+     id="rect34" />
+</svg>

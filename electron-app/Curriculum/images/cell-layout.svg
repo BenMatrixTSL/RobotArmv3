@@ -1,0 +1,88 @@
+<svg viewBox="0 0 520 380" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, sans-serif">
+  <rect width="520" height="380" fill="#f8fafc" rx="8"/>
+  <text x="260" y="22" text-anchor="middle" font-size="14" font-weight="700" fill="#1e293b">Automation Cell Layout</text>
+  <text x="260" y="38" text-anchor="middle" font-size="10" fill="#64748b">Top-down view of a typical robot workcell — fencing, stations, and safety zones</text>
+
+  <!-- Cell boundary (safety fence) -->
+  <rect x="40" y="50" width="380" height="280" rx="6" fill="none" stroke="#dc2626" stroke-width="3" stroke-dasharray="10,5"/>
+  <text x="230" y="68" text-anchor="middle" font-size="10" font-weight="700" fill="#dc2626">Safety Fence / Guarding Perimeter</text>
+
+  <!-- Floor area inside -->
+  <rect x="46" y="72" width="368" height="252" rx="4" fill="#f1f5f9" opacity="0.7"/>
+
+  <!-- Robot base -->
+  <circle cx="230" cy="200" r="22" fill="#1e293b" stroke="#475569" stroke-width="2"/>
+  <text x="230" y="196" text-anchor="middle" font-size="9" font-weight="700" fill="white">ROBOT</text>
+  <text x="230" y="208" text-anchor="middle" font-size="9" fill="#94a3b8">BASE</text>
+
+  <!-- Robot reach envelope (dashed circle) -->
+  <circle cx="230" cy="200" r="110" fill="none" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="8,4" opacity="0.8"/>
+  <text x="230" y="100" text-anchor="middle" font-size="9" fill="#d97706">Max reach envelope</text>
+
+  <!-- PICK station (blue) -->
+  <rect x="80" y="158" width="68" height="44" rx="6" fill="#3b82f6" stroke="#1d4ed8" stroke-width="2"/>
+  <text x="114" y="176" text-anchor="middle" font-size="10" font-weight="700" fill="white">PICK</text>
+  <text x="114" y="190" text-anchor="middle" font-size="9" fill="#bfdbfe">Station A</text>
+  <!-- Conveyor line into PICK -->
+  <line x1="46" y1="180" x2="80" y2="180" stroke="#64748b" stroke-width="2" stroke-dasharray="4,2"/>
+  <polygon points="78,176 78,184 86,180" fill="#64748b"/>
+  <text x="63" y="172" text-anchor="middle" font-size="8" fill="#64748b">Conveyor</text>
+  <text x="63" y="183" text-anchor="middle" font-size="8" fill="#64748b">in</text>
+
+  <!-- PLACE station (green) -->
+  <rect x="312" y="158" width="68" height="44" rx="6" fill="#16a34a" stroke="#15803d" stroke-width="2"/>
+  <text x="346" y="176" text-anchor="middle" font-size="10" font-weight="700" fill="white">PLACE</text>
+  <text x="346" y="190" text-anchor="middle" font-size="9" fill="#bbf7d0">Station B</text>
+  <!-- Conveyor out from PLACE -->
+  <line x1="380" y1="180" x2="414" y2="180" stroke="#64748b" stroke-width="2" stroke-dasharray="4,2"/>
+  <polygon points="412,176 412,184 420,180" fill="#64748b"/>
+  <text x="400" y="172" text-anchor="middle" font-size="8" fill="#64748b">Conveyor</text>
+  <text x="400" y="183" text-anchor="middle" font-size="8" fill="#64748b">out</text>
+
+  <!-- TOOL stand (purple) -->
+  <rect x="180" y="92" width="52" height="40" rx="6" fill="#7c3aed" stroke="#6d28d9" stroke-width="1.5"/>
+  <text x="206" y="108" text-anchor="middle" font-size="9" font-weight="700" fill="white">TOOL</text>
+  <text x="206" y="120" text-anchor="middle" font-size="9" fill="#ddd6fe">Stand</text>
+
+  <!-- HOME position marker -->
+  <polygon points="230,145 223,158 237,158" fill="#ea580c" stroke="#c2410c" stroke-width="1.5"/>
+  <text x="248" y="157" font-size="9" fill="#ea580c">HOME</text>
+
+  <!-- Control cabinet (grey) -->
+  <rect x="80" y="262" width="60" height="46" rx="4" fill="#475569" stroke="#334155" stroke-width="1.5"/>
+  <text x="110" y="280" text-anchor="middle" font-size="9" font-weight="700" fill="white">CONTROL</text>
+  <text x="110" y="292" text-anchor="middle" font-size="9" fill="#cbd5e1">CABINET</text>
+  <text x="110" y="304" text-anchor="middle" font-size="8" fill="#94a3b8">(Pi + PSU)</text>
+
+  <!-- HMI / Pendant (blue outline) -->
+  <rect x="316" y="262" width="64" height="46" rx="4" fill="white" stroke="#3b82f6" stroke-width="2"/>
+  <text x="348" y="280" text-anchor="middle" font-size="9" font-weight="700" fill="#3b82f6">HMI /</text>
+  <text x="348" y="292" text-anchor="middle" font-size="9" fill="#3b82f6">PENDANT</text>
+  <text x="348" y="304" text-anchor="middle" font-size="8" fill="#64748b">Operator</text>
+
+  <!-- Access gate -->
+  <rect x="196" y="326" width="68" height="4" rx="2" fill="#16a34a" stroke="#15803d" stroke-width="1"/>
+  <text x="230" y="345" text-anchor="middle" font-size="9" fill="#16a34a">Access Gate (interlocked)</text>
+
+  <!-- Legend -->
+  <rect x="428" y="50" width="84" height="200" rx="6" fill="white" stroke="#e2e8f0" stroke-width="1.5"/>
+  <text x="470" y="68" text-anchor="middle" font-size="10" font-weight="700" fill="#1e293b">Legend</text>
+  <rect x="436" y="76" width="12" height="10" rx="2" fill="#3b82f6"/>
+  <text x="454" y="85" font-size="9" fill="#1e293b">Pick station</text>
+  <rect x="436" y="94" width="12" height="10" rx="2" fill="#16a34a"/>
+  <text x="454" y="103" font-size="9" fill="#1e293b">Place station</text>
+  <rect x="436" y="112" width="12" height="10" rx="2" fill="#7c3aed"/>
+  <text x="454" y="121" font-size="9" fill="#1e293b">Tool / fixture</text>
+  <rect x="436" y="130" width="12" height="10" rx="2" fill="#1e293b"/>
+  <text x="454" y="139" font-size="9" fill="#1e293b">Robot base</text>
+  <line x1="436" y1="154" x2="448" y2="154" stroke="#dc2626" stroke-width="2" stroke-dasharray="4,2"/>
+  <text x="454" y="158" font-size="9" fill="#dc2626">Safety fence</text>
+  <line x1="436" y1="170" x2="448" y2="170" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="4,2"/>
+  <text x="454" y="174" font-size="9" fill="#d97706">Reach envelope</text>
+  <polygon points="436,190 430,200 442,200" fill="#ea580c"/>
+  <text x="454" y="197" font-size="9" fill="#ea580c">Home position</text>
+  <rect x="436" y="208" width="12" height="10" rx="2" fill="#16a34a"/>
+  <text x="454" y="217" font-size="9" fill="#16a34a">Access gate</text>
+
+  <text x="260" y="368" text-anchor="middle" font-size="9" fill="#64748b">All personnel must remain outside the fence when the robot is energised — access gate triggers E-Stop on open</text>
+</svg>

@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Module 13 — Safety Standards & Design for Safety</title>
+<style>
+  :root {
+    --bg: #f8fafc; --card: #ffffff; --border: #e2e8f0;
+    --text: #1e293b; --muted: #64748b;
+    --accent: #3b82f6; --accent-light: #eff6ff;
+    --green: #16a34a; --green-light: #f0fdf4;
+    --purple: #7c3aed; --purple-light: #faf5ff;
+    --orange: #ea580c; --orange-light: #fff7ed;
+    --red: #dc2626; --red-light: #fef2f2;
+    --yellow: #ca8a04; --yellow-light: #fefce8;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+  .hero { background: linear-gradient(135deg, #450a0a 0%, #7f1d1d 100%); color: white; padding: 3rem 2rem; text-align: center; }
+  .hero .module-num { font-size: 0.85rem; opacity: 0.6; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 0.5rem; }
+  .hero h1 { font-size: 2rem; font-weight: 700; margin-bottom: 0.75rem; }
+  .hero p { font-size: 1.05rem; opacity: 0.85; max-width: 600px; margin: 0 auto; }
+  .meta-bar { display: flex; justify-content: center; gap: 2rem; padding: 1rem; background: #1e293b; color: #94a3b8; font-size: 0.85rem; flex-wrap: wrap; }
+  .container { max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem; }
+  .section-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.75rem; margin-bottom: 1.5rem; }
+  .pill { display: inline-block; font-size: 0.75rem; font-weight: 600; padding: 0.2rem 0.65rem; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.9rem; }
+  .pill-theory   { background: var(--accent-light); color: var(--accent); }
+  .pill-worksheet{ background: var(--purple-light); color: var(--purple); }
+  .pill-sowhat   { background: var(--orange-light); color: var(--orange); }
+  .pill-mcq      { background: #fff8e1; color: #856404; }
+  h2 { font-size: 1.3rem; font-weight: 700; margin-bottom: 0.75rem; }
+  h3 { font-size: 1.05rem; font-weight: 600; margin: 1.2rem 0 0.5rem; }
+  p  { margin-bottom: 0.8rem; }
+  .highlight-box { background: var(--accent-light); border-left: 4px solid var(--accent); padding: 1rem 1.2rem; border-radius: 0 8px 8px 0; margin: 1rem 0; }
+  .warning-box { background: var(--yellow-light); border-left: 4px solid var(--yellow); padding: 1rem 1.2rem; border-radius: 0 8px 8px 0; margin: 1rem 0; color: #713f12; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1rem 0; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 1rem; margin: 1rem 0; }
+  .mini-card { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; }
+  .mini-card h4 { font-size: 0.9rem; font-weight: 700; margin-bottom: 0.4rem; }
+  .mini-card p  { font-size: 0.85rem; color: var(--muted); margin: 0; }
+  .hierarchy { display: flex; flex-direction: column; gap: 0.4rem; margin: 1rem 0; }
+  .hier-row { display: flex; align-items: center; gap: 0.8rem; padding: 0.6rem 1rem; border-radius: 6px; font-size: 0.9rem; font-weight: 600; }
+  .h1 { background: #fef2f2; border: 1px solid #fca5a5; color: #dc2626; }
+  .h2 { background: #fff7ed; border: 1px solid #fdba74; color: #c2410c; }
+  .h3 { background: #fefce8; border: 1px solid #fde047; color: #854d0e; }
+  .h4 { background: #f0fdf4; border: 1px solid #86efac; color: #15803d; }
+  .h5 { background: #eff6ff; border: 1px solid #93c5fd; color: #1d4ed8; }
+  .hier-num { font-size: 1.1rem; min-width: 2rem; }
+  table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+  th { background: var(--accent-light); color: var(--accent); text-align: left; padding: 0.6rem 0.8rem; font-weight: 600; }
+  td { padding: 0.55rem 0.8rem; border-bottom: 1px solid var(--border); }
+  tr:last-child td { border-bottom: none; }
+  .steps { list-style: none; counter-reset: step; padding: 0; }
+  .steps li { counter-increment: step; display: flex; gap: 1rem; margin-bottom: 0.9rem; align-items: flex-start; }
+  .steps li::before { content: counter(step); min-width: 28px; height: 28px; background: var(--green); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; flex-shrink: 0; }
+  .tab-ref { display: inline-block; background: #0f172a; color: #7dd3fc; font-family: monospace; font-size: 0.8rem; padding: 0.15rem 0.5rem; border-radius: 4px; }
+  .todo-block { background: var(--red-light); border: 2px dashed var(--red); border-radius: 8px; padding: 1rem 1.2rem; margin: 1rem 0; color: var(--red); }
+  .todo-block strong { display: block; margin-bottom: 0.3rem; }
+  .mcq-question { margin-bottom: 1.5rem; }
+  .mcq-question p { font-weight: 600; margin-bottom: 0.6rem; }
+  .mcq-option { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.35rem; cursor: pointer; font-size: 0.95rem; }
+  .mcq-option input { accent-color: var(--accent); }
+  .feedback-msg { font-size: 0.85rem; padding: 0.45rem 0.8rem; border-radius: 6px; margin-top: 0.5rem; display: none; }
+  .feedback-correct { background: var(--green-light); color: var(--green); }
+  .feedback-wrong   { background: var(--red-light);   color: var(--red); }
+  .check-btn { background: var(--accent); color: white; border: none; padding: 0.7rem 1.6rem; border-radius: 8px; font-size: 0.95rem; font-weight: 600; cursor: pointer; margin-top: 0.5rem; }
+  .check-btn:hover { background: #2563eb; }
+  .score-bar-wrap { height: 8px; background: var(--border); border-radius: 4px; margin: 1rem 0 0.4rem; }
+  .score-bar { height: 100%; background: var(--green); border-radius: 4px; transition: width 0.4s; width: 0%; }
+  .score-text { font-size: 0.9rem; color: var(--muted); }
+  .nav-row { display: flex; justify-content: space-between; margin-top: 2rem; }
+  .nav-btn { display: inline-block; padding: 0.6rem 1.4rem; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 0.9rem; border: 2px solid var(--border); color: var(--text); }
+  .nav-btn.primary { background: var(--accent); color: white; border-color: var(--accent); }
+  .callout { display:flex; gap:0.75rem; padding:1rem 1.2rem; border-radius:8px; margin:1rem 0; }
+  .callout-info    { background:var(--accent-light); border-left:4px solid var(--accent); }
+  .callout-warning { background:#fefce8; border-left:4px solid #ca8a04; color:#713f12; }
+  .callout-tip     { background:var(--green-light); border-left:4px solid var(--green); color:#14532d; }
+  .callout-danger  { background:var(--red-light); border-left:4px solid var(--red); color:#991b1b; }
+  .callout-icon { font-size:1.2rem; flex-shrink:0; padding-top:0.1rem; }
+  .callout-body { flex:1; font-size:0.9rem; }
+  .callout-body ul, .callout-body ol { padding-left:1.2rem; margin-top:0.3rem; }
+  .ui-ref { display:inline-block; background:var(--green); color:#fff; font-size:0.75rem; font-weight:600; padding:0.1rem 0.45rem; border-radius:4px; font-family:monospace; }
+  @media(max-width:600px){ .grid-2,.grid-3{ grid-template-columns:1fr; } }
+</style>
+<link rel="stylesheet" href="worksheet.css">
+</head>
+<body>
+
+<div class="hero">
+  <div class="module-num">Module 13 of 16</div>
+  <h1>Safety Standards &amp; Design for Safety</h1>
+  <p>How international standards shape robot design, and how to apply systematic safety thinking to the arm you are using.</p>
+</div>
+<div class="meta-bar">
+  <span>&#128340; 60–75 min</span>
+  <span>&#127919; Group: Advanced</span>
+  <span>&#128268; App tabs: Dead Zones · Settings · Joint Control</span>
+</div>
+
+<div class="container">
+
+  <!-- THEORY 1 -->
+  <div class="section-card">
+    <span class="pill pill-theory">Theory</span>
+    <h2>Key Safety Standards for Robots</h2>
+    <p>Industrial robots are governed by a hierarchy of international standards. These define how robots must be designed, installed, and operated to protect workers:</p>
+    <table>
+      <tr><th>Standard</th><th>Scope</th></tr>
+      <tr><td><strong>ISO 10218-1</strong></td><td>Robot design and manufacture — what the robot builder must provide</td></tr>
+      <tr><td><strong>ISO 10218-2</strong></td><td>Robot installation and work cell — what the integrator must ensure</td></tr>
+      <tr><td><strong>ISO/TS 15066</strong></td><td>Collaborative robots (cobots) — force and speed limits for human contact</td></tr>
+      <tr><td><strong>EN 60204-1</strong></td><td>Electrical safety of machines — wiring, guarding, emergency stop design</td></tr>
+      <tr><td><strong>PUWER 1998</strong></td><td>UK law — Provision and Use of Work Equipment Regulations</td></tr>
+    </table>
+    <div class="highlight-box">
+      <strong>Note:</strong> This arm is an educational device, not CE-marked industrial equipment. However, the same safety principles apply at any scale.
+    </div>
+  </div>
+
+  <!-- THEORY 2 -->
+  <div class="section-card">
+    <span class="pill pill-theory">Theory</span>
+    <h2>The Hierarchy of Controls</h2>
+    <img src="images/controls-pyramid.svg" alt="Hierarchy of controls pyramid" style="width:100%;height:auto;display:block;border-radius:8px;margin:12px 0;">
+    <p>When designing for safety, engineers work through a priority hierarchy — eliminating hazards is always preferred over warning about them:</p>
+    <div class="hierarchy">
+      <div class="hier-row h1"><span class="hier-num">1</span> <strong>Eliminate</strong> — Remove the hazard entirely (e.g. redesign so the motion is not needed)</div>
+      <div class="hier-row h2"><span class="hier-num">2</span> <strong>Substitute</strong> — Replace with a less dangerous alternative (e.g. slower motor)</div>
+      <div class="hier-row h3"><span class="hier-num">3</span> <strong>Engineering controls</strong> — Guards, interlocks, software limits, force limiting</div>
+      <div class="hier-row h4"><span class="hier-num">4</span> <strong>Administrative controls</strong> — Procedures, training, supervision, permit-to-work</div>
+      <div class="hier-row h5"><span class="hier-num">5</span> <strong>PPE</strong> — Personal protective equipment (last resort — relies on human compliance)</div>
+    </div>
+    <p>In this arm, the <strong>Dead Zones</strong> tab provides an engineering control (level 3). Your lab rules about not reaching into the operating envelope are administrative controls (level 4).</p>
+
+    <div class="callout callout-info">
+      <span class="callout-icon">🚫</span>
+      <div class="callout-body">
+        <strong>Dead Zones Tab — Safety Parameters</strong></br>
+        Each dead zone is a named rectangular XYZ exclusion volume with an enable/disable toggle. In the safety hierarchy, dead zones are a <strong>Level 3 Engineering Control</strong> — they are enforced automatically by the server and do not rely on the operator remembering to avoid a specific area. Enable the <strong>Dead Zones</strong> overlay in 3D Visualisation to verify that defined zones correspond to physical obstacles in the lab layout. A zone defined incorrectly (wrong coordinates, wrong size, or accidentally disabled) provides no protection — verify the visual overlay against the physical space.
+      </div>
+    </div>
+
+    <div class="callout callout-info">
+      <span class="callout-icon">🔐</span>
+      <div class="callout-body">
+        <strong>Control Session — Level 3 Engineering Control</strong></br>
+        The software <em>control session</em> mechanism is an engineering control (Level 3 in the hierarchy). Only one WebSocket client at a time can issue movement commands. Key properties:
+        <ul style="margin:0.4rem 0 0;padding-left:1.2rem;">
+          <li>A <strong>5-minute idle timeout</strong> auto-releases control if no movement is commanded — preventing an abandoned session from blocking others</li>
+          <li>A disconnecting client <strong>immediately releases control</strong></li>
+          <li>Control can only be forcibly taken from another client using an explicit <strong>Force Take Control</strong> — and the displaced client is notified</li>
+        </ul>
+        In a multi-user lab environment, this prevents two students from simultaneously commanding conflicting movements. Classify it alongside dead zones in your hierarchy of controls worksheet.
+      </div>
+    </div>
+  </div>
+
+  <!-- THEORY 3 -->
+  <div class="section-card">
+    <span class="pill pill-theory">Theory</span>
+    <h2>Speed &amp; Force Limiting</h2>
+    <img src="images/ke-speed-graph.svg" alt="Kinetic energy vs speed graph" style="width:100%;height:auto;display:block;border-radius:8px;margin:12px 0;">
+    <p>One of the most important safety parameters in any robot is how fast it moves and how much force it can exert. These two quantities determine the severity of a collision:</p>
+    <p style="text-align:center; font-family:monospace; background:#f1f5f9; padding:0.8rem; border-radius:8px; margin:1rem 0;">
+      Energy = ½ × m × v²&nbsp;&nbsp;&nbsp;&nbsp;Force = m × a
+    </p>
+    <p>Doubling the speed quadruples the kinetic energy at impact. This is why cobots under ISO/TS 15066 have strict speed limits when humans are nearby.</p>
+    <div class="grid-2">
+      <div class="mini-card">
+        <h4>&#128268; Speed limiting</h4>
+        <p>Reducing maximum joint speed (via the Settings tab or G-code feed rate F parameter) reduces both cycle time and collision energy.</p>
+      </div>
+      <div class="mini-card">
+        <h4>&#9889; Torque/current limiting</h4>
+        <p>The ST3215 servos have a hardware current limit built into the servo IC — this caps the force the joint can exert. There is no current-limit slider in the Settings tab; the closest software-accessible safety control for overload is the speed limit.</p>
+      </div>
+    </div>
+    <div class="warning-box">
+      <strong>&#9888;&#65039; Even at low speeds, a robot arm can cause injury</strong> if a finger or hand is trapped between a moving link and a fixed object. Treat the arm with the same respect as any powered machinery.
+    </div>
+
+    <div class="callout callout-info">
+      <span class="callout-icon">🌡️</span>
+      <div class="callout-body">
+        <strong>Thermal Protection — Layered Engineering Controls</strong></br>
+        The system has thermal protection at two levels — a useful example of layered engineering controls:
+        <ul style="margin:0.4rem 0 0;padding-left:1.2rem;">
+          <li><strong>Level 1 (hardware)</strong>: the ST3215 servo IC has a built-in thermal fuse / shutdown — the servo cuts power if it overheats, regardless of software state</li>
+          <li><strong>Level 3 (software)</strong>: the server detects an overtemperature fault from the servo's telemetry and enforces a 30-second cool-down period for that joint, refusing further move commands until it has cooled. The LED strip switches to flashing orange to signal the fault</li>
+        </ul>
+        Ask: which control is preferred in the hierarchy, and why is the hardware-level control retained even when the software-level control exists?
+      </div>
+    </div>
+  </div>
+
+  <!-- WORKSHEET -->
+  <div class="section-card worksheet-card">
+    <span class="pill pill-worksheet">Worksheet</span>
+    <h2>Activity — Safety Audit of the Arm</h2>
+    <p>Carry out a systematic safety review of the arm setup in your lab, applying the hierarchy of controls.</p>
+    <ul class="steps">
+      <li>Identify three specific hazards associated with this arm (e.g. struck by moving link, trapped fingers, tripping on cables). Write each below.</li>
+      <li>For each hazard, classify it using the hierarchy: which existing controls are in place? Which level of the hierarchy are they at?</li>
+      <li>Open the <span class="tab-ref">Dead Zones</span> tab. Check that joint limits are set appropriately. Does the current limit prevent the arm reaching any fixtures or people in your lab layout?</li>
+      <li>Open the <span class="tab-ref">Settings</span> tab. Find the <strong>Linear Speed</strong> and <strong>Movement Mode</strong> parameters and record their current values. Note: there is no current-limit slider here — the ST3215 servo's current limit is a hardware parameter. The closest software-accessible safety control for overload is the speed limit.</li>
+      <li>Open the <span class="tab-ref">Joint Control</span> tab. Command a fast move (high speed) and observe the behaviour. Then set speed to 20% and repeat. Describe the difference in collision risk.</li>
+      <li>Write a short (half-page) <strong>safe operating procedure (SOP)</strong> for using this arm in your lab. Include: who may operate it, pre-use checks, what to do if something goes wrong, and how to safely power it down.</li>
+    </ul>
+
+    <div class="callout callout-tip no-print">
+      <span class="callout-icon">📋</span>
+      <div class="callout-body">
+        <strong>SOP Template — Connection and Control Workflow</strong></br>
+        Your SOP should include this specific sequence for using the application safely:
+        <ol style="margin:0.4rem 0 0;padding-left:1.2rem;">
+          <li>Open the application, navigate to <span class="ui-ref">Connection</span> tab, enter Pi IP address (or use Auto-Detect), connect</li>
+          <li>Observe the LED strip — confirm it shows <strong>solid green</strong> (connected and ready) before proceeding</li>
+          <li>Press <strong>Take Control</strong> — confirm the status bar shows you have control</li>
+          <li>Enable torque only when ready to move and everyone is clear of the working envelope</li>
+          <li>After completing work: press <strong>E-Stop</strong> or run the Home sequence, then <strong>Disable Torque</strong>, then press <strong>Release Control</strong></li>
+          <li>Do not leave the session with control held — another user will be locked out</li>
+        </ol>
+      </div>
+    </div>
+
+    <h3>Hazard Register</h3>
+    <table>
+      <tr><th>Hazard</th><th>Who is at risk</th><th>Existing controls</th><th>Hierarchy level</th><th>Residual risk</th></tr>
+      <tr>
+        <td><input type="text" placeholder="1."></td>
+        <td><input type="text"></td>
+        <td><input type="text"></td>
+        <td><input type="text"></td>
+        <td><input type="text"></td>
+      </tr>
+      <tr>
+        <td><input type="text" placeholder="2."></td>
+        <td><input type="text"></td>
+        <td><input type="text"></td>
+        <td><input type="text"></td>
+        <td><input type="text"></td>
+      </tr>
+      <tr>
+        <td><input type="text" placeholder="3."></td>
+        <td><input type="text"></td>
+        <td><input type="text"></td>
+        <td><input type="text"></td>
+        <td><input type="text"></td>
+      </tr>
+    </table>
+
+    <div class="ws-field">
+      <label>Settings values — Linear Speed and Movement Mode</label>
+      <input type="text" placeholder="Linear Speed: ___ mm/s   Movement Mode: PTP / Linear Cartesian">
+    </div>
+
+    <div class="ws-field">
+      <label>Speed comparison — high speed vs 20% (collision risk)</label>
+      <textarea placeholder="At high speed... At 20%..."></textarea>
+    </div>
+
+    <div class="ws-field">
+      <label>Safe Operating Procedure (SOP)</label>
+      <textarea style="min-height:140px;" placeholder="Who may operate: ...&#10;Pre-use checks: ...&#10;If something goes wrong: ...&#10;Safe power-down: ..."></textarea>
+    </div>
+
+    <div class="callout callout-info no-print">
+      <span class="callout-icon">⚙️</span>
+      <div class="callout-body">
+        <strong>Settings Tab — Confirmed Parameters</strong></br>
+        Relevant parameters in the <span class="ui-ref">Settings</span> tab for safety analysis:
+        <ul style="margin:0.4rem 0 0;padding-left:1.2rem;">
+          <li><strong>Movement Mode</strong>: PTP (point-to-point, faster) or Linear Cartesian (straight-line end-effector path, slower)</li>
+          <li><strong>Linear Speed (mm/s)</strong>: maximum speed for Linear Cartesian moves</li>
+          <li><strong>Linear Step Size (mm)</strong>: waypoint spacing for linear interpolation (smaller = smoother path, more computation)</li>
+          <li><strong>Status Watchdog Interval</strong>: fallback poll period if the server stops pushing updates</li>
+        </ul>
+        There is no explicit current-limit slider — the ST3215 servo's current limit is a hardware parameter. The closest software-accessible safety control for overload is the <strong>speed limit</strong>: lower speed → lower peak current draw → lower risk of thermal overload.
+      </div>
+    </div>
+  </div>
+
+  <!-- SO WHAT -->
+  <div class="section-card">
+    <span class="pill pill-sowhat">So What?</span>
+    <h2>Safety Is an Engineering Responsibility</h2>
+    <p>In UK law (Health and Safety at Work Act 1974, PUWER 1998), employers have a duty to ensure that work equipment is safe. But the engineer who designs the system shares moral — and sometimes legal — responsibility for how safe it is to use.</p>
+    <p>The hierarchy of controls, risk assessments, and safety standards exist because history has shown that relying on people to "be careful" is not enough. Engineering out the hazard is always better than managing it with rules and warning signs.</p>
+    <p><strong>Think about:</strong> If you were asked to deploy this arm in a public exhibition where members of the public (including children) could get close to it, what additional controls would you need? At which levels of the hierarchy?</p>
+  </div>
+
+  <!-- MCQ -->
+  <div class="section-card">
+    <span class="pill pill-mcq">Quiz</span>
+    <h2>Check Your Understanding</h2>
+
+    <div class="mcq-question">
+      <p>1. According to the hierarchy of controls, which approach is always preferred first?</p>
+      <label class="mcq-option"><input type="radio" name="q1" value="a"> Providing PPE to operators</label>
+      <label class="mcq-option"><input type="radio" name="q1" value="b"> Posting warning signs</label>
+      <label class="mcq-option"><input type="radio" name="q1" value="c"> Eliminating the hazard entirely</label>
+      <label class="mcq-option"><input type="radio" name="q1" value="d"> Writing a safe operating procedure</label>
+      <div class="feedback-msg" id="q1-fb"></div>
+    </div>
+
+    <div class="mcq-question">
+      <p>2. Doubling a robot's speed increases the kinetic energy at impact by a factor of:</p>
+      <label class="mcq-option"><input type="radio" name="q2" value="a"> 2 (doubles)</label>
+      <label class="mcq-option"><input type="radio" name="q2" value="b"> 4 (quadruples)</label>
+      <label class="mcq-option"><input type="radio" name="q2" value="c"> 1.5 (50% more)</label>
+      <label class="mcq-option"><input type="radio" name="q2" value="d"> 8 (octuples)</label>
+      <div class="feedback-msg" id="q2-fb"></div>
+    </div>
+
+    <div class="mcq-question">
+      <p>3. Software dead zones in the app are an example of which hierarchy level?</p>
+      <label class="mcq-option"><input type="radio" name="q3" value="a"> Elimination</label>
+      <label class="mcq-option"><input type="radio" name="q3" value="b"> PPE</label>
+      <label class="mcq-option"><input type="radio" name="q3" value="c"> Administrative control</label>
+      <label class="mcq-option"><input type="radio" name="q3" value="d"> Engineering control</label>
+      <div class="feedback-msg" id="q3-fb"></div>
+    </div>
+
+    <button class="check-btn" onclick="checkMCQ()">Check Answers</button>
+    <div class="score-bar-wrap"><div class="score-bar" id="score-bar"></div></div>
+    <div class="score-text" id="score-text"></div>
+  </div>
+
+  <div class="nav-row">
+    <a class="nav-btn" href="module-12.html">&#8592; Module 12</a>
+    <a class="nav-btn primary" href="module-14.html">Module 14 &#8594;</a>
+  </div>
+</div>
+
+<script>
+const answers = { q1: 'c', q2: 'b', q3: 'd' };
+const feedback = {
+  q1: { c: 'Correct! Elimination — removing the hazard entirely — is always the preferred first approach in the hierarchy.', wrong: 'Not quite. The hierarchy prioritises elimination first — removing the hazard entirely before considering any other measures.' },
+  q2: { b: 'Correct! KE = ½mv², so doubling v multiplies KE by 2² = 4.', wrong: 'Not quite. KE = ½mv², so doubling speed multiplies kinetic energy by 2² = 4 (quadruples).' },
+  q3: { d: 'Correct! Software limits are an engineering control — they are built into the system design rather than relying on human behaviour.', wrong: 'Not quite. Software limits are engineering controls — they are designed into the system rather than relying on rules or PPE.' }
+};
+function checkMCQ() {
+  let score = 0;
+  ['q1','q2','q3'].forEach(q => {
+    const sel = document.querySelector(`input[name="${q}"]:checked`);
+    const fb = document.getElementById(`${q}-fb`);
+    if (!sel) { fb.textContent = 'Please select an answer.'; fb.className = 'feedback-msg feedback-wrong'; fb.style.display = 'block'; return; }
+    const correct = sel.value === answers[q];
+    if (correct) score++;
+    fb.textContent = correct ? feedback[q][sel.value] : feedback[q].wrong;
+    fb.className = 'feedback-msg ' + (correct ? 'feedback-correct' : 'feedback-wrong');
+    fb.style.display = 'block';
+  });
+  document.getElementById('score-bar').style.width = (score / 3 * 100) + '%';
+  document.getElementById('score-text').textContent = `Score: ${score} / 3`;
+}
+</script>
+<script src="worksheet.js"></script>
+</body>
+</html>

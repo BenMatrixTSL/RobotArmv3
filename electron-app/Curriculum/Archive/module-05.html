@@ -1,0 +1,1185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="curriculum-module" content="5">
+  <title>Module 5: Statics, Forces &amp; Load Analysis</title>
+  <style>
+    :root {
+      --bg: #f6f7f9;
+      --card: #fff;
+      --text: #1a1d26;
+      --muted: #5c6370;
+      --accent: #1e5a8a;
+      --border: #d8dde6;
+      --code-bg: #eef1f6;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 17px;
+      line-height: 1.55;
+      color: var(--text);
+      background: var(--bg);
+    }
+    .wrap {
+      max-width: 52rem;
+      margin: 0 auto;
+      padding: 1.25rem 1.25rem 3rem;
+    }
+    .top-nav {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.75rem 1rem;
+      padding: 0.75rem 0;
+      margin-bottom: 1.25rem;
+      border-bottom: 1px solid var(--border);
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+      font-size: 0.9rem;
+    }
+    .nav-title {
+      flex: 1 1 auto;
+      font-weight: 600;
+      color: var(--muted);
+      min-width: 12rem;
+    }
+    a.nav-link {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    a.nav-link:hover { text-decoration: underline; }
+    h1.page-title {
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+      font-size: 1.65rem;
+      font-weight: 700;
+      margin: 0 0 0.5rem;
+      line-height: 1.25;
+    }
+    p.lead {
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+      color: var(--muted);
+      margin: 0 0 1.5rem;
+      font-size: 0.95rem;
+    }
+    section.card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.25rem 1.5rem 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    }
+    section.card h2 {
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+      font-size: 1.15rem;
+      margin: 0 0 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid var(--accent);
+      color: var(--accent);
+    }
+    .card-inner {
+      font-family: Georgia, "Times New Roman", serif;
+    }
+    .card-inner h1, .card-inner h2, .card-inner h3, .card-inner h4 {
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+    }
+    .card-inner h1 { font-size: 1.35rem; }
+    .card-inner h2 { font-size: 1.15rem; border-bottom: none; color: var(--text); }
+    .card-inner h3 { font-size: 1.05rem; }
+    .card-inner h4 { font-size: 1rem; }
+    .card-inner code {
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 0.9em;
+      background: var(--code-bg);
+      padding: 0.1em 0.35em;
+      border-radius: 4px;
+    }
+    .card-inner pre {
+      background: var(--code-bg);
+      padding: 1rem;
+      overflow-x: auto;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+    }
+    .card-inner pre code {
+      background: none;
+      padding: 0;
+    }
+    .card-inner table {
+      border-collapse: collapse;
+      width: 100%;
+      font-size: 0.95rem;
+      margin: 1rem 0;
+    }
+    .card-inner th, .card-inner td {
+      border: 1px solid var(--border);
+      padding: 0.45rem 0.6rem;
+      text-align: left;
+      vertical-align: top;
+    }
+    .card-inner th {
+      background: #eef3f8;
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+      font-weight: 600;
+    }
+    ul.index-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+    }
+    ul.index-list li {
+      margin: 0.35rem 0;
+      padding: 0.5rem 0.65rem;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--card);
+    }
+    ul.index-list a {
+      color: var(--accent);
+      font-weight: 600;
+      text-decoration: none;
+    }
+    ul.index-list a:hover { text-decoration: underline; }
+    .index-meta {
+      display: block;
+      font-size: 0.85rem;
+      color: var(--muted);
+      font-weight: normal;
+      margin-top: 0.2rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <nav class="top-nav">
+  <a class="nav-link" href="index.html">All modules</a>
+  <a class="nav-link" href="module-04.html">← Previous</a>
+  <span class="nav-title">Module 5: Statics, Forces &amp; Load Analysis</span>
+  <a class="nav-link" href="module-06.html">Next →</a>
+</nav>
+<h1 class="page-title">Module 5: Statics, Forces &amp; Load Analysis</h1>
+<p class="lead">BTEC robot arm curriculum — one page per module. Work through sections in order.</p>
+<section class="card"><h2>Curriculum plan (from BTEC_Robot_Arm_Curriculum_Plan.md)</h2><div class="card-inner"><h2><strong>Module 5: Statics, Forces &amp; Load Analysis</strong></h2>
+<p><em>Building on Module 4</em></p>
+<h3>Learning Objectives Covered:</h3>
+<ul>
+<li>✅ <strong>Statics and forces</strong> (Level 3)</li>
+<li>Identify loads at each joint for different arm postures (especially shoulder and elbow)</li>
+<li>Explain how joint torque limits and load readings constrain safe working envelope</li>
+<li>Describe effect of changing payload mass and reach on joint loading and stability</li>
+</ul>
+<h3>Content:</h3>
+<ol>
+<li>
+<p><strong>Forces and Loads Basics</strong><br />
+   - What is force?<br />
+   - What is torque?<br />
+   - How forces act on the robot arm<br />
+   - Understanding moments and leverage</p>
+</li>
+<li>
+<p><strong>Joint Loading</strong><br />
+   - Why different postures create different loads<br />
+   - Shoulder joint: why it carries the most load<br />
+   - Elbow joint: load distribution<br />
+   - Base joint: stability considerations</p>
+</li>
+<li>
+<p><strong>Working Envelope</strong><br />
+   - What is a working envelope?<br />
+   - How torque limits define safe operation<br />
+   - Using load readings to stay within limits<br />
+   - Understanding reach vs. payload trade-offs</p>
+</li>
+<li>
+<p><strong>Payload Effects</strong><br />
+   - How payload mass affects joint loading<br />
+   - How reach (arm extension) affects loading<br />
+   - Stability considerations<br />
+   - Finding the safe operating zone</p>
+</li>
+</ol>
+<h3>Practical Activities:</h3>
+<ul>
+<li>Measure joint loads in different postures</li>
+<li>Create a map of working envelope</li>
+<li>Test with different payloads</li>
+<li>Test at different reaches</li>
+<li>Document load readings for various configurations</li>
+<li>Create a simple load vs. reach graph</li>
+<li>Determine maximum safe payload at different reaches</li>
+</ul>
+<hr /></div></section>
+<section class="card"><h2>Theory & teaching notes</h2><div class="card-inner"><h1>Module 5: Statics, Forces &amp; Load Analysis</h1>
+<h2>Theory &amp; Teaching Notes</h2>
+<p><strong>Module Duration:</strong> 2-3 hours<br />
+<strong>Level:</strong> Foundation (Level 3)</p>
+<hr />
+<h2>Learning Objectives</h2>
+<p>By the end of this module, students will be able to:<br />
+- Understand forces and torques acting on robot arms<br />
+- Identify loads at different joints<br />
+- Explain how torque limits constrain operation<br />
+- Understand the relationship between payload, reach, and loading<br />
+- Map the working envelope</p>
+<hr />
+<h2>1. Forces and Loads Basics</h2>
+<h3>What is Force?</h3>
+<p><strong>Force</strong> = A push or pull that causes movement or change</p>
+<p><strong>Units:</strong> Newtons (N) or pounds (lb)</p>
+<p><strong>In robot arms:</strong><br />
+- Gravity pulls down on links<br />
+- Payload creates downward force<br />
+- Joints must resist these forces</p>
+<h3>What is Torque?</h3>
+<p><strong>Torque</strong> = Rotational force (force that causes rotation)</p>
+<p><strong>Think of it like:</strong> Turning a doorknob - you apply torque</p>
+<p><strong>Units:</strong> Newton-meters (Nm) or pound-feet (lb-ft)</p>
+<p><strong>In robot arms:</strong><br />
+- Joints must produce torque to move<br />
+- Torque resists gravity and payload<br />
+- Each joint has a maximum torque limit</p>
+<h3>What is a Moment?</h3>
+<p><strong>Moment</strong> = Force × Distance (torque is a type of moment)</p>
+<p><strong>Key idea:</strong> The further the force is from the pivot, the larger the moment.</p>
+<p><strong>Example:</strong> <br />
+- Holding a weight close to your body = small moment<br />
+- Holding weight with arm extended = large moment</p>
+<p><strong>In robot arms:</strong> Extended arm creates larger moments (more torque needed).</p>
+<h3>What is Leverage?</h3>
+<p><strong>Leverage</strong> = Using distance to multiply force</p>
+<p><strong>Simple lever example:</strong><br />
+- Long lever = less force needed<br />
+- Short lever = more force needed</p>
+<p><strong>In robot arms:</strong><br />
+- Longer reach = more torque needed at joints<br />
+- Shorter reach = less torque needed</p>
+<hr />
+<h2>2. Joint Loading</h2>
+<h3>Why Different Postures Create Different Loads</h3>
+<p><strong>Key concept:</strong> The same payload creates different loads depending on arm position.</p>
+<p><strong>Example - Shoulder Joint:</strong></p>
+<p><strong>Posture 1: Arm Extended Horizontally</strong><br />
+- Payload is far from shoulder<br />
+- Large moment arm<br />
+- <strong>High torque needed</strong></p>
+<p><strong>Posture 2: Arm Retracted (Close to Body)</strong><br />
+- Payload is close to shoulder<br />
+- Small moment arm<br />
+- <strong>Low torque needed</strong></p>
+<p><strong>Posture 3: Arm Raised High</strong><br />
+- Payload is above shoulder<br />
+- Different direction of force<br />
+- <strong>Moderate torque, but different direction</strong></p>
+<h3>Shoulder Joint: Why It Carries Most Load</h3>
+<p><strong>The shoulder joint typically carries the most load because:</strong></p>
+<ol>
+<li>
+<p><strong>It supports everything</strong><br />
+   - All links below it<br />
+   - All joints below it<br />
+   - The payload<br />
+   - Everything!</p>
+</li>
+<li>
+<p><strong>Long moment arm</strong><br />
+   - Payload is far from shoulder<br />
+   - Creates large torque</p>
+</li>
+<li>
+<p><strong>Gravity effect</strong><br />
+   - Gravity pulls down on everything<br />
+   - Shoulder must resist all of it</p>
+</li>
+</ol>
+<p><strong>Think of it like:</strong> Carrying a heavy bag - your shoulder does most of the work.</p>
+<h3>Elbow Joint: Load Distribution</h3>
+<p><strong>The elbow joint:</strong><br />
+- Supports less than shoulder (only forearm and payload)<br />
+- But still significant load<br />
+- Especially when arm is extended</p>
+<p><strong>Load depends on:</strong><br />
+- How extended the arm is<br />
+- Payload weight<br />
+- Position of payload</p>
+<h3>Base Joint: Stability Considerations</h3>
+<p><strong>The base joint:</strong><br />
+- Must resist all forces<br />
+- Provides stability<br />
+- Prevents robot from tipping<br />
+- Critical for safety</p>
+<hr />
+<h2>3. Working Envelope</h2>
+<h3>What is a Working Envelope?</h3>
+<p><strong>Working envelope</strong> = The 3D space the robot can reach</p>
+<p><strong>Think of it like:</strong> The space you can reach with your arm without moving your body.</p>
+<h3>How Torque Limits Define Safe Operation</h3>
+<p><strong>Torque limits</strong> = Maximum safe torque for each joint</p>
+<p><strong>Why limits exist:</strong><br />
+- Prevent damage<br />
+- Ensure safety<br />
+- Maintain accuracy<br />
+- Prevent overheating</p>
+<p><strong>How they define safe operation:</strong></p>
+<p><strong>Within limits:</strong><br />
+- Robot can operate safely<br />
+- Joints not overloaded<br />
+- Smooth operation<br />
+- Good accuracy</p>
+<p><strong>Approaching limits:</strong><br />
+- Operation still possible<br />
+- But less margin for error<br />
+- Monitor carefully<br />
+- Reduce speed or payload</p>
+<p><strong>Exceeding limits:</strong><br />
+- <strong>DANGEROUS!</strong><br />
+- Can damage joints<br />
+- Can cause failure<br />
+- Must stop immediately</p>
+<h3>Using Load Readings to Stay Within Limits</h3>
+<p><strong>Load readings</strong> tell you how much torque each joint is using.</p>
+<p><strong>How to use them:</strong></p>
+<ol>
+<li>
+<p><strong>Monitor load readings</strong><br />
+   - Watch real-time feedback<br />
+   - Check each joint<br />
+   - Identify high loads</p>
+</li>
+<li>
+<p><strong>Compare to limits</strong><br />
+   - What's the limit?<br />
+   - What's current load?<br />
+   - How close are you?</p>
+</li>
+<li>
+<p><strong>Adjust if needed</strong><br />
+   - Reduce payload<br />
+   - Reduce reach<br />
+   - Change posture<br />
+   - Slow down</p>
+</li>
+</ol>
+<p><strong>Safe operating zone:</strong><br />
+- Load &lt; 80% of limit = Safe<br />
+- Load 80-90% = Caution<br />
+- Load &gt; 90% = Danger!</p>
+<hr />
+<h2>4. Payload Effects</h2>
+<h3>How Payload Mass Affects Joint Loading</h3>
+<p><strong>Simple rule:</strong> Heavier payload = more load on joints</p>
+<p><strong>Why:</strong><br />
+- More weight = more force<br />
+- More force = more torque needed<br />
+- Joints must work harder</p>
+<p><strong>Example:</strong><br />
+- 100g payload = Low load<br />
+- 500g payload = Medium load<br />
+- 1000g payload = High load (might exceed limits)</p>
+<p><strong>Effect on different joints:</strong><br />
+- <strong>Shoulder:</strong> Most affected (carries everything)<br />
+- <strong>Elbow:</strong> Moderately affected<br />
+- <strong>Wrist:</strong> Least affected (only payload itself)</p>
+<h3>How Reach Affects Loading</h3>
+<p><strong>Simple rule:</strong> Longer reach = more load on joints</p>
+<p><strong>Why:</strong><br />
+- Longer moment arm<br />
+- More leverage<br />
+- More torque needed</p>
+<p><strong>Example - Same Payload:</strong></p>
+<p><strong>Close Reach (Retracted):</strong><br />
+- Moment arm = Short<br />
+- Torque needed = Low<br />
+- <strong>Safe operation</strong></p>
+<p><strong>Medium Reach:</strong><br />
+- Moment arm = Medium<br />
+- Torque needed = Medium<br />
+- <strong>Moderate operation</strong></p>
+<p><strong>Far Reach (Extended):</strong><br />
+- Moment arm = Long<br />
+- Torque needed = High<br />
+- <strong>May exceed limits!</strong></p>
+<h3>The Payload-Reach Trade-off</h3>
+<p><strong>Key concept:</strong> You can't have maximum payload at maximum reach.</p>
+<p><strong>Why:</strong><br />
+- Maximum reach = Maximum torque needed<br />
+- Maximum payload = Maximum torque needed<br />
+- Together = Exceeds limits!</p>
+<p><strong>Solution:</strong> Reduce one or both<br />
+- Reduce payload at long reach<br />
+- Reduce reach with heavy payload<br />
+- Find the balance</p>
+<h3>Stability Considerations</h3>
+<p><strong>Stability</strong> = How stable the robot is (won't tip over)</p>
+<p><strong>Factors affecting stability:</strong></p>
+<ol>
+<li>
+<p><strong>Payload position</strong><br />
+   - Far from base = Less stable<br />
+   - Close to base = More stable</p>
+</li>
+<li>
+<p><strong>Payload weight</strong><br />
+   - Heavy payload = Less stable<br />
+   - Light payload = More stable</p>
+</li>
+<li>
+<p><strong>Base size</strong><br />
+   - Large base = More stable<br />
+   - Small base = Less stable</p>
+</li>
+<li>
+<p><strong>Center of gravity</strong><br />
+   - Low center = More stable<br />
+   - High center = Less stable</p>
+</li>
+</ol>
+<p><strong>Unstable conditions:</strong><br />
+- Heavy payload at far reach<br />
+- High center of gravity<br />
+- Small base<br />
+- <strong>Can cause tipping!</strong></p>
+<hr />
+<h2>5. Finding the Safe Operating Zone</h2>
+<h3>Maximum Safe Payload at Different Reaches</h3>
+<p><strong>You need to find:</strong> What's the maximum safe payload at each reach distance?</p>
+<p><strong>How to find it:</strong></p>
+<ol>
+<li>
+<p><strong>Start at close reach</strong><br />
+   - Test with increasing payloads<br />
+   - Monitor load readings<br />
+   - Find maximum before limits</p>
+</li>
+<li>
+<p><strong>Move to medium reach</strong><br />
+   - Test again<br />
+   - Maximum will be lower<br />
+   - Document results</p>
+</li>
+<li>
+<p><strong>Move to far reach</strong><br />
+   - Test again<br />
+   - Maximum will be even lower<br />
+   - Document results</p>
+</li>
+<li>
+<p><strong>Create a chart</strong><br />
+   - X-axis: Reach distance<br />
+   - Y-axis: Maximum payload<br />
+   - Shows safe operating zone</p>
+</li>
+</ol>
+<h3>Load vs. Reach Graph</h3>
+<p><strong>A load vs. reach graph shows:</strong><br />
+- Safe operating zone (green)<br />
+- Caution zone (yellow)<br />
+- Unsafe zone (red)</p>
+<p><strong>How to read it:</strong><br />
+- Find your reach on X-axis<br />
+- Find your payload on Y-axis<br />
+- Check which zone you're in<br />
+- Adjust if needed</p>
+<hr />
+<h2>6. Practical Understanding</h2>
+<h3>Measuring Joint Loads</h3>
+<p><strong>You can measure loads by:</strong></p>
+<ol>
+<li>
+<p><strong>Using servo feedback</strong><br />
+   - Read load percentage<br />
+   - Compare to maximum<br />
+   - Monitor in real-time</p>
+</li>
+<li>
+<p><strong>Testing different postures</strong><br />
+   - Same payload, different positions<br />
+   - Compare load readings<br />
+   - Understand relationships</p>
+</li>
+<li>
+<p><strong>Testing different payloads</strong><br />
+   - Same position, different weights<br />
+   - See how load increases<br />
+   - Find limits</p>
+</li>
+</ol>
+<h3>Creating a Working Envelope Map</h3>
+<p><strong>Steps to create:</strong></p>
+<ol>
+<li>
+<p><strong>Test reach limits</strong><br />
+   - Move to maximum in each direction<br />
+   - Document positions<br />
+   - Map boundaries</p>
+</li>
+<li>
+<p><strong>Test payload limits</strong><br />
+   - At different reaches<br />
+   - Find maximum safe payload<br />
+   - Document results</p>
+</li>
+<li>
+<p><strong>Create zones</strong><br />
+   - Safe zone (green)<br />
+   - Caution zone (yellow)<br />
+   - Unsafe zone (red)</p>
+</li>
+<li>
+<p><strong>Document</strong><br />
+   - Draw map<br />
+   - Label zones<br />
+   - Add notes</p>
+</li>
+</ol>
+<hr />
+<h2>7. Summary</h2>
+<h3>Key Concepts</h3>
+<ol>
+<li><strong>Force</strong> = Push or pull</li>
+<li><strong>Torque</strong> = Rotational force</li>
+<li><strong>Moment</strong> = Force × Distance</li>
+<li><strong>Shoulder carries most load</strong> (supports everything)</li>
+<li><strong>Working envelope</strong> = Reachable space</li>
+<li><strong>Torque limits</strong> define safe operation</li>
+<li><strong>Payload and reach</strong> affect loading</li>
+<li><strong>Trade-off:</strong> Can't have max payload at max reach</li>
+</ol>
+<h3>Understanding Loads</h3>
+<p>You should now understand:<br />
+- Why loads vary with posture<br />
+- Why shoulder carries most load<br />
+- How payload affects loading<br />
+- How reach affects loading<br />
+- How to stay within safe limits</p>
+<h3>Next Steps</h3>
+<p>After learning this theory, you will:<br />
+- Measure loads in different postures<br />
+- Test with different payloads<br />
+- Test at different reaches<br />
+- Create working envelope map<br />
+- Complete the Module 5 worksheet</p>
+<hr />
+<h2>Questions for Review</h2>
+<p>Before moving to the worksheet, make sure you can answer:</p>
+<ol>
+<li>What is torque?</li>
+<li>Why does the shoulder joint carry the most load?</li>
+<li>What is a working envelope?</li>
+<li>How do torque limits define safe operation?</li>
+<li>How does payload mass affect joint loading?</li>
+<li>How does reach affect loading?</li>
+<li>What is the payload-reach trade-off?</li>
+</ol>
+<hr />
+<p><strong>Remember:</strong> Understanding loads helps you operate safely and prevent damage. Always monitor load readings and stay within limits!</p></div></section>
+<section class="card"><h2>Student worksheet</h2><div class="card-inner"><h1>Module 5: Statics, Forces &amp; Load Analysis</h1>
+<h2>Student Worksheet</h2>
+<p><strong>Name:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_<br />
+<strong>Date:</strong> </em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>_<br />
+<strong>Group/Class:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>____</p>
+<hr />
+<h2>Part 1: Forces and Loads Basics</h2>
+<h3>Question 1: Basic Concepts</h3>
+<p>Define the following terms:</p>
+<p>a) <strong>Force:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<p>b) <strong>Torque:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<p>c) <strong>Moment:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<p>d) <strong>Leverage:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<h3>Question 2: How Forces Act on Robot Arm</h3>
+<p>Explain how forces act on the robot arm:</p>
+<hr />
+<hr />
+<hr />
+<h2>Part 2: Joint Loading</h2>
+<h3>Question 3: Different Postures, Different Loads</h3>
+<p>Test the robot arm in THREE different postures and record load readings:</p>
+<table>
+<thead>
+<tr>
+<th>Posture</th>
+<th>Description</th>
+<th>Shoulder Load</th>
+<th>Elbow Load</th>
+<th>Base Load</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1. Extended</td>
+<td>Arm fully extended</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>2. Retracted</td>
+<td>Arm close to body</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>3. Lifted</td>
+<td>Arm raised high</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><strong>What did you observe about load differences?</strong></p>
+<hr />
+<hr />
+<h3>Question 4: Why Shoulder Carries Most Load</h3>
+<p>Explain why the shoulder joint typically carries the most load:</p>
+<hr />
+<hr />
+<hr />
+<hr />
+<h2>Part 3: Working Envelope</h2>
+<h3>Question 5: Working Envelope Definition</h3>
+<p>What is a working envelope?</p>
+<hr />
+<hr />
+<h3>Question 6: Torque Limits and Safe Operation</h3>
+<p>Answer the following:</p>
+<p>a) What are the torque limits for each joint?</p>
+<table>
+<thead>
+<tr>
+<th>Joint</th>
+<th>Maximum Torque Limit</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Shoulder</td>
+<td></td>
+</tr>
+<tr>
+<td>Elbow</td>
+<td></td>
+</tr>
+<tr>
+<td>Base</td>
+<td></td>
+</tr>
+<tr>
+<td>Wrist</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p>b) How do torque limits define safe operation?</p>
+<hr />
+<hr />
+<h3>Question 7: Load Readings and Limits</h3>
+<p>Complete the following:</p>
+<p>a) How can you use load readings to stay within safe limits?</p>
+<hr />
+<p>b) What load reading would indicate you're approaching the limit?</p>
+<hr />
+<hr />
+<h2>Part 4: Payload Effects</h2>
+<h3>Question 8: Payload Mass Effects</h3>
+<p>Test with THREE different payloads (including no payload):</p>
+<table>
+<thead>
+<tr>
+<th>Payload Mass</th>
+<th>Shoulder Load</th>
+<th>Elbow Load</th>
+<th>Observations</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0g (no payload)</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Light payload</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Heavy payload</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><strong>How does payload mass affect joint loading?</strong></p>
+<hr />
+<hr />
+<h3>Question 9: Reach Effects</h3>
+<p>Test at THREE different reaches with the same payload:</p>
+<table>
+<thead>
+<tr>
+<th>Reach Distance</th>
+<th>Shoulder Load</th>
+<th>Elbow Load</th>
+<th>Stability</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Close (retracted)</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Medium</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Far (extended)</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><strong>How does reach affect loading?</strong></p>
+<hr />
+<hr />
+<h3>Question 10: Load vs. Reach Graph</h3>
+<p>Create a simple graph showing load vs. reach:</p>
+<p>[Space for graph - X-axis: Reach, Y-axis: Load]</p>
+<p><strong>What does the graph show?</strong></p>
+<hr />
+<hr />
+<hr />
+<h2>Part 5: Safe Operating Zone</h2>
+<h3>Question 11: Maximum Safe Payload</h3>
+<p>Determine the maximum safe payload at different reaches:</p>
+<table>
+<thead>
+<tr>
+<th>Reach</th>
+<th>Maximum Safe Payload</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Close</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Medium</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Far</td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><strong>How did you determine these values?</strong></p>
+<hr />
+<hr />
+<h3>Question 12: Stability Considerations</h3>
+<p>Answer the following:</p>
+<p>a) What affects the stability of the robot arm?</p>
+<hr />
+<p>b) How can you ensure stable operation?</p>
+<hr />
+<hr />
+<h2>Part 6: Practical Exercise</h2>
+<h3>Exercise 1: Load Mapping</h3>
+<p>Create a map of the working envelope showing:<br />
+- Safe operating zones (green)<br />
+- Caution zones (yellow)<br />
+- Unsafe zones (red)</p>
+<p>[Space for map/diagram]</p>
+<h3>Exercise 2: Load Documentation</h3>
+<p>Document load readings for 5 different configurations:</p>
+<table>
+<thead>
+<tr>
+<th>Configuration</th>
+<th>Posture</th>
+<th>Payload</th>
+<th>Reach</th>
+<th>Shoulder Load</th>
+<th>Elbow Load</th>
+<th>Safe?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>2</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>3</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>4</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>5</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>Part 7: Reflection</h2>
+<h3>Question 13: Understanding Forces and Loads</h3>
+<p>Answer the following:</p>
+<p>a) Why is it important to understand joint loading?</p>
+<hr />
+<hr />
+<p>b) How will you use this knowledge when operating the robot arm?</p>
+<hr />
+<hr />
+<p>c) What was the most important thing you learned about payload and reach?</p>
+<hr />
+<hr />
+<hr />
+<h2>Self-Assessment Checklist</h2>
+<p>Before submitting, check that you have:</p>
+<ul>
+<li>[ ] Understood basic force and torque concepts</li>
+<li>[ ] Measured loads in different postures</li>
+<li>[ ] Understood why shoulder carries most load</li>
+<li>[ ] Mapped the working envelope</li>
+<li>[ ] Tested with different payloads</li>
+<li>[ ] Tested at different reaches</li>
+<li>[ ] Created load vs. reach graph</li>
+<li>[ ] Determined maximum safe payloads</li>
+<li>[ ] Documented load readings</li>
+<li>[ ] Written reflection answers</li>
+</ul>
+<p><strong>Student Signature:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_<br />
+<strong>Date:</strong> </em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><em><br />
+<strong>Instructor Signature:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_<br />
+<strong>Date:</strong> </em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong></em></p></div></section>
+<section class="card"><h2>Multiple choice questions</h2><div class="card-inner"><h1>Module 5: Statics, Forces &amp; Load Analysis</h1>
+<h2>Multiple Choice Questions</h2>
+<p><strong>Instructions:</strong> Choose the best answer for each question.</p>
+<hr />
+<p><strong>1. What is torque?</strong><br />
+   a) Linear force<br />
+   b) Rotational force<br />
+   c) Speed<br />
+   d) Position</p>
+<p><strong>2. Which joint typically carries the most load?</strong><br />
+   a) Elbow<br />
+   b) Shoulder<br />
+   c) Wrist<br />
+   d) Base</p>
+<p><strong>3. What is a working envelope?</strong><br />
+   a) The robot's speed<br />
+   b) The safe operating area where the robot can reach<br />
+   c) The robot's color<br />
+   d) The robot's cost</p>
+<p><strong>4. How do torque limits define safe operation?</strong><br />
+   a) They don't matter<br />
+   b) They set maximum safe loads to prevent damage<br />
+   c) They make the robot faster<br />
+   d) They change the robot's color</p>
+<p><strong>5. How does payload mass affect joint loading?</strong><br />
+   a) It doesn't affect loading<br />
+   b) Heavier payloads increase joint loading<br />
+   c) Heavier payloads decrease loading<br />
+   d) It only affects the wrist</p>
+<p><strong>6. How does reach (arm extension) affect loading?</strong><br />
+   a) It doesn't affect loading<br />
+   b) Longer reach increases loading on joints<br />
+   c) Longer reach decreases loading<br />
+   d) It only affects the base</p>
+<p><strong>7. What happens to stability when the arm is fully extended?</strong><br />
+   a) Stability increases<br />
+   b) Stability decreases<br />
+   c) Stability stays the same<br />
+   d) Stability doesn't matter</p>
+<p><strong>8. Why do different postures create different loads?</strong><br />
+   a) They don't<br />
+   b) Because leverage and moment arms change<br />
+   c) Because the robot changes color<br />
+   d) Because the speed changes</p>
+<p><strong>9. How can you use load readings to stay within safe limits?</strong><br />
+   a) Ignore them<br />
+   b) Monitor them and stop if approaching limits<br />
+   c) Increase speed<br />
+   d) They're not useful</p>
+<p><strong>10. What is the relationship between reach and payload?</strong><br />
+   a) No relationship<br />
+   b) Longer reach reduces maximum safe payload<br />
+   c) Longer reach increases maximum safe payload<br />
+   d) They're the same thing</p>
+<hr />
+<h2>Answer Key</h2>
+<ol>
+<li><strong>b)</strong> Rotational force</li>
+<li><strong>b)</strong> Shoulder</li>
+<li><strong>b)</strong> The safe operating area where the robot can reach</li>
+<li><strong>b)</strong> They set maximum safe loads to prevent damage</li>
+<li><strong>b)</strong> Heavier payloads increase joint loading</li>
+<li><strong>b)</strong> Longer reach increases loading on joints</li>
+<li><strong>b)</strong> Stability decreases</li>
+<li><strong>b)</strong> Because leverage and moment arms change</li>
+<li><strong>b)</strong> Monitor them and stop if approaching limits</li>
+<li><strong>b)</strong> Longer reach reduces maximum safe payload</li>
+</ol>
+<hr />
+<h2>Scoring Guide</h2>
+<ul>
+<li><strong>9-10 correct:</strong> Excellent understanding</li>
+<li><strong>7-8 correct:</strong> Good understanding</li>
+<li><strong>5-6 correct:</strong> Satisfactory understanding</li>
+<li><strong>Below 5 correct:</strong> Needs review</li>
+</ul></div></section>
+<section class="card"><h2>Assessment rubric</h2><div class="card-inner"><h1>Module 5: Statics, Forces &amp; Load Analysis</h1>
+<h2>Assessment Rubric</h2>
+<p><strong>Student Name:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_<br />
+<strong>Date:</strong> </em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>_<br />
+<strong>Assessor:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>____</p>
+<hr />
+<h2>Overall Assessment Criteria</h2>
+<table>
+<thead>
+<tr>
+<th>Criteria</th>
+<th>Excellent (4)</th>
+<th>Good (3)</th>
+<th>Satisfactory (2)</th>
+<th>Needs Improvement (1)</th>
+<th>Score</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Knowledge &amp; Understanding</strong></td>
+<td>Comprehensive understanding of forces, loads, and working envelope</td>
+<td>Good understanding with minor gaps</td>
+<td>Basic understanding evident</td>
+<td>Limited understanding</td>
+<td>/4</td>
+</tr>
+<tr>
+<td><strong>Practical Skills</strong></td>
+<td>Accurate load measurements and analysis</td>
+<td>Mostly accurate measurements</td>
+<td>Basic measurements completed</td>
+<td>Struggles with measurements</td>
+<td>/4</td>
+</tr>
+<tr>
+<td><strong>Analysis &amp; Application</strong></td>
+<td>Clear analysis of load relationships and safe operating zones</td>
+<td>Good analysis with minor gaps</td>
+<td>Basic analysis completed</td>
+<td>Limited analysis</td>
+<td>/4</td>
+</tr>
+<tr>
+<td><strong>Documentation</strong></td>
+<td>Complete, accurate documentation with graphs and maps</td>
+<td>Good documentation</td>
+<td>Basic documentation</td>
+<td>Incomplete documentation</td>
+<td>/4</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Total Score:</strong> /16</p>
+<hr />
+<h2>Detailed Marking Guide</h2>
+<h3>Part 1: Forces and Loads Basics (15 marks)</h3>
+<ul>
+<li><strong>4 marks per definition:</strong> Clear and accurate definitions</li>
+<li><strong>3 marks:</strong> Good definitions with minor gaps</li>
+<li><strong>2 marks:</strong> Basic understanding shown</li>
+<li><strong>0 marks:</strong> No answer</li>
+</ul>
+<p><strong>Mark:</strong> /15</p>
+<hr />
+<h3>Part 2: Joint Loading (20 marks)</h3>
+<h4>Question 3: Different Postures (12 marks)</h4>
+<ul>
+<li><strong>4 marks per posture:</strong> Complete data with accurate observations</li>
+<li><strong>2 marks per posture:</strong> Data recorded but missing observations</li>
+<li><strong>0 marks:</strong> Not attempted</li>
+</ul>
+<h4>Question 4: Shoulder Load Explanation (8 marks)</h4>
+<ul>
+<li><strong>8 marks:</strong> Clear, accurate explanation</li>
+<li><strong>6 marks:</strong> Good explanation</li>
+<li><strong>4 marks:</strong> Basic understanding</li>
+<li><strong>0 marks:</strong> No answer</li>
+</ul>
+<p><strong>Mark:</strong> /20</p>
+<hr />
+<h3>Part 3: Working Envelope (20 marks)</h3>
+<h4>Question 5: Definition (5 marks)</h4>
+<ul>
+<li><strong>5 marks:</strong> Clear, accurate definition</li>
+<li><strong>3 marks:</strong> Good definition</li>
+<li><strong>1 mark:</strong> Basic attempt</li>
+<li><strong>0 marks:</strong> No answer</li>
+</ul>
+<h4>Question 6: Torque Limits (10 marks)</h4>
+<ul>
+<li><strong>5 marks:</strong> Complete torque limit table</li>
+<li><strong>5 marks:</strong> Clear explanation of how limits define safe operation</li>
+</ul>
+<h4>Question 7: Load Readings (5 marks)</h4>
+<ul>
+<li><strong>2.5 marks per answer:</strong> Clear, practical answers</li>
+</ul>
+<p><strong>Mark:</strong> /20</p>
+<hr />
+<h3>Part 4: Payload Effects (25 marks)</h3>
+<h4>Question 8: Payload Mass Effects (10 marks)</h4>
+<ul>
+<li><strong>10 marks:</strong> Complete data table with accurate analysis</li>
+<li><strong>7 marks:</strong> Data recorded but limited analysis</li>
+<li><strong>4 marks:</strong> Basic attempt</li>
+<li><strong>0 marks:</strong> Not attempted</li>
+</ul>
+<h4>Question 9: Reach Effects (10 marks)</h4>
+<ul>
+<li><strong>10 marks:</strong> Complete data table with accurate analysis</li>
+<li><strong>7 marks:</strong> Data recorded but limited analysis</li>
+<li><strong>4 marks:</strong> Basic attempt</li>
+<li><strong>0 marks:</strong> Not attempted</li>
+</ul>
+<h4>Question 10: Load vs. Reach Graph (5 marks)</h4>
+<ul>
+<li><strong>5 marks:</strong> Accurate graph with clear interpretation</li>
+<li><strong>3 marks:</strong> Graph created but missing interpretation</li>
+<li><strong>1 mark:</strong> Basic attempt</li>
+<li><strong>0 marks:</strong> Not attempted</li>
+</ul>
+<p><strong>Mark:</strong> /25</p>
+<hr />
+<h3>Part 5: Safe Operating Zone (15 marks)</h3>
+<h4>Question 11: Maximum Safe Payload (8 marks)</h4>
+<ul>
+<li><strong>8 marks:</strong> Complete table with clear methodology</li>
+<li><strong>6 marks:</strong> Table completed but methodology unclear</li>
+<li><strong>4 marks:</strong> Basic attempt</li>
+<li><strong>0 marks:</strong> Not attempted</li>
+</ul>
+<h4>Question 12: Stability (7 marks)</h4>
+<ul>
+<li><strong>4 marks:</strong> Clear explanation of stability factors</li>
+<li><strong>3 marks:</strong> Clear explanation of ensuring stability</li>
+</ul>
+<p><strong>Mark:</strong> /15</p>
+<hr />
+<h3>Part 6: Practical Exercise (15 marks)</h3>
+<h4>Exercise 1: Load Mapping (8 marks)</h4>
+<ul>
+<li><strong>8 marks:</strong> Complete, accurate working envelope map</li>
+<li><strong>6 marks:</strong> Mostly complete map</li>
+<li><strong>4 marks:</strong> Basic map</li>
+<li><strong>0 marks:</strong> Not attempted</li>
+</ul>
+<h4>Exercise 2: Load Documentation (7 marks)</h4>
+<ul>
+<li><strong>7 marks:</strong> Complete documentation for all configurations</li>
+<li><strong>5 marks:</strong> Mostly complete</li>
+<li><strong>3 marks:</strong> Basic documentation</li>
+<li><strong>0 marks:</strong> Not attempted</li>
+</ul>
+<p><strong>Mark:</strong> /15</p>
+<hr />
+<h3>Part 7: Reflection (10 marks)</h3>
+<ul>
+<li><strong>4 marks per answer:</strong> Thoughtful, well-explained answers</li>
+<li><strong>3 marks per answer:</strong> Good answers</li>
+<li><strong>2 marks per answer:</strong> Basic answers</li>
+<li><strong>0 marks:</strong> No answer</li>
+</ul>
+<p><strong>Mark:</strong> /10</p>
+<hr />
+<h2>Overall Performance Levels</h2>
+<h3>Excellent (85-100%)</h3>
+<ul>
+<li>Comprehensive understanding of all concepts</li>
+<li>Accurate load measurements and analysis</li>
+<li>Clear analysis of relationships</li>
+<li>Complete documentation with graphs</li>
+</ul>
+<h3>Good (70-84%)</h3>
+<ul>
+<li>Good understanding with minor gaps</li>
+<li>Mostly accurate measurements</li>
+<li>Good analysis</li>
+<li>Good documentation</li>
+</ul>
+<h3>Satisfactory (55-69%)</h3>
+<ul>
+<li>Basic understanding</li>
+<li>Basic measurements</li>
+<li>Basic analysis</li>
+<li>Basic documentation</li>
+</ul>
+<h3>Needs Improvement (Below 55%)</h3>
+<ul>
+<li>Limited understanding</li>
+<li>Struggles with measurements</li>
+<li>Limited analysis</li>
+<li>Incomplete documentation</li>
+</ul>
+<hr />
+<p><strong>Final Grade:</strong> <strong><em>_</em></strong>____ / 100</p>
+<p><strong>Assessor Comments:</strong></p>
+<hr />
+<hr />
+<p><strong>Assessor Signature:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_<br />
+<strong>Date:</strong> </em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>_</p></div></section>
+  </div>
+</body>
+</html>

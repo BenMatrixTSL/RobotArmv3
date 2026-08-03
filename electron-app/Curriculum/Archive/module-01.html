@@ -1,0 +1,1223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="curriculum-module" content="1">
+  <title>Module 1: Introduction &amp; Safety Fundamentals</title>
+  <style>
+    :root {
+      --bg: #f6f7f9;
+      --card: #fff;
+      --text: #1a1d26;
+      --muted: #5c6370;
+      --accent: #1e5a8a;
+      --border: #d8dde6;
+      --code-bg: #eef1f6;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 17px;
+      line-height: 1.55;
+      color: var(--text);
+      background: var(--bg);
+    }
+    .wrap {
+      max-width: 52rem;
+      margin: 0 auto;
+      padding: 1.25rem 1.25rem 3rem;
+    }
+    .top-nav {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.75rem 1rem;
+      padding: 0.75rem 0;
+      margin-bottom: 1.25rem;
+      border-bottom: 1px solid var(--border);
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+      font-size: 0.9rem;
+    }
+    .nav-title {
+      flex: 1 1 auto;
+      font-weight: 600;
+      color: var(--muted);
+      min-width: 12rem;
+    }
+    a.nav-link {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    a.nav-link:hover { text-decoration: underline; }
+    h1.page-title {
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+      font-size: 1.65rem;
+      font-weight: 700;
+      margin: 0 0 0.5rem;
+      line-height: 1.25;
+    }
+    p.lead {
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+      color: var(--muted);
+      margin: 0 0 1.5rem;
+      font-size: 0.95rem;
+    }
+    section.card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.25rem 1.5rem 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    }
+    section.card h2 {
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+      font-size: 1.15rem;
+      margin: 0 0 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid var(--accent);
+      color: var(--accent);
+    }
+    .card-inner {
+      font-family: Georgia, "Times New Roman", serif;
+    }
+    .card-inner h1, .card-inner h2, .card-inner h3, .card-inner h4 {
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+    }
+    .card-inner h1 { font-size: 1.35rem; }
+    .card-inner h2 { font-size: 1.15rem; border-bottom: none; color: var(--text); }
+    .card-inner h3 { font-size: 1.05rem; }
+    .card-inner h4 { font-size: 1rem; }
+    .card-inner code {
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 0.9em;
+      background: var(--code-bg);
+      padding: 0.1em 0.35em;
+      border-radius: 4px;
+    }
+    .card-inner pre {
+      background: var(--code-bg);
+      padding: 1rem;
+      overflow-x: auto;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+    }
+    .card-inner pre code {
+      background: none;
+      padding: 0;
+    }
+    .card-inner table {
+      border-collapse: collapse;
+      width: 100%;
+      font-size: 0.95rem;
+      margin: 1rem 0;
+    }
+    .card-inner th, .card-inner td {
+      border: 1px solid var(--border);
+      padding: 0.45rem 0.6rem;
+      text-align: left;
+      vertical-align: top;
+    }
+    .card-inner th {
+      background: #eef3f8;
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+      font-weight: 600;
+    }
+    ul.index-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+    }
+    ul.index-list li {
+      margin: 0.35rem 0;
+      padding: 0.5rem 0.65rem;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--card);
+    }
+    ul.index-list a {
+      color: var(--accent);
+      font-weight: 600;
+      text-decoration: none;
+    }
+    ul.index-list a:hover { text-decoration: underline; }
+    .index-meta {
+      display: block;
+      font-size: 0.85rem;
+      color: var(--muted);
+      font-weight: normal;
+      margin-top: 0.2rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <nav class="top-nav">
+  <a class="nav-link" href="index.html">All modules</a>
+  
+  <span class="nav-title">Module 1: Introduction &amp; Safety Fundamentals</span>
+  <a class="nav-link" href="module-02.html">Next →</a>
+</nav>
+<h1 class="page-title">Module 1: Introduction &amp; Safety Fundamentals</h1>
+<p class="lead">BTEC robot arm curriculum — one page per module. Work through sections in order.</p>
+<section class="card"><h2>Curriculum plan (from BTEC_Robot_Arm_Curriculum_Plan.md)</h2><div class="card-inner"><h2><strong>Module 1: Introduction &amp; Safety Fundamentals</strong></h2>
+<p><em>Foundation - Must be completed first</em></p>
+<h3>Learning Objectives Covered:</h3>
+<ul>
+<li>✅ <strong>Safe operation</strong> (Level 3)</li>
+<li>Identify key hazards: pinch/crush points, unexpected motion, electrical hazards</li>
+<li>Follow safe operating procedures: enabling/disabling torque, keeping clear of envelope, emergency stop</li>
+<li>✅ <strong>Basic risk assessment</strong> (Level 3)</li>
+<li>Perform simple risk assessment: identify hazards, assess likelihood/severity, propose control measures</li>
+</ul>
+<h3>Content:</h3>
+<ol>
+<li>
+<p><strong>What is a Robot Arm?</strong><br />
+   - Introduction to robot arms and their industrial applications<br />
+   - Overview of the educational robot arm system<br />
+   - Basic terminology: joints, links, end effector, degrees of freedom</p>
+</li>
+<li>
+<p><strong>Safety First</strong><br />
+   - Hazard identification workshop<br />
+   - Safe operating procedures demonstration<br />
+   - Emergency stop procedures<br />
+   - Personal protective equipment (PPE) requirements</p>
+</li>
+<li>
+<p><strong>Risk Assessment Exercise</strong><br />
+   - Complete a risk assessment form for robot arm operation<br />
+   - Identify control measures (speed limits, supervision, workspace layout)<br />
+   - Document findings</p>
+</li>
+</ol>
+<h3>Practical Activities:</h3>
+<ul>
+<li>Safety walkthrough of the robot arm</li>
+<li>Practice enabling/disabling torque safely</li>
+<li>Emergency stop drill</li>
+<li>Complete risk assessment document</li>
+</ul>
+<hr /></div></section>
+<section class="card"><h2>Theory & teaching notes</h2><div class="card-inner"><h1>Module 1: Introduction &amp; Safety Fundamentals</h1>
+<h2>Theory &amp; Teaching Notes</h2>
+<p><strong>Module Duration:</strong> 2-3 hours<br />
+<strong>Level:</strong> Foundation (Level 3)</p>
+<hr />
+<h2>Learning Objectives</h2>
+<p>By the end of this module, students will be able to:<br />
+- Identify key hazards when operating robot arms<br />
+- Follow safe operating procedures<br />
+- Perform basic risk assessments<br />
+- Understand the importance of safety in robotics</p>
+<hr />
+<h2>1. What is a Robot Arm?</h2>
+<h3>Definition</h3>
+<p>A <strong>robot arm</strong> (also called a robotic manipulator) is a mechanical device that can move and position objects. It consists of:<br />
+- <strong>Links</strong>: Rigid sections that connect joints<br />
+- <strong>Joints</strong>: Connection points that allow movement<br />
+- <strong>End Effector</strong>: The tool or gripper at the end of the arm<br />
+- <strong>Base</strong>: The fixed mounting point</p>
+<h3>Basic Structure</h3>
+<p>Think of a robot arm like a human arm:<br />
+- <strong>Base</strong> = Your shoulder (fixed point)<br />
+- <strong>Links</strong> = Your upper arm, forearm, hand<br />
+- <strong>Joints</strong> = Your shoulder, elbow, wrist<br />
+- <strong>End Effector</strong> = Your hand (does the work)</p>
+<h3>Degrees of Freedom</h3>
+<p><strong>Degrees of freedom</strong> refers to how many independent ways the robot arm can move. Each joint typically provides one degree of freedom.</p>
+<p><strong>Example:</strong> A robot arm with 4 joints has 4 degrees of freedom.</p>
+<h3>Industrial Applications</h3>
+<p>Robot arms are used in many industries:<br />
+- <strong>Pick-and-place</strong>: Moving items from one location to another<br />
+- <strong>Assembly</strong>: Putting parts together<br />
+- <strong>Welding</strong>: Joining metal parts<br />
+- <strong>Painting</strong>: Applying paint evenly<br />
+- <strong>Inspection</strong>: Checking quality<br />
+- <strong>Sorting</strong>: Organizing items</p>
+<hr />
+<h2>2. Safety First: Why It Matters</h2>
+<h3>The Importance of Safety</h3>
+<p>Safety is the <strong>most important</strong> thing when working with robot arms because:<br />
+1. Robot arms can cause serious injury<br />
+2. They move with force and speed<br />
+3. They don't "see" people in their way<br />
+4. Electrical hazards exist<br />
+5. Moving parts can pinch or crush</p>
+<p><strong>Remember:</strong> A robot arm doesn't know you're there. It will follow its program, even if you're in the way.</p>
+<hr />
+<h2>3. Identifying Hazards</h2>
+<h3>Common Hazards</h3>
+<h4>A. Pinch and Crush Points</h4>
+<p><strong>What they are:</strong> Places where body parts can be caught between moving parts.</p>
+<p><strong>Where they occur:</strong><br />
+- Between joints and links<br />
+- Between the arm and fixed objects<br />
+- Between the end effector and objects</p>
+<p><strong>Example:</strong> Your finger between the elbow joint and the link above it.</p>
+<h4>B. Unexpected or Rapid Motion</h4>
+<p><strong>What it is:</strong> The robot moving suddenly or faster than expected.</p>
+<p><strong>Why it's dangerous:</strong><br />
+- You might not be ready<br />
+- You might be too close<br />
+- You might lose balance</p>
+<p><strong>Example:</strong> The robot suddenly moving to a new position while you're adjusting something.</p>
+<h4>C. Electrical Hazards</h4>
+<p><strong>What they are:</strong> Dangers from electricity.</p>
+<p><strong>Where they occur:</strong><br />
+- Power connections<br />
+- Exposed wires<br />
+- Wet conditions<br />
+- Damaged equipment</p>
+<p><strong>Example:</strong> Touching exposed electrical connections.</p>
+<h3>How to Identify Hazards</h3>
+<ol>
+<li><strong>Look</strong> at the robot arm carefully</li>
+<li><strong>Think</strong> about what could go wrong</li>
+<li><strong>Ask</strong> yourself: "What if...?"</li>
+<li><strong>Check</strong> all moving parts</li>
+<li><strong>Inspect</strong> electrical connections</li>
+</ol>
+<hr />
+<h2>4. Safe Operating Procedures</h2>
+<h3>Before Operating</h3>
+<p><strong>ALWAYS do these things first:</strong></p>
+<ol>
+<li>
+<p><strong>Check the workspace</strong><br />
+   - Is the area clear?<br />
+   - Are there obstacles?<br />
+   - Is there enough space?</p>
+</li>
+<li>
+<p><strong>Check the equipment</strong><br />
+   - Are all connections secure?<br />
+   - Is there any visible damage?<br />
+   - Are guards in place?</p>
+</li>
+<li>
+<p><strong>Check yourself</strong><br />
+   - Are you wearing appropriate clothing?<br />
+   - No loose items (jewelry, ties, etc.)?<br />
+   - Are you focused and alert?</p>
+</li>
+<li>
+<p><strong>Check supervision</strong><br />
+   - Is an instructor present?<br />
+   - Do you know emergency procedures?</p>
+</li>
+</ol>
+<h3>During Operation</h3>
+<p><strong>ALWAYS follow these rules:</strong></p>
+<ol>
+<li>
+<p><strong>Stay outside the working envelope</strong><br />
+   - The working envelope is the space the robot can reach<br />
+   - Stay well clear of this area<br />
+   - Never reach into the envelope while the robot is moving</p>
+</li>
+<li>
+<p><strong>Use speed limits</strong><br />
+   - Start with slow speeds<br />
+   - Increase gradually only if safe<br />
+   - Never exceed safe limits</p>
+</li>
+<li>
+<p><strong>Monitor the robot</strong><br />
+   - Watch what it's doing<br />
+   - Listen for unusual sounds<br />
+   - Be ready to stop if needed</p>
+</li>
+<li>
+<p><strong>Keep others informed</strong><br />
+   - Tell people when you're operating<br />
+   - Warn them to stay clear<br />
+   - Work as a team</p>
+</li>
+</ol>
+<h3>Enabling and Disabling Torque</h3>
+<p><strong>Torque</strong> is the rotational force that makes joints move.</p>
+<p><strong>Disabling torque:</strong><br />
+- Prevents accidental movement<br />
+- Allows safe manual positioning<br />
+- Should be done when:<br />
+  - Setting up<br />
+  - Teaching positions<br />
+  - Making adjustments<br />
+  - When not in use</p>
+<p><strong>Enabling torque:</strong><br />
+- Allows the robot to move<br />
+- Should only be done when:<br />
+  - You're ready to operate<br />
+  - Workspace is clear<br />
+  - You know how to stop it<br />
+  - You're supervised</p>
+<p><strong>How to do it safely:</strong><br />
+1. Check workspace is clear<br />
+2. Check you know how to stop<br />
+3. Enable torque slowly<br />
+4. Test movement carefully<br />
+5. Monitor constantly</p>
+<h3>Emergency Stop</h3>
+<p><strong>What it is:</strong> A button or function that immediately stops the robot.</p>
+<p><strong>When to use it:</strong><br />
+- Someone is in danger<br />
+- The robot is moving unexpectedly<br />
+- Something is wrong<br />
+- You feel unsafe</p>
+<p><strong>How to use it:</strong><br />
+- Press the emergency stop button immediately<br />
+- Don't wait<br />
+- Don't think about it<br />
+- Just press it</p>
+<p><strong>After emergency stop:</strong><br />
+- Don't restart immediately<br />
+- Check what went wrong<br />
+- Get help if needed<br />
+- Only restart when safe</p>
+<hr />
+<h2>5. Risk Assessment</h2>
+<h3>What is Risk Assessment?</h3>
+<p><strong>Risk assessment</strong> is a way to:<br />
+1. Identify hazards<br />
+2. Decide how likely they are to happen<br />
+3. Decide how serious they could be<br />
+4. Find ways to reduce the risk</p>
+<h3>The Risk Assessment Process</h3>
+<h4>Step 1: Identify Hazards</h4>
+<ul>
+<li>Look at the task</li>
+<li>Think about what could go wrong</li>
+<li>List all possible hazards</li>
+</ul>
+<h4>Step 2: Assess Likelihood</h4>
+<p><strong>Likelihood</strong> = How often something might happen<br />
+- <strong>High</strong>: Very likely to happen<br />
+- <strong>Medium</strong>: Might happen sometimes<br />
+- <strong>Low</strong>: Unlikely to happen</p>
+<h4>Step 3: Assess Severity</h4>
+<p><strong>Severity</strong> = How serious the injury could be<br />
+- <strong>High</strong>: Serious injury (broken bones, cuts requiring stitches)<br />
+- <strong>Medium</strong>: Moderate injury (bruises, minor cuts)<br />
+- <strong>Low</strong>: Minor injury (small bruises, scratches)</p>
+<h4>Step 4: Determine Risk Level</h4>
+<p><strong>Risk Level</strong> = Likelihood × Severity</p>
+<table>
+<thead>
+<tr>
+<th>Likelihood</th>
+<th>Severity</th>
+<th>Risk Level</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>High</td>
+<td>High</td>
+<td><strong>HIGH RISK</strong> - Stop! Must reduce risk</td>
+</tr>
+<tr>
+<td>High</td>
+<td>Medium</td>
+<td><strong>MEDIUM RISK</strong> - Reduce risk before proceeding</td>
+</tr>
+<tr>
+<td>Medium</td>
+<td>High</td>
+<td><strong>MEDIUM RISK</strong> - Reduce risk before proceeding</td>
+</tr>
+<tr>
+<td>Medium</td>
+<td>Medium</td>
+<td><strong>MEDIUM RISK</strong> - Reduce risk before proceeding</td>
+</tr>
+<tr>
+<td>Low</td>
+<td>High</td>
+<td><strong>MEDIUM RISK</strong> - Reduce risk before proceeding</td>
+</tr>
+<tr>
+<td>Low</td>
+<td>Medium</td>
+<td><strong>LOW RISK</strong> - Acceptable with care</td>
+</tr>
+<tr>
+<td>Low</td>
+<td>Low</td>
+<td><strong>LOW RISK</strong> - Acceptable</td>
+</tr>
+</tbody>
+</table>
+<h4>Step 5: Control Measures</h4>
+<p><strong>Control measures</strong> are ways to reduce risk:</p>
+<p><strong>Examples:</strong><br />
+- <strong>Speed limits</strong>: Reduce speed to prevent rapid movement<br />
+- <strong>Supervision</strong>: Always have an instructor present<br />
+- <strong>Workspace layout</strong>: Keep area clear and organized<br />
+- <strong>Training</strong>: Make sure operators are trained<br />
+- <strong>Guards</strong>: Use physical barriers<br />
+- <strong>Emergency stops</strong>: Ensure they work and are accessible</p>
+<h3>Risk Assessment Example</h3>
+<p><strong>Task:</strong> Operating robot arm to move objects</p>
+<table>
+<thead>
+<tr>
+<th>Hazard</th>
+<th>Likelihood</th>
+<th>Severity</th>
+<th>Risk Level</th>
+<th>Control Measure</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Pinch point at joint</td>
+<td>Medium</td>
+<td>High</td>
+<td>Medium</td>
+<td>Keep clear of joints, use slow speed</td>
+</tr>
+<tr>
+<td>Unexpected rapid motion</td>
+<td>Low</td>
+<td>High</td>
+<td>Medium</td>
+<td>Set speed limits, test movements first</td>
+</tr>
+<tr>
+<td>Electrical shock</td>
+<td>Low</td>
+<td>High</td>
+<td>Medium</td>
+<td>Check connections, keep dry, inspect regularly</td>
+</tr>
+<tr>
+<td>Falling object</td>
+<td>Low</td>
+<td>Medium</td>
+<td>Low</td>
+<td>Secure objects, check gripper, stay clear</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>6. Personal Protective Equipment (PPE)</h2>
+<h3>What is PPE?</h3>
+<p><strong>PPE</strong> = Personal Protective Equipment = Things you wear to protect yourself</p>
+<h3>Required PPE for Robot Arm Operation</h3>
+<ol>
+<li>
+<p><strong>Safety glasses</strong><br />
+   - Protect eyes from flying objects<br />
+   - Must be worn at all times</p>
+</li>
+<li>
+<p><strong>Appropriate clothing</strong><br />
+   - No loose items (ties, jewelry, loose sleeves)<br />
+   - Closed-toe shoes<br />
+   - Long hair tied back</p>
+</li>
+<li>
+<p><strong>No distractions</strong><br />
+   - No phones while operating<br />
+   - Focus on the task<br />
+   - Be alert</p>
+</li>
+</ol>
+<hr />
+<h2>7. Workspace Safety</h2>
+<h3>Setting Up a Safe Workspace</h3>
+<ol>
+<li>
+<p><strong>Clear the area</strong><br />
+   - Remove obstacles<br />
+   - Clear walkways<br />
+   - Organize tools</p>
+</li>
+<li>
+<p><strong>Mark boundaries</strong><br />
+   - Show the working envelope<br />
+   - Mark safe zones<br />
+   - Use floor tape if needed</p>
+</li>
+<li>
+<p><strong>Check lighting</strong><br />
+   - Good visibility<br />
+   - No shadows<br />
+   - No glare</p>
+</li>
+<li>
+<p><strong>Check floor</strong><br />
+   - Clean and dry<br />
+   - No trip hazards<br />
+   - Stable surface</p>
+</li>
+</ol>
+<hr />
+<h2>8. Key Safety Rules Summary</h2>
+<h3>The Golden Rules</h3>
+<ol>
+<li>
+<p><strong>Safety first, always</strong><br />
+   - Nothing is more important than safety</p>
+</li>
+<li>
+<p><strong>Never operate alone</strong><br />
+   - Always have supervision<br />
+   - Work as a team</p>
+</li>
+<li>
+<p><strong>Know how to stop</strong><br />
+   - Know where emergency stop is<br />
+   - Practice using it<br />
+   - Use it if unsure</p>
+</li>
+<li>
+<p><strong>Stay clear</strong><br />
+   - Never enter the working envelope<br />
+   - Keep others clear too<br />
+   - Respect boundaries</p>
+</li>
+<li>
+<p><strong>Check before you start</strong><br />
+   - Workspace clear?<br />
+   - Equipment safe?<br />
+   - You're ready?</p>
+</li>
+<li>
+<p><strong>Start slow</strong><br />
+   - Begin with slow speeds<br />
+   - Test movements<br />
+   - Increase gradually</p>
+</li>
+<li>
+<p><strong>If in doubt, stop</strong><br />
+   - Don't guess<br />
+   - Ask for help<br />
+   - Better safe than sorry</p>
+</li>
+</ol>
+<hr />
+<h2>9. What to Do in an Emergency</h2>
+<h3>If Someone Gets Hurt</h3>
+<ol>
+<li>
+<p><strong>Stop the robot immediately</strong><br />
+   - Press emergency stop<br />
+   - Disable torque</p>
+</li>
+<li>
+<p><strong>Get help</strong><br />
+   - Call for instructor<br />
+   - Call emergency services if serious</p>
+</li>
+<li>
+<p><strong>Don't move the person</strong><br />
+   - Unless they're in immediate danger<br />
+   - Wait for medical help</p>
+</li>
+<li>
+<p><strong>Report the incident</strong><br />
+   - Tell your instructor<br />
+   - Document what happened<br />
+   - Learn from it</p>
+</li>
+</ol>
+<h3>If Equipment Fails</h3>
+<ol>
+<li>
+<p><strong>Stop immediately</strong><br />
+   - Press emergency stop<br />
+   - Disable power if safe</p>
+</li>
+<li>
+<p><strong>Don't try to fix it</strong><br />
+   - Get qualified help<br />
+   - Report the problem</p>
+</li>
+<li>
+<p><strong>Document the issue</strong><br />
+   - What happened?<br />
+   - When did it happen?<br />
+   - What were you doing?</p>
+</li>
+</ol>
+<hr />
+<h2>10. Summary</h2>
+<h3>Key Points to Remember</h3>
+<ol>
+<li><strong>Robot arms are powerful tools</strong> that can cause serious injury</li>
+<li><strong>Safety is always the priority</strong> - nothing is more important</li>
+<li><strong>Identify hazards</strong> before starting work</li>
+<li><strong>Follow procedures</strong> - they exist for your safety</li>
+<li><strong>Use risk assessment</strong> to understand and reduce risks</li>
+<li><strong>Know how to stop</strong> - emergency stops save lives</li>
+<li><strong>Work together</strong> - safety is a team effort</li>
+<li><strong>If unsure, ask</strong> - there are no stupid safety questions</li>
+</ol>
+<h3>Next Steps</h3>
+<p>After learning this theory, you will:<br />
+- Complete practical safety exercises<br />
+- Perform a risk assessment<br />
+- Practice emergency procedures<br />
+- Complete the Module 1 worksheet</p>
+<hr />
+<h2>Questions for Review</h2>
+<p>Before moving to the worksheet, make sure you can answer:</p>
+<ol>
+<li>What are the main parts of a robot arm?</li>
+<li>What are three common hazards?</li>
+<li>What should you do before operating a robot arm?</li>
+<li>When should you use the emergency stop?</li>
+<li>What is risk assessment?</li>
+<li>What PPE should you wear?</li>
+<li>What are the golden safety rules?</li>
+</ol>
+<hr />
+<p><strong>Remember:</strong> Safety is not optional. It's essential. Take your time, follow procedures, and always prioritize safety over speed or convenience.</p></div></section>
+<section class="card"><h2>Student worksheet</h2><div class="card-inner"><h1>Module 1: Introduction &amp; Safety Fundamentals</h1>
+<h2>Student Worksheet</h2>
+<p><strong>Name:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_<br />
+<strong>Date:</strong> </em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>_<br />
+<strong>Group/Class:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>____</p>
+<hr />
+<h2>Part 1: Understanding Robot Arms</h2>
+<h3>Question 1: Basic Terminology</h3>
+<p>Fill in the blanks with the correct terms:</p>
+<p>a) A <strong><em>_</em></strong><strong><em>_</em></strong>_ is a connection point between two parts of the robot arm that allows movement.</p>
+<p>b) A <strong><em>_</em></strong><strong><em>_</em></strong>_ is a rigid section between two joints.</p>
+<p>c) The <strong><em>_</em></strong><strong><em>_</em></strong>_ is the tool or gripper at the end of the robot arm.</p>
+<p>d) <strong><em>_</em></strong><strong><em>_</em></strong>_ refers to the number of independent ways the robot arm can move.</p>
+<h3>Question 2: Industrial Applications</h3>
+<p>List three industrial applications of robot arms and briefly explain what the robot does in each:</p>
+<ol>
+<li>
+<p><strong>Application:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_<br />
+<strong>What it does:</strong> </em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>_</p>
+</li>
+<li>
+<p><strong>Application:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_<br />
+<strong>What it does:</strong> </em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>_</p>
+</li>
+<li>
+<p><strong>Application:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_<br />
+<strong>What it does:</strong> </em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>_</p>
+</li>
+</ol>
+<hr />
+<h2>Part 2: Safety Identification</h2>
+<h3>Question 3: Hazard Identification</h3>
+<p>Look at the robot arm system and identify THREE potential hazards. For each hazard, describe:<br />
+- What the hazard is<br />
+- Where it is located<br />
+- Who could be harmed</p>
+<table>
+<thead>
+<tr>
+<th>Hazard</th>
+<th>Location</th>
+<th>Who Could Be Harmed</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1.</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>2.</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>3.</td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h3>Question 4: Safe Operating Procedures</h3>
+<p>Answer the following questions about safe operation:</p>
+<p>a) Before operating the robot arm, what should you always do first?</p>
+<hr />
+<p>b) What is the purpose of disabling torque?</p>
+<hr />
+<p>c) What should you do if the robot arm starts moving unexpectedly?</p>
+<hr />
+<p>d) How far should you stay from the robot arm when it is operating?</p>
+<hr />
+<hr />
+<h2>Part 3: Risk Assessment</h2>
+<h3>Question 5: Risk Assessment Table</h3>
+<p>Complete the risk assessment table below for operating the robot arm:</p>
+<table>
+<thead>
+<tr>
+<th>Hazard</th>
+<th>Likelihood (High/Medium/Low)</th>
+<th>Severity (High/Medium/Low)</th>
+<th>Risk Level</th>
+<th>Control Measure</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Pinch point at joint</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Unexpected rapid motion</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Electrical shock</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Falling object</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Risk Level Guide:</strong><br />
+- <strong>High Risk:</strong> Likely to cause serious injury<br />
+- <strong>Medium Risk:</strong> Could cause moderate injury<br />
+- <strong>Low Risk:</strong> Minor injury possible</p>
+<h3>Question 6: Control Measures</h3>
+<p>List THREE control measures you would implement to reduce risk when operating the robot arm:</p>
+<ol>
+<li>
+<hr />
+</li>
+<li>
+<hr />
+</li>
+<li>
+<hr />
+</li>
+</ol>
+<hr />
+<h2>Part 4: Practical Exercise</h2>
+<h3>Exercise 1: Safety Walkthrough</h3>
+<p>Complete this checklist during a supervised safety walkthrough:</p>
+<ul>
+<li>[ ] Identified all pinch and crush points</li>
+<li>[ ] Located emergency stop button/function</li>
+<li>[ ] Understood how to enable torque safely</li>
+<li>[ ] Understood how to disable torque safely</li>
+<li>[ ] Identified safe operating distance</li>
+<li>[ ] Checked that workspace is clear</li>
+<li>[ ] Verified power connections are secure</li>
+<li>[ ] Confirmed instructor supervision is present</li>
+</ul>
+<p><strong>Notes from walkthrough:</strong></p>
+<hr />
+<hr />
+<hr />
+<h3>Exercise 2: Emergency Stop Practice</h3>
+<p>Practice the emergency stop procedure THREE times under supervision:</p>
+<p><strong>Attempt 1:</strong> Time to stop: <strong><em>_</em></strong> seconds<br />
+<strong>Attempt 2:</strong> Time to stop: <strong><em>_</em></strong> seconds<br />
+<strong>Attempt 3:</strong> Time to stop: <strong><em>_</em></strong> seconds</p>
+<p><strong>What did you learn from this exercise?</strong></p>
+<hr />
+<hr />
+<hr />
+<h2>Part 5: Reflection</h2>
+<h3>Question 7: Safety Reflection</h3>
+<p>Answer the following questions:</p>
+<p>a) Why is safety the first thing we learn about robot arms?</p>
+<hr />
+<hr />
+<p>b) What was the most important safety rule you learned today?</p>
+<hr />
+<hr />
+<p>c) How will you apply these safety rules in future modules?</p>
+<hr />
+<hr />
+<hr />
+<h2>Self-Assessment Checklist</h2>
+<p>Before submitting, check that you have:</p>
+<ul>
+<li>[ ] Completed all questions</li>
+<li>[ ] Identified at least 3 hazards</li>
+<li>[ ] Completed the risk assessment table</li>
+<li>[ ] Participated in the safety walkthrough</li>
+<li>[ ] Practiced emergency stop procedure</li>
+<li>[ ] Written reflection answers</li>
+</ul>
+<p><strong>Student Signature:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_<br />
+<strong>Date:</strong> </em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><em><br />
+<strong>Instructor Signature:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_<br />
+<strong>Date:</strong> </em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong></em></p></div></section>
+<section class="card"><h2>Multiple choice questions</h2><div class="card-inner"><h1>Module 1: Introduction &amp; Safety Fundamentals</h1>
+<h2>Multiple Choice Questions</h2>
+<p><strong>Instructions:</strong> Choose the best answer for each question. Circle or highlight your choice.</p>
+<hr />
+<h2>Section A: Basic Terminology and Concepts</h2>
+<p><strong>1. What is a joint in a robot arm?</strong><br />
+   a) The tool at the end of the arm<br />
+   b) A connection point between two parts that allows movement<br />
+   c) The base of the robot arm<br />
+   d) The power supply</p>
+<p><strong>2. What is the end effector?</strong><br />
+   a) The base of the robot arm<br />
+   b) The joint that moves the most<br />
+   c) The tool or gripper at the end of the robot arm<br />
+   d) The controller</p>
+<p><strong>3. What does "degrees of freedom" mean?</strong><br />
+   a) How fast the robot can move<br />
+   b) The number of independent ways the robot arm can move<br />
+   c) How much weight the robot can lift<br />
+   d) The range of motion of one joint</p>
+<p><strong>4. Which of these is NOT a common industrial application of robot arms?</strong><br />
+   a) Pick-and-place operations<br />
+   b) Assembly tasks<br />
+   c) Cooking meals<br />
+   d) Welding and painting</p>
+<hr />
+<h2>Section B: Safety Hazards</h2>
+<p><strong>5. Which of these is a common hazard when operating a robot arm?</strong><br />
+   a) Pinch and crush points at joints<br />
+   b) The robot arm being too slow<br />
+   c) The robot arm being too accurate<br />
+   d) The robot arm being too quiet</p>
+<p><strong>6. What should you do FIRST before operating a robot arm?</strong><br />
+   a) Start moving it immediately<br />
+   b) Check that torque is disabled and workspace is clear<br />
+   c) Increase the speed to maximum<br />
+   d) Remove all safety guards</p>
+<p><strong>7. If a robot arm starts moving unexpectedly, what should you do?</strong><br />
+   a) Try to stop it with your hands<br />
+   b) Use the emergency stop immediately<br />
+   c) Wait for it to stop on its own<br />
+   d) Run away</p>
+<p><strong>8. What is the purpose of disabling torque?</strong><br />
+   a) To make the robot move faster<br />
+   b) To prevent accidental movement and allow safe manual positioning<br />
+   c) To save electricity<br />
+   d) To make the robot more accurate</p>
+<hr />
+<h2>Section C: Risk Assessment</h2>
+<p><strong>9. In a risk assessment, what does "likelihood" refer to?</strong><br />
+   a) How serious an injury could be<br />
+   b) How often something might happen<br />
+   c) How expensive an accident would be<br />
+   d) How difficult it is to prevent</p>
+<p><strong>10. In a risk assessment, what does "severity" refer to?</strong><br />
+   a) How often something might happen<br />
+   b) How serious an injury could be<br />
+   c) How expensive equipment is<br />
+   d) How difficult it is to fix</p>
+<p><strong>11. If a hazard has HIGH likelihood and HIGH severity, what is the risk level?</strong><br />
+   a) Low risk<br />
+   b) Medium risk<br />
+   c) High risk<br />
+   d) No risk</p>
+<p><strong>12. Which of these is an example of a control measure?</strong><br />
+   a) Ignoring the hazard<br />
+   b) Setting speed limits and ensuring supervision<br />
+   c) Operating faster to finish quicker<br />
+   d) Removing all safety features</p>
+<hr />
+<h2>Section D: Safe Operating Procedures</h2>
+<p><strong>13. How far should you stay from a robot arm when it is operating?</strong><br />
+   a) As close as possible to see better<br />
+   b) Outside the robot's working envelope<br />
+   c) Just touching distance<br />
+   d) It doesn't matter</p>
+<p><strong>14. What should you check before enabling torque on a robot arm?</strong><br />
+   a) That you have the right password<br />
+   b) That the workspace is clear and you understand how to stop it<br />
+   c) That the robot is moving already<br />
+   d) That you are wearing expensive clothes</p>
+<p><strong>15. What is an emergency stop used for?</strong><br />
+   a) To make the robot move faster<br />
+   b) To immediately stop the robot in a dangerous situation<br />
+   c) To save your work<br />
+   d) To change the robot's program</p>
+<p><strong>16. When should you use the emergency stop?</strong><br />
+   a) Only at the end of the day<br />
+   b) Whenever you want to stop the robot<br />
+   c) In any situation where there is immediate danger<br />
+   d) Never, it's just for decoration</p>
+<hr />
+<h2>Section E: Personal Protective Equipment and Workspace</h2>
+<p><strong>17. Which of these is typically NOT required PPE for robot arm operation?</strong><br />
+   a) Safety glasses<br />
+   b) High-heeled shoes<br />
+   c) Appropriate clothing (no loose items)<br />
+   d) Closed-toe shoes</p>
+<p><strong>18. What should you ensure about the workspace before operating a robot arm?</strong><br />
+   a) That it is dark<br />
+   b) That it is clear of obstacles and people<br />
+   c) That it is messy<br />
+   d) That music is playing loudly</p>
+<p><strong>19. Who should supervise beginners operating a robot arm?</strong><br />
+   a) No one, they can learn alone<br />
+   b) A qualified instructor or experienced operator<br />
+   c) Another beginner<br />
+   d) Anyone nearby</p>
+<p><strong>20. What should you do if you are unsure about a safety procedure?</strong><br />
+   a) Guess and try anyway<br />
+   b) Ask a qualified instructor before proceeding<br />
+   c) Look it up on your phone later<br />
+   d) Skip that step</p>
+<hr />
+<h2>Answer Key</h2>
+<ol>
+<li><strong>b)</strong> A connection point between two parts that allows movement</li>
+<li><strong>c)</strong> The tool or gripper at the end of the robot arm</li>
+<li><strong>b)</strong> The number of independent ways the robot arm can move</li>
+<li><strong>c)</strong> Cooking meals</li>
+<li><strong>a)</strong> Pinch and crush points at joints</li>
+<li><strong>b)</strong> Check that torque is disabled and workspace is clear</li>
+<li><strong>b)</strong> Use the emergency stop immediately</li>
+<li><strong>b)</strong> To prevent accidental movement and allow safe manual positioning</li>
+<li><strong>b)</strong> How often something might happen</li>
+<li><strong>b)</strong> How serious an injury could be</li>
+<li><strong>c)</strong> High risk</li>
+<li><strong>b)</strong> Setting speed limits and ensuring supervision</li>
+<li><strong>b)</strong> Outside the robot's working envelope</li>
+<li><strong>b)</strong> That the workspace is clear and you understand how to stop it</li>
+<li><strong>b)</strong> To immediately stop the robot in a dangerous situation</li>
+<li><strong>c)</strong> In any situation where there is immediate danger</li>
+<li><strong>b)</strong> High-heeled shoes</li>
+<li><strong>b)</strong> That it is clear of obstacles and people</li>
+<li><strong>b)</strong> A qualified instructor or experienced operator</li>
+<li><strong>b)</strong> Ask a qualified instructor before proceeding</li>
+</ol>
+<hr />
+<h2>Scoring Guide</h2>
+<ul>
+<li><strong>18-20 correct:</strong> Excellent understanding</li>
+<li><strong>15-17 correct:</strong> Good understanding</li>
+<li><strong>12-14 correct:</strong> Satisfactory understanding</li>
+<li><strong>Below 12 correct:</strong> Needs review of module content</li>
+</ul></div></section>
+<section class="card"><h2>Assessment rubric</h2><div class="card-inner"><h1>Module 1: Introduction &amp; Safety Fundamentals</h1>
+<h2>Assessment Rubric</h2>
+<p><strong>Student Name:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_<br />
+<strong>Date:</strong> </em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>_<br />
+<strong>Assessor:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>____</p>
+<hr />
+<h2>Overall Assessment Criteria</h2>
+<table>
+<thead>
+<tr>
+<th>Criteria</th>
+<th>Excellent (4)</th>
+<th>Good (3)</th>
+<th>Satisfactory (2)</th>
+<th>Needs Improvement (1)</th>
+<th>Score</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Knowledge &amp; Understanding</strong></td>
+<td>Demonstrates comprehensive understanding of safety concepts and terminology</td>
+<td>Shows good understanding with minor gaps</td>
+<td>Basic understanding evident but some confusion</td>
+<td>Limited understanding, significant gaps</td>
+<td>/4</td>
+</tr>
+<tr>
+<td><strong>Practical Skills</strong></td>
+<td>Consistently follows all safety procedures correctly</td>
+<td>Follows most procedures correctly</td>
+<td>Follows basic procedures but needs reminders</td>
+<td>Struggles with safety procedures</td>
+<td>/4</td>
+</tr>
+<tr>
+<td><strong>Risk Assessment</strong></td>
+<td>Complete, accurate risk assessment with appropriate control measures</td>
+<td>Good risk assessment with mostly appropriate measures</td>
+<td>Basic risk assessment completed but lacks detail</td>
+<td>Incomplete or inaccurate risk assessment</td>
+<td>/4</td>
+</tr>
+<tr>
+<td><strong>Reflection &amp; Application</strong></td>
+<td>Thoughtful reflection showing deep understanding</td>
+<td>Good reflection showing understanding</td>
+<td>Basic reflection, some understanding</td>
+<td>Limited reflection, little understanding</td>
+<td>/4</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Total Score:</strong> /16</p>
+<hr />
+<h2>Detailed Marking Guide</h2>
+<h3>Part 1: Understanding Robot Arms (20 marks)</h3>
+<h4>Question 1: Basic Terminology (8 marks)</h4>
+<ul>
+<li><strong>4 marks:</strong> All 4 terms correct</li>
+<li><strong>3 marks:</strong> 3 terms correct</li>
+<li><strong>2 marks:</strong> 2 terms correct</li>
+<li><strong>1 mark:</strong> 1 term correct</li>
+<li><strong>0 marks:</strong> No correct answers</li>
+</ul>
+<p><strong>Correct answers:</strong><br />
+- a) joint<br />
+- b) link<br />
+- c) end effector<br />
+- d) degrees of freedom</p>
+<h4>Question 2: Industrial Applications (12 marks)</h4>
+<ul>
+<li><strong>4 marks per application:</strong> Correct application with clear explanation</li>
+<li><strong>2 marks per application:</strong> Correct application but vague explanation</li>
+<li><strong>1 mark per application:</strong> Incorrect application or no explanation</li>
+<li><strong>0 marks:</strong> No answer</li>
+</ul>
+<p><strong>Mark:</strong> /20</p>
+<hr />
+<h3>Part 2: Safety Identification (25 marks)</h3>
+<h4>Question 3: Hazard Identification (15 marks)</h4>
+<ul>
+<li><strong>5 marks per hazard:</strong> Clear identification with location and who could be harmed</li>
+<li><strong>3 marks per hazard:</strong> Hazard identified but missing details</li>
+<li><strong>1 mark per hazard:</strong> Vague or incorrect identification</li>
+<li><strong>0 marks:</strong> No answer</li>
+</ul>
+<h4>Question 4: Safe Operating Procedures (10 marks)</h4>
+<ul>
+<li><strong>2.5 marks per answer:</strong> Complete and correct answer</li>
+<li><strong>1.5 marks per answer:</strong> Partially correct but incomplete</li>
+<li><strong>0.5 marks per answer:</strong> Attempted but incorrect</li>
+<li><strong>0 marks:</strong> No answer</li>
+</ul>
+<p><strong>Mark:</strong> /25</p>
+<hr />
+<h3>Part 3: Risk Assessment (30 marks)</h3>
+<h4>Question 5: Risk Assessment Table (20 marks)</h4>
+<ul>
+<li><strong>5 marks per hazard row:</strong> Complete with appropriate ratings and control measures</li>
+<li><strong>3 marks per hazard row:</strong> Mostly complete but missing some elements</li>
+<li><strong>1 mark per hazard row:</strong> Incomplete or inappropriate ratings</li>
+<li><strong>0 marks:</strong> No answer</li>
+</ul>
+<p><strong>Assessment criteria:</strong><br />
+- Likelihood and severity ratings should be appropriate<br />
+- Risk level should reflect likelihood × severity<br />
+- Control measures should be practical and effective</p>
+<h4>Question 6: Control Measures (10 marks)</h4>
+<ul>
+<li><strong>4 marks:</strong> Three appropriate, well-explained control measures</li>
+<li><strong>3 marks:</strong> Three control measures but some lack detail</li>
+<li><strong>2 marks:</strong> Two control measures provided</li>
+<li><strong>1 mark:</strong> One control measure provided</li>
+<li><strong>0 marks:</strong> No answer</li>
+</ul>
+<p><strong>Mark:</strong> /30</p>
+<hr />
+<h3>Part 4: Practical Exercise (15 marks)</h3>
+<h4>Exercise 1: Safety Walkthrough (8 marks)</h4>
+<ul>
+<li><strong>8 marks:</strong> All checklist items completed, detailed notes provided</li>
+<li><strong>6 marks:</strong> Most items completed, some notes provided</li>
+<li><strong>4 marks:</strong> Basic completion, minimal notes</li>
+<li><strong>2 marks:</strong> Incomplete checklist</li>
+<li><strong>0 marks:</strong> Not attempted</li>
+</ul>
+<h4>Exercise 2: Emergency Stop Practice (7 marks)</h4>
+<ul>
+<li><strong>7 marks:</strong> Completed three attempts, thoughtful reflection on learning</li>
+<li><strong>5 marks:</strong> Completed attempts but limited reflection</li>
+<li><strong>3 marks:</strong> Completed some attempts</li>
+<li><strong>1 mark:</strong> Attempted but not completed</li>
+<li><strong>0 marks:</strong> Not attempted</li>
+</ul>
+<p><strong>Mark:</strong> /15</p>
+<hr />
+<h3>Part 5: Reflection (10 marks)</h3>
+<h4>Question 7: Safety Reflection (10 marks)</h4>
+<ul>
+<li><strong>4 marks per question:</strong> Thoughtful, well-explained answers showing deep understanding</li>
+<li><strong>3 marks per question:</strong> Good answers showing understanding</li>
+<li><strong>2 marks per question:</strong> Basic answers, some understanding</li>
+<li><strong>1 mark per question:</strong> Limited answers, little understanding</li>
+<li><strong>0 marks:</strong> No answer</li>
+</ul>
+<p><strong>Mark:</strong> /10</p>
+<hr />
+<h2>Overall Performance Levels</h2>
+<h3>Excellent (85-100%)</h3>
+<ul>
+<li>Demonstrates comprehensive understanding of all safety concepts</li>
+<li>Consistently follows all safety procedures</li>
+<li>Complete and accurate risk assessment</li>
+<li>Thoughtful reflection showing deep understanding</li>
+<li>All practical exercises completed to high standard</li>
+</ul>
+<h3>Good (70-84%)</h3>
+<ul>
+<li>Shows good understanding with minor gaps</li>
+<li>Follows most safety procedures correctly</li>
+<li>Good risk assessment with mostly appropriate measures</li>
+<li>Good reflection showing understanding</li>
+<li>Most practical exercises completed well</li>
+</ul>
+<h3>Satisfactory (55-69%)</h3>
+<ul>
+<li>Basic understanding evident but some confusion</li>
+<li>Follows basic procedures but needs reminders</li>
+<li>Basic risk assessment completed but lacks detail</li>
+<li>Basic reflection, some understanding</li>
+<li>Practical exercises completed but may lack detail</li>
+</ul>
+<h3>Needs Improvement (Below 55%)</h3>
+<ul>
+<li>Limited understanding, significant gaps</li>
+<li>Struggles with safety procedures</li>
+<li>Incomplete or inaccurate risk assessment</li>
+<li>Limited reflection, little understanding</li>
+<li>Practical exercises incomplete or not attempted</li>
+</ul>
+<hr />
+<h2>Feedback Section</h2>
+<h3>Strengths:</h3>
+<hr />
+<hr />
+<hr />
+<h3>Areas for Improvement:</h3>
+<hr />
+<hr />
+<hr />
+<h3>Action Plan:</h3>
+<hr />
+<hr />
+<hr />
+<h3>Next Steps:</h3>
+<hr />
+<hr />
+<hr />
+<p><strong>Final Grade:</strong> <strong><em>_</em></strong>____ / 100</p>
+<p><strong>Assessor Comments:</strong></p>
+<hr />
+<hr />
+<hr />
+<p><strong>Assessor Signature:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_<br />
+<strong>Date:</strong> </em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>_</p></div></section>
+  </div>
+</body>
+</html>

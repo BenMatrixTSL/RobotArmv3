@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Module 10 — Data Logging & Diagnostics</title>
+<style>
+  :root {
+    --bg: #f8fafc; --card: #ffffff; --border: #e2e8f0;
+    --text: #1e293b; --muted: #64748b;
+    --accent: #3b82f6; --accent-light: #eff6ff;
+    --green: #16a34a; --green-light: #f0fdf4;
+    --purple: #7c3aed; --purple-light: #faf5ff;
+    --orange: #ea580c; --orange-light: #fff7ed;
+    --red: #dc2626; --red-light: #fef2f2;
+    --yellow: #ca8a04; --yellow-light: #fefce8;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+  .hero { background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%); color: white; padding: 3rem 2rem; text-align: center; }
+  .hero .module-num { font-size: 0.85rem; opacity: 0.6; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 0.5rem; }
+  .hero h1 { font-size: 2rem; font-weight: 700; margin-bottom: 0.75rem; }
+  .hero p { font-size: 1.05rem; opacity: 0.85; max-width: 600px; margin: 0 auto; }
+  .meta-bar { display: flex; justify-content: center; gap: 2rem; padding: 1rem; background: #1e293b; color: #94a3b8; font-size: 0.85rem; flex-wrap: wrap; }
+  .container { max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem; }
+  .section-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.75rem; margin-bottom: 1.5rem; }
+  .pill { display: inline-block; font-size: 0.75rem; font-weight: 600; padding: 0.2rem 0.65rem; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.9rem; }
+  .pill-theory   { background: var(--accent-light); color: var(--accent); }
+  .pill-activity { background: var(--green-light);  color: var(--green); }
+  .pill-worksheet{ background: var(--purple-light); color: var(--purple); }
+  .pill-sowhat   { background: var(--orange-light); color: var(--orange); }
+  .pill-mcq      { background: #fff8e1; color: #856404; }
+  h2 { font-size: 1.3rem; font-weight: 700; margin-bottom: 0.75rem; }
+  h3 { font-size: 1.05rem; font-weight: 600; margin: 1.2rem 0 0.5rem; }
+  p  { margin-bottom: 0.8rem; color: var(--text); }
+  .highlight-box { background: var(--accent-light); border-left: 4px solid var(--accent); padding: 1rem 1.2rem; border-radius: 0 8px 8px 0; margin: 1rem 0; }
+  .formula { background: #0f172a; color: #7dd3fc; font-family: monospace; font-size: 1rem; padding: 0.8rem 1.2rem; border-radius: 8px; margin: 1rem 0; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1rem 0; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 1rem; margin: 1rem 0; }
+  .mini-card { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; }
+  .mini-card h4 { font-size: 0.9rem; font-weight: 700; margin-bottom: 0.4rem; }
+  .mini-card p  { font-size: 0.85rem; color: var(--muted); margin: 0; }
+  table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+  th { background: var(--accent-light); color: var(--accent); text-align: left; padding: 0.6rem 0.8rem; font-weight: 600; }
+  td { padding: 0.55rem 0.8rem; border-bottom: 1px solid var(--border); }
+  tr:last-child td { border-bottom: none; }
+  .steps { list-style: none; counter-reset: step; padding: 0; }
+  .steps li { counter-increment: step; display: flex; gap: 1rem; margin-bottom: 0.9rem; align-items: flex-start; }
+  .steps li::before { content: counter(step); min-width: 28px; height: 28px; background: var(--green); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; flex-shrink: 0; }
+  .tab-ref { display: inline-block; background: #0f172a; color: #7dd3fc; font-family: monospace; font-size: 0.8rem; padding: 0.15rem 0.5rem; border-radius: 4px; }
+  .todo-block { background: var(--red-light); border: 2px dashed var(--red); border-radius: 8px; padding: 1rem 1.2rem; margin: 1rem 0; color: var(--red); }
+  .todo-block strong { display: block; margin-bottom: 0.3rem; }
+  /* MCQ */
+  .mcq-question { margin-bottom: 1.5rem; }
+  .mcq-question p { font-weight: 600; margin-bottom: 0.6rem; }
+  .mcq-option { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.35rem; cursor: pointer; font-size: 0.95rem; }
+  .mcq-option input { accent-color: var(--accent); }
+  .feedback-msg { font-size: 0.85rem; padding: 0.45rem 0.8rem; border-radius: 6px; margin-top: 0.5rem; display: none; }
+  .feedback-correct { background: var(--green-light); color: var(--green); }
+  .feedback-wrong   { background: var(--red-light);   color: var(--red); }
+  .check-btn { background: var(--accent); color: white; border: none; padding: 0.7rem 1.6rem; border-radius: 8px; font-size: 0.95rem; font-weight: 600; cursor: pointer; margin-top: 0.5rem; }
+  .check-btn:hover { background: #2563eb; }
+  .score-bar-wrap { height: 8px; background: var(--border); border-radius: 4px; margin: 1rem 0 0.4rem; }
+  .score-bar { height: 100%; background: var(--green); border-radius: 4px; transition: width 0.4s; width: 0%; }
+  .score-text { font-size: 0.9rem; color: var(--muted); }
+  .nav-row { display: flex; justify-content: space-between; margin-top: 2rem; }
+  .nav-btn { display: inline-block; padding: 0.6rem 1.4rem; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 0.9rem; border: 2px solid var(--border); color: var(--text); }
+  .nav-btn.primary { background: var(--accent); color: white; border-color: var(--accent); }
+  @media(max-width:600px){ .grid-2,.grid-3{ grid-template-columns:1fr; } .meta-bar{ gap:1rem; } }
+  .callout{border-radius:8px;padding:.875rem 1rem;margin:.75rem 0;font-size:.93rem;display:flex;gap:.75rem}
+  .callout-icon{font-size:1.25rem;flex-shrink:0;line-height:1.4}
+  .callout-body{flex:1}
+  .callout-info{background:var(--accent-light);border:1px solid #bfdbfe}
+  .callout-tip{background:var(--green-light);border:1px solid #bbf7d0}
+  .callout-warning{background:var(--orange-light);border:1px solid #fed7aa}
+  .callout-danger{background:var(--red-light);border:1px solid #fecaca}
+  .ui-ref{display:inline;background:rgba(22,163,74,0.13);border:1px solid #bbf7d0;border-radius:4px;font-size:.8rem;font-weight:600;padding:.1em .45em;color:var(--green)}
+</style>
+<link rel="stylesheet" href="worksheet.css">
+</head>
+<body>
+
+<div class="hero">
+  <div class="module-num">Module 10 of 16</div>
+  <h1>Data Logging &amp; Diagnostics</h1>
+  <p>Capturing, interpreting, and using live data from the robot arm to monitor health and diagnose faults.</p>
+</div>
+<div class="meta-bar">
+  <span>&#128340; 60–75 min</span>
+  <span>&#127919; Group: Intermediate</span>
+  <span>&#128268; App tabs: Joint Control · Settings · Connection</span>
+</div>
+
+<div class="container">
+
+  <!-- THEORY 1 -->
+  <div class="section-card">
+    <span class="pill pill-theory">Theory</span>
+    <h2>Why Log Data?</h2>
+    <img src="images/telemetry-graph.svg" alt="Live telemetry data graph" style="width:100%;height:auto;display:block;border-radius:8px;margin:12px 0;">
+    <p>A robot arm in operation generates a continuous stream of sensor data — joint positions, temperatures, supply voltages, and load readings. Capturing this data over time is called <strong>data logging</strong>. Engineers use logged data to:</p>
+    <div class="grid-3">
+      <div class="mini-card">
+        <h4>&#128200; Trend Analysis</h4>
+        <p>Spot gradual drift or degradation before failure occurs.</p>
+      </div>
+      <div class="mini-card">
+        <h4>&#128270; Fault Diagnosis</h4>
+        <p>Replay events leading up to a fault to find the root cause.</p>
+      </div>
+      <div class="mini-card">
+        <h4>&#9989; Performance Verification</h4>
+        <p>Confirm the arm meets speed and accuracy specifications.</p>
+      </div>
+    </div>
+    <p>In safety-critical systems (ISO 10218), logs are a legal requirement — they prove the system operated within defined limits.</p>
+  </div>
+
+  <!-- THEORY 2 -->
+  <div class="section-card">
+    <span class="pill pill-theory">Theory</span>
+    <h2>What Data Does a Servo Report?</h2>
+    <p>The ST3215 servos used in this arm report several parameters over the serial bus. The app reads these and displays them in real time:</p>
+    <table>
+      <tr><th>Parameter</th><th>Units</th><th>What it tells you</th></tr>
+      <tr><td>Position</td><td>degrees (°)</td><td>Current joint angle — compare to commanded angle to check accuracy</td></tr>
+      <tr><td>Velocity</td><td>rpm</td><td>How fast the joint is moving — high values near limits risk overshoot</td></tr>
+      <tr><td>Load</td><td>% of stall torque</td><td>Mechanical load on the motor — sustained high load = overheating risk</td></tr>
+      <tr><td>Voltage</td><td>V</td><td>Supply rail health — drop under load indicates wiring or PSU issues</td></tr>
+      <tr><td>Temperature</td><td>°C</td><td>Motor winding temperature — above ~70 °C the servo will self-limit</td></tr>
+    </table>
+    <div class="highlight-box">
+      <strong>Key point:</strong> Load is a proxy for current. Since <em>torque = K<sub>t</sub> × I</em>, high load% means high current, which means high heat. Monitoring load is the earliest warning of an overload condition.
+    </div>
+    <div class="callout callout-info">
+      <span class="callout-icon">🔌</span>
+      <div class="callout-body">
+        <strong>Connection Tab — Server Diagnostics Panel</strong></br>
+        The <span class="ui-ref">Connection</span> tab includes a <strong>server bus diagnostics panel</strong> that shows: serial bus health, number of connected WebSocket clients, server uptime, and build ID. Use this alongside the Joint Control telemetry during diagnostics — the diagnostics panel gives you the <em>infrastructure</em> view (is the bus healthy? how many clients are connected?) while Joint Control gives you the <em>sensor</em> view (what are the joints doing?). Both together give a complete diagnostic picture.
+      </div>
+    </div>
+  </div>
+
+  <!-- THEORY 3 -->
+  <div class="section-card">
+    <span class="pill pill-theory">Theory</span>
+    <h2>Diagnostic Thinking: Symptoms → Causes</h2>
+    <img src="images/diagnostic-flowchart.svg" alt="Diagnostic thinking flowchart" style="width:100%;height:auto;display:block;border-radius:8px;margin:12px 0;">
+    <p>Good diagnostics follow a structured process — not guesswork. A common framework is <strong>Symptom → Hypothesis → Test → Conclusion</strong>.</p>
+    <table>
+      <tr><th>Symptom</th><th>Possible causes</th><th>Test</th></tr>
+      <tr><td>Joint overshoots target</td><td>Speed too high, PID gains wrong</td><td>Reduce speed, observe position trace</td></tr>
+      <tr><td>Temperature rising fast</td><td>Sustained high load, poor ventilation</td><td>Check load %, reduce payload</td></tr>
+      <tr><td>Voltage drops under move</td><td>PSU current-limited, thin wiring</td><td>Measure V at servo headers during move</td></tr>
+      <tr><td>Position error accumulates</td><td>Backlash, encoder slipping</td><td>Command same pose 10×, log final position</td></tr>
+      <tr><td>WebSocket disconnects</td><td>Network jitter, Pi overloaded</td><td>Check Pi CPU usage, ping latency</td></tr>
+    </table>
+    <div class="callout callout-warning">
+      <span class="callout-icon">🌡️</span>
+      <div class="callout-body">
+        <strong>Thermal Fault</strong></br>
+        <strong>Symptom:</strong> LED strip flashing orange; one joint becomes unresponsive.<br>
+        <strong>Cause:</strong> A servo has exceeded its safe operating temperature. The server automatically enforces a 30-second cool-down period for that joint.<br>
+        <strong>Test:</strong> Check the Temperature (°C) field on the affected joint's card in <span class="ui-ref">Joint Control</span>.<br>
+        <strong>Resolution:</strong> Wait 30 seconds. Reduce duty cycle, speed, or payload for that joint. If it recurs, check for mechanical binding.
+      </div>
+    </div>
+    <div class="callout callout-warning">
+      <span class="callout-icon">🔴</span>
+      <div class="callout-body">
+        <strong>Serial Bus Loss / Server Recovery</strong></br>
+        <strong>Symptom:</strong> LED strip pulsing red; all joints frozen; Joint Control shows stale data.<br>
+        <strong>Cause:</strong> The server lost contact with the serial bus (cable fault, power interruption, or hardware error). It is attempting to reconnect automatically with exponential backoff (waits 2 s → 4 s → 8 s → max 30 s between attempts).<br>
+        <strong>Test:</strong> Check the Connection tab diagnostics panel for bus health status.<br>
+        <strong>Resolution:</strong> Wait up to 30 seconds for auto-recovery. If it does not recover, check the serial bus cable connections and cycle the Pi's power.
+      </div>
+    </div>
+  </div>
+
+  <!-- WORKSHEET / ACTIVITY -->
+  <div class="section-card worksheet-card">
+    <span class="pill pill-worksheet">Worksheet</span>
+    <h2>Activity — Live Data Monitoring</h2>
+    <p>You will observe live servo telemetry while the arm performs a repeating motion, and record what you see.</p>
+    <ul class="steps">
+      <li>Connect to the arm using the <span class="tab-ref">Connection</span> tab. Confirm the status indicator is green.</li>
+      <li>Open the <span class="tab-ref">Joint Control</span> tab. Note the servo status panel — locate the live position, load, voltage and temperature readouts for each joint.</li>
+      <li>With the arm at its home/zero position, record the <strong>idle readings</strong> in the table below.</li>
+      <li>Command Joint 2 (shoulder) to move slowly between 0° and 60°, repeatedly. Observe how the load value changes at the extremes of the motion.</li>
+      <li>Now hold the end-effector gently (add a small manual load) and observe load % again. Record the difference.</li>
+      <li>Check the temperature reading before and after 5 minutes of continuous motion. Is it rising?</li>
+      <li>Open the <span class="tab-ref">Settings</span> tab and locate any configurable temperature or load alarm thresholds. Note the default values.</li>
+    </ul>
+
+    <h3>Data Recording Table</h3>
+    <table>
+      <tr><th>Condition</th><th>Joint 2 Load %</th><th>Voltage (V)</th><th>Temperature (°C)</th></tr>
+      <tr><td>Idle / home</td><td><input type="text" placeholder="%"></td><td><input type="text" placeholder="V"></td><td><input type="text" placeholder="°C"></td></tr>
+      <tr><td>Moving 0°→60° (no load)</td><td><input type="text" placeholder="%"></td><td><input type="text" placeholder="V"></td><td><input type="text" placeholder="°C"></td></tr>
+      <tr><td>Moving with manual load</td><td><input type="text" placeholder="%"></td><td><input type="text" placeholder="V"></td><td><input type="text" placeholder="°C"></td></tr>
+      <tr><td>After 5 min continuous</td><td><input type="text" placeholder="%"></td><td><input type="text" placeholder="V"></td><td><input type="text" placeholder="°C"></td></tr>
+    </table>
+
+    <div class="ws-field">
+      <label>Observations — load change, temperature trend, and Settings notes</label>
+      <textarea placeholder="Describe what you observed for load %, temperature, and any Settings values..."></textarea>
+    </div>
+
+    <div class="callout callout-info no-print">
+      <span class="callout-icon">📊</span>
+      <div class="callout-body">
+        <strong>Joint Control Tab — Confirmed Layout</strong></br>
+        The <span class="ui-ref">Joint Control</span> tab shows six joint status cards (one per joint). Each card displays live data updated approximately every 20 ms from the servo bus:
+        <ul style="margin:0.4rem 0 0;padding-left:1.2rem;">
+          <li><strong>Angle (°)</strong> — current joint position</li>
+          <li><strong>Velocity</strong> — current speed</li>
+          <li><strong>Load (%)</strong> — current draw as a percentage of stall torque</li>
+          <li><strong>Voltage (V)</strong> — servo supply voltage</li>
+          <li><strong>Temperature (°C)</strong> — servo motor temperature</li>
+        </ul>
+        Note: the <span class="ui-ref">Settings</span> tab does <em>not</em> have alarm threshold sliders for temperature or load — the configurable value is the <strong>status watchdog interval</strong> (the fallback poll period if the server stops pushing). The servos have hardware thermal protection built in.
+      </div>
+    </div>
+  </div>
+
+  <!-- SO WHAT -->
+  <div class="section-card">
+    <span class="pill pill-sowhat">So What?</span>
+    <h2>Why Does This Matter in Industry?</h2>
+    <p>Industrial robots in factories run 24/7. A sudden failure mid-cycle can damage tooling, injure workers, or halt an entire production line. <strong>Predictive maintenance</strong> uses logged data — temperature trends, vibration signatures, load drift — to schedule servicing <em>before</em> failure, not after.</p>
+    <p>The techniques you practised here (monitoring load, watching temperature, noting voltage sag) are the same principles behind industrial SCADA (Supervisory Control and Data Acquisition) systems, just at a smaller scale.</p>
+    <p><strong>Think about:</strong> If you were deploying this arm in a school workshop that runs 6 hours a day, what logging strategy would you design? What thresholds would you alarm on?</p>
+  </div>
+
+  <!-- MCQ -->
+  <div class="section-card">
+    <span class="pill pill-mcq">Quiz</span>
+    <h2>Check Your Understanding</h2>
+
+    <div class="mcq-question" id="q1-block">
+      <p>1. A servo's load reading is described as a proxy for which electrical quantity?</p>
+      <label class="mcq-option"><input type="radio" name="q1" value="a"> Voltage</label>
+      <label class="mcq-option"><input type="radio" name="q1" value="b"> Current</label>
+      <label class="mcq-option"><input type="radio" name="q1" value="c"> Resistance</label>
+      <label class="mcq-option"><input type="radio" name="q1" value="d"> Power factor</label>
+      <div class="feedback-msg" id="q1-fb"></div>
+    </div>
+
+    <div class="mcq-question" id="q2-block">
+      <p>2. Which diagnostic approach is most structured?</p>
+      <label class="mcq-option"><input type="radio" name="q2" value="a"> Replace parts until it works</label>
+      <label class="mcq-option"><input type="radio" name="q2" value="b"> Symptom → Hypothesis → Test → Conclusion</label>
+      <label class="mcq-option"><input type="radio" name="q2" value="c"> Ask the manufacturer</label>
+      <label class="mcq-option"><input type="radio" name="q2" value="d"> Reboot and hope</label>
+      <div class="feedback-msg" id="q2-fb"></div>
+    </div>
+
+    <div class="mcq-question" id="q3-block">
+      <p>3. A servo's temperature rises steadily over 30 minutes of continuous operation. The most likely first action is:</p>
+      <label class="mcq-option"><input type="radio" name="q3" value="a"> Increase supply voltage</label>
+      <label class="mcq-option"><input type="radio" name="q3" value="b"> Ignore it — servos always run hot</label>
+      <label class="mcq-option"><input type="radio" name="q3" value="c"> Reduce duty cycle or payload, check load %</label>
+      <label class="mcq-option"><input type="radio" name="q3" value="d"> Replace the servo immediately</label>
+      <div class="feedback-msg" id="q3-fb"></div>
+    </div>
+
+    <button class="check-btn" onclick="checkMCQ()">Check Answers</button>
+    <div class="score-bar-wrap"><div class="score-bar" id="score-bar"></div></div>
+    <div class="score-text" id="score-text"></div>
+  </div>
+
+  <div class="nav-row">
+    <a class="nav-btn" href="module-09.html">&#8592; Module 9</a>
+    <a class="nav-btn primary" href="module-11.html">Module 11 &#8594;</a>
+  </div>
+</div>
+
+<script>
+const answers = { q1: 'b', q2: 'b', q3: 'c' };
+const feedback = {
+  q1: {
+    b: 'Correct! Load % is proportional to motor current (torque = Kt × I), making it an indirect current measurement.',
+    wrong: 'Not quite. Torque = Kt × I, so load is proportional to motor current.'
+  },
+  q2: {
+    b: 'Correct! Symptom → Hypothesis → Test → Conclusion is the structured engineering diagnostic method.',
+    wrong: 'Not quite. The structured approach is Symptom → Hypothesis → Test → Conclusion.'
+  },
+  q3: {
+    c: 'Correct! Rising temperature means excessive load. Reduce duty cycle or payload and check load % first.',
+    wrong: 'Not quite. Rising temperature signals overload — reduce duty cycle or payload and inspect load %.'
+  }
+};
+function checkMCQ() {
+  let score = 0;
+  ['q1','q2','q3'].forEach(q => {
+    const sel = document.querySelector(`input[name="${q}"]:checked`);
+    const fb = document.getElementById(`${q}-fb`);
+    if (!sel) { fb.textContent = 'Please select an answer.'; fb.className = 'feedback-msg feedback-wrong'; fb.style.display = 'block'; return; }
+    const v = sel.value;
+    const correct = v === answers[q];
+    if (correct) score++;
+    fb.textContent = correct ? feedback[q][v] : feedback[q].wrong;
+    fb.className = 'feedback-msg ' + (correct ? 'feedback-correct' : 'feedback-wrong');
+    fb.style.display = 'block';
+  });
+  document.getElementById('score-bar').style.width = (score / 3 * 100) + '%';
+  document.getElementById('score-text').textContent = `Score: ${score} / 3`;
+}
+</script>
+<script src="worksheet.js"></script>
+</body>
+</html>

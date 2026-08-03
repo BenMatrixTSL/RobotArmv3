@@ -1,0 +1,74 @@
+<svg viewBox="0 0 560 360" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, sans-serif">
+  <defs>
+    <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 Z" fill="#475569"/>
+    </marker>
+  </defs>
+  <rect width="560" height="360" fill="#f8fafc" rx="8"/>
+  <text x="280" y="24" text-anchor="middle" font-size="15" font-weight="700" fill="#1e293b">Speed Effect on Position Response</text>
+  <text x="280" y="40" text-anchor="middle" font-size="11" fill="#64748b">Step command from 0° to 60° — same servo, three speed settings</text>
+
+  <!-- Chart area -->
+  <rect x="60" y="55" width="470" height="240" rx="4" fill="white" stroke="#e2e8f0" stroke-width="1.5"/>
+
+  <!-- Grid -->
+  <line x1="60"  y1="115" x2="530" y2="115" stroke="#f1f5f9" stroke-width="1"/>
+  <line x1="60"  y1="175" x2="530" y2="175" stroke="#f1f5f9" stroke-width="1"/>
+  <line x1="60"  y1="235" x2="530" y2="235" stroke="#f1f5f9" stroke-width="1"/>
+  <line x1="178" y1="55" x2="178" y2="295" stroke="#f1f5f9" stroke-width="1"/>
+  <line x1="296" y1="55" x2="296" y2="295" stroke="#f1f5f9" stroke-width="1"/>
+  <line x1="414" y1="55" x2="414" y2="295" stroke="#f1f5f9" stroke-width="1"/>
+
+  <!-- Axes -->
+  <line x1="60" y1="295" x2="530" y2="295" stroke="#475569" stroke-width="2" marker-end="url(#arr)"/>
+  <line x1="60" y1="295" x2="60"  y2="55"  stroke="#475569" stroke-width="2" marker-end="url(#arr)"/>
+
+  <!-- Y axis labels (position) -->
+  <text x="54" y="295" text-anchor="end" font-size="10" fill="#64748b">0°</text>
+  <text x="54" y="235" text-anchor="end" font-size="10" fill="#64748b">20°</text>
+  <text x="54" y="175" text-anchor="end" font-size="10" fill="#64748b">40°</text>
+  <text x="54" y="115" text-anchor="end" font-size="10" fill="#64748b">60°</text>
+  <text x="54" y="68"  text-anchor="end" font-size="10" fill="#64748b">80°</text>
+  <text x="14" y="175" text-anchor="middle" font-size="11" fill="#64748b" transform="rotate(-90,14,175)">Position (°)</text>
+
+  <!-- X axis labels (time) -->
+  <text x="60"  y="310" text-anchor="middle" font-size="10" fill="#64748b">0</text>
+  <text x="178" y="310" text-anchor="middle" font-size="10" fill="#64748b">0.5 s</text>
+  <text x="296" y="310" text-anchor="middle" font-size="10" fill="#64748b">1.0 s</text>
+  <text x="414" y="310" text-anchor="middle" font-size="10" fill="#64748b">1.5 s</text>
+  <text x="530" y="310" text-anchor="middle" font-size="10" fill="#64748b">2.0 s</text>
+  <text x="295" y="328" text-anchor="middle" font-size="11" fill="#64748b">Time</text>
+
+  <!-- Target line at 60° (y=115) -->
+  <line x1="60" y1="115" x2="530" y2="115" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="6,3"/>
+  <text x="534" y="119" font-size="9" fill="#64748b">Target 60°</text>
+
+  <!-- Slow (20%) — smooth approach, no overshoot -->
+  <!-- Rises slowly from t=0 to t=2s, approaches 115 -->
+  <path d="M 60,295 Q 200,295 300,160 Q 380,115 530,113" stroke="#16a34a" stroke-width="2.5" fill="none"/>
+
+  <!-- Medium (50%) — faster, slight overshoot then settle -->
+  <path d="M 60,295 Q 140,295 220,120 Q 255,95 280,100 Q 330,110 400,114 Q 450,115 530,115" stroke="#f59e0b" stroke-width="2.5" fill="none"/>
+
+  <!-- Fast (100%) — fast rise, significant overshoot, oscillation -->
+  <path d="M 60,295 Q 110,295 160,100 Q 185,68 210,75 Q 240,100 260,80 Q 280,70 300,90 Q 340,110 380,112 Q 450,115 530,115" stroke="#ef4444" stroke-width="2.5" fill="none"/>
+
+  <!-- Overshoot annotation for fast -->
+  <line x1="185" y1="68" x2="185" y2="115" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="3,2"/>
+  <text x="190" y="78" font-size="9" fill="#ef4444">Overshoot</text>
+  <text x="190" y="90" font-size="9" fill="#ef4444">~+18°!</text>
+
+  <!-- Settling time annotation -->
+  <line x1="380" y1="60" x2="380" y2="295" stroke="#ef4444" stroke-width="1" stroke-dasharray="3,2" opacity="0.5"/>
+  <text x="384" y="72" font-size="9" fill="#ef4444">settled</text>
+
+  <!-- Legend -->
+  <line x1="70" y1="68" x2="100" y2="68" stroke="#16a34a" stroke-width="2.5"/>
+  <text x="106" y="72" font-size="10" fill="#16a34a">20% speed — smooth, no overshoot (slow)</text>
+  <line x1="70" y1="82" x2="100" y2="82" stroke="#f59e0b" stroke-width="2.5"/>
+  <text x="106" y="86" font-size="10" fill="#f59e0b">50% speed — slight overshoot, settles quickly</text>
+  <line x1="70" y1="96" x2="100" y2="96" stroke="#ef4444" stroke-width="2.5"/>
+  <text x="106" y="100" font-size="10" fill="#ef4444">100% speed — large overshoot, oscillates before settling</text>
+
+  <text x="280" y="348" text-anchor="middle" font-size="10" fill="#64748b">Overshoot occurs when momentum carries the joint past the target — PID derivative term damps this, but high speed overwhelms it</text>
+</svg>

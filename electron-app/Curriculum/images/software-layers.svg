@@ -1,0 +1,62 @@
+<svg viewBox="0 0 540 400" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, sans-serif">
+  <defs>
+    <marker id="arr-down" markerWidth="8" markerHeight="8" refX="4" refY="6" orient="auto">
+      <path d="M0,0 L4,8 L8,0 Z" fill="#64748b"/>
+    </marker>
+    <marker id="arr-up" markerWidth="8" markerHeight="8" refX="4" refY="2" orient="auto">
+      <path d="M0,8 L4,0 L8,8 Z" fill="#64748b"/>
+    </marker>
+  </defs>
+  <rect width="540" height="400" fill="#f8fafc" rx="8"/>
+  <text x="270" y="26" text-anchor="middle" font-size="15" font-weight="700" fill="#1e293b">Software Architecture — System Layers</text>
+
+  <!-- Layer 1: HMI / Electron App -->
+  <rect x="40" y="45" width="460" height="56" rx="8" fill="#eff6ff" stroke="#3b82f6" stroke-width="2"/>
+  <text x="270" y="68" text-anchor="middle" font-size="13" font-weight="700" fill="#1d4ed8">Layer 1 — HMI / Electron App</text>
+  <text x="270" y="85" text-anchor="middle" font-size="10" fill="#3b82f6">Tabs: Joint Control · Pendant · G-Code · Blockly · 3D View · Kinematics · Settings</text>
+  <text x="50" y="68" font-size="10" fill="#3b82f6">JavaScript / HTML</text>
+
+  <!-- Arrow down/up -->
+  <line x1="270" y1="101" x2="270" y2="120" stroke="#64748b" stroke-width="2" marker-end="url(#arr-down)"/>
+  <line x1="280" y1="120" x2="280" y2="101" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr-up)" stroke-dasharray="3,2"/>
+  <text x="295" y="113" font-size="10" fill="#64748b">WebSocket · JSON · TCP port 8080</text>
+
+  <!-- Layer 2: Network -->
+  <rect x="40" y="122" width="460" height="44" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+  <text x="270" y="142" text-anchor="middle" font-size="13" font-weight="700" fill="#166534">Layer 2 — Network Transport</text>
+  <text x="270" y="157" text-anchor="middle" font-size="10" fill="#16a34a">Wi-Fi / Ethernet · TCP/IP · Latency ~1–10 ms · JSON command packets</text>
+
+  <!-- Arrow -->
+  <line x1="270" y1="166" x2="270" y2="185" stroke="#64748b" stroke-width="2" marker-end="url(#arr-down)"/>
+  <line x1="280" y1="185" x2="280" y2="166" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr-up)" stroke-dasharray="3,2"/>
+  <text x="295" y="178" font-size="10" fill="#64748b">Parsed by Python WebSocket server</text>
+
+  <!-- Layer 3: Python Server -->
+  <rect x="40" y="187" width="460" height="56" rx="8" fill="#faf5ff" stroke="#7c3aed" stroke-width="2"/>
+  <text x="270" y="210" text-anchor="middle" font-size="13" font-weight="700" fill="#6d28d9">Layer 3 — Controller (Raspberry Pi)</text>
+  <text x="270" y="227" text-anchor="middle" font-size="10" fill="#7c3aed">Python · Motion planning · Safety checks · Unit conversion (° → encoder counts)</text>
+  <text x="50" y="210" font-size="10" fill="#7c3aed">Python asyncio</text>
+
+  <!-- Arrow -->
+  <line x1="270" y1="243" x2="270" y2="262" stroke="#64748b" stroke-width="2" marker-end="url(#arr-down)"/>
+  <line x1="280" y1="262" x2="280" y2="243" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr-up)" stroke-dasharray="3,2"/>
+  <text x="295" y="255" font-size="10" fill="#64748b">UART serial · 1 Mbaud · Half-duplex</text>
+
+  <!-- Layer 4: Serial Protocol -->
+  <rect x="40" y="264" width="460" height="44" rx="8" fill="#fff7ed" stroke="#ea580c" stroke-width="2"/>
+  <text x="270" y="284" text-anchor="middle" font-size="13" font-weight="700" fill="#c2410c">Layer 4 — Serial Protocol</text>
+  <text x="270" y="299" text-anchor="middle" font-size="10" fill="#ea580c">Feetech SCServo protocol · Addressed packets · ID 1–N · CRC checksum</text>
+
+  <!-- Arrow -->
+  <line x1="270" y1="308" x2="270" y2="327" stroke="#64748b" stroke-width="2" marker-end="url(#arr-down)"/>
+  <line x1="280" y1="327" x2="280" y2="308" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr-up)" stroke-dasharray="3,2"/>
+  <text x="295" y="320" font-size="10" fill="#64748b">Position commands out · Telemetry data back</text>
+
+  <!-- Layer 5: Hardware -->
+  <rect x="40" y="329" width="460" height="44" rx="8" fill="#fef2f2" stroke="#dc2626" stroke-width="2"/>
+  <text x="270" y="349" text-anchor="middle" font-size="13" font-weight="700" fill="#dc2626">Layer 5 — Actuators &amp; Sensors</text>
+  <text x="270" y="364" text-anchor="middle" font-size="10" fill="#ef4444">ST3215 servo motors · AS5600 magnetic encoders · PID control runs here</text>
+
+  <!-- Side label -->
+  <text x="14" y="210" text-anchor="middle" font-size="11" fill="#1e293b" font-weight="600" transform="rotate(-90,14,210)">USER → HARDWARE</text>
+</svg>

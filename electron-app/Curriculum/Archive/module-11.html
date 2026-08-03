@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="curriculum-module" content="11">
+  <title>Module 11: Mechatronic System Integration</title>
+  <style>
+    :root {
+      --bg: #f6f7f9;
+      --card: #fff;
+      --text: #1a1d26;
+      --muted: #5c6370;
+      --accent: #1e5a8a;
+      --border: #d8dde6;
+      --code-bg: #eef1f6;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 17px;
+      line-height: 1.55;
+      color: var(--text);
+      background: var(--bg);
+    }
+    .wrap {
+      max-width: 52rem;
+      margin: 0 auto;
+      padding: 1.25rem 1.25rem 3rem;
+    }
+    .top-nav {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.75rem 1rem;
+      padding: 0.75rem 0;
+      margin-bottom: 1.25rem;
+      border-bottom: 1px solid var(--border);
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+      font-size: 0.9rem;
+    }
+    .nav-title {
+      flex: 1 1 auto;
+      font-weight: 600;
+      color: var(--muted);
+      min-width: 12rem;
+    }
+    a.nav-link {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    a.nav-link:hover { text-decoration: underline; }
+    h1.page-title {
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+      font-size: 1.65rem;
+      font-weight: 700;
+      margin: 0 0 0.5rem;
+      line-height: 1.25;
+    }
+    p.lead {
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+      color: var(--muted);
+      margin: 0 0 1.5rem;
+      font-size: 0.95rem;
+    }
+    section.card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.25rem 1.5rem 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    }
+    section.card h2 {
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+      font-size: 1.15rem;
+      margin: 0 0 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid var(--accent);
+      color: var(--accent);
+    }
+    .card-inner {
+      font-family: Georgia, "Times New Roman", serif;
+    }
+    .card-inner h1, .card-inner h2, .card-inner h3, .card-inner h4 {
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+    }
+    .card-inner h1 { font-size: 1.35rem; }
+    .card-inner h2 { font-size: 1.15rem; border-bottom: none; color: var(--text); }
+    .card-inner h3 { font-size: 1.05rem; }
+    .card-inner h4 { font-size: 1rem; }
+    .card-inner code {
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 0.9em;
+      background: var(--code-bg);
+      padding: 0.1em 0.35em;
+      border-radius: 4px;
+    }
+    .card-inner pre {
+      background: var(--code-bg);
+      padding: 1rem;
+      overflow-x: auto;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+    }
+    .card-inner pre code {
+      background: none;
+      padding: 0;
+    }
+    .card-inner table {
+      border-collapse: collapse;
+      width: 100%;
+      font-size: 0.95rem;
+      margin: 1rem 0;
+    }
+    .card-inner th, .card-inner td {
+      border: 1px solid var(--border);
+      padding: 0.45rem 0.6rem;
+      text-align: left;
+      vertical-align: top;
+    }
+    .card-inner th {
+      background: #eef3f8;
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+      font-weight: 600;
+    }
+    ul.index-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+    }
+    ul.index-list li {
+      margin: 0.35rem 0;
+      padding: 0.5rem 0.65rem;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--card);
+    }
+    ul.index-list a {
+      color: var(--accent);
+      font-weight: 600;
+      text-decoration: none;
+    }
+    ul.index-list a:hover { text-decoration: underline; }
+    .index-meta {
+      display: block;
+      font-size: 0.85rem;
+      color: var(--muted);
+      font-weight: normal;
+      margin-top: 0.2rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <nav class="top-nav">
+  <a class="nav-link" href="index.html">All modules</a>
+  <a class="nav-link" href="module-10.html">← Previous</a>
+  <span class="nav-title">Module 11: Mechatronic System Integration</span>
+  <a class="nav-link" href="module-12.html">Next →</a>
+</nav>
+<h1 class="page-title">Module 11: Mechatronic System Integration</h1>
+<p class="lead">BTEC robot arm curriculum — one page per module. Work through sections in order.</p>
+<section class="card"><h2>Curriculum plan (from BTEC_Robot_Arm_Curriculum_Plan.md)</h2><div class="card-inner"><h2><strong>Module 11: Mechatronic System Integration</strong></h2>
+<p><em>Level 4/5 - Building on Module 10</em></p>
+<h3>Learning Objectives Covered:</h3>
+<ul>
+<li>✅ <strong>Mechatronic system integration</strong> (Level 4/5)</li>
+<li>Describe arm as mechatronic system combining mechanics, actuators, sensors, controller, and software</li>
+<li>Analyze how mechanical design (backlash) and control strategy influence accuracy and repeatability</li>
+</ul>
+<h3>Content:</h3>
+<ol>
+<li>
+<p><strong>What is Mechatronics?</strong><br />
+   - Definition and principles<br />
+   - Integration of disciplines<br />
+   - Why integration matters</p>
+</li>
+<li>
+<p><strong>System Components</strong><br />
+   - Mechanical components<br />
+   - Actuators (servos)<br />
+   - Sensors (feedback)<br />
+   - Controller (Raspberry Pi)<br />
+   - Software (control algorithms)</p>
+</li>
+<li>
+<p><strong>System Integration</strong><br />
+   - How components work together<br />
+   - Interfaces between components<br />
+   - Data flow and control flow<br />
+   - System-level behavior</p>
+</li>
+<li>
+<p><strong>Accuracy &amp; Repeatability</strong><br />
+   - What is accuracy?<br />
+   - What is repeatability?<br />
+   - Mechanical factors (backlash, stiffness)<br />
+   - Control strategy factors<br />
+   - How design choices affect performance</p>
+</li>
+<li>
+<p><strong>Backlash Analysis</strong><br />
+   - What is backlash?<br />
+   - How it affects accuracy<br />
+   - Measuring backlash<br />
+   - Compensating for backlash<br />
+   - Design considerations</p>
+</li>
+</ol>
+<h3>Practical Activities:</h3>
+<ul>
+<li>Create mechatronic system block diagram</li>
+<li>Identify all system components</li>
+<li>Measure system accuracy</li>
+<li>Measure system repeatability</li>
+<li>Measure backlash</li>
+<li>Test control strategies</li>
+<li>Analyze performance trade-offs</li>
+<li>Document system integration</li>
+<li>Present mechatronic analysis</li>
+</ul>
+<hr /></div></section>
+<section class="card"><h2>Theory & teaching notes</h2><div class="card-inner"><h1>Module 11: Mechatronic System Integration</h1>
+<h2>Theory &amp; Teaching Notes</h2>
+<p><strong>Module Duration:</strong> 2-3 hours<br />
+<strong>Level:</strong> Advanced (Level 4/5)</p>
+<hr />
+<h2>Learning Objectives</h2>
+<p>By the end of this module, students will be able to:<br />
+- Understand what mechatronics means<br />
+- Identify all system components<br />
+- Understand how components integrate<br />
+- Analyze how design affects accuracy and repeatability<br />
+- Understand backlash and its effects<br />
+- Evaluate system performance</p>
+<hr />
+<h2>1. What is Mechatronics?</h2>
+<h3>Definition</h3>
+<p><strong>Mechatronics</strong> = Integration of:<br />
+- <strong>Mechanics</strong> (physical parts, movement)<br />
+- <strong>Electronics</strong> (electrical components, circuits)<br />
+- <strong>Software</strong> (programming, control)<br />
+- <strong>Control</strong> (feedback, automation)</p>
+<p><strong>Think of it like:</strong> A combination of mechanical engineering, electrical engineering, and computer science working together.</p>
+<h3>Integration of Disciplines</h3>
+<p><strong>Traditional approach:</strong><br />
+- Mechanical engineers design mechanics<br />
+- Electrical engineers design electronics<br />
+- Software engineers write code<br />
+- <strong>Separate, not integrated</strong></p>
+<p><strong>Mechatronic approach:</strong><br />
+- All disciplines work together<br />
+- Design considers all aspects<br />
+- Components integrated from start<br />
+- <strong>Holistic, integrated design</strong></p>
+<h3>Why Integration Matters</h3>
+<p><strong>Benefits:</strong><br />
+- Better performance<br />
+- Optimized design<br />
+- Fewer compromises<br />
+- More reliable<br />
+- Better functionality</p>
+<p><strong>Example:</strong> <br />
+- Mechanical design affects electrical needs<br />
+- Electrical design affects software requirements<br />
+- Software design affects mechanical performance<br />
+- <strong>All must work together</strong></p>
+<hr />
+<h2>2. System Components</h2>
+<h3>Mechanical Components</h3>
+<p><strong>What they are:</strong> Physical parts that move and support</p>
+<p><strong>Examples:</strong><br />
+- Links (rigid sections)<br />
+- Joints (connection points)<br />
+- Base (foundation)<br />
+- End effector (tool)<br />
+- Bearings (reduce friction)<br />
+- Gears (transmit motion)</p>
+<p><strong>Function:</strong> Provide structure and movement</p>
+<h3>Actuators (Servos)</h3>
+<p><strong>What they are:</strong> Motors that create movement</p>
+<p><strong>In robot arm:</strong><br />
+- ST3215 servos<br />
+- Provide torque<br />
+- Move joints<br />
+- Controlled precisely</p>
+<p><strong>Function:</strong> Convert electrical energy to mechanical motion</p>
+<h3>Sensors (Feedback)</h3>
+<p><strong>What they are:</strong> Devices that measure and report</p>
+<p><strong>In robot arm:</strong><br />
+- Position sensors (in servos)<br />
+- Load sensors (in servos)<br />
+- Temperature sensors (in servos)<br />
+- Voltage sensors</p>
+<p><strong>Function:</strong> Provide information about system state</p>
+<h3>Controller (Raspberry Pi)</h3>
+<p><strong>What it is:</strong> The "brain" of the system</p>
+<p><strong>Function:</strong><br />
+- Processes commands<br />
+- Runs software<br />
+- Coordinates components<br />
+- Makes decisions</p>
+<h3>Software (Control Algorithms)</h3>
+<p><strong>What it is:</strong> Programs that control the system</p>
+<p><strong>Function:</strong><br />
+- Implements control logic<br />
+- Processes feedback<br />
+- Makes decisions<br />
+- Coordinates movement</p>
+<hr />
+<h2>3. System Integration</h2>
+<h3>How Components Work Together</h3>
+<p><strong>The mechatronic system:</strong></p>
+<ol>
+<li><strong>User</strong> wants robot to move</li>
+<li><strong>Software</strong> processes command</li>
+<li><strong>Controller</strong> sends command to servo</li>
+<li><strong>Servo</strong> (actuator) moves joint</li>
+<li><strong>Sensors</strong> measure position</li>
+<li><strong>Feedback</strong> sent back to controller</li>
+<li><strong>Software</strong> adjusts if needed</li>
+<li><strong>Mechanical parts</strong> move to position</li>
+</ol>
+<p><strong>All components work together seamlessly.</strong></p>
+<h3>Interfaces Between Components</h3>
+<p><strong>Mechanical-Electrical Interface:</strong><br />
+- Servos connect to links<br />
+- Power connections<br />
+- Signal connections</p>
+<p><strong>Electrical-Software Interface:</strong><br />
+- Controller communicates with servos<br />
+- Software sends commands<br />
+- Feedback received</p>
+<p><strong>Software-Mechanical Interface:</strong><br />
+- Software commands movement<br />
+- Mechanical parts respond<br />
+- Feedback confirms position</p>
+<h3>Data Flow and Control Flow</h3>
+<p><strong>Data flow:</strong><br />
+- Commands flow: Software → Controller → Servos<br />
+- Feedback flows: Servos → Controller → Software</p>
+<p><strong>Control flow:</strong><br />
+- Software makes decisions<br />
+- Controller executes commands<br />
+- Servos perform actions<br />
+- Sensors provide feedback<br />
+- Loop continues</p>
+<h3>System-Level Behavior</h3>
+<p><strong>Emergent behavior:</strong><br />
+- System behaves as whole<br />
+- Not just sum of parts<br />
+- Integration creates capabilities<br />
+- Components enable each other</p>
+<p><strong>Example:</strong><br />
+- Individual servo: Can move joint<br />
+- Integrated system: Can perform complex tasks<br />
+- <strong>Integration enables capabilities</strong></p>
+<hr />
+<h2>4. Accuracy &amp; Repeatability</h2>
+<h3>What is Accuracy?</h3>
+<p><strong>Accuracy</strong> = How close the robot gets to the target position</p>
+<p><strong>Measured as:</strong> Error = Target - Actual</p>
+<p><strong>Example:</strong><br />
+- Target: 45.0°<br />
+- Actual: 44.8°<br />
+- Error: 0.2°<br />
+- <strong>Accuracy: ±0.2°</strong></p>
+<p><strong>Good accuracy:</strong> Small error<br />
+<strong>Poor accuracy:</strong> Large error</p>
+<h3>What is Repeatability?</h3>
+<p><strong>Repeatability</strong> = How consistently the robot returns to the same position</p>
+<p><strong>Measured as:</strong> Variation in repeated attempts</p>
+<p><strong>Example:</strong><br />
+- Try 1: 45.0°<br />
+- Try 2: 45.1°<br />
+- Try 3: 44.9°<br />
+- Variation: ±0.1°<br />
+- <strong>Repeatability: ±0.1°</strong></p>
+<p><strong>Good repeatability:</strong> Small variation<br />
+<strong>Poor repeatability:</strong> Large variation</p>
+<h3>Why They Matter</h3>
+<p><strong>Accuracy matters for:</strong><br />
+- Precise tasks<br />
+- Assembly operations<br />
+- Quality requirements<br />
+- Application needs</p>
+<p><strong>Repeatability matters for:</strong><br />
+- Consistent operation<br />
+- Production quality<br />
+- Reliability<br />
+- Automation</p>
+<hr />
+<h2>5. Mechanical Design Effects</h2>
+<h3>Backlash</h3>
+<p><strong>What is backlash?</strong><br />
+- Play or gap in gears/joints<br />
+- Causes inaccuracy<br />
+- Common in gear systems</p>
+<p><strong>How it affects accuracy:</strong><br />
+- When reversing direction, gap must be taken up<br />
+- Causes position error<br />
+- Reduces accuracy</p>
+<p><strong>Example:</strong><br />
+- Moving forward: Position = 45.0°<br />
+- Moving backward: Position = 44.5° (0.5° error due to backlash)</p>
+<p><strong>How to reduce:</strong><br />
+- Better quality gears<br />
+- Preload mechanisms<br />
+- Tighter tolerances<br />
+- Regular maintenance</p>
+<h3>Stiffness</h3>
+<p><strong>What is stiffness?</strong><br />
+- Resistance to bending<br />
+- How much force causes how much deflection</p>
+<p><strong>How it affects accuracy:</strong><br />
+- Low stiffness = More bending = Less accuracy<br />
+- High stiffness = Less bending = Better accuracy</p>
+<p><strong>Example:</strong><br />
+- Stiff link: Bends 0.1mm under load<br />
+- Flexible link: Bends 1.0mm under load<br />
+- <strong>Stiffer = More accurate</strong></p>
+<p><strong>How to improve:</strong><br />
+- Use stiffer materials<br />
+- Increase cross-section<br />
+- Reduce length<br />
+- Add support</p>
+<h3>Wear</h3>
+<p><strong>What is wear?</strong><br />
+- Gradual deterioration over time<br />
+- Friction causes material loss<br />
+- Changes dimensions</p>
+<p><strong>How it affects accuracy:</strong><br />
+- Changes clearances<br />
+- Increases backlash<br />
+- Reduces precision</p>
+<p><strong>How to reduce:</strong><br />
+- Use wear-resistant materials<br />
+- Proper lubrication<br />
+- Reduce loads<br />
+- Regular maintenance</p>
+<hr />
+<h2>6. Control Strategy Effects</h2>
+<h3>Control Algorithms</h3>
+<p><strong>Different control strategies:</strong></p>
+<ol>
+<li>
+<p><strong>Open-loop</strong><br />
+   - No feedback<br />
+   - Less accurate<br />
+   - Simpler</p>
+</li>
+<li>
+<p><strong>Closed-loop</strong><br />
+   - Uses feedback<br />
+   - More accurate<br />
+   - More complex</p>
+</li>
+</ol>
+<p><strong>Better control = Better accuracy and repeatability</strong></p>
+<h3>Feedback Quality</h3>
+<p><strong>Good feedback:</strong><br />
+- Accurate sensors<br />
+- Fast updates<br />
+- Reliable data<br />
+- <strong>Enables good control</strong></p>
+<p><strong>Poor feedback:</strong><br />
+- Inaccurate sensors<br />
+- Slow updates<br />
+- Unreliable data<br />
+- <strong>Limits control quality</strong></p>
+<h3>Control Tuning</h3>
+<p><strong>Tuning parameters:</strong><br />
+- Response speed<br />
+- Stability<br />
+- Accuracy<br />
+- Smoothness</p>
+<p><strong>Well-tuned control:</strong><br />
+- Fast response<br />
+- Stable<br />
+- Accurate<br />
+- Smooth</p>
+<p><strong>Poorly-tuned control:</strong><br />
+- Slow or unstable<br />
+- Less accurate<br />
+- Jerky</p>
+<hr />
+<h2>7. Analyzing System Performance</h2>
+<h3>Measuring Accuracy</h3>
+<p><strong>How to measure:</strong></p>
+<ol>
+<li>
+<p><strong>Command specific positions</strong><br />
+   - Move to known positions<br />
+   - Measure actual positions<br />
+   - Calculate errors</p>
+</li>
+<li>
+<p><strong>Repeat multiple times</strong><br />
+   - Get average error<br />
+   - Find maximum error<br />
+   - Understand accuracy</p>
+</li>
+</ol>
+<p><strong>Example:</strong><br />
+- Test 10 positions<br />
+- Average error: 0.5mm<br />
+- Maximum error: 1.2mm<br />
+- <strong>Accuracy: ±1.2mm</strong></p>
+<h3>Measuring Repeatability</h3>
+<p><strong>How to measure:</strong></p>
+<ol>
+<li>
+<p><strong>Move to same position multiple times</strong><br />
+   - Command same position<br />
+   - Measure actual positions<br />
+   - Calculate variation</p>
+</li>
+<li>
+<p><strong>Repeat many times</strong><br />
+   - Get statistics<br />
+   - Find variation<br />
+   - Understand repeatability</p>
+</li>
+</ol>
+<p><strong>Example:</strong><br />
+- Move to position 10 times<br />
+- Average: 45.0°<br />
+- Standard deviation: 0.1°<br />
+- <strong>Repeatability: ±0.1°</strong></p>
+<h3>Analyzing Results</h3>
+<p><strong>What to look for:</strong><br />
+- Overall accuracy<br />
+- Overall repeatability<br />
+- Patterns in errors<br />
+- Problem areas</p>
+<p><strong>How to improve:</strong><br />
+- Identify worst areas<br />
+- Understand causes<br />
+- Make improvements<br />
+- Re-measure</p>
+<hr />
+<h2>8. Summary</h2>
+<h3>Key Concepts</h3>
+<ol>
+<li><strong>Mechatronics</strong> integrates mechanics, electronics, software, control</li>
+<li><strong>System components</strong> work together</li>
+<li><strong>Integration</strong> enables system capabilities</li>
+<li><strong>Accuracy</strong> = How close to target</li>
+<li><strong>Repeatability</strong> = How consistent</li>
+<li><strong>Mechanical design</strong> affects performance (backlash, stiffness, wear)</li>
+<li><strong>Control strategy</strong> affects performance (algorithms, feedback, tuning)</li>
+</ol>
+<h3>Understanding Mechatronic Integration</h3>
+<p>You should now understand:<br />
+- What mechatronics means<br />
+- How components integrate<br />
+- How design affects performance<br />
+- How to measure performance<br />
+- How to improve performance</p>
+<h3>Next Steps</h3>
+<p>After learning this theory, you will:<br />
+- Identify system components<br />
+- Understand integration<br />
+- Measure accuracy and repeatability<br />
+- Analyze backlash<br />
+- Evaluate control strategy<br />
+- Complete the Module 11 worksheet</p>
+<hr />
+<h2>Questions for Review</h2>
+<p>Before moving to the worksheet, make sure you can answer:</p>
+<ol>
+<li>What is mechatronics?</li>
+<li>What are the main system components?</li>
+<li>How do components integrate?</li>
+<li>What is the difference between accuracy and repeatability?</li>
+<li>How does backlash affect accuracy?</li>
+<li>How does control strategy affect performance?</li>
+<li>How do you measure system performance?</li>
+</ol>
+<hr />
+<p><strong>Remember:</strong> Mechatronic systems are more than the sum of their parts. Understanding integration helps you optimize the whole system!</p></div></section>
+<section class="card"><h2>Student worksheet</h2><div class="card-inner"><h1>Module 11: Mechatronic System Integration</h1>
+<h2>Student Worksheet</h2>
+<p><strong>Name:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_<br />
+<strong>Date:</strong> </em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>_<br />
+<strong>Group/Class:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>____</p>
+<hr />
+<h2>Part 1: What is Mechatronics?</h2>
+<h3>Question 1: Definition</h3>
+<p>Define mechatronics:</p>
+<hr />
+<hr />
+<h3>Question 2: Integration Principles</h3>
+<p>Explain why integration matters:</p>
+<hr />
+<hr />
+<hr />
+<h2>Part 2: System Components</h2>
+<h3>Question 3: Component Identification</h3>
+<p>Identify all components in the mechatronic system:</p>
+<table>
+<thead>
+<tr>
+<th>Component Type</th>
+<th>Examples</th>
+<th>Function</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Mechanical</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Actuators</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Sensors</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Controller</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Software</td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>Part 3: System Integration</h2>
+<h3>Question 4: How Components Work Together</h3>
+<p>Explain how components integrate:</p>
+<hr />
+<hr />
+<hr />
+<h3>Question 5: Interfaces</h3>
+<p>Document interfaces between components:</p>
+<table>
+<thead>
+<tr>
+<th>Interface</th>
+<th>Components</th>
+<th>Data/Control Flow</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h3>Question 6: System Block Diagram</h3>
+<p>Create a system block diagram:</p>
+<p>[Space for diagram]</p>
+<hr />
+<h2>Part 4: Accuracy &amp; Repeatability</h2>
+<h3>Question 7: Measuring Accuracy</h3>
+<p>Measure system accuracy:</p>
+<p><strong>Test:</strong> Move to 5 different positions<br />
+<strong>Results:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Position</th>
+<th>Target</th>
+<th>Actual</th>
+<th>Error</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>2</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>3</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>4</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>5</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Average Error:</strong> <strong><em>_</em></strong></p>
+<h3>Question 8: Measuring Repeatability</h3>
+<p>Measure system repeatability:</p>
+<p><strong>Test:</strong> Move to same position 10 times<br />
+<strong>Results:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Run</th>
+<th>Position</th>
+<th>Variation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>2</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>...</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>10</td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Average Variation:</strong> <strong><em>_</em></strong></p>
+<hr />
+<h2>Part 5: Backlash Analysis</h2>
+<h3>Question 9: What is Backlash?</h3>
+<p>Define backlash:</p>
+<hr />
+<hr />
+<h3>Question 10: Measuring Backlash</h3>
+<p>Measure backlash in your system:</p>
+<p><strong>Method:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<p><strong>Results:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<p><strong>How it affects accuracy:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<h3>Question 11: Compensating for Backlash</h3>
+<p>How can you compensate for backlash?</p>
+<hr />
+<hr />
+<hr />
+<h2>Part 6: Control Strategy Effects</h2>
+<h3>Question 12: Control Strategy Analysis</h3>
+<p>Analyze how control strategy affects performance:</p>
+<p><strong>Current Strategy:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<p><strong>Effects on Accuracy:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<p><strong>Effects on Repeatability:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<p><strong>How to Improve:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<hr />
+<h2>Part 7: Reflection</h2>
+<h3>Question 13: Understanding Integration</h3>
+<p>Answer the following:</p>
+<p>a) How does understanding mechatronic integration help you?</p>
+<hr />
+<hr />
+<p>b) What factors most affect accuracy and repeatability?</p>
+<hr />
+<hr />
+<hr />
+<h2>Self-Assessment Checklist</h2>
+<ul>
+<li>[ ] Understood mechatronics</li>
+<li>[ ] Identified all components</li>
+<li>[ ] Understood system integration</li>
+<li>[ ] Measured accuracy</li>
+<li>[ ] Measured repeatability</li>
+<li>[ ] Analyzed backlash</li>
+<li>[ ] Analyzed control strategy</li>
+<li>[ ] Written reflection</li>
+</ul>
+<p><strong>Student Signature:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_<br />
+<strong>Date:</strong> </em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><em><br />
+<strong>Instructor Signature:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_<br />
+<strong>Date:</strong> </em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong></em></p></div></section>
+<section class="card"><h2>Multiple choice questions</h2><div class="card-inner"><h1>Module 11: Mechatronic System Integration</h1>
+<h2>Multiple Choice Questions</h2>
+<p><strong>Instructions:</strong> Choose the best answer for each question.</p>
+<hr />
+<p><strong>1. What is mechatronics?</strong><br />
+   a) Only mechanics<br />
+   b) Integration of mechanics, electronics, and software<br />
+   c) Only electronics<br />
+   d) Only software</p>
+<p><strong>2. What are actuators in a robot arm?</strong><br />
+   a) Sensors<br />
+   b) Motors/servos that move the arm<br />
+   c) The controller<br />
+   d) The base</p>
+<p><strong>3. What are sensors in a robot arm?</strong><br />
+   a) Components that provide feedback<br />
+   b) The motors<br />
+   c) The controller<br />
+   d) The base</p>
+<p><strong>4. What is accuracy?</strong><br />
+   a) How close the robot gets to the target position<br />
+   b) How fast it moves<br />
+   c) How much it weighs<br />
+   d) How much it costs</p>
+<p><strong>5. What is repeatability?</strong><br />
+   a) How consistently the robot returns to the same position<br />
+   b) How fast it moves<br />
+   c) How much it weighs<br />
+   d) How much it costs</p>
+<p><strong>6. What is backlash?</strong><br />
+   a) Play or gap in joints causing inaccuracy<br />
+   b) The robot moving backward<br />
+   c) The robot stopping<br />
+   d) The robot moving fast</p>
+<p><strong>7. How does backlash affect accuracy?</strong><br />
+   a) It doesn't affect it<br />
+   b) It reduces accuracy<br />
+   c) It improves accuracy<br />
+   d) It makes it faster</p>
+<p><strong>8. How does mechanical design affect accuracy?</strong><br />
+   a) It doesn't affect it<br />
+   b) Backlash and stiffness influence accuracy<br />
+   c) It only affects speed<br />
+   d) It only affects cost</p>
+<p><strong>9. How does control strategy affect repeatability?</strong><br />
+   a) It doesn't affect it<br />
+   b) Control algorithms influence how consistently the robot moves<br />
+   c) It only affects speed<br />
+   d) It only affects appearance</p>
+<p><strong>10. Why is system integration important?</strong><br />
+   a) It's not important<br />
+   b) All components must work together for optimal performance<br />
+   c) It makes the robot faster<br />
+   d) It changes the robot's color</p>
+<hr />
+<h2>Answer Key</h2>
+<ol>
+<li><strong>b)</strong> Integration of mechanics, electronics, and software</li>
+<li><strong>b)</strong> Motors/servos that move the arm</li>
+<li><strong>a)</strong> Components that provide feedback</li>
+<li><strong>a)</strong> How close the robot gets to the target position</li>
+<li><strong>a)</strong> How consistently the robot returns to the same position</li>
+<li><strong>a)</strong> Play or gap in joints causing inaccuracy</li>
+<li><strong>b)</strong> It reduces accuracy</li>
+<li><strong>b)</strong> Backlash and stiffness influence accuracy</li>
+<li><strong>b)</strong> Control algorithms influence how consistently the robot moves</li>
+<li><strong>b)</strong> All components must work together for optimal performance</li>
+</ol>
+<hr />
+<h2>Scoring Guide</h2>
+<ul>
+<li><strong>9-10 correct:</strong> Excellent understanding</li>
+<li><strong>7-8 correct:</strong> Good understanding</li>
+<li><strong>5-6 correct:</strong> Satisfactory understanding</li>
+<li><strong>Below 5 correct:</strong> Needs review</li>
+</ul></div></section>
+<section class="card"><h2>Assessment rubric</h2><div class="card-inner"><h1>Module 11: Mechatronic System Integration</h1>
+<h2>Assessment Rubric</h2>
+<p><strong>Student Name:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_<br />
+<strong>Date:</strong> </em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>_<br />
+<strong>Assessor:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>____</p>
+<hr />
+<h2>Overall Assessment Criteria</h2>
+<table>
+<thead>
+<tr>
+<th>Criteria</th>
+<th>Excellent (4)</th>
+<th>Good (3)</th>
+<th>Satisfactory (2)</th>
+<th>Needs Improvement (1)</th>
+<th>Score</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Knowledge &amp; Understanding</strong></td>
+<td>Comprehensive understanding of mechatronics</td>
+<td>Good understanding</td>
+<td>Basic understanding</td>
+<td>Limited understanding</td>
+<td>/4</td>
+</tr>
+<tr>
+<td><strong>Practical Skills</strong></td>
+<td>Accurate measurements and analysis</td>
+<td>Mostly accurate</td>
+<td>Basic measurements</td>
+<td>Struggles with measurements</td>
+<td>/4</td>
+</tr>
+<tr>
+<td><strong>Analysis &amp; Application</strong></td>
+<td>Clear analysis of integration and performance</td>
+<td>Good analysis</td>
+<td>Basic analysis</td>
+<td>Limited analysis</td>
+<td>/4</td>
+</tr>
+<tr>
+<td><strong>Documentation</strong></td>
+<td>Complete system documentation</td>
+<td>Good documentation</td>
+<td>Basic documentation</td>
+<td>Incomplete documentation</td>
+<td>/4</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Total Score:</strong> /16</p>
+<hr />
+<h2>Detailed Marking Guide</h2>
+<h3>Part 1: Mechatronics (15 marks)</h3>
+<ul>
+<li><strong>Question 1:</strong> 8 marks</li>
+<li><strong>Question 2:</strong> 7 marks</li>
+</ul>
+<p><strong>Mark:</strong> /15</p>
+<hr />
+<h3>Part 2: Components (20 marks)</h3>
+<ul>
+<li><strong>Question 3:</strong> 20 marks (component table)</li>
+</ul>
+<p><strong>Mark:</strong> /20</p>
+<hr />
+<h3>Part 3: Integration (20 marks)</h3>
+<ul>
+<li><strong>Question 4:</strong> 8 marks</li>
+<li><strong>Question 5:</strong> 6 marks (interface table)</li>
+<li><strong>Question 6:</strong> 6 marks (block diagram)</li>
+</ul>
+<p><strong>Mark:</strong> /20</p>
+<hr />
+<h3>Part 4: Accuracy &amp; Repeatability (20 marks)</h3>
+<ul>
+<li><strong>Question 7:</strong> 10 marks (accuracy measurement)</li>
+<li><strong>Question 8:</strong> 10 marks (repeatability measurement)</li>
+</ul>
+<p><strong>Mark:</strong> /20</p>
+<hr />
+<h3>Part 5: Backlash (15 marks)</h3>
+<ul>
+<li><strong>Question 9:</strong> 5 marks</li>
+<li><strong>Question 10:</strong> 5 marks</li>
+<li><strong>Question 11:</strong> 5 marks</li>
+</ul>
+<p><strong>Mark:</strong> /15</p>
+<hr />
+<h3>Part 6: Control Strategy (10 marks)</h3>
+<ul>
+<li><strong>Question 12:</strong> 10 marks</li>
+</ul>
+<p><strong>Mark:</strong> /10</p>
+<hr />
+<h3>Part 7: Reflection (5 marks)</h3>
+<ul>
+<li><strong>Question 13:</strong> 5 marks</li>
+</ul>
+<p><strong>Mark:</strong> /5</p>
+<hr />
+<p><strong>Final Grade:</strong> <strong><em>_</em></strong>____ / 100</p>
+<p><strong>Assessor Comments:</strong></p>
+<hr />
+<hr />
+<p><strong>Assessor Signature:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_<br />
+<strong>Date:</strong> </em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>_</p></div></section>
+  </div>
+</body>
+</html>

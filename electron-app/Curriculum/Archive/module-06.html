@@ -1,0 +1,1024 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="curriculum-module" content="6">
+  <title>Module 6: Industrial Context &amp; Basic Automation</title>
+  <style>
+    :root {
+      --bg: #f6f7f9;
+      --card: #fff;
+      --text: #1a1d26;
+      --muted: #5c6370;
+      --accent: #1e5a8a;
+      --border: #d8dde6;
+      --code-bg: #eef1f6;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 17px;
+      line-height: 1.55;
+      color: var(--text);
+      background: var(--bg);
+    }
+    .wrap {
+      max-width: 52rem;
+      margin: 0 auto;
+      padding: 1.25rem 1.25rem 3rem;
+    }
+    .top-nav {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.75rem 1rem;
+      padding: 0.75rem 0;
+      margin-bottom: 1.25rem;
+      border-bottom: 1px solid var(--border);
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+      font-size: 0.9rem;
+    }
+    .nav-title {
+      flex: 1 1 auto;
+      font-weight: 600;
+      color: var(--muted);
+      min-width: 12rem;
+    }
+    a.nav-link {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    a.nav-link:hover { text-decoration: underline; }
+    h1.page-title {
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+      font-size: 1.65rem;
+      font-weight: 700;
+      margin: 0 0 0.5rem;
+      line-height: 1.25;
+    }
+    p.lead {
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+      color: var(--muted);
+      margin: 0 0 1.5rem;
+      font-size: 0.95rem;
+    }
+    section.card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.25rem 1.5rem 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    }
+    section.card h2 {
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+      font-size: 1.15rem;
+      margin: 0 0 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid var(--accent);
+      color: var(--accent);
+    }
+    .card-inner {
+      font-family: Georgia, "Times New Roman", serif;
+    }
+    .card-inner h1, .card-inner h2, .card-inner h3, .card-inner h4 {
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+    }
+    .card-inner h1 { font-size: 1.35rem; }
+    .card-inner h2 { font-size: 1.15rem; border-bottom: none; color: var(--text); }
+    .card-inner h3 { font-size: 1.05rem; }
+    .card-inner h4 { font-size: 1rem; }
+    .card-inner code {
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 0.9em;
+      background: var(--code-bg);
+      padding: 0.1em 0.35em;
+      border-radius: 4px;
+    }
+    .card-inner pre {
+      background: var(--code-bg);
+      padding: 1rem;
+      overflow-x: auto;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+    }
+    .card-inner pre code {
+      background: none;
+      padding: 0;
+    }
+    .card-inner table {
+      border-collapse: collapse;
+      width: 100%;
+      font-size: 0.95rem;
+      margin: 1rem 0;
+    }
+    .card-inner th, .card-inner td {
+      border: 1px solid var(--border);
+      padding: 0.45rem 0.6rem;
+      text-align: left;
+      vertical-align: top;
+    }
+    .card-inner th {
+      background: #eef3f8;
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+      font-weight: 600;
+    }
+    ul.index-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+    }
+    ul.index-list li {
+      margin: 0.35rem 0;
+      padding: 0.5rem 0.65rem;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--card);
+    }
+    ul.index-list a {
+      color: var(--accent);
+      font-weight: 600;
+      text-decoration: none;
+    }
+    ul.index-list a:hover { text-decoration: underline; }
+    .index-meta {
+      display: block;
+      font-size: 0.85rem;
+      color: var(--muted);
+      font-weight: normal;
+      margin-top: 0.2rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <nav class="top-nav">
+  <a class="nav-link" href="index.html">All modules</a>
+  <a class="nav-link" href="module-05.html">← Previous</a>
+  <span class="nav-title">Module 6: Industrial Context &amp; Basic Automation</span>
+  <a class="nav-link" href="module-07.html">Next →</a>
+</nav>
+<h1 class="page-title">Module 6: Industrial Context &amp; Basic Automation</h1>
+<p class="lead">BTEC robot arm curriculum — one page per module. Work through sections in order.</p>
+<section class="card"><h2>Curriculum plan (from BTEC_Robot_Arm_Curriculum_Plan.md)</h2><div class="card-inner"><h2><strong>Module 6: Industrial Context &amp; Basic Automation</strong></h2>
+<p><em>Building on Module 5</em></p>
+<h3>Learning Objectives Covered:</h3>
+<ul>
+<li>✅ <strong>Industrial context for robot arms</strong> (Level 3)</li>
+<li>Relate educational arm to industrial uses: pick-and-place, assembly, welding, painting, inspection, sorting</li>
+<li>Compare capabilities (reach, payload, repeatability, speed) to industrial manipulators</li>
+<li>✅ <strong>Basic automated sequences</strong> (Level 3)</li>
+<li>Design and implement simple automated tasks: move between taught points, use dwell/wait steps, return to safe "home" pose</li>
+<li>Explain how sequences fit into wider automated processes</li>
+</ul>
+<h3>Content:</h3>
+<ol>
+<li>
+<p><strong>Industrial Applications</strong><br />
+   - Pick-and-place operations<br />
+   - Assembly tasks<br />
+   - Welding and painting<br />
+   - Inspection and quality control<br />
+   - Sorting and packaging<br />
+   - Real-world examples</p>
+</li>
+<li>
+<p><strong>Comparing Capabilities</strong><br />
+   - Reach: how far can it go?<br />
+   - Payload: how much can it carry?<br />
+   - Repeatability: how accurate is it?<br />
+   - Speed: how fast can it move?<br />
+   - Comparison to industrial robots</p>
+</li>
+<li>
+<p><strong>Designing Automated Sequences</strong><br />
+   - Planning a sequence: step-by-step approach<br />
+   - Teaching waypoints<br />
+   - Adding dwell/wait times<br />
+   - Creating a "home" position<br />
+   - Safety considerations in sequences</p>
+</li>
+<li>
+<p><strong>Integration Concepts</strong><br />
+   - How sequences fit into larger processes<br />
+   - Workflow thinking<br />
+   - Cycle time considerations<br />
+   - Reliability and repeatability</p>
+</li>
+</ol>
+<h3>Practical Activities:</h3>
+<ul>
+<li>Research industrial robot applications</li>
+<li>Create comparison table: educational vs. industrial</li>
+<li>Design an automated sequence for a simple task</li>
+<li>Implement sequence with waypoints and dwell times</li>
+<li>Test repeatability (run 10 times, measure variation)</li>
+<li>Create a "home" position and return sequence</li>
+<li>Document the automated process</li>
+<li>Present findings on industrial applications</li>
+</ul>
+<hr /></div></section>
+<section class="card"><h2>Theory & teaching notes</h2><div class="card-inner"><h1>Module 6: Industrial Context &amp; Basic Automation</h1>
+<h2>Theory &amp; Teaching Notes</h2>
+<p><strong>Module Duration:</strong> 2-3 hours<br />
+<strong>Level:</strong> Foundation (Level 3)</p>
+<hr />
+<h2>Learning Objectives</h2>
+<p>By the end of this module, students will be able to:<br />
+- Relate educational robot arms to industrial applications<br />
+- Compare capabilities between educational and industrial robots<br />
+- Design and implement automated sequences<br />
+- Understand how sequences fit into larger processes</p>
+<hr />
+<h2>1. Industrial Applications of Robot Arms</h2>
+<h3>Why Industries Use Robot Arms</h3>
+<p><strong>Industries use robot arms because they:</strong><br />
+- Work consistently (no tiredness)<br />
+- Work accurately (repeatable)<br />
+- Work fast (high productivity)<br />
+- Work safely (in dangerous environments)<br />
+- Work 24/7 (no breaks)</p>
+<h3>Common Industrial Applications</h3>
+<h4>Pick-and-Place Operations</h4>
+<p><strong>What it is:</strong> Moving items from one location to another</p>
+<p><strong>Examples:</strong><br />
+- Loading boxes onto conveyor<br />
+- Placing parts in assembly<br />
+- Sorting items by type<br />
+- Packaging products</p>
+<p><strong>Why robots:</strong><br />
+- Fast and consistent<br />
+- Can handle heavy items<br />
+- Works continuously</p>
+<h4>Assembly Tasks</h4>
+<p><strong>What it is:</strong> Putting parts together to make products</p>
+<p><strong>Examples:</strong><br />
+- Assembling electronics<br />
+- Putting together car parts<br />
+- Building appliances<br />
+- Creating products</p>
+<p><strong>Why robots:</strong><br />
+- Precise positioning<br />
+- Consistent quality<br />
+- Can handle small parts<br />
+- Reduces errors</p>
+<h4>Welding and Painting</h4>
+<p><strong>What it is:</strong> Joining metal parts or applying coatings</p>
+<p><strong>Examples:</strong><br />
+- Car body welding<br />
+- Painting car bodies<br />
+- Welding pipes<br />
+- Coating surfaces</p>
+<p><strong>Why robots:</strong><br />
+- Consistent quality<br />
+- Works in dangerous environments (fumes, heat)<br />
+- Precise control<br />
+- Can work in tight spaces</p>
+<h4>Inspection and Quality Control</h4>
+<p><strong>What it is:</strong> Checking products for defects</p>
+<p><strong>Examples:</strong><br />
+- Checking dimensions<br />
+- Looking for defects<br />
+- Testing functionality<br />
+- Verifying quality</p>
+<p><strong>Why robots:</strong><br />
+- Consistent inspection<br />
+- Can use cameras/sensors<br />
+- Never misses defects<br />
+- Documents results</p>
+<h4>Sorting and Packaging</h4>
+<p><strong>What it is:</strong> Organizing and packaging products</p>
+<p><strong>Examples:</strong><br />
+- Sorting by size/color<br />
+- Packaging into boxes<br />
+- Labeling products<br />
+- Organizing inventory</p>
+<p><strong>Why robots:</strong><br />
+- Fast sorting<br />
+- Consistent packaging<br />
+- Handles variety<br />
+- Reduces labor</p>
+<hr />
+<h2>2. Comparing Capabilities</h2>
+<h3>Key Capabilities to Compare</h3>
+<h4>Reach</h4>
+<p><strong>What it is:</strong> How far the robot can extend</p>
+<p><strong>Educational robots:</strong><br />
+- Typically 200-500mm reach<br />
+- Suitable for small tasks<br />
+- Fits on desktop</p>
+<p><strong>Industrial robots:</strong><br />
+- Can be 1-3 meters or more<br />
+- Handles large workpieces<br />
+- Covers large areas</p>
+<p><strong>Comparison:</strong> Industrial robots have much longer reach</p>
+<h4>Payload</h4>
+<p><strong>What it is:</strong> How much weight the robot can carry</p>
+<p><strong>Educational robots:</strong><br />
+- Typically 100g - 1kg<br />
+- Light objects only<br />
+- Limited by size</p>
+<p><strong>Industrial robots:</strong><br />
+- Can be 10kg - 1000kg or more<br />
+- Heavy industrial parts<br />
+- Powerful motors</p>
+<p><strong>Comparison:</strong> Industrial robots can carry much more</p>
+<h4>Repeatability</h4>
+<p><strong>What it is:</strong> How accurately the robot returns to the same position</p>
+<p><strong>Educational robots:</strong><br />
+- Typically ±1-2mm<br />
+- Good for learning<br />
+- Adequate for small tasks</p>
+<p><strong>Industrial robots:</strong><br />
+- Can be ±0.1mm or better<br />
+- Very precise<br />
+- Production quality</p>
+<p><strong>Comparison:</strong> Industrial robots are more precise</p>
+<h4>Speed</h4>
+<p><strong>What it is:</strong> How fast the robot moves</p>
+<p><strong>Educational robots:</strong><br />
+- Moderate speed<br />
+- Safe for learning<br />
+- Adequate for practice</p>
+<p><strong>Industrial robots:</strong><br />
+- Very fast<br />
+- Optimized for production<br />
+- Maximizes throughput</p>
+<p><strong>Comparison:</strong> Industrial robots are much faster</p>
+<h3>Why Educational Robots Exist</h3>
+<p><strong>Educational robots are designed to:</strong><br />
+- Teach concepts safely<br />
+- Be affordable<br />
+- Be easy to use<br />
+- Demonstrate principles<br />
+- Allow experimentation</p>
+<p><strong>They're not meant to:</strong><br />
+- Replace industrial robots<br />
+- Handle heavy production<br />
+- Work at industrial speeds<br />
+- Replace industrial applications</p>
+<p><strong>They're meant to:</strong><br />
+- Teach you how robots work<br />
+- Prepare you for industry<br />
+- Let you experiment safely<br />
+- Build your skills</p>
+<hr />
+<h2>3. Designing Automated Sequences</h2>
+<h3>What is an Automated Sequence?</h3>
+<p>An <strong>automated sequence</strong> is a series of movements the robot performs automatically, one after another.</p>
+<p><strong>Think of it like:</strong> A recipe - step 1, then step 2, then step 3, etc.</p>
+<h3>Planning a Sequence</h3>
+<p><strong>Step 1: Define the Task</strong><br />
+- What do you want the robot to do?<br />
+- What's the goal?<br />
+- What's the starting point?</p>
+<p><strong>Step 2: Break Into Steps</strong><br />
+- What positions are needed?<br />
+- What order?<br />
+- Any waits needed?</p>
+<p><strong>Step 3: Identify Waypoints</strong><br />
+- Key positions along the path<br />
+- Where robot must stop<br />
+- Important locations</p>
+<p><strong>Step 4: Add Timing</strong><br />
+- How long at each position?<br />
+- Any waits needed?<br />
+- Speed considerations</p>
+<p><strong>Step 5: Add Safety</strong><br />
+- Return to home?<br />
+- Check conditions?<br />
+- Error handling?</p>
+<h3>Teaching Waypoints</h3>
+<p><strong>Waypoints</strong> = Key positions in the sequence</p>
+<p><strong>How to teach:</strong><br />
+1. Move robot to position (by jogging)<br />
+2. Store the position<br />
+3. Give it a clear name<br />
+4. Add to sequence</p>
+<p><strong>Good waypoint names:</strong><br />
+- "Pick Position"<br />
+- "Above Pick Position"<br />
+- "Place Position"<br />
+- "Above Place Position"<br />
+- "Home"</p>
+<h3>Adding Dwell/Wait Steps</h3>
+<p><strong>Dwell</strong> = A pause in the sequence</p>
+<p><strong>Why add dwell:</strong><br />
+- Allow gripper to close/open<br />
+- Wait for part to settle<br />
+- Ensure operation completes<br />
+- Safety pause</p>
+<p><strong>How to add:</strong><br />
+- Insert "Wait" step in sequence<br />
+- Set time (e.g., 1 second)<br />
+- Position appropriately</p>
+<p><strong>Example:</strong><br />
+1. Move to pick position<br />
+2. <strong>Wait 0.5 seconds</strong> (gripper closes)<br />
+3. Move up<br />
+4. Move to place position<br />
+5. <strong>Wait 0.5 seconds</strong> (gripper opens)<br />
+6. Move up<br />
+7. Return to home</p>
+<h3>Creating a Home Position</h3>
+<p><strong>Home position</strong> = Safe starting/return position</p>
+<p><strong>Characteristics:</strong><br />
+- Safe (no collisions)<br />
+- Easy to reach<br />
+- Known position<br />
+- Good reference point</p>
+<p><strong>Why important:</strong><br />
+- Consistent starting point<br />
+- Safe return position<br />
+- Easy to find<br />
+- Reference for other positions</p>
+<p><strong>How to create:</strong><br />
+1. Move robot to safe position<br />
+2. Store as "Home"<br />
+3. Use as first and last step in sequences</p>
+<hr />
+<h2>4. Integration Concepts</h2>
+<h3>How Sequences Fit Into Larger Processes</h3>
+<p><strong>Robot sequences are part of larger automated processes:</strong></p>
+<p><strong>Example - Manufacturing Line:</strong><br />
+1. Conveyor brings part<br />
+2. <strong>Robot picks part</strong> (your sequence)<br />
+3. Robot places part in machine<br />
+4. Machine processes part<br />
+5. Robot removes part<br />
+6. Conveyor takes part away</p>
+<p><strong>Your sequence</strong> is just one step in the bigger process.</p>
+<h3>Workflow Thinking</h3>
+<p><strong>Workflow</strong> = The complete process from start to finish</p>
+<p><strong>Think about:</strong><br />
+- What happens before your sequence?<br />
+- What happens after your sequence?<br />
+- How does your sequence fit?<br />
+- What information is needed?<br />
+- What information is provided?</p>
+<h3>Cycle Time Considerations</h3>
+<p><strong>Cycle time</strong> = Time for one complete sequence</p>
+<p><strong>Why it matters:</strong><br />
+- Faster cycle = more production<br />
+- But must be safe<br />
+- Must be reliable<br />
+- Must maintain quality</p>
+<p><strong>How to optimize:</strong><br />
+- Reduce unnecessary waits<br />
+- Optimize paths<br />
+- Increase speed (safely)<br />
+- Eliminate unnecessary steps</p>
+<p><strong>Trade-off:</strong><br />
+- Speed vs. accuracy<br />
+- Speed vs. safety<br />
+- Speed vs. reliability</p>
+<h3>Reliability and Repeatability</h3>
+<p><strong>Reliability</strong> = How consistently the sequence works</p>
+<p><strong>Repeatability</strong> = How accurately robot returns to positions</p>
+<p><strong>Why important:</strong><br />
+- Production needs consistency<br />
+- Quality depends on accuracy<br />
+- Automation requires reliability</p>
+<p><strong>How to ensure:</strong><br />
+- Test sequences multiple times<br />
+- Measure repeatability<br />
+- Check for errors<br />
+- Optimize movements</p>
+<hr />
+<h2>5. Practical Example: Pick-and-Place</h2>
+<h3>Task Description</h3>
+<p><strong>Goal:</strong> Pick an object from Position A and place it at Position B</p>
+<h3>Sequence Steps</h3>
+<ol>
+<li>
+<p><strong>Start at Home</strong><br />
+   - Safe starting position<br />
+   - Known location</p>
+</li>
+<li>
+<p><strong>Move to Above Pick Position</strong><br />
+   - Approach from above<br />
+   - Avoid collisions</p>
+</li>
+<li>
+<p><strong>Move to Pick Position</strong><br />
+   - Lower to object<br />
+   - Ready to pick</p>
+</li>
+<li>
+<p><strong>Wait (Gripper Closes)</strong><br />
+   - Allow gripper to close<br />
+   - Ensure grip</p>
+</li>
+<li>
+<p><strong>Move Up</strong><br />
+   - Lift object<br />
+   - Clear obstacles</p>
+</li>
+<li>
+<p><strong>Move to Above Place Position</strong><br />
+   - Approach place location<br />
+   - From safe height</p>
+</li>
+<li>
+<p><strong>Move to Place Position</strong><br />
+   - Lower to place location<br />
+   - Ready to place</p>
+</li>
+<li>
+<p><strong>Wait (Gripper Opens)</strong><br />
+   - Allow gripper to open<br />
+   - Release object</p>
+</li>
+<li>
+<p><strong>Move Up</strong><br />
+   - Clear place location<br />
+   - Avoid collisions</p>
+</li>
+<li>
+<p><strong>Return to Home</strong></p>
+<ul>
+<li>Safe return</li>
+<li>Ready for next cycle</li>
+</ul>
+</li>
+</ol>
+<h3>Testing the Sequence</h3>
+<p><strong>Before running:</strong><br />
+- Test each position individually<br />
+- Check for collisions<br />
+- Verify timing<br />
+- Ensure safety</p>
+<p><strong>During testing:</strong><br />
+- Run slowly first<br />
+- Watch each step<br />
+- Check for problems<br />
+- Adjust if needed</p>
+<p><strong>After testing:</strong><br />
+- Run multiple times<br />
+- Measure repeatability<br />
+- Check timing<br />
+- Document results</p>
+<hr />
+<h2>6. Summary</h2>
+<h3>Key Concepts</h3>
+<ol>
+<li><strong>Robot arms used in many industries</strong> for various tasks</li>
+<li><strong>Industrial robots</strong> are larger, faster, stronger than educational</li>
+<li><strong>Educational robots</strong> teach concepts safely and affordably</li>
+<li><strong>Automated sequences</strong> perform tasks automatically</li>
+<li><strong>Waypoints</strong> are key positions in sequences</li>
+<li><strong>Dwell steps</strong> add pauses for operations</li>
+<li><strong>Home position</strong> provides safe reference point</li>
+<li><strong>Sequences fit into larger processes</strong> and workflows</li>
+</ol>
+<h3>Understanding Automation</h3>
+<p>You should now understand:<br />
+- How robots are used in industry<br />
+- Differences between educational and industrial robots<br />
+- How to design sequences<br />
+- How sequences integrate into processes<br />
+- Importance of reliability and repeatability</p>
+<h3>Next Steps</h3>
+<p>After learning this theory, you will:<br />
+- Research industrial applications<br />
+- Compare robot capabilities<br />
+- Design automated sequences<br />
+- Implement and test sequences<br />
+- Complete the Module 6 worksheet</p>
+<hr />
+<h2>Questions for Review</h2>
+<p>Before moving to the worksheet, make sure you can answer:</p>
+<ol>
+<li>What are three industrial applications of robot arms?</li>
+<li>How do educational robots compare to industrial robots?</li>
+<li>What is an automated sequence?</li>
+<li>What are waypoints?</li>
+<li>Why add dwell steps?</li>
+<li>What is a home position?</li>
+<li>How do sequences fit into larger processes?</li>
+</ol>
+<hr />
+<p><strong>Remember:</strong> Understanding industrial context helps you see the bigger picture. Your educational robot teaches the same principles used in industry!</p></div></section>
+<section class="card"><h2>Student worksheet</h2><div class="card-inner"><h1>Module 6: Industrial Context &amp; Basic Automation</h1>
+<h2>Student Worksheet</h2>
+<p><strong>Name:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_<br />
+<strong>Date:</strong> </em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>_<br />
+<strong>Group/Class:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>____</p>
+<hr />
+<h2>Part 1: Industrial Applications</h2>
+<h3>Question 1: Industrial Uses</h3>
+<p>Research and describe THREE industrial applications:</p>
+<table>
+<thead>
+<tr>
+<th>Application</th>
+<th>What Robot Does</th>
+<th>Industry Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Pick-and-place</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Assembly</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Welding/Painting</td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h3>Question 2: Relating to Educational Arm</h3>
+<p>How does our educational robot arm relate to these industrial applications?</p>
+<hr />
+<hr />
+<hr />
+<h2>Part 2: Comparing Capabilities</h2>
+<h3>Question 3: Capability Measurements</h3>
+<p>Measure and document the robot arm's capabilities:</p>
+<table>
+<thead>
+<tr>
+<th>Capability</th>
+<th>Educational Arm</th>
+<th>Typical Industrial Arm</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Reach</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Payload</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Repeatability</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Speed</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h3>Question 4: Comparison Analysis</h3>
+<p>What are the main differences between educational and industrial robots?</p>
+<hr />
+<hr />
+<hr />
+<hr />
+<h2>Part 3: Designing Automated Sequences</h2>
+<h3>Question 5: Sequence Planning</h3>
+<p>Plan a simple automated task:</p>
+<p><strong>Task Description:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<p><strong>Steps:</strong><br />
+1. <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><br />
+2. <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong></strong><br />
+3. <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><br />
+4. <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong></strong><br />
+5. <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<h3>Question 6: Waypoints and Dwell Times</h3>
+<p>Create a sequence with waypoints and dwell times:</p>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>Position Name</th>
+<th>Dwell Time (seconds)</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Home</td>
+<td>0</td>
+<td>Starting position</td>
+</tr>
+<tr>
+<td>2</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>3</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>4</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>5</td>
+<td>Home</td>
+<td>0</td>
+<td>Return to start</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>Part 4: Implementation and Testing</h2>
+<h3>Question 7: Sequence Implementation</h3>
+<p>Implement your sequence and document:</p>
+<p><strong>Sequence Name:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_<br />
+<strong>Number of Steps:</strong> </em></strong><strong><em>_<br />
+<strong>Total Time:</strong> </em></strong>____ seconds</p>
+<p><strong>Did it work as planned?</strong> Yes / No<br />
+<strong>Problems encountered:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<h3>Question 8: Repeatability Test</h3>
+<p>Run the sequence 10 times and measure variation:</p>
+<table>
+<thead>
+<tr>
+<th>Run</th>
+<th>End Position X</th>
+<th>End Position Y</th>
+<th>End Position Z</th>
+<th>Variation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>2</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>3</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>...</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>10</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Average Variation:</strong> <strong><em>_</em></strong><br />
+<strong>Is this acceptable?</strong> Yes / No<br />
+<strong>Why?</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<hr />
+<h2>Part 5: Integration Concepts</h2>
+<h3>Question 9: Workflow Thinking</h3>
+<p>How does your sequence fit into a larger automated process?</p>
+<hr />
+<hr />
+<hr />
+<h3>Question 10: Cycle Time</h3>
+<p>Calculate cycle time for your sequence:</p>
+<p><strong>Sequence Duration:</strong> <strong><em>_</em></strong> seconds<br />
+<strong>How could you reduce cycle time?</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>__</p>
+<hr />
+<h2>Part 6: Reflection</h2>
+<h3>Question 11: Industrial Context</h3>
+<p>Answer the following:</p>
+<p>a) What did you learn about industrial robot applications?</p>
+<hr />
+<hr />
+<p>b) How will this knowledge help you in future work?</p>
+<hr />
+<hr />
+<hr />
+<h2>Self-Assessment Checklist</h2>
+<ul>
+<li>[ ] Researched industrial applications</li>
+<li>[ ] Compared capabilities</li>
+<li>[ ] Designed automated sequence</li>
+<li>[ ] Implemented sequence</li>
+<li>[ ] Tested repeatability</li>
+<li>[ ] Documented findings</li>
+<li>[ ] Written reflection</li>
+</ul>
+<p><strong>Student Signature:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_<br />
+<strong>Date:</strong> </em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><em><br />
+<strong>Instructor Signature:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_<br />
+<strong>Date:</strong> </em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong></em></p></div></section>
+<section class="card"><h2>Multiple choice questions</h2><div class="card-inner"><h1>Module 6: Industrial Context &amp; Basic Automation</h1>
+<h2>Multiple Choice Questions</h2>
+<p><strong>Instructions:</strong> Choose the best answer for each question.</p>
+<hr />
+<p><strong>1. Which is NOT a common industrial robot application?</strong><br />
+   a) Pick-and-place<br />
+   b) Assembly<br />
+   c) Cooking meals<br />
+   d) Welding</p>
+<p><strong>2. What is "repeatability" in robotics?</strong><br />
+   a) How fast the robot moves<br />
+   b) How accurately the robot returns to the same position<br />
+   c) How much weight it can lift<br />
+   d) How far it can reach</p>
+<p><strong>3. What is a "waypoint" in a sequence?</strong><br />
+   a) A stopping point<br />
+   b) A taught position in a sequence<br />
+   c) The end effector<br />
+   d) The base</p>
+<p><strong>4. What is a "dwell" time?</strong><br />
+   a) A pause in the sequence<br />
+   b) Moving faster<br />
+   c) Stopping permanently<br />
+   d) The robot's speed</p>
+<p><strong>5. What is a "home" position?</strong><br />
+   a) A safe starting/return position<br />
+   b) The robot's base<br />
+   c) The end effector<br />
+   d) The controller</p>
+<p><strong>6. Why is repeatability important?</strong><br />
+   a) It makes the robot look better<br />
+   b) It ensures consistent operation in automated processes<br />
+   c) It makes the robot faster<br />
+   d) It's not important</p>
+<p><strong>7. What is "cycle time"?</strong><br />
+   a) The time for one complete sequence<br />
+   b) The robot's age<br />
+   c) The number of joints<br />
+   d) The robot's speed</p>
+<p><strong>8. How do sequences fit into larger processes?</strong><br />
+   a) They don't<br />
+   b) They are part of automated workflows<br />
+   c) They are standalone<br />
+   d) They only work alone</p>
+<p><strong>9. What is the main difference between educational and industrial robots?</strong><br />
+   a) Color<br />
+   b) Industrial robots typically have higher payload, speed, and accuracy<br />
+   c) Size only<br />
+   d) There's no difference</p>
+<p><strong>10. Why test repeatability multiple times?</strong><br />
+   a) To waste time<br />
+   b) To verify consistency and reliability<br />
+   c) To make it faster<br />
+   d) It's not necessary</p>
+<hr />
+<h2>Answer Key</h2>
+<ol>
+<li><strong>c)</strong> Cooking meals</li>
+<li><strong>b)</strong> How accurately the robot returns to the same position</li>
+<li><strong>b)</strong> A taught position in a sequence</li>
+<li><strong>a)</strong> A pause in the sequence</li>
+<li><strong>a)</strong> A safe starting/return position</li>
+<li><strong>b)</strong> It ensures consistent operation in automated processes</li>
+<li><strong>a)</strong> The time for one complete sequence</li>
+<li><strong>b)</strong> They are part of automated workflows</li>
+<li><strong>b)</strong> Industrial robots typically have higher payload, speed, and accuracy</li>
+<li><strong>b)</strong> To verify consistency and reliability</li>
+</ol>
+<hr />
+<h2>Scoring Guide</h2>
+<ul>
+<li><strong>9-10 correct:</strong> Excellent understanding</li>
+<li><strong>7-8 correct:</strong> Good understanding</li>
+<li><strong>5-6 correct:</strong> Satisfactory understanding</li>
+<li><strong>Below 5 correct:</strong> Needs review</li>
+</ul></div></section>
+<section class="card"><h2>Assessment rubric</h2><div class="card-inner"><h1>Module 6: Industrial Context &amp; Basic Automation</h1>
+<h2>Assessment Rubric</h2>
+<p><strong>Student Name:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_<br />
+<strong>Date:</strong> </em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>_<br />
+<strong>Assessor:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>____</p>
+<hr />
+<h2>Overall Assessment Criteria</h2>
+<table>
+<thead>
+<tr>
+<th>Criteria</th>
+<th>Excellent (4)</th>
+<th>Good (3)</th>
+<th>Satisfactory (2)</th>
+<th>Needs Improvement (1)</th>
+<th>Score</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Knowledge &amp; Understanding</strong></td>
+<td>Comprehensive understanding of industrial context</td>
+<td>Good understanding</td>
+<td>Basic understanding</td>
+<td>Limited understanding</td>
+<td>/4</td>
+</tr>
+<tr>
+<td><strong>Practical Skills</strong></td>
+<td>Successfully designed and implemented sequence</td>
+<td>Mostly successful</td>
+<td>Basic implementation</td>
+<td>Struggles with implementation</td>
+<td>/4</td>
+</tr>
+<tr>
+<td><strong>Analysis &amp; Application</strong></td>
+<td>Clear analysis of capabilities and repeatability</td>
+<td>Good analysis</td>
+<td>Basic analysis</td>
+<td>Limited analysis</td>
+<td>/4</td>
+</tr>
+<tr>
+<td><strong>Documentation</strong></td>
+<td>Complete, accurate documentation</td>
+<td>Good documentation</td>
+<td>Basic documentation</td>
+<td>Incomplete documentation</td>
+<td>/4</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Total Score:</strong> /16</p>
+<hr />
+<h2>Detailed Marking Guide</h2>
+<h3>Part 1: Industrial Applications (20 marks)</h3>
+<ul>
+<li><strong>Question 1:</strong> 12 marks (4 per application)</li>
+<li><strong>Question 2:</strong> 8 marks</li>
+</ul>
+<p><strong>Mark:</strong> /20</p>
+<hr />
+<h3>Part 2: Comparing Capabilities (20 marks)</h3>
+<ul>
+<li><strong>Question 3:</strong> 12 marks (complete capability table)</li>
+<li><strong>Question 4:</strong> 8 marks (comparison analysis)</li>
+</ul>
+<p><strong>Mark:</strong> /20</p>
+<hr />
+<h3>Part 3: Designing Sequences (20 marks)</h3>
+<ul>
+<li><strong>Question 5:</strong> 10 marks (sequence planning)</li>
+<li><strong>Question 6:</strong> 10 marks (waypoints and dwell times)</li>
+</ul>
+<p><strong>Mark:</strong> /20</p>
+<hr />
+<h3>Part 4: Implementation (25 marks)</h3>
+<ul>
+<li><strong>Question 7:</strong> 10 marks (implementation)</li>
+<li><strong>Question 8:</strong> 15 marks (repeatability test)</li>
+</ul>
+<p><strong>Mark:</strong> /25</p>
+<hr />
+<h3>Part 5: Integration (10 marks)</h3>
+<ul>
+<li><strong>Question 9:</strong> 5 marks</li>
+<li><strong>Question 10:</strong> 5 marks</li>
+</ul>
+<p><strong>Mark:</strong> /10</p>
+<hr />
+<h3>Part 6: Reflection (5 marks)</h3>
+<ul>
+<li><strong>Question 11:</strong> 5 marks</li>
+</ul>
+<p><strong>Mark:</strong> /5</p>
+<hr />
+<p><strong>Final Grade:</strong> <strong><em>_</em></strong>____ / 100</p>
+<p><strong>Assessor Comments:</strong></p>
+<hr />
+<hr />
+<p><strong>Assessor Signature:</strong> <strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_<br />
+<strong>Date:</strong> </em></strong><strong><em>_</em></strong><strong><em>_</em></strong><strong><em>_</em></strong>_</p></div></section>
+  </div>
+</body>
+</html>

@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Module 16 — Evaluation, Reflection &amp; Communication</title>
+<style>
+  :root {
+    --bg: #f8fafc; --card: #ffffff; --border: #e2e8f0;
+    --text: #1e293b; --muted: #64748b;
+    --accent: #3b82f6; --accent-light: #eff6ff;
+    --green: #16a34a; --green-light: #f0fdf4;
+    --purple: #7c3aed; --purple-light: #faf5ff;
+    --orange: #ea580c; --orange-light: #fff7ed;
+    --red: #dc2626; --red-light: #fef2f2;
+    --gold: #ca8a04; --gold-light: #fefce8;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+  .hero { background: linear-gradient(135deg, #312e81 0%, #4f46e5 100%); color: white; padding: 3rem 2rem; text-align: center; }
+  .hero .module-num { font-size: 0.85rem; opacity: 0.6; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 0.5rem; }
+  .hero h1 { font-size: 2rem; font-weight: 700; margin-bottom: 0.75rem; }
+  .hero p { font-size: 1.05rem; opacity: 0.85; max-width: 600px; margin: 0 auto; }
+  .meta-bar { display: flex; justify-content: center; gap: 2rem; padding: 1rem; background: #1e293b; color: #94a3b8; font-size: 0.85rem; flex-wrap: wrap; }
+  .container { max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem; }
+  .section-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.75rem; margin-bottom: 1.5rem; }
+  .pill { display: inline-block; font-size: 0.75rem; font-weight: 600; padding: 0.2rem 0.65rem; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.9rem; }
+  .pill-theory   { background: var(--accent-light); color: var(--accent); }
+  .pill-worksheet{ background: var(--purple-light); color: var(--purple); }
+  .pill-sowhat   { background: var(--orange-light); color: var(--orange); }
+  .pill-mcq      { background: #fff8e1; color: #856404; }
+  h2 { font-size: 1.3rem; font-weight: 700; margin-bottom: 0.75rem; }
+  h3 { font-size: 1.05rem; font-weight: 600; margin: 1.2rem 0 0.5rem; }
+  p  { margin-bottom: 0.8rem; }
+  .highlight-box { background: var(--accent-light); border-left: 4px solid var(--accent); padding: 1rem 1.2rem; border-radius: 0 8px 8px 0; margin: 1rem 0; }
+  .gold-box { background: var(--gold-light); border-left: 4px solid var(--gold); padding: 1rem 1.2rem; border-radius: 0 8px 8px 0; margin: 1rem 0; color: #713f12; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1rem 0; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 1rem; margin: 1rem 0; }
+  .mini-card { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; }
+  .mini-card h4 { font-size: 0.9rem; font-weight: 700; margin-bottom: 0.4rem; }
+  .mini-card p  { font-size: 0.85rem; color: var(--muted); margin: 0; }
+  table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+  th { background: var(--accent-light); color: var(--accent); text-align: left; padding: 0.6rem 0.8rem; font-weight: 600; }
+  td { padding: 0.55rem 0.8rem; border-bottom: 1px solid var(--border); }
+  tr:last-child td { border-bottom: none; }
+  .cycle { display: flex; align-items: center; justify-content: center; gap: 0.5rem; flex-wrap: wrap; margin: 1.2rem 0; }
+  .cycle-step { background: var(--accent-light); border: 2px solid var(--accent); border-radius: 8px; padding: 0.6rem 1rem; font-size: 0.88rem; font-weight: 600; color: var(--accent); text-align: center; min-width: 100px; }
+  .cycle-arrow { color: var(--muted); font-size: 1.4rem; }
+  .steps { list-style: none; counter-reset: step; padding: 0; }
+  .steps li { counter-increment: step; display: flex; gap: 1rem; margin-bottom: 0.9rem; align-items: flex-start; }
+  .steps li::before { content: counter(step); min-width: 28px; height: 28px; background: var(--green); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; flex-shrink: 0; }
+  .completion-badge { background: linear-gradient(135deg, #312e81, #4f46e5); color: white; border-radius: 12px; padding: 2rem; text-align: center; margin: 1.5rem 0; }
+  .completion-badge .badge-icon { font-size: 3rem; margin-bottom: 0.5rem; }
+  .completion-badge h3 { font-size: 1.4rem; margin-bottom: 0.5rem; }
+  .completion-badge p { opacity: 0.85; margin: 0; font-size: 0.95rem; }
+  .mcq-question { margin-bottom: 1.5rem; }
+  .mcq-question p { font-weight: 600; margin-bottom: 0.6rem; }
+  .mcq-option { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.35rem; cursor: pointer; font-size: 0.95rem; }
+  .mcq-option input { accent-color: var(--accent); }
+  .feedback-msg { font-size: 0.85rem; padding: 0.45rem 0.8rem; border-radius: 6px; margin-top: 0.5rem; display: none; }
+  .feedback-correct { background: var(--green-light); color: var(--green); }
+  .feedback-wrong   { background: var(--red-light);   color: var(--red); }
+  .check-btn { background: var(--accent); color: white; border: none; padding: 0.7rem 1.6rem; border-radius: 8px; font-size: 0.95rem; font-weight: 600; cursor: pointer; margin-top: 0.5rem; }
+  .check-btn:hover { background: #4338ca; }
+  .score-bar-wrap { height: 8px; background: var(--border); border-radius: 4px; margin: 1rem 0 0.4rem; }
+  .score-bar { height: 100%; background: var(--green); border-radius: 4px; transition: width 0.4s; width: 0%; }
+  .score-text { font-size: 0.9rem; color: var(--muted); }
+  .nav-row { display: flex; justify-content: space-between; margin-top: 2rem; }
+  .nav-btn { display: inline-block; padding: 0.6rem 1.4rem; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 0.9rem; border: 2px solid var(--border); color: var(--text); }
+  .nav-btn.primary { background: var(--accent); color: white; border-color: var(--accent); }
+  .callout { display:flex; gap:0.75rem; padding:1rem 1.2rem; border-radius:8px; margin:1rem 0; }
+  .callout-info    { background:var(--accent-light); border-left:4px solid var(--accent); }
+  .callout-warning { background:#fefce8; border-left:4px solid #ca8a04; color:#713f12; }
+  .callout-tip     { background:var(--green-light); border-left:4px solid var(--green); color:#14532d; }
+  .callout-danger  { background:var(--red-light); border-left:4px solid var(--red); color:#991b1b; }
+  .callout-icon { font-size:1.2rem; flex-shrink:0; padding-top:0.1rem; }
+  .callout-body { flex:1; font-size:0.9rem; }
+  .callout-body ul, .callout-body ol { padding-left:1.2rem; margin-top:0.3rem; }
+  .ui-ref { display:inline-block; background:var(--green); color:#fff; font-size:0.75rem; font-weight:600; padding:0.1rem 0.45rem; border-radius:4px; font-family:monospace; }
+  @media(max-width:600px){ .grid-2,.grid-3{ grid-template-columns:1fr; } .cycle{ flex-direction:column; } .cycle-arrow{ transform:rotate(90deg); } }
+</style>
+<link rel="stylesheet" href="worksheet.css">
+</head>
+<body>
+
+<div class="hero">
+  <div class="module-num">Module 16 of 16 — Final Module</div>
+  <h1>Evaluation, Reflection &amp; Communication</h1>
+  <p>Critically evaluating your project outcomes, reflecting on what you learned, and communicating your work to different audiences.</p>
+</div>
+<div class="meta-bar">
+  <span>&#128340; 75–90 min</span>
+  <span>&#127919; Group: Project</span>
+  <span>&#128268; Context: Your completed project</span>
+</div>
+
+<div class="container">
+
+  <!-- THEORY 1 -->
+  <div class="section-card">
+    <span class="pill pill-theory">Theory</span>
+    <h2>What is Critical Evaluation?</h2>
+    <img src="images/design-cycle.svg" alt="Engineering design cycle" style="width:100%;height:auto;display:block;border-radius:8px;margin:12px 0;">
+    <p><strong>Evaluation</strong> means comparing your outcomes against your original specification and asking: did I succeed? <strong>Critical</strong> evaluation means being honest about where you fell short and explaining why — not just listing what went well.</p>
+    <p>Engineers who can accurately evaluate their own work are more valuable than those who can only report success. Identifying failure modes, understanding root causes, and proposing improvements is the core of engineering iteration.</p>
+    <div class="cycle">
+      <div class="cycle-step">Design</div>
+      <div class="cycle-arrow">&#8594;</div>
+      <div class="cycle-step">Build</div>
+      <div class="cycle-arrow">&#8594;</div>
+      <div class="cycle-step">Test</div>
+      <div class="cycle-arrow">&#8594;</div>
+      <div class="cycle-step">Evaluate</div>
+      <div class="cycle-arrow">&#8594;</div>
+      <div class="cycle-step">Improve</div>
+      <div class="cycle-arrow">&#8594;</div>
+      <div class="cycle-step">Design</div>
+    </div>
+    <p>This iterative cycle — design, build, test, evaluate, improve — never truly ends in a living engineering project. Each iteration narrows the gap between the current state and the ideal.</p>
+  </div>
+
+  <!-- THEORY 2 -->
+  <div class="section-card">
+    <span class="pill pill-theory">Theory</span>
+    <h2>Writing a Strong Evaluation</h2>
+    <p>A strong evaluation has three components for each specification point:</p>
+    <table>
+      <tr><th>Component</th><th>What to include</th><th>Weak example</th><th>Strong example</th></tr>
+      <tr>
+        <td><strong>Outcome</strong></td>
+        <td>Did you meet the spec? By how much?</td>
+        <td>"The arm was accurate."</td>
+        <td>"J2 achieved ±0.3° repeatability, exceeding the ±2° spec."</td>
+      </tr>
+      <tr>
+        <td><strong>Analysis</strong></td>
+        <td>Why did you get this result?</td>
+        <td>"It worked well."</td>
+        <td>"Accuracy was high because the AS5600 encoder provides closed-loop feedback, eliminating accumulated step error."</td>
+      </tr>
+      <tr>
+        <td><strong>Improvement</strong></td>
+        <td>What would you do differently?</td>
+        <td>"I would make it better."</td>
+        <td>"Cycle time could be reduced by 30% by overlapping joint moves rather than moving one joint at a time."</td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- THEORY 3 -->
+  <div class="section-card">
+    <span class="pill pill-theory">Theory</span>
+    <h2>Communicating to Different Audiences</h2>
+    <p>The same project needs to be communicated differently depending on who is listening. This is a professional skill — engineers must explain complex technical work to non-technical managers, clients, and the public.</p>
+    <div class="grid-3">
+      <div class="mini-card">
+        <h4>&#128203; Technical report</h4>
+        <p>Full detail, evidence, diagrams. Audience: engineers, assessors. Use technical vocabulary correctly.</p>
+      </div>
+      <div class="mini-card">
+        <h4>&#128101; Peer presentation</h4>
+        <p>Live or recorded. Show the arm working. Explain key decisions. Handle questions.</p>
+      </div>
+      <div class="mini-card">
+        <h4>&#127760; Non-technical summary</h4>
+        <p>One page, plain English. Explain what the system does and why it matters — no jargon.</p>
+      </div>
+    </div>
+    <div class="gold-box">
+      <strong>&#127942; BTEC assessment note:</strong> For merit and distinction criteria, your evaluation must be <em>critical</em> — it must identify weaknesses and suggest specific, justified improvements. Simply listing what worked will not achieve higher grades.
+    </div>
+  </div>
+
+  <!-- WORKSHEET -->
+  <div class="section-card worksheet-card">
+    <span class="pill pill-worksheet">Worksheet</span>
+    <h2>Activity — Evaluate and Present Your Project</h2>
+    <p>Complete these tasks to finalise your project and prepare for assessment.</p>
+    <ul class="steps">
+      <li><strong>Specification review:</strong> Return to the specification you wrote in Module 14. For each point, record the actual outcome (your test results from Module 15) and state pass or fail.</li>
+      <li><strong>Written evaluation:</strong> For each specification point, write 2–4 sentences covering outcome, analysis, and improvement (use the table format from Theory 2 above as a guide).</li>
+      <li><strong>Overall reflection:</strong> Write one paragraph (150–200 words) answering: What were the two most significant technical challenges you faced, and how did you overcome them?</li>
+      <li><strong>Future development:</strong> Write three specific, justified improvements you would make if you had more time. For each, explain the engineering reason it would improve the system.</li>
+      <li><strong>Presentation:</strong> Prepare a 5-minute presentation of your project. Include: what the arm was programmed to do, a live demonstration, two key results from testing, and one honest critique of your own work.</li>
+      <li><strong>Non-technical summary:</strong> Write a half-page plain-English summary of your project, suitable for a parent, governor, or potential employer who has no engineering background.</li>
+    </ul>
+
+    <div class="callout callout-tip no-print">
+      <span class="callout-icon">💭</span>
+      <div class="callout-body">
+        <strong>Evaluation Prompt — Programming Mode Choice</strong></br>
+        Write a paragraph addressing this question: <em>"Which programming mode (Blockly, G-Code, or RAPID) was most effective for your project, and why? If you were building a pick-and-place system that needed to respond to the camera (pick the block the camera detects, not a pre-taught position), which mode would you use and what would need to change in either the app or the server to support it?"</em>
+        <br><br>
+        A strong answer names specific advantages and limitations of the chosen mode, references actual observations from the project (e.g. "G-code was faster to edit when I needed to adjust a single position"), and proposes a technically plausible change for the camera-reactive scenario.
+      </div>
+    </div>
+
+    <div class="callout callout-tip no-print">
+      <span class="callout-icon">📐</span>
+      <div class="callout-body">
+        <strong>Improvement Topic — 3D Model Calibration</strong></br>
+        Evaluate how accurately the 3D Visualisation model matched the physical arm's end-effector position during your project. Consider: did the model diverge from the physical arm at extreme joint configurations? Possible causes: joint flex under load, mechanical backlash, or inaccurate link lengths in the URDF.
+        <br><br>
+        A strong improvement proposal would be: <em>"The URDF link lengths could be refined by commanding 10 known positions, measuring the actual end-effector XYZ with a ruler and reference frame, comparing to the FK-computed values, and adjusting the URDF until the error is below ±5 mm. The AS5600 encoders provide a second angle reference that could also be used to detect systematic backlash errors."</em>
+        This demonstrates understanding of the URDF (Settings tab), the Kinematics tab, and the AS5600 hardware — an engineering improvement rooted in the specific system.
+      </div>
+    </div>
+
+    <div class="callout callout-tip no-print">
+      <span class="callout-icon">🎯</span>
+      <div class="callout-body">
+        <strong>Live Demo Suggestion — Control Session Handover</strong></br>
+        For a memorable and technically impressive demonstration, show the <strong>control session handover</strong>:
+        <ol style="margin:0.4rem 0 0;padding-left:1.2rem;">
+          <li>Your computer has control — run a short automated sequence</li>
+          <li>A second student connects on a second laptop — show the "another client has control" status message on their screen</li>
+          <li>Demonstrate <strong>Force Take Control</strong> from the second laptop — your session is displaced and you are notified</li>
+          <li>The second student now commands the arm</li>
+        </ol>
+        This demonstrates a real distributed-system concept (mutual exclusion over a network) to examiners — not just "the arm moves to a position". It directly showcases knowledge from Module 9 (WebSocket architecture) and Module 13 (control session as an engineering control), and is unique to this specific system.
+      </div>
+    </div>
+
+    <h3>Evaluation Summary Table</h3>
+    <table>
+      <tr><th>Spec point</th><th>Target</th><th>Actual result</th><th>Pass/Fail</th><th>Key reason for outcome</th></tr>
+      <tr>
+        <td><input type="text" placeholder="1."></td>
+        <td><input type="text"></td>
+        <td><input type="text"></td>
+        <td><input type="text"></td>
+        <td><input type="text"></td>
+      </tr>
+      <tr>
+        <td><input type="text" placeholder="2."></td>
+        <td><input type="text"></td>
+        <td><input type="text"></td>
+        <td><input type="text"></td>
+        <td><input type="text"></td>
+      </tr>
+      <tr>
+        <td><input type="text" placeholder="3."></td>
+        <td><input type="text"></td>
+        <td><input type="text"></td>
+        <td><input type="text"></td>
+        <td><input type="text"></td>
+      </tr>
+      <tr>
+        <td><input type="text" placeholder="4."></td>
+        <td><input type="text"></td>
+        <td><input type="text"></td>
+        <td><input type="text"></td>
+        <td><input type="text"></td>
+      </tr>
+      <tr>
+        <td><input type="text" placeholder="5."></td>
+        <td><input type="text"></td>
+        <td><input type="text"></td>
+        <td><input type="text"></td>
+        <td><input type="text"></td>
+      </tr>
+      <tr>
+        <td><input type="text" placeholder="6."></td>
+        <td><input type="text"></td>
+        <td><input type="text"></td>
+        <td><input type="text"></td>
+        <td><input type="text"></td>
+      </tr>
+    </table>
+
+    <div class="ws-field">
+      <label>Overall reflection (150–200 words)</label>
+      <textarea style="min-height:120px;" placeholder="Two most significant technical challenges and how you overcame them..."></textarea>
+    </div>
+    <div class="ws-field">
+      <label>Future development — three justified improvements</label>
+      <textarea style="min-height:120px;" placeholder="1. ...&#10;2. ...&#10;3. ..."></textarea>
+    </div>
+    <div class="ws-field">
+      <label>Programming mode evaluation (optional prompt)</label>
+      <textarea placeholder="Which mode was most effective and why? Camera-reactive scenario..."></textarea>
+    </div>
+    <div class="ws-field">
+      <label>Non-technical summary (plain English)</label>
+      <textarea style="min-height:100px;" placeholder="Half-page summary for a non-engineer audience..."></textarea>
+    </div>
+  </div>
+
+  <!-- SO WHAT -->
+  <div class="section-card">
+    <span class="pill pill-sowhat">So What?</span>
+    <h2>Reflection as an Engineering Habit</h2>
+    <p>The best engineers are those who treat every project — successful or not — as a learning opportunity. The practice of structured reflection (what worked, what did not, and why) is what separates engineers who improve continuously from those who repeat the same mistakes.</p>
+    <p>Professional engineering bodies (IMechE, IET, BCS) require evidence of <em>continuing professional development</em> (CPD) — ongoing learning and reflection — as a condition of membership. The habit starts here.</p>
+    <p><strong>Final thought:</strong> When you started Module 1, you may not have known what a serial bus, a kinematic chain, or a PID controller was. Look at your project now. That distance is what engineering education is for.</p>
+  </div>
+
+  <!-- COMPLETION BADGE -->
+  <div class="completion-badge">
+    <div class="badge-icon">&#127941;</div>
+    <h3>Curriculum Complete</h3>
+    <p>You have worked through all 16 modules — Foundation, Intermediate, Advanced, and Project. Well done.</p>
+  </div>
+
+  <!-- MCQ -->
+  <div class="section-card">
+    <span class="pill pill-mcq">Final Quiz</span>
+    <h2>Check Your Understanding</h2>
+
+    <div class="mcq-question">
+      <p>1. A critical evaluation differs from a basic evaluation because it:</p>
+      <label class="mcq-option"><input type="radio" name="q1" value="a"> Is longer and uses more technical words</label>
+      <label class="mcq-option"><input type="radio" name="q1" value="b"> Honestly identifies weaknesses and proposes specific, justified improvements</label>
+      <label class="mcq-option"><input type="radio" name="q1" value="c"> Only covers the things that went well</label>
+      <label class="mcq-option"><input type="radio" name="q1" value="d"> Is written after the presentation</label>
+      <div class="feedback-msg" id="q1-fb"></div>
+    </div>
+
+    <div class="mcq-question">
+      <p>2. When presenting to a non-technical audience, the most important thing is to:</p>
+      <label class="mcq-option"><input type="radio" name="q2" value="a"> Use as much technical vocabulary as possible to appear credible</label>
+      <label class="mcq-option"><input type="radio" name="q2" value="b"> Explain what the system does and why it matters, in plain language</label>
+      <label class="mcq-option"><input type="radio" name="q2" value="c"> Focus only on the parts that did not work</label>
+      <label class="mcq-option"><input type="radio" name="q2" value="d"> Read directly from your report</label>
+      <div class="feedback-msg" id="q2-fb"></div>
+    </div>
+
+    <div class="mcq-question">
+      <p>3. The engineering design cycle is best described as:</p>
+      <label class="mcq-option"><input type="radio" name="q3" value="a"> A linear process that ends when the first design is built</label>
+      <label class="mcq-option"><input type="radio" name="q3" value="b"> An iterative loop of design → build → test → evaluate → improve</label>
+      <label class="mcq-option"><input type="radio" name="q3" value="c"> A process that only applies to large industrial projects</label>
+      <label class="mcq-option"><input type="radio" name="q3" value="d"> Something done only at the start of a project</label>
+      <div class="feedback-msg" id="q3-fb"></div>
+    </div>
+
+    <button class="check-btn" onclick="checkMCQ()">Check Answers</button>
+    <div class="score-bar-wrap"><div class="score-bar" id="score-bar"></div></div>
+    <div class="score-text" id="score-text"></div>
+  </div>
+
+  <div class="nav-row">
+    <a class="nav-btn" href="module-15.html">&#8592; Module 15</a>
+    <a class="nav-btn primary" href="index.html">&#8592; Back to Index</a>
+  </div>
+</div>
+
+<script>
+const answers = { q1: 'b', q2: 'b', q3: 'b' };
+const feedback = {
+  q1: { b: 'Correct! Critical evaluation honestly identifies weaknesses and proposes specific, justified improvements — not just a list of successes.', wrong: 'Not quite. Critical evaluation means honestly identifying weaknesses and proposing specific, justified improvements.' },
+  q2: { b: 'Correct! For a non-technical audience, plain language and clear explanation of purpose matters far more than technical detail.', wrong: 'Not quite. For a non-technical audience, plain language and explaining what the system does and why it matters is most important.' },
+  q3: { b: 'Correct! The engineering design cycle is an iterative loop — design, build, test, evaluate, improve — that repeats with each iteration.', wrong: 'Not quite. The design cycle is an iterative loop: design → build → test → evaluate → improve, repeated to converge on the best solution.' }
+};
+function checkMCQ() {
+  let score = 0;
+  ['q1','q2','q3'].forEach(q => {
+    const sel = document.querySelector(`input[name="${q}"]:checked`);
+    const fb = document.getElementById(`${q}-fb`);
+    if (!sel) { fb.textContent = 'Please select an answer.'; fb.className = 'feedback-msg feedback-wrong'; fb.style.display = 'block'; return; }
+    const correct = sel.value === answers[q];
+    if (correct) score++;
+    fb.textContent = correct ? feedback[q][sel.value] : feedback[q].wrong;
+    fb.className = 'feedback-msg ' + (correct ? 'feedback-correct' : 'feedback-wrong');
+    fb.style.display = 'block';
+  });
+  document.getElementById('score-bar').style.width = (score / 3 * 100) + '%';
+  document.getElementById('score-text').textContent = `Score: ${score} / 3`;
+}
+</script>
+<script src="worksheet.js"></script>
+</body>
+</html>

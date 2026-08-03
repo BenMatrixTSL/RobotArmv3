@@ -1,0 +1,60 @@
+<svg viewBox="0 0 420 500" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, sans-serif">
+  <defs>
+    <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 Z" fill="#475569"/>
+    </marker>
+  </defs>
+  <rect width="420" height="500" fill="#f8fafc" rx="8"/>
+  <text x="210" y="26" text-anchor="middle" font-size="15" font-weight="700" fill="#1e293b">Emergency Stop Procedure</text>
+  <text x="210" y="42" text-anchor="middle" font-size="11" fill="#64748b">Follow this sequence when a hazard is observed</text>
+
+  <!-- Step 1: Observe hazard -->
+  <rect x="85" y="58" width="250" height="48" rx="8" fill="#fef2f2" stroke="#dc2626" stroke-width="2.5"/>
+  <text x="210" y="78" text-anchor="middle" font-size="12" font-weight="700" fill="#dc2626">⚠ Observe Hazard</text>
+  <text x="210" y="96" text-anchor="middle" font-size="10" fill="#dc2626">Unexpected movement, collision, smoke, noise</text>
+
+  <line x1="210" y1="106" x2="210" y2="130" stroke="#475569" stroke-width="2" marker-end="url(#arr)"/>
+
+  <!-- Step 2: Press E-Stop -->
+  <rect x="85" y="130" width="250" height="56" rx="8" fill="#dc2626" stroke="#991b1b" stroke-width="2"/>
+  <text x="210" y="152" text-anchor="middle" font-size="14" font-weight="700" fill="white">⛔ PRESS E-STOP</text>
+  <text x="210" y="170" text-anchor="middle" font-size="10" fill="#fca5a5">If no E-Stop: disconnect power / close app</text>
+  <text x="210" y="182" text-anchor="middle" font-size="10" fill="#fca5a5">DO NOT reach in while arm is moving</text>
+
+  <line x1="210" y1="186" x2="210" y2="210" stroke="#475569" stroke-width="2" marker-end="url(#arr)"/>
+
+  <!-- Step 3: Confirm stopped -->
+  <polygon points="210,210 310,248 210,286 110,248" fill="#fef3c7" stroke="#d97706" stroke-width="2"/>
+  <text x="210" y="244" text-anchor="middle" font-size="11" font-weight="700" fill="#92400e">Arm fully</text>
+  <text x="210" y="260" text-anchor="middle" font-size="11" font-weight="700" fill="#92400e">stopped?</text>
+
+  <!-- NO branch -->
+  <line x1="110" y1="248" x2="60" y2="248" stroke="#dc2626" stroke-width="2" marker-end="url(#arr)"/>
+  <line x1="60"  y1="248" x2="60"  y2="155" stroke="#dc2626" stroke-width="2"/>
+  <line x1="60"  y1="155" x2="85"  y2="155" stroke="#dc2626" stroke-width="2" marker-end="url(#arr)"/>
+  <text x="82" y="242" font-size="10" fill="#dc2626" font-weight="700">NO</text>
+  <text x="35" y="200" font-size="9" fill="#dc2626" transform="rotate(-90,35,200)">Disconnect power</text>
+
+  <!-- YES branch -->
+  <line x1="210" y1="286" x2="210" y2="310" stroke="#16a34a" stroke-width="2" marker-end="url(#arr)"/>
+  <text x="222" y="302" font-size="10" fill="#16a34a" font-weight="700">YES</text>
+
+  <!-- Step 4: Isolate -->
+  <rect x="85" y="310" width="250" height="48" rx="8" fill="#fff7ed" stroke="#ea580c" stroke-width="2"/>
+  <text x="210" y="330" text-anchor="middle" font-size="12" font-weight="700" fill="#c2410c">🔌 Isolate Power</text>
+  <text x="210" y="348" text-anchor="middle" font-size="10" fill="#ea580c">Switch off PSU · Disconnect USB/Ethernet</text>
+
+  <line x1="210" y1="358" x2="210" y2="382" stroke="#475569" stroke-width="2" marker-end="url(#arr)"/>
+
+  <!-- Step 5: Report -->
+  <rect x="85" y="382" width="250" height="48" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+  <text x="210" y="402" text-anchor="middle" font-size="12" font-weight="700" fill="#166534">📋 Report Incident</text>
+  <text x="210" y="420" text-anchor="middle" font-size="10" fill="#166534">Inform supervisor · Complete accident log</text>
+
+  <line x1="210" y1="430" x2="210" y2="454" stroke="#475569" stroke-width="2" marker-end="url(#arr)"/>
+
+  <!-- Step 6: Investigate before restart -->
+  <rect x="85" y="454" width="250" height="36" rx="8" fill="#eff6ff" stroke="#3b82f6" stroke-width="2"/>
+  <text x="210" y="468" text-anchor="middle" font-size="11" font-weight="700" fill="#1d4ed8">Investigate before restarting</text>
+  <text x="210" y="482" text-anchor="middle" font-size="10" fill="#3b82f6">Do NOT restart without supervisor authorisation</text>
+</svg>
