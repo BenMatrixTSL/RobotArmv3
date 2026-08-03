@@ -427,7 +427,7 @@ function defineCustomBlocks() {
         }
     };
 
-    // Set tool orientation vector (direction of tool Z-axis)
+    // Set tool orientation vector (direction of tool Z-axis) with optional spin rotation
     Blockly.Blocks['set_tool_orientation'] = {
         init: function() {
             this.appendDummyInput()
@@ -437,11 +437,13 @@ function defineCustomBlocks() {
                 .appendField('Y')
                 .appendField(new Blockly.FieldNumber(0), 'ORI_Y')
                 .appendField('Z')
-                .appendField(new Blockly.FieldNumber(-1), 'ORI_Z');
+                .appendField(new Blockly.FieldNumber(-1), 'ORI_Z')
+                .appendField('Rotation (°)')
+                .appendField(new Blockly.FieldNumber(0), 'ORI_ROTATION');
             this.setPreviousStatement(true, null);
             this.setNextStatement(true, null);
             this.setColour(230);
-            this.setTooltip('Set the tool orientation vector (direction of the tool Z-axis)');
+            this.setTooltip('Set the tool orientation vector and spin rotation. Rotation spins the tool around its pointing axis — 0° keeps a consistent world-aligned reference regardless of position.');
         }
     };
 
@@ -1830,11 +1832,12 @@ function registerBlocklyGenerators() {
         const ox = block.getFieldValue('ORI_X');
         const oy = block.getFieldValue('ORI_Y');
         const oz = block.getFieldValue('ORI_Z');
+        const rot = block.getFieldValue('ORI_ROTATION');
         return `
         highlightBlocklyBlock('${blockId}');
         await checkBlocklyPauseStop();
-        appendBlocklyOutput('Setting tool orientation to vector (${ox}, ${oy}, ${oz})');
-        setToolOrientationVector(${ox}, ${oy}, ${oz});
+        appendBlocklyOutput('Setting tool orientation to vector (${ox}, ${oy}, ${oz}) rotation ${rot}°');
+        setToolOrientationVector(${ox}, ${oy}, ${oz}, ${rot});
         `;
     };
 

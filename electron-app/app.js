@@ -7,7 +7,7 @@
  * @param {number} y - Y component
  * @param {number} z - Z component
  */
-function setToolOrientationVector(x, y, z) {
+function setToolOrientationVector(x, y, z, rotation) {
     const vx = typeof x === 'number' ? x : 0;
     const vy = typeof y === 'number' ? y : 0;
     const vz = typeof z === 'number' ? z : -1;
@@ -21,7 +21,8 @@ function setToolOrientationVector(x, y, z) {
     currentToolOrientation = {
         x: vx / length,
         y: vy / length,
-        z: vz / length
+        z: vz / length,
+        rotation: typeof rotation === 'number' ? rotation : (currentToolOrientation.rotation || 0)
     };
 
     console.log('Tool orientation set to:', currentToolOrientation);
@@ -130,10 +131,11 @@ let deadZones = [];
 let nextDeadZoneId = 1;
 let safeZHeight = 300; // Default safe Z height in mm for routing over dead zones
 
-// Tool orientation (direction vector for the tool's local Z-axis)
+// Tool orientation (direction vector for the tool's local Z-axis + optional spin rotation).
 // Physical home (all joints 0°) has the tool pointing DOWN = {0,0,-1} in world frame.
 // toolZAxisFromMatrix returns the negative Z column, matching this physical convention.
-let currentToolOrientation = { x: 0, y: 0, z: -1 };
+// rotation: degrees of spin around the tool Z-axis (0 = consistent world-aligned reference).
+let currentToolOrientation = { x: 0, y: 0, z: -1, rotation: 0 };
 
 // Exact commanded XYZ for jog moves — updated with precise step sizes so errors
 // do not accumulate across sequential jogs. Reset to null after any non-jog move
@@ -2996,6 +2998,12 @@ async function quickMoveXYZ(axis, direction) {
  */
 function pendantSetOrientation(mode) {
     const display = document.getElementById('pendantOrientationDisplay');
+    const rotInput = document.getElementById('pendantOrientationRotation');
+    const getRotation = () => {
+        if (!rotInput) return currentToolOrientation.rotation || 0;
+        const v = parseFloat(rotInput.value);
+        return isFinite(v) ? v : 0;
+    };
     if (mode === 'current') {
         if (robotKinematics.isConfigured() && Array.isArray(lastGoodJointStatus) && lastGoodJointStatus.length > 0) {
             try {
@@ -3004,8 +3012,15 @@ function pendantSetOrientation(mode) {
                 );
                 const fk = robotKinematics.forwardKinematics(angles);
                 const t = toolZAxisFromMatrix(fk.rotation);
-                currentToolOrientation = { x: t.x, y: t.y, z: t.z };
-                if (display) display.textContent = `Locked: X:${t.x.toFixed(2)} Y:${t.y.toFixed(2)} Z:${t.z.toFixed(2)}`;
+                // Compute current spin angle from the tool X-axis
+                const tx = toolXAxisFromMatrix(fk.rotation);
+                const frame0 = buildToolFrame(t, 0);
+                const dot_x = tx.x*frame0.xAxis.x + tx.y*frame0.xAxis.y + tx.z*frame0.xAxis.z;
+                const dot_y = tx.x*frame0.yAxis.x + tx.y*frame0.yAxis.y + tx.z*frame0.yAxis.z;
+                const rot = Math.atan2(dot_y, dot_x) * 180 / Math.PI;
+                currentToolOrientation = { x: t.x, y: t.y, z: t.z, rotation: rot };
+                if (rotInput) rotInput.value = rot.toFixed(1);
+                if (display) display.textContent = `Locked: X:${t.x.toFixed(2)} Y:${t.y.toFixed(2)} Z:${t.z.toFixed(2)} rot:${rot.toFixed(1)}°`;
                 showAppMessage('Tool orientation locked to current pose');
             } catch (e) {
                 showAppMessage('Could not read current pose: ' + e.message);
@@ -3014,13 +3029,20 @@ function pendantSetOrientation(mode) {
             showAppMessage('Kinematics not configured or no joint status yet');
         }
     } else if (mode === 'up') {
-        currentToolOrientation = { x: 0, y: 0, z: 1 };
-        if (display) display.textContent = 'Locked: tool up (0, 0, +1)';
+        const rot = getRotation();
+        currentToolOrientation = { x: 0, y: 0, z: 1, rotation: rot };
+        if (display) display.textContent = `Locked: tool up (0, 0, +1) rot:${rot.toFixed(1)}°`;
         showAppMessage('Tool orientation set to tool up');
     } else if (mode === 'down') {
-        currentToolOrientation = { x: 0, y: 0, z: -1 };
-        if (display) display.textContent = 'Locked: tool down / home direction (0, 0, -1)';
+        const rot = getRotation();
+        currentToolOrientation = { x: 0, y: 0, z: -1, rotation: rot };
+        if (display) display.textContent = `Locked: tool down (0, 0, -1) rot:${rot.toFixed(1)}°`;
         showAppMessage('Tool orientation set to tool down (home direction)');
+    } else if (mode === 'rotation') {
+        // Update just the rotation without changing the pointing direction
+        const rot = getRotation();
+        currentToolOrientation = { ...currentToolOrientation, rotation: rot };
+        if (display) display.textContent = `Direction: X:${currentToolOrientation.x.toFixed(2)} Y:${currentToolOrientation.y.toFixed(2)} Z:${currentToolOrientation.z.toFixed(2)} rot:${rot.toFixed(1)}°`;
     }
 }
 
@@ -4977,14 +4999,18 @@ async function runRapidProgram() {
                 initialAngles2 = jointAngles2.slice();
             }
         } else if (/^SetToolOri\b/i.test(line)) {
-            // SetToolOri [[ux,uy,uz]];  → set global tool orientation vector
+            // SetToolOri [[ux,uy,uz]];              → set orientation vector
+            // SetToolOri [[ux,uy,uz],rot];           → set orientation + spin rotation (degrees)
             const xyz = parseRapidXYZ(line, 'SetToolOri');
             if (!xyz) {
                 console.warn('RAPID: Could not parse SetToolOri on line', i + 1, ':', line);
                 continue;
             }
-            setToolOrientationVector(xyz[0], xyz[1], xyz[2]);
-            console.log('RAPID: SetToolOri on line', i + 1, 'orientation:', xyz);
+            // Parse optional rotation after the vector bracket: SetToolOri [[x,y,z],rot]
+            const rotMatch = line.match(/\]\s*,\s*([-+]?[0-9]*\.?[0-9]+)/);
+            const rot = rotMatch ? parseFloat(rotMatch[1]) : undefined;
+            setToolOrientationVector(xyz[0], xyz[1], xyz[2], rot);
+            console.log('RAPID: SetToolOri on line', i + 1, 'orientation:', xyz, 'rotation:', rot);
         } else if (/^WaitTime\b/i.test(line)) {
             // WaitTime t; where t is seconds
             const match = line.match(/WaitTime\s+([0-9]*\.?[0-9]+)/i);

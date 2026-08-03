@@ -79,6 +79,15 @@ function toolZAxisFromMatrix(T) {
 }
 
 /**
+ * Extracts the tool X-axis from a 4x4 transform matrix (first column of rotation part).
+ * @param {Array} T - 4x4 matrix (row-major, upper-left 3x3 = rotation)
+ * @returns {{ x: number, y: number, z: number }}
+ */
+function toolXAxisFromMatrix(T) {
+    return { x: T[0][0], y: T[1][0], z: T[2][0] };
+}
+
+/**
  * Normalises a 3D vector. If the length is very small, returns a default
  * pointing straight down (0, 0, -1) so we never divide by zero.
  * @param {{ x: number, y: number, z: number }} v
@@ -93,6 +102,37 @@ function normalizeVector(v) {
         return { x: 0, y: 0, z: -1 };
     }
     return { x: x / len, y: y / len, z: z / len };
+}
+
+/**
+ * Builds a consistent tool orientation frame from a desired Z-axis and a rotation angle.
+ * Rotation=0 gives a repeatable reference X-axis regardless of where the arm is.
+ * Increasing rotation spins the tool around its pointing axis (right-hand rule).
+ *
+ * @param {{ x, y, z }} desiredZ - normalised tool Z-axis (pointing direction)
+ * @param {number} rotationDeg - rotation around the tool Z-axis in degrees
+ * @returns {{ xAxis: {x,y,z}, yAxis: {x,y,z}, zAxis: {x,y,z} }}
+ */
+function buildToolFrame(desiredZ, rotationDeg) {
+    const z = normalizeVector(desiredZ);
+    // Choose a world reference not parallel to z, then Gram-Schmidt orthogonalise
+    const ref = (Math.abs(z.z) < 0.9) ? { x: 0, y: 0, z: 1 } : { x: 1, y: 0, z: 0 };
+    const dot = ref.x*z.x + ref.y*z.y + ref.z*z.z;
+    const xRef = normalizeVector({ x: ref.x - dot*z.x, y: ref.y - dot*z.y, z: ref.z - dot*z.z });
+    // yRef = z × xRef
+    const yRef = {
+        x: z.y*xRef.z - z.z*xRef.y,
+        y: z.z*xRef.x - z.x*xRef.z,
+        z: z.x*xRef.y - z.y*xRef.x
+    };
+    // Rotate xRef around z by rotationDeg
+    const c = Math.cos(rotationDeg * Math.PI / 180);
+    const s = Math.sin(rotationDeg * Math.PI / 180);
+    return {
+        xAxis: { x: c*xRef.x - s*yRef.x, y: c*xRef.y - s*yRef.y, z: c*xRef.z - s*yRef.z },
+        yAxis: { x: s*xRef.x + c*yRef.x, y: s*xRef.y + c*yRef.y, z: s*xRef.z + c*yRef.z },
+        zAxis: z
+    };
 }
 
 // ---------------------------------------------------------------------------
@@ -469,12 +509,19 @@ class RobotKinematics {
 
         const numJoints = this.joints.length;
 
-        // Decide if we also have a desired tool orientation (direction vector)
+        // Decide if we also have a desired tool orientation (direction vector + optional spin)
         let hasOrientationTarget = false;
+        let hasRotationTarget = false;
         let desiredToolZ = { x: 0, y: 0, z: -1 };
+        let desiredToolX = null;
         if (targetPose && targetPose.orientation) {
             desiredToolZ = normalizeVector(targetPose.orientation);
             hasOrientationTarget = true;
+            if (typeof targetPose.orientation.rotation === 'number') {
+                const frame = buildToolFrame(desiredToolZ, targetPose.orientation.rotation);
+                desiredToolX = frame.xAxis;
+                hasRotationTarget = true;
+            }
         }
 
         // Quick reachability check using approximate maximum reach
@@ -535,10 +582,7 @@ class RobotKinematics {
                 const positionErrorLength = Math.sqrt(errX * errX + errY * errY + errZ * errZ);
 
                 // Optional orientation error (desired tool Z direction - current)
-                let oriErrX = 0;
-                let oriErrY = 0;
-                let oriErrZ = 0;
-                let orientationErrorLength = 0;
+                let oriErrX = 0, oriErrY = 0, oriErrZ = 0, orientationErrorLength = 0;
                 if (hasOrientationTarget) {
                     oriErrX = desiredToolZ.x - currentToolZ.x;
                     oriErrY = desiredToolZ.y - currentToolZ.y;
@@ -546,10 +590,22 @@ class RobotKinematics {
                     orientationErrorLength = Math.sqrt(oriErrX * oriErrX + oriErrY * oriErrY + oriErrZ * oriErrZ);
                 }
 
-                // Combined convergence: both position AND orientation must be within tolerance
+                // Optional rotation error (desired tool X axis - current, spins tool around its Z)
+                let rotErrX = 0, rotErrY = 0, rotErrZ = 0, rotationErrorLength = 0;
+                let currentToolX = null;
+                if (hasRotationTarget) {
+                    currentToolX = toolXAxisFromMatrix(fkResult.rotation);
+                    rotErrX = desiredToolX.x - currentToolX.x;
+                    rotErrY = desiredToolX.y - currentToolX.y;
+                    rotErrZ = desiredToolX.z - currentToolX.z;
+                    rotationErrorLength = Math.sqrt(rotErrX*rotErrX + rotErrY*rotErrY + rotErrZ*rotErrZ);
+                }
+
+                // Combined convergence: both position AND orientation (and rotation if set) within tolerance
                 const posConverged = positionErrorLength < positionToleranceMm;
                 const oriConverged = !hasOrientationTarget || orientationErrorLength < 0.05;
-                if (posConverged && oriConverged) break;
+                const rotConverged = !hasRotationTarget || rotationErrorLength < 0.1;
+                if (posConverged && oriConverged && rotConverged) break;
 
                 // Build numeric Jacobian for position (3 x numJoints): how XYZ changes per degree
                 const Jpos = [];
@@ -558,9 +614,13 @@ class RobotKinematics {
                 Jpos[1] = new Array(numJoints).fill(0);
                 Jpos[2] = new Array(numJoints).fill(0);
 
-                // If we care about orientation, we also build a simple numeric Jacobian
-                // for the tool Z-axis direction: how (Zx, Zy, Zz) change per degree.
+                // If we care about orientation, build numeric Jacobians for tool Z and X axes.
                 const Jori = hasOrientationTarget ? [
+                    new Array(numJoints).fill(0),
+                    new Array(numJoints).fill(0),
+                    new Array(numJoints).fill(0)
+                ] : null;
+                const Jori_x = hasRotationTarget ? [
                     new Array(numJoints).fill(0),
                     new Array(numJoints).fill(0),
                     new Array(numJoints).fill(0)
@@ -568,31 +628,33 @@ class RobotKinematics {
 
                 for (let j = 0; j < numJoints; j++) {
                     const originalAngle = angles[j];
-                    // Slightly change this one joint
                     angles[j] = originalAngle + finiteDifferenceDeg;
                     const fkPlus = this.forwardKinematics(angles);
                     const posPlus = fkPlus.position;
                     const toolZPlus = toolZAxisFromMatrix(fkPlus.rotation);
-                    // Restore
                     angles[j] = originalAngle;
 
-                    // Approximate position derivative: (f(theta+delta) - f(theta)) / delta
                     Jpos[0][j] = (posPlus.x - currentPos.x) / finiteDifferenceDeg;
                     Jpos[1][j] = (posPlus.y - currentPos.y) / finiteDifferenceDeg;
                     Jpos[2][j] = (posPlus.z - currentPos.z) / finiteDifferenceDeg;
 
-                    // Approximate orientation derivative (tool Z axis) if needed
                     if (hasOrientationTarget && Jori) {
                         Jori[0][j] = (toolZPlus.x - currentToolZ.x) / finiteDifferenceDeg;
                         Jori[1][j] = (toolZPlus.y - currentToolZ.y) / finiteDifferenceDeg;
                         Jori[2][j] = (toolZPlus.z - currentToolZ.z) / finiteDifferenceDeg;
                     }
+                    if (hasRotationTarget && Jori_x) {
+                        const toolXPlus = toolXAxisFromMatrix(fkPlus.rotation);
+                        Jori_x[0][j] = (toolXPlus.x - currentToolX.x) / finiteDifferenceDeg;
+                        Jori_x[1][j] = (toolXPlus.y - currentToolX.y) / finiteDifferenceDeg;
+                        Jori_x[2][j] = (toolXPlus.z - currentToolX.z) / finiteDifferenceDeg;
+                    }
                 }
 
                 // --- Null-space IK update ---
                 // Primary task: position via damped pseudoinverse (J_pos^+)
-                // Secondary task: orientation correction projected into null space of J_pos,
-                // so it cannot disturb the primary position solution.
+                // Secondary task: orientation (Z-axis + optional X-axis spin) projected into
+                // null space of J_pos so position is unaffected.
 
                 const Jpos_pinv = dampedPseudoinverse3xN(Jpos, numJoints, lambda);
                 if (!Jpos_pinv) continue; // degenerate — skip this iteration
@@ -600,15 +662,18 @@ class RobotKinematics {
                 // Primary update: move toward target position
                 const dq_primary = matVec3(Jpos_pinv, [errX, errY, errZ]);
 
-                // Secondary update: orientation correction in null space
+                // Secondary update: combined orientation + rotation gradient in null space
                 let dq_null = null;
                 if (hasOrientationTarget && Jori) {
-                    // J_ori^T * oriErr  (N×1) — orientation gradient
                     const g_ori = [];
                     for (let j = 0; j < numJoints; j++) {
-                        g_ori.push(Jori[0][j]*oriErrX + Jori[1][j]*oriErrY + Jori[2][j]*oriErrZ);
+                        let g = Jori[0][j]*oriErrX + Jori[1][j]*oriErrY + Jori[2][j]*oriErrZ;
+                        // Add X-axis (spin) gradient with half weight — it has 1 DOF vs 2 for Z
+                        if (hasRotationTarget && Jori_x) {
+                            g += 0.5 * (Jori_x[0][j]*rotErrX + Jori_x[1][j]*rotErrY + Jori_x[2][j]*rotErrZ);
+                        }
+                        g_ori.push(g);
                     }
-                    // Project into null space of J_pos so position is unaffected
                     dq_null = nullSpaceProject(Jpos, Jpos_pinv, g_ori, numJoints);
                 }
 
@@ -664,25 +729,21 @@ class RobotKinematics {
                 const dZy = desiredToolZ.y - finalToolZ.y;
                 const dZz = desiredToolZ.z - finalToolZ.z;
                 const oriErrorLength = Math.sqrt(dZx * dZx + dZy * dZy + dZz * dZz);
-
-                // Cosine of angle between desired and achieved Z axes
-                const dot =
-                    desiredToolZ.x * finalToolZ.x +
-                    desiredToolZ.y * finalToolZ.y +
-                    desiredToolZ.z * finalToolZ.z;
-                const clampedDot = Math.max(-1, Math.min(1, dot));
-                const angleDeg = (Math.acos(clampedDot) * 180) / Math.PI;
-
+                const dot = Math.max(-1, Math.min(1,
+                    desiredToolZ.x * finalToolZ.x + desiredToolZ.y * finalToolZ.y + desiredToolZ.z * finalToolZ.z));
+                const angleDeg = (Math.acos(dot) * 180) / Math.PI;
+                let rotLog = '';
+                if (hasRotationTarget) {
+                    const finalToolX = toolXAxisFromMatrix(finalFk.rotation);
+                    const dotX = Math.max(-1, Math.min(1,
+                        desiredToolX.x * finalToolX.x + desiredToolX.y * finalToolX.y + desiredToolX.z * finalToolX.z));
+                    rotLog = ` rotError≈${(Math.acos(dotX) * 180 / Math.PI).toFixed(1)}deg`;
+                }
                 console.log(
-                    'IK orientation summary: desiredZ=',
-                    desiredToolZ,
-                    ' finalZ=',
-                    finalToolZ,
-                    ' |ΔZ|=',
-                    oriErrorLength.toFixed(3),
-                    ' angle error≈',
-                    angleDeg.toFixed(1),
-                    'deg'
+                    'IK orientation summary: desiredZ=', desiredToolZ,
+                    ' finalZ=', finalToolZ,
+                    ' |ΔZ|=', oriErrorLength.toFixed(3),
+                    ' angle error≈', angleDeg.toFixed(1), 'deg' + rotLog
                 );
             }
         } catch (e) {
@@ -882,6 +943,10 @@ class RobotKinematics {
 
         const desiredZ = normalizeVector(desiredOrientation);
 
+        // Optional spin (rotation around tool Z-axis)
+        const hasRot = typeof desiredOrientation.rotation === 'number';
+        const desiredX = hasRot ? buildToolFrame(desiredZ, desiredOrientation.rotation).xAxis : null;
+
         const clampToLimits = (angleDeg, joint) => {
             let a = angleDeg;
             if (joint && joint.limits) {
@@ -898,8 +963,13 @@ class RobotKinematics {
                 const tz = toolZAxisFromMatrix(fk.rotation);
                 const dx = pos.x - targetPose.x, dy = pos.y - targetPose.y, dz = pos.z - targetPose.z;
                 const posErr = Math.sqrt(dx * dx + dy * dy + dz * dz);
-                const dot = Math.max(-1, Math.min(1, desiredZ.x * tz.x + desiredZ.y * tz.y + desiredZ.z * tz.z));
-                const oriDeg = (Math.acos(dot) * 180) / Math.PI;
+                const dotZ = Math.max(-1, Math.min(1, desiredZ.x*tz.x + desiredZ.y*tz.y + desiredZ.z*tz.z));
+                let oriDeg = (Math.acos(dotZ) * 180) / Math.PI;
+                if (hasRot) {
+                    const tx = toolXAxisFromMatrix(fk.rotation);
+                    const dotX = Math.max(-1, Math.min(1, desiredX.x*tx.x + desiredX.y*tx.y + desiredX.z*tx.z));
+                    oriDeg += 0.5 * (Math.acos(dotX) * 180) / Math.PI;
+                }
                 return { positionErrorMm: posErr, orientationErrorDeg: oriDeg, achievedPosition: { x: pos.x, y: pos.y, z: pos.z } };
             } catch (e) {
                 return null;
@@ -916,14 +986,22 @@ class RobotKinematics {
             try {
                 for (let iter = 0; iter < maxIter; iter++) {
                     const fk = this.forwardKinematics(a);
-                    const cp = fk.position, ctz = toolZAxisFromMatrix(fk.rotation);
+                    const cp = fk.position;
+                    const ctz = toolZAxisFromMatrix(fk.rotation);
+                    const ctx = hasRot ? toolXAxisFromMatrix(fk.rotation) : null;
                     const ex = targetPose.x - cp.x, ey = targetPose.y - cp.y, ez = targetPose.z - cp.z;
                     const posErr = Math.sqrt(ex*ex + ey*ey + ez*ez);
                     const oriErrX = desiredZ.x - ctz.x, oriErrY = desiredZ.y - ctz.y, oriErrZ = desiredZ.z - ctz.z;
                     const oriErr = Math.sqrt(oriErrX*oriErrX + oriErrY*oriErrY + oriErrZ*oriErrZ);
-                    if (posErr < posTol && oriErr < oriTol) break;
+                    let rotErrX = 0, rotErrY = 0, rotErrZ = 0, rotErr = 0;
+                    if (hasRot) {
+                        rotErrX = desiredX.x - ctx.x; rotErrY = desiredX.y - ctx.y; rotErrZ = desiredX.z - ctx.z;
+                        rotErr = Math.sqrt(rotErrX*rotErrX + rotErrY*rotErrY + rotErrZ*rotErrZ);
+                    }
+                    if (posErr < posTol && oriErr < oriTol && rotErr < 0.15) break;
                     const Jpos = [new Array(numJoints).fill(0), new Array(numJoints).fill(0), new Array(numJoints).fill(0)];
                     const Jori = [new Array(numJoints).fill(0), new Array(numJoints).fill(0), new Array(numJoints).fill(0)];
+                    const Jori_x = hasRot ? [new Array(numJoints).fill(0), new Array(numJoints).fill(0), new Array(numJoints).fill(0)] : null;
                     for (let j = 0; j < numJoints; j++) {
                         const orig = a[j]; a[j] = orig + fdDeg;
                         const fp = this.forwardKinematics(a); a[j] = orig;
@@ -934,12 +1012,22 @@ class RobotKinematics {
                         Jori[0][j] = (tz2.x - ctz.x) / fdDeg;
                         Jori[1][j] = (tz2.y - ctz.y) / fdDeg;
                         Jori[2][j] = (tz2.z - ctz.z) / fdDeg;
+                        if (hasRot && Jori_x) {
+                            const tx2 = toolXAxisFromMatrix(fp.rotation);
+                            Jori_x[0][j] = (tx2.x - ctx.x) / fdDeg;
+                            Jori_x[1][j] = (tx2.y - ctx.y) / fdDeg;
+                            Jori_x[2][j] = (tx2.z - ctx.z) / fdDeg;
+                        }
                     }
                     const pinv = dampedPseudoinverse3xN(Jpos, numJoints, lambda);
                     if (!pinv) continue;
                     const dq_pos = matVec3(pinv, [ex, ey, ez]);
                     const g_ori = [];
-                    for (let j = 0; j < numJoints; j++) g_ori.push(Jori[0][j]*oriErrX + Jori[1][j]*oriErrY + Jori[2][j]*oriErrZ);
+                    for (let j = 0; j < numJoints; j++) {
+                        let g = Jori[0][j]*oriErrX + Jori[1][j]*oriErrY + Jori[2][j]*oriErrZ;
+                        if (hasRot && Jori_x) g += 0.5 * (Jori_x[0][j]*rotErrX + Jori_x[1][j]*rotErrY + Jori_x[2][j]*rotErrZ);
+                        g_ori.push(g);
+                    }
                     const dq_null = nullSpaceProject(Jpos, pinv, g_ori, numJoints);
                     for (let j = 0; j < numJoints; j++) {
                         let d = posStepSize * dq_pos[j] + oriGain * dq_null[j];
@@ -965,14 +1053,16 @@ class RobotKinematics {
         const j5Hint = clampToLimits(-(j2 + j3), numJoints > 4 ? this.joints[4] : null);
 
         // Wrist seed configurations: [j4_absolute, j5_absolute, j6_absolute]
+        // When a spin rotation is specified, seed j6 with the target rotation angle as a hint.
+        const rot6 = hasRot ? (desiredOrientation.rotation || 0) : 0;
         const wristSeeds = [
             [baseAngles[3] || 0, baseAngles[4] || 0, baseAngles[5] || 0], // current (from pos-IK)
-            [0,   j5Hint,      0],   // no roll, compensated pitch
-            [90,  j5Hint,      0],   // +90° roll
-            [-90, j5Hint,      0],   // -90° roll
-            [0,   90,          0],   // max pitch (for very low positions)
-            [90,  90,          0],   // roll + max pitch
-            [-90, 90,          0],   // -roll + max pitch
+            [0,   j5Hint,  rot6],   // no roll, compensated pitch, rotation hint
+            [90,  j5Hint,  rot6],   // +90° roll
+            [-90, j5Hint,  rot6],   // -90° roll
+            [0,   90,      rot6],   // max pitch (for very low positions)
+            [90,  90,      rot6],   // roll + max pitch
+            [-90, 90,      rot6],   // -roll + max pitch
         ];
 
         // For each seed run a short Jacobian to locally converge it, then

@@ -186,7 +186,7 @@
                 <button class="tab-button" data-tab="positions">Stored Positions</button>
                 <button class="tab-button" data-tab="deadzones">Dead Zones</button>
                 <button class="tab-button" data-tab="camera">Camera</button>
-                <button class="tab-button" data-tab="settings">Settings</button>
+                <button class="tab-button" data-tab="settings" style="display:none;">Settings</button>
                 <button class="tab-button" data-tab="curriculum">Curriculum</button>
             </div>
 
@@ -376,6 +376,11 @@
                         <button class="btn btn-secondary pendant2-wide-btn" onclick="pendantSetOrientation('current')">Lock to Current Pose</button>
                         <button class="btn btn-secondary pendant2-wide-btn" onclick="pendantSetOrientation('down')">Tool Down</button>
                         <button class="btn btn-secondary pendant2-wide-btn" onclick="pendantSetOrientation('up')">Tool Up</button>
+                        <div style="display:flex;align-items:center;gap:6px;margin-top:4px;">
+                            <label style="font-size:0.85em;white-space:nowrap;">Spin rotation (°)</label>
+                            <input id="pendantOrientationRotation" type="number" value="0" step="5"
+                                style="width:70px;" oninput="pendantSetOrientation('rotation')">
+                        </div>
                         <div class="pendant2-orientation-info" id="pendantOrientationDisplay">Jogs maintain current arm pose</div>
                     </div>
 
