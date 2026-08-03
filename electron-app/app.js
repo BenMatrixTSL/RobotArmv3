@@ -572,8 +572,8 @@ function generateQuickMovementButtons() {
     
     for (let i = 1; i <= numJoints; i++) {
         html += `
-            <button class="direction-btn" onclick="quickMove(${i}, -1)">J${i} −</button>
-            <button class="direction-btn" onclick="quickMove(${i}, 1)">J${i} +</button>
+            <button class="direction-btn joint-jog-minus" onclick="quickMove(${i}, -1)">J${i} −</button>
+            <button class="direction-btn joint-jog-plus" onclick="quickMove(${i}, 1)">J${i} +</button>
         `;
     }
     

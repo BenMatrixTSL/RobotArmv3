@@ -1302,6 +1302,43 @@ header h1 {
     margin-bottom: 15px;
 }
 
+/* Joint jog buttons — blue for minus, green for plus */
+.joint-jog-minus {
+    background: #2980b9 !important;
+    color: #fff !important;
+    font-weight: 700 !important;
+    border: none !important;
+    border-radius: 8px !important;
+    font-size: 14px !important;
+    padding: 14px 6px !important;
+    touch-action: manipulation;
+    transition: background 0.1s;
+}
+
+.joint-jog-minus:hover {
+    background: #3498db !important;
+}
+
+.joint-jog-plus {
+    background: #27ae60 !important;
+    color: #fff !important;
+    font-weight: 700 !important;
+    border: none !important;
+    border-radius: 8px !important;
+    font-size: 14px !important;
+    padding: 14px 6px !important;
+    touch-action: manipulation;
+    transition: background 0.1s;
+}
+
+.joint-jog-plus:hover {
+    background: #2ecc71 !important;
+}
+
+.joint-jog-card {
+    gap: 12px;
+}
+
 .direction-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
