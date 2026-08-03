@@ -22,7 +22,7 @@ function setToolOrientationVector(x, y, z, rotation) {
         x: vx / length,
         y: vy / length,
         z: vz / length,
-        rotation: typeof rotation === 'number' ? rotation : (currentToolOrientation.rotation || 0)
+        rotation: typeof rotation === 'number' ? rotation : ((currentToolOrientation && currentToolOrientation.rotation) || 0)
     };
 
     console.log('Tool orientation set to:', currentToolOrientation);
@@ -135,7 +135,9 @@ let safeZHeight = 300; // Default safe Z height in mm for routing over dead zone
 // Physical home (all joints 0°) has the tool pointing DOWN = {0,0,-1} in world frame.
 // toolZAxisFromMatrix returns the negative Z column, matching this physical convention.
 // rotation: degrees of spin around the tool Z-axis (0 = consistent world-aligned reference).
-let currentToolOrientation = { x: 0, y: 0, z: -1, rotation: 0 };
+// null = free (no orientation constraint; all 6 joints used for positioning).
+// {x,y,z,rotation} = locked to that tool vector.
+let currentToolOrientation = null;
 
 // Exact commanded XYZ for jog moves — updated with precise step sizes so errors
 // do not accumulate across sequential jogs. Reset to null after any non-jog move
@@ -2992,57 +2994,67 @@ async function quickMoveXYZ(axis, direction) {
 
 /**
  * Set tool orientation from the pendant UI.
- * 'current' → read FK from live joint angles and lock to that direction.
- * 'down'    → {0,0,-1} world Z-down.
- * 'forward' → {1,0,0} world X-forward.
+ * 'free' → null; all 6 joints free for positioning, no orientation constraint.
+ * 'down' → {0,0,-1} world Z-down.
+ * 'up'   → {0,0,+1} world Z-up.
+ * 'rotation' → update spin angle only, keep current direction lock.
  */
 function pendantSetOrientation(mode) {
     const display = document.getElementById('pendantOrientationDisplay');
     const rotInput = document.getElementById('pendantOrientationRotation');
+
     const getRotation = () => {
-        if (!rotInput) return currentToolOrientation.rotation || 0;
+        if (!rotInput) return (currentToolOrientation && currentToolOrientation.rotation) || 0;
         const v = parseFloat(rotInput.value);
         return isFinite(v) ? v : 0;
     };
-    if (mode === 'current') {
-        if (robotKinematics.isConfigured() && Array.isArray(lastGoodJointStatus) && lastGoodJointStatus.length > 0) {
-            try {
-                const angles = lastGoodJointStatus.map(j =>
-                    (j && typeof j.angleDegrees === 'number' && !isNaN(j.angleDegrees)) ? j.angleDegrees : 0
-                );
-                const fk = robotKinematics.forwardKinematics(angles);
-                const t = toolZAxisFromMatrix(fk.rotation);
-                // Compute current spin angle from the tool X-axis
-                const tx = toolXAxisFromMatrix(fk.rotation);
-                const frame0 = buildToolFrame(t, 0);
-                const dot_x = tx.x*frame0.xAxis.x + tx.y*frame0.xAxis.y + tx.z*frame0.xAxis.z;
-                const dot_y = tx.x*frame0.yAxis.x + tx.y*frame0.yAxis.y + tx.z*frame0.yAxis.z;
-                const rot = Math.atan2(dot_y, dot_x) * 180 / Math.PI;
-                currentToolOrientation = { x: t.x, y: t.y, z: t.z, rotation: rot };
-                if (rotInput) rotInput.value = rot.toFixed(1);
-                if (display) display.textContent = `Locked: X:${t.x.toFixed(2)} Y:${t.y.toFixed(2)} Z:${t.z.toFixed(2)} rot:${rot.toFixed(1)}°`;
-                showAppMessage('Tool orientation locked to current pose');
-            } catch (e) {
-                showAppMessage('Could not read current pose: ' + e.message);
-            }
+
+    const updateButtonStates = (activeMode) => {
+        ['free', 'down', 'up'].forEach(m => {
+            const btn = document.getElementById(`pendantOrientBtn_${m}`);
+            if (btn) btn.classList.toggle('active', m === activeMode);
+        });
+    };
+
+    const updateDisplay = () => {
+        if (!display) return;
+        if (!currentToolOrientation) {
+            display.textContent = 'Free — all 6 joints used for positioning';
+            display.style.color = '';
+            display.style.fontStyle = 'italic';
+            display.style.fontWeight = '';
         } else {
-            showAppMessage('Kinematics not configured or no joint status yet');
+            const { x, y, z, rotation } = currentToolOrientation;
+            display.textContent = `⚠ Locked: X:${x.toFixed(2)} Y:${y.toFixed(2)} Z:${z.toFixed(2)} rot:${rotation.toFixed(1)}\xb0`;
+            display.style.color = '#e67e22';
+            display.style.fontStyle = 'normal';
+            display.style.fontWeight = 'bold';
         }
-    } else if (mode === 'up') {
-        const rot = getRotation();
-        currentToolOrientation = { x: 0, y: 0, z: 1, rotation: rot };
-        if (display) display.textContent = `Locked: tool up (0, 0, +1) rot:${rot.toFixed(1)}°`;
-        showAppMessage('Tool orientation set to tool up');
+    };
+
+    if (mode === 'free') {
+        currentToolOrientation = null;
+        updateButtonStates('free');
+        updateDisplay();
+        showAppMessage('Orientation unlocked — all joints free for XYZ positioning');
     } else if (mode === 'down') {
         const rot = getRotation();
         currentToolOrientation = { x: 0, y: 0, z: -1, rotation: rot };
-        if (display) display.textContent = `Locked: tool down (0, 0, -1) rot:${rot.toFixed(1)}°`;
-        showAppMessage('Tool orientation set to tool down (home direction)');
-    } else if (mode === 'rotation') {
-        // Update just the rotation without changing the pointing direction
+        updateButtonStates('down');
+        updateDisplay();
+        showAppMessage('Tool orientation locked: pointing down (0, 0, -1)');
+    } else if (mode === 'up') {
         const rot = getRotation();
-        currentToolOrientation = { ...currentToolOrientation, rotation: rot };
-        if (display) display.textContent = `Direction: X:${currentToolOrientation.x.toFixed(2)} Y:${currentToolOrientation.y.toFixed(2)} Z:${currentToolOrientation.z.toFixed(2)} rot:${rot.toFixed(1)}°`;
+        currentToolOrientation = { x: 0, y: 0, z: 1, rotation: rot };
+        updateButtonStates('up');
+        updateDisplay();
+        showAppMessage('Tool orientation locked: pointing up (0, 0, +1)');
+    } else if (mode === 'rotation') {
+        const rot = getRotation();
+        if (currentToolOrientation) {
+            currentToolOrientation = { ...currentToolOrientation, rotation: rot };
+            updateDisplay();
+        }
     }
 }
 
