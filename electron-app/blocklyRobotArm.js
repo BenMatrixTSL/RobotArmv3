@@ -292,8 +292,11 @@ function getBlocklyToolbox() {
                 contents: [
                     { kind: 'block', type: 'gripper_open' },
                     { kind: 'block', type: 'gripper_close' },
+                    { kind: 'block', type: 'end_tool_servo' },
                     { kind: 'block', type: 'pump_on' },
-                    { kind: 'block', type: 'pump_off' }
+                    { kind: 'block', type: 'pump_off' },
+                    { kind: 'block', type: 'solenoid_on' },
+                    { kind: 'block', type: 'solenoid_off' }
                 ]
             },
             {
@@ -681,15 +684,15 @@ function defineCustomBlocks() {
         }
     };
 
-    // Tool: Pump on
+    // Tool: Pump on (vacuum = pump + solenoid)
     Blockly.Blocks['pump_on'] = {
         init: function() {
             this.appendDummyInput()
-                .appendField('Pump On');
+                .appendField('Vacuum On');
             this.setPreviousStatement(true, null);
             this.setNextStatement(true, null);
             this.setColour(165);
-            this.setTooltip('Turn the vacuum pump on (full power)');
+            this.setTooltip('Turn the vacuum on (pump + solenoid valve both on)');
         }
     };
 
@@ -697,11 +700,49 @@ function defineCustomBlocks() {
     Blockly.Blocks['pump_off'] = {
         init: function() {
             this.appendDummyInput()
-                .appendField('Pump Off');
+                .appendField('Vacuum Off');
             this.setPreviousStatement(true, null);
             this.setNextStatement(true, null);
             this.setColour(165);
-            this.setTooltip('Turn the vacuum pump off');
+            this.setTooltip('Turn the vacuum off (pump + solenoid valve both off)');
+        }
+    };
+
+    // Tool: Solenoid on
+    Blockly.Blocks['solenoid_on'] = {
+        init: function() {
+            this.appendDummyInput()
+                .appendField('Solenoid On');
+            this.setPreviousStatement(true, null);
+            this.setNextStatement(true, null);
+            this.setColour(165);
+            this.setTooltip('Open the solenoid valve (independent of pump)');
+        }
+    };
+
+    // Tool: Solenoid off
+    Blockly.Blocks['solenoid_off'] = {
+        init: function() {
+            this.appendDummyInput()
+                .appendField('Solenoid Off');
+            this.setPreviousStatement(true, null);
+            this.setNextStatement(true, null);
+            this.setColour(165);
+            this.setTooltip('Close the solenoid valve (independent of pump)');
+        }
+    };
+
+    // Tool: End tool servo angle
+    Blockly.Blocks['end_tool_servo'] = {
+        init: function() {
+            this.appendDummyInput()
+                .appendField('Set End Tool Servo to')
+                .appendField(new Blockly.FieldNumber(90, 0, 180, 1), 'ANGLE')
+                .appendField('degrees');
+            this.setPreviousStatement(true, null);
+            this.setNextStatement(true, null);
+            this.setColour(165);
+            this.setTooltip('Set the end tool servo to a specific angle (0° = closed, 180° = open)');
         }
     };
 }
@@ -1824,8 +1865,8 @@ function registerBlocklyGenerators() {
         return `
         highlightBlocklyBlock('${blockId}');
         await checkBlocklyPauseStop();
-        appendBlocklyOutput('Pump on');
-        setToolPump(true);
+        appendBlocklyOutput('Vacuum on');
+        setVacuum(true);
         `;
     };
 
@@ -1834,8 +1875,40 @@ function registerBlocklyGenerators() {
         return `
         highlightBlocklyBlock('${blockId}');
         await checkBlocklyPauseStop();
-        appendBlocklyOutput('Pump off');
-        setToolPump(false);
+        appendBlocklyOutput('Vacuum off');
+        setVacuum(false);
+        `;
+    };
+
+    Blockly.JavaScript['solenoid_on'] = function(block) {
+        const blockId = block.id;
+        return `
+        highlightBlocklyBlock('${blockId}');
+        await checkBlocklyPauseStop();
+        appendBlocklyOutput('Solenoid on');
+        setEndToolSolenoidEnabled(true);
+        `;
+    };
+
+    Blockly.JavaScript['solenoid_off'] = function(block) {
+        const blockId = block.id;
+        return `
+        highlightBlocklyBlock('${blockId}');
+        await checkBlocklyPauseStop();
+        appendBlocklyOutput('Solenoid off');
+        setEndToolSolenoidEnabled(false);
+        `;
+    };
+
+    Blockly.JavaScript['end_tool_servo'] = function(block) {
+        const blockId = block.id;
+        const angle = block.getFieldValue('ANGLE');
+        return `
+        highlightBlocklyBlock('${blockId}');
+        await checkBlocklyPauseStop();
+        appendBlocklyOutput('End tool servo to ${angle}°');
+        moveEndToolServoTo(${angle});
+        await new Promise(resolve => setTimeout(resolve, 500));
         `;
     };
 
@@ -1948,15 +2021,30 @@ function convertBlocklyToGCode(blocklyCode) {
             continue;
         }
 
-        // Convert pump_on: setToolPump(true)
-        if (line.includes('setToolPump(true)')) {
+        // Convert pump_on/pump_off (vacuum = pump + solenoid)
+        if (line.includes('setVacuum(true)')) {
             gcode += 'M62\n';
             continue;
         }
-
-        // Convert pump_off: setToolPump(false)
-        if (line.includes('setToolPump(false)')) {
+        if (line.includes('setVacuum(false)')) {
             gcode += 'M63\n';
+            continue;
+        }
+
+        // Convert solenoid_on / solenoid_off
+        if (line.includes('setEndToolSolenoidEnabled(true)')) {
+            gcode += 'M64\n';
+            continue;
+        }
+        if (line.includes('setEndToolSolenoidEnabled(false)')) {
+            gcode += 'M65\n';
+            continue;
+        }
+
+        // Convert end_tool_servo: moveEndToolServoTo(angle)
+        const servoToMatch = line.match(/moveEndToolServoTo\((\d+)\)/);
+        if (servoToMatch) {
+            gcode += `M12 P${servoToMatch[1]}\n`;
             continue;
         }
 
@@ -2087,15 +2175,30 @@ function convertBlocklyToRapid(blocklyCode) {
             continue;
         }
 
-        // Convert pump_on: setToolPump(true)
-        if (line.includes('setToolPump(true)')) {
+        // Convert pump_on/pump_off (vacuum = pump + solenoid)
+        if (line.includes('setVacuum(true)')) {
             rapid += 'PumpOn;\n';
             continue;
         }
-
-        // Convert pump_off: setToolPump(false)
-        if (line.includes('setToolPump(false)')) {
+        if (line.includes('setVacuum(false)')) {
             rapid += 'PumpOff;\n';
+            continue;
+        }
+
+        // Convert solenoid_on / solenoid_off
+        if (line.includes('setEndToolSolenoidEnabled(true)')) {
+            rapid += 'SolenoidOn;\n';
+            continue;
+        }
+        if (line.includes('setEndToolSolenoidEnabled(false)')) {
+            rapid += 'SolenoidOff;\n';
+            continue;
+        }
+
+        // Convert end_tool_servo: moveEndToolServoTo(angle)
+        const servoToMatch = line.match(/moveEndToolServoTo\((\d+)\)/);
+        if (servoToMatch) {
+            rapid += `ServoTo ${servoToMatch[1]};\n`;
             continue;
         }
 

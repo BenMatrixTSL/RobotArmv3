@@ -4506,18 +4506,35 @@ async function executeGCodeCommand(command) {
                 await robotArmClient.sendCommand('toolSetServoEnabledAndAngle', { angle: 0 });
                 await new Promise(resolve => setTimeout(resolve, 500));
             }
+        } else if (command.code === 'M12') {
+            // M12 P<angle> = End tool servo to angle
+            const angle = command.params.P;
+            if (angle === undefined) {
+                gcodeProcessor.log('M12: missing P parameter (angle 0-180)');
+            } else {
+                const a = Math.max(0, Math.min(180, Math.round(angle)));
+                gcodeProcessor.log(`M12: Servo to ${a}°`);
+                if (robotArmClient.isConnected) {
+                    await robotArmClient.sendCommand('toolSetServoEnabledAndAngle', { angle: a });
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                }
+            }
         } else if (command.code === 'M62') {
-            // M62 = Vacuum pump on
-            gcodeProcessor.log('M62: Pump on');
-            if (robotArmClient.isConnected) {
-                await robotArmClient.sendCommand('toolSetPwm', { pwm1Duty: 255, enable1: true });
-            }
+            // M62 = Vacuum on (pump + solenoid valve)
+            gcodeProcessor.log('M62: Vacuum on (pump + solenoid)');
+            setVacuum(true);
         } else if (command.code === 'M63') {
-            // M63 = Vacuum pump off
-            gcodeProcessor.log('M63: Pump off');
-            if (robotArmClient.isConnected) {
-                await robotArmClient.sendCommand('toolSetPwm', { pwm1Duty: 0, enable1: false });
-            }
+            // M63 = Vacuum off (pump + solenoid valve)
+            gcodeProcessor.log('M63: Vacuum off (pump + solenoid)');
+            setVacuum(false);
+        } else if (command.code === 'M64') {
+            // M64 = Solenoid valve on (independent of pump)
+            gcodeProcessor.log('M64: Solenoid on');
+            setEndToolSolenoidEnabled(true);
+        } else if (command.code === 'M65') {
+            // M65 = Solenoid valve off (independent of pump)
+            gcodeProcessor.log('M65: Solenoid off');
+            setEndToolSolenoidEnabled(false);
         } else if (command.code === 'M30' || command.code === 'M2') {
             // Program end
             gcodeProcessor.log(`M-code: ${command.code} (program end)`);
@@ -5022,16 +5039,31 @@ async function runRapidProgram() {
             }
         } else if (/^PumpOn\b/i.test(line)) {
             console.log('RAPID: PumpOn on line', i + 1);
-            if (robotArmClient && robotArmClient.isConnected) {
-                await robotArmClient.sendCommand('toolSetPwm', { pwm1Duty: 255, enable1: true });
-            }
+            setVacuum(true);
         } else if (/^PumpOff\b/i.test(line)) {
             console.log('RAPID: PumpOff on line', i + 1);
-            if (robotArmClient && robotArmClient.isConnected) {
-                await robotArmClient.sendCommand('toolSetPwm', { pwm1Duty: 0, enable1: false });
+            setVacuum(false);
+        } else if (/^SolenoidOn\b/i.test(line)) {
+            console.log('RAPID: SolenoidOn on line', i + 1);
+            setEndToolSolenoidEnabled(true);
+        } else if (/^SolenoidOff\b/i.test(line)) {
+            console.log('RAPID: SolenoidOff on line', i + 1);
+            setEndToolSolenoidEnabled(false);
+        } else if (/^ServoTo\b/i.test(line)) {
+            // ServoTo <angle>;  e.g. ServoTo 90;
+            const m = line.match(/^ServoTo\s+([\d.]+)/i);
+            if (m) {
+                const angle = Math.max(0, Math.min(180, Math.round(parseFloat(m[1]))));
+                console.log('RAPID: ServoTo', angle, 'on line', i + 1);
+                if (robotArmClient && robotArmClient.isConnected) {
+                    await robotArmClient.sendCommand('toolSetServoEnabledAndAngle', { angle });
+                    await new Promise(function (resolve) { setTimeout(resolve, 500); });
+                }
+            } else {
+                console.warn('RAPID: ServoTo missing angle on line', i + 1);
             }
         } else {
-            console.warn('RAPID: Unsupported line (MoveJ/MoveAbsJ/MoveJOffs/MoveLXYZ/MoveLOffs/WaitTime/SetDO/Home/GripperOpen/GripperClose/PumpOn/PumpOff):', line);
+            console.warn('RAPID: Unsupported line (MoveJ/MoveAbsJ/MoveJOffs/MoveLXYZ/MoveLOffs/WaitTime/SetDO/Home/GripperOpen/GripperClose/PumpOn/PumpOff/SolenoidOn/SolenoidOff/ServoTo):', line);
         }
     }
 
@@ -7110,6 +7142,11 @@ function setEndToolSolenoidEnabled(enabled) {
     );
     const stateEl = document.getElementById('endToolSolenoidStateText');
     if (stateEl) stateEl.textContent = enabled ? 'Open' : 'Closed';
+}
+
+function setVacuum(on) {
+    setEndToolPumpEnabled(on);
+    setEndToolSolenoidEnabled(on);
 }
 
 // ===== End Tool Current Polling =====

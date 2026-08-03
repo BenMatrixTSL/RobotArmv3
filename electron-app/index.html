@@ -558,17 +558,32 @@
                         <tr>
                             <td><strong>M10</strong>, <strong>M11</strong></td>
                             <td>
-                                Gripper control.<br>
+                                Gripper servo shortcuts.<br>
                                 <code>M10</code> → open gripper (servo to 180°).<br>
                                 <code>M11</code> → close gripper (servo to 0°).
                             </td>
                         </tr>
                         <tr>
+                            <td><strong>M12</strong></td>
+                            <td>
+                                End tool servo to a specific angle.<br>
+                                <code>M12 P90</code> → servo to 90° (0–180).
+                            </td>
+                        </tr>
+                        <tr>
                             <td><strong>M62</strong>, <strong>M63</strong></td>
                             <td>
-                                Vacuum pump control.<br>
-                                <code>M62</code> → pump on.<br>
-                                <code>M63</code> → pump off.
+                                Vacuum on/off — controls pump <em>and</em> solenoid valve together.<br>
+                                <code>M62</code> → vacuum on (pump + solenoid).<br>
+                                <code>M63</code> → vacuum off (pump + solenoid).
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>M64</strong>, <strong>M65</strong></td>
+                            <td>
+                                Solenoid valve only (independent of pump).<br>
+                                <code>M64</code> → solenoid on.<br>
+                                <code>M65</code> → solenoid off.
                             </td>
                         </tr>
                         <tr>
