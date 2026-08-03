@@ -342,78 +342,115 @@
         </div>
 
         <!-- Touchscreen Pendant Tab -->
-        <div id="pendant-ui-tab" class="tab-content">
-            <h2>Pendant Control (Touchscreen)</h2>
-            <p class="info-text">
-                This page is designed for touchscreens. Use the large arrow buttons to jog the robot in XYZ,
-                return to home, and perform common actions without needing a keyboard or mouse.
-            </p>
+        <div id="pendant-ui-tab" class="tab-content pendant2-page">
 
-            <div class="pendant-layout">
-                <div class="pendant-panel">
-                    <h3>Current Position</h3>
-                    <div class="pendant-position">
-                        <div class="pendant-pos-line">X: <span id="pendantX">-</span> mm</div>
-                        <div class="pendant-pos-line">Y: <span id="pendantY">-</span> mm</div>
-                        <div class="pendant-pos-line">Z: <span id="pendantZ">-</span> mm</div>
+            <!-- Header: position readout + critical controls -->
+            <div class="pendant2-header">
+                <div class="pendant2-position-box">
+                    <div class="pendant2-pos-line">X: <span id="pendantX">-</span> <span class="pendant2-unit">mm</span></div>
+                    <div class="pendant2-pos-line">Y: <span id="pendantY">-</span> <span class="pendant2-unit">mm</span></div>
+                    <div class="pendant2-pos-line">Z: <span id="pendantZ">-</span> <span class="pendant2-unit">mm</span></div>
+                </div>
+                <div class="pendant2-header-actions">
+                    <button class="btn btn-danger pendant2-estop" onclick="stopAllJoints()">EMERGENCY<br>STOP</button>
+                    <button class="btn btn-secondary pendant2-home-btn" onclick="homeAllJoints()">Home All<br>Joints</button>
+                </div>
+            </div>
+
+            <!-- Main area: jog pad + right-side controls -->
+            <div class="pendant2-main">
+
+                <!-- XYZ Jog pad -->
+                <div class="pendant2-jog-card">
+                    <div class="pendant2-jog-label">XYZ JOG</div>
+                    <div class="pendant2-jog-cluster">
+                        <!-- XY D-pad (3×3 grid) -->
+                        <div class="pendant2-dpad">
+                            <div class="pendant2-dpad-empty"></div>
+                            <button class="btn pendant2-jog-btn pendant2-jog-xy" onclick="quickMoveXYZ('Y', 1)">Y+<br>▲</button>
+                            <div class="pendant2-dpad-empty"></div>
+                            <button class="btn pendant2-jog-btn pendant2-jog-xy" onclick="quickMoveXYZ('X', -1)">◀<br>X−</button>
+                            <div class="pendant2-dpad-center">XY</div>
+                            <button class="btn pendant2-jog-btn pendant2-jog-xy" onclick="quickMoveXYZ('X', 1)">X+<br>▶</button>
+                            <div class="pendant2-dpad-empty"></div>
+                            <button class="btn pendant2-jog-btn pendant2-jog-xy" onclick="quickMoveXYZ('Y', -1)">▼<br>Y−</button>
+                            <div class="pendant2-dpad-empty"></div>
+                        </div>
+                        <!-- Z controls (vertical column) -->
+                        <div class="pendant2-z-col">
+                            <button class="btn pendant2-jog-btn pendant2-jog-z" onclick="quickMoveXYZ('Z', 1)">▲<br>Z+</button>
+                            <div class="pendant2-z-label">Z</div>
+                            <button class="btn pendant2-jog-btn pendant2-jog-z" onclick="quickMoveXYZ('Z', -1)">Z−<br>▼</button>
+                        </div>
+                    </div>
+
+                    <!-- Step size presets -->
+                    <div class="pendant2-step-row">
+                        <span class="pendant2-step-label">Step (mm):</span>
+                        <button class="btn pendant2-step-btn active" onclick="setPendantStep(1, this)">1</button>
+                        <button class="btn pendant2-step-btn" onclick="setPendantStep(5, this)">5</button>
+                        <button class="btn pendant2-step-btn" onclick="setPendantStep(10, this)">10</button>
+                        <button class="btn pendant2-step-btn" onclick="setPendantStep(25, this)">25</button>
+                        <input type="hidden" id="xyzStepSize" value="1">
                     </div>
                 </div>
 
-                <div class="pendant-panel">
-                    <h3>XY Jog</h3>
-                    <div class="pendant-xy-wheel">
-                        <button class="btn pendant-btn pendant-xy-btn pendant-xy-up" onclick="quickMoveXYZ('Y', 1)">Y+</button>
-                        <button class="btn pendant-btn pendant-xy-btn pendant-xy-down" onclick="quickMoveXYZ('Y', -1)">Y-</button>
-                        <button class="btn pendant-btn pendant-xy-btn pendant-xy-left" onclick="quickMoveXYZ('X', -1)">X-</button>
-                        <button class="btn pendant-btn pendant-xy-btn pendant-xy-right" onclick="quickMoveXYZ('X', 1)">X+</button>
-                        <button class="btn pendant-btn pendant-xy-btn pendant-xy-center" onclick="homeAllJoints()">Home</button>
-                    </div>
-                </div>
+                <!-- Right-side panels -->
+                <div class="pendant2-side-panels">
 
-                <div class="pendant-panel">
-                    <h3>Z Jog</h3>
-                    <div class="pendant-z-grid">
-                        <button class="btn pendant-btn" onclick="quickMoveXYZ('Z', 1)">Z+ ▲</button>
-                        <button class="btn pendant-btn" onclick="quickMoveXYZ('Z', -1)">▼ Z-</button>
+                    <div class="pendant2-card">
+                        <div class="pendant2-card-title">Tool Orientation</div>
+                        <button class="btn btn-secondary pendant2-wide-btn" onclick="pendantSetOrientation('current')">Lock to Current Pose</button>
+                        <button class="btn btn-secondary pendant2-wide-btn" onclick="pendantSetOrientation('down')">Tool Down</button>
+                        <button class="btn btn-secondary pendant2-wide-btn" onclick="pendantSetOrientation('up')">Tool Up</button>
+                        <div class="pendant2-orientation-info" id="pendantOrientationDisplay">Jogs maintain current arm pose</div>
                     </div>
-                </div>
 
-                <div class="pendant-panel">
-                    <h3>Quick Actions</h3>
-                    <div class="pendant-actions">
-                        <button class="btn btn-secondary pendant-wide-btn" onclick="homeAllJoints()">Home All Joints</button>
-                        <button class="btn btn-danger pendant-wide-btn" onclick="stopAllJoints()">Emergency Stop</button>
-                        <button class="btn btn-primary pendant-wide-btn" onclick="moveToXYZ()">Move to Target XYZ</button>
-                    </div>
-                    <div class="pendant-step-settings">
-                        <label>
-                            Jog Step (mm):
-                            <input type="text" id="xyzStepSize" value="5">
-                        </label>
-                    </div>
-                </div>
-
-                <div class="pendant-panel">
-                    <h3>Tool Orientation</h3>
-                    <p class="info-text" style="margin-bottom:8px">Direction the tool tip points during XYZ moves.</p>
-                    <div class="pendant-actions">
-                        <button class="btn btn-secondary pendant-wide-btn" onclick="pendantSetOrientation('current')">Lock to Current Pose</button>
-                        <button class="btn btn-secondary pendant-wide-btn" onclick="pendantSetOrientation('down')">Tool Down (Home)</button>
-                        <button class="btn btn-secondary pendant-wide-btn" onclick="pendantSetOrientation('up')">Tool Up</button>
-                    </div>
-                    <div style="margin-top:6px;font-size:0.85em;color:#666" id="pendantOrientationDisplay">Jogs always maintain current arm pose</div>
-                </div>
-
-                <div class="pendant-panel">
-                    <h3>Move to Stored Position</h3>
-                    <div class="pendant-stored-pos">
-                        <label for="pendantPositionSelect">Stored Position:</label>
-                        <select id="pendantPositionSelect">
-                            <option value="">Select position</option>
+                    <div class="pendant2-card">
+                        <div class="pendant2-card-title">Move to Stored Position</div>
+                        <select id="pendantPositionSelect" class="pendant2-select">
+                            <option value="">Select position…</option>
                         </select>
-                        <button class="btn btn-primary pendant-wide-btn" onclick="moveToStoredPositionFromPendant()">Move to Position</button>
+                        <button class="btn btn-primary pendant2-wide-btn" onclick="moveToStoredPositionFromPendant()">Move to Position</button>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- End tool controls (full width) -->
+            <div class="pendant2-end-tools-row">
+
+                <div class="pendant2-card pendant2-end-tool-card">
+                    <div class="pendant2-card-title">End Tool — Servo</div>
+                    <div class="pendant2-end-tool-btns">
+                        <button class="btn btn-secondary pendant2-tool-btn" onclick="setEndToolServoEnabled(true)">Enable</button>
+                        <button class="btn btn-secondary pendant2-tool-btn" onclick="setEndToolServoEnabled(false)">Disable</button>
+                    </div>
+                    <div class="pendant2-end-tool-btns pendant2-end-tool-presets">
+                        <button class="btn pendant2-tool-btn pendant2-servo-btn" onclick="moveEndToolServoTo(0)">Close<br><span class="pendant2-angle-sub">0°</span></button>
+                        <button class="btn pendant2-tool-btn pendant2-servo-btn" onclick="moveEndToolServoTo(45)">45°</button>
+                        <button class="btn pendant2-tool-btn pendant2-servo-btn" onclick="moveEndToolServoTo(90)">Half<br><span class="pendant2-angle-sub">90°</span></button>
+                        <button class="btn pendant2-tool-btn pendant2-servo-btn" onclick="moveEndToolServoTo(135)">135°</button>
+                        <button class="btn pendant2-tool-btn pendant2-servo-btn" onclick="moveEndToolServoTo(180)">Open<br><span class="pendant2-angle-sub">180°</span></button>
                     </div>
                 </div>
+
+                <div class="pendant2-card pendant2-end-tool-card">
+                    <div class="pendant2-card-title">End Tool — Pump</div>
+                    <div class="pendant2-end-tool-btns">
+                        <button class="btn btn-secondary pendant2-tool-btn pendant2-pump-on" onclick="setEndToolPumpEnabled(true)">Pump ON</button>
+                        <button class="btn btn-secondary pendant2-tool-btn" onclick="setEndToolPumpEnabled(false)">Pump OFF</button>
+                    </div>
+                </div>
+
+                <div class="pendant2-card pendant2-end-tool-card">
+                    <div class="pendant2-card-title">End Tool — Solenoid Valve</div>
+                    <div class="pendant2-end-tool-btns">
+                        <button class="btn btn-secondary pendant2-tool-btn pendant2-pump-on" onclick="setEndToolSolenoidEnabled(true)">Valve ON</button>
+                        <button class="btn btn-secondary pendant2-tool-btn" onclick="setEndToolSolenoidEnabled(false)">Valve OFF</button>
+                    </div>
+                </div>
+
             </div>
         </div>
 
@@ -1245,14 +1282,6 @@
             </div> <!-- end tab-content-container -->
         </div> <!-- end main-layout -->
 
-        <!-- Footer -->
-        <footer class="app-footer">
-            <p>
-                <a href="https://www.matrixtsl.com/robot-arm/" target="_blank" rel="noopener noreferrer">
-                    Click here for curriculum and resources
-                </a>
-            </p>
-        </footer>
     </div>
 
     <!-- Scripts -->

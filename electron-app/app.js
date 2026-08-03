@@ -3024,6 +3024,13 @@ function pendantSetOrientation(mode) {
     }
 }
 
+function setPendantStep(value, btn) {
+    const input = document.getElementById('xyzStepSize');
+    if (input) input.value = value;
+    document.querySelectorAll('.pendant2-step-btn').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+}
+
 /**
  * Copies current XYZ position to target inputs
  */
