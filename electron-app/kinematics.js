@@ -554,6 +554,10 @@ class RobotKinematics {
             }
         }
 
+        // Capture seed angles as posture reference — used by the null-space posture task
+        // to keep the arm in its current configuration when no orientation is locked.
+        const seedAngles = angles.slice();
+
         // Settings for the solver
         const maxIterations = 800;
         const positionToleranceMm = 0.3;  // stop when within 0.3 mm
@@ -662,9 +666,11 @@ class RobotKinematics {
                 // Primary update: move toward target position
                 const dq_primary = matVec3(Jpos_pinv, [errX, errY, errZ]);
 
-                // Secondary update: combined orientation + rotation gradient in null space
+                // Secondary update: orientation lock OR posture control, projected into
+                // the null space of J_pos so the primary position task is unaffected.
                 let dq_null = null;
                 if (hasOrientationTarget && Jori) {
+                    // Orientation is locked — drive tool Z (and optionally X) toward target.
                     const g_ori = [];
                     for (let j = 0; j < numJoints; j++) {
                         let g = Jori[0][j]*oriErrX + Jori[1][j]*oriErrY + Jori[2][j]*oriErrZ;
@@ -675,6 +681,13 @@ class RobotKinematics {
                         g_ori.push(g);
                     }
                     dq_null = nullSpaceProject(Jpos, Jpos_pinv, g_ori, numJoints);
+                } else {
+                    // No orientation locked — use null space to hold the arm's starting
+                    // configuration (posture control). Without this the 3 redundant DOF
+                    // drift freely over 800 iterations, causing cross-axis position errors
+                    // (e.g. Z shifts when jogging X).
+                    const g_posture = seedAngles.map((a, j) => a - angles[j]);
+                    dq_null = nullSpaceProject(Jpos, Jpos_pinv, g_posture, numJoints);
                 }
 
                 for (let j = 0; j < numJoints; j++) {

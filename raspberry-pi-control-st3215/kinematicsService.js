@@ -480,6 +480,7 @@ class RobotKinematics {
                 angles.push(0);
             }
         }
+        const seedAngles = angles.slice();
 
         const maxIterations = 800;
         const positionToleranceMm = 0.3;
@@ -558,6 +559,11 @@ class RobotKinematics {
                     g_ori.push(Jori[0][j]*oriErrX + Jori[1][j]*oriErrY + Jori[2][j]*oriErrZ);
                 }
                 dq_null = nullSpaceProject(Jpos, Jpos_pinv, g_ori, numJoints);
+            } else {
+                // No orientation locked — posture control: keep joints near seed configuration
+                // so cross-axis position errors don't accumulate over 800 iterations.
+                const g_posture = seedAngles.map((a, j) => a - angles[j]);
+                dq_null = nullSpaceProject(Jpos, Jpos_pinv, g_posture, numJoints);
             }
 
             for (let j = 0; j < numJoints; j++) {
