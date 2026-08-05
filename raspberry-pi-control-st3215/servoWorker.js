@@ -21,6 +21,8 @@
 
 const { SerialPort } = require('serialport');
 const RobotArm = require('./robotArmST3215');
+const fs   = require('fs');
+const path = require('path');
 
 // Catch-all safety net: log the error and exit so the parent can restart us.
 // A silent crash (unhandled rejection with no output) is the hardest to debug.
@@ -1103,9 +1105,45 @@ process.on('message', (msg) => {
     }
 });
 
+// ===== PID config auto-apply =====
+const PID_CONFIG_PATH = path.join(__dirname, 'servo-pid-config.json');
+
+async function applyPIDConfig() {
+    if (!fs.existsSync(PID_CONFIG_PATH)) {
+        log('No servo-pid-config.json found — using factory defaults');
+        return;
+    }
+    let cfg;
+    try {
+        cfg = JSON.parse(fs.readFileSync(PID_CONFIG_PATH, 'utf8'));
+    } catch (e) {
+        log('servo-pid-config.json parse error: ' + e.message, true);
+        return;
+    }
+    const joints = cfg && cfg.joints;
+    if (!joints) { log('servo-pid-config.json missing joints key', true); return; }
+
+    for (let i = 0; i < servos.length; i++) {
+        const servo = servos[i];
+        if (!servo) continue;
+        const jointId = String(i + 1);
+        const entry   = joints[jointId];
+        if (!entry)   continue;
+
+        const { p = 32, d = 32, i: integralGain = 0, minStartupForce = 16 } = entry;
+        try {
+            await servo.writePIDValues(p, d, integralGain, minStartupForce);
+            log(`PID applied J${jointId}: P=${p} D=${d} I=${integralGain} MinStartup=${minStartupForce}`);
+        } catch (e) {
+            log(`PID apply failed J${jointId}: ${e.message}`, true);
+        }
+    }
+}
+
 // ===== Start =====
 log(`Servo worker starting (pid=${process.pid} VERBOSE_LOG=${VERBOSE_LOG} STATUS_POLL_MS=${STATUS_POLL_INTERVAL_MS} MIN_GAP_MS=${MIN_BUS_TICK_GAP_MS})`);
 initializeServos().then(async () => {
+    await applyPIDConfig();
     await refreshJointStatusCacheFromBus();
     startBusTickLoop();
     process.send({ type: 'ready', jointConfigs: getJointConfigsSnapshot() });

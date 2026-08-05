@@ -58,6 +58,14 @@ const STS_PRESENT_VOLTAGE = 62;
 const STS_PRESENT_TEMPERATURE = 63;
 const STS_MOVING = 66;
 
+// EEPROM register addresses (STS3215, addr 0x00–0x27).
+// Writing requires unlocking at STS_EEPROM_LOCK first.
+const STS_EEPROM_LOCK       = 0x37;  // 0 = unlocked, 1 = locked (default locked)
+const STS_P_COEF            = 0x15;  // Position proportional gain  (byte, default 32)
+const STS_D_COEF            = 0x16;  // Position derivative gain    (byte, default 32)
+const STS_I_COEF            = 0x17;  // Position integral gain      (byte, default  0)
+const STS_MIN_STARTUP_FORCE = 0x18;  // Minimum startup force       (byte, default 16)
+
 // Position limits
 const MIN_POSITION = 0;
 const MAX_POSITION = 4095;
@@ -1376,6 +1384,35 @@ class ServoController {
             if (DEBUG) console.error(`Servo ${this.servoId}: Failed to read quick status:`, error.message);
             throw error;
         }
+    }
+
+    /**
+     * Read current PID coefficients and minimum startup force from EEPROM.
+     * @returns {{ p, d, i, minStartupForce }} — all bytes 0–254
+     */
+    async readPIDValues() {
+        const data = await this.readData(STS_P_COEF, 4);
+        return {
+            p:               data[0],
+            d:               data[1],
+            i:               data[2],
+            minStartupForce: data[3],
+        };
+    }
+
+    /**
+     * Write PID coefficients and minimum startup force to EEPROM.
+     * Unlocks EEPROM first; takes effect immediately without power-cycle.
+     * @param {number} p  - Proportional gain  (0–254, default 32)
+     * @param {number} d  - Derivative gain     (0–254, default 32)
+     * @param {number} i  - Integral gain       (0–254, default  0)
+     * @param {number} minStartupForce          (0–254, default 16)
+     */
+    async writePIDValues(p, d, i = 0, minStartupForce = 16) {
+        await this.writeData(STS_EEPROM_LOCK, [0]);                   // unlock EEPROM
+        await new Promise(r => setTimeout(r, 25));
+        await this.writeData(STS_P_COEF, [p, d, i, minStartupForce]); // write 4 bytes in one packet
+        await new Promise(r => setTimeout(r, 40));
     }
 }
 

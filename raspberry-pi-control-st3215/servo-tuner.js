@@ -1,0 +1,273 @@
+'use strict';
+/**
+ * servo-tuner.js — Automated PID tuner for ST3215 servo joints.
+ *
+ * Sweeps P and D gain values for each joint, measures position tracking error
+ * on step-response moves, and writes the best combination to EEPROM.
+ * Results are saved to servo-pid-config.json for auto-apply at startup.
+ *
+ * BEFORE RUNNING:
+ *   sudo systemctl stop st3215-server.service
+ *   node servo-tuner.js
+ *   sudo systemctl start st3215-server.service
+ *
+ * The arm must be in a safe resting position (near home / all joints ~0°).
+ * Only one joint moves at a time; all others stay at whatever angle they're at.
+ */
+
+const { ServoController } = require('./robotArmST3215');
+const { SerialPort }       = require('serialport');
+const fs                   = require('fs');
+const path                 = require('path');
+
+const SERIAL_PORT  = process.env.SERIAL_PORT  || '/dev/serial0';
+const BAUD_RATE    = 1_000_000;
+const CONFIG_PATH  = path.join(__dirname, 'servo-pid-config.json');
+
+// ── EEPROM register addresses ──────────────────────────────────────────────
+const REG_EEPROM_LOCK    = 0x37;  // 0 = unlocked
+const REG_MAX_TORQUE_L   = 0x10;  // 2-byte word, 0–1000
+const REG_UNLOADING_COND = 0x13;  // overload-protection flags
+const REG_P_COEF         = 0x15;  // position P gain  (byte, default 32)
+const REG_D_COEF         = 0x16;  // position D gain  (byte, default 32)
+const REG_I_COEF         = 0x17;  // position I gain  (byte, default  0)
+const REG_MIN_STARTUP    = 0x18;  // min startup force(byte, default 16)
+const REG_PROT_TORQUE    = 0x21;  // protection torque% after overload
+
+// ── Tuning parameters ──────────────────────────────────────────────────────
+const P_CANDIDATES  = [24, 32, 40, 48, 64, 80];
+const D_CANDIDATES  = [16, 24, 32, 48, 64];
+const TEST_SPEED    = 500;   // steps/s (~44 °/s) — moderate speed for testing
+const SETTLE_EXTRA  = 400;   // ms to wait after isMoving clears before reading
+
+// Per-joint test: move this many degrees from current position, then back.
+// Signs are chosen to be safe from ~0° home for each joint's limits.
+const JOINT_CONFIG = {
+    1: { label: 'J1 base yaw',       testOffsetDeg:  15 },
+    2: { label: 'J2 shoulder pitch', testOffsetDeg: -15 },
+    3: { label: 'J3 elbow pitch',    testOffsetDeg:  15 },
+    4: { label: 'J4 wrist roll 1',   testOffsetDeg:  15 },
+    5: { label: 'J5 wrist pitch',    testOffsetDeg:  15 },
+    6: { label: 'J6 wrist roll 2',   testOffsetDeg:  15 },
+};
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+const sleep        = ms   => new Promise(r => setTimeout(r, ms));
+const stepsToAngle = s    => (s - 2048) / 11.377;
+const angleToSteps = deg  => Math.round(2048 + deg * 11.377);
+
+async function avgPosition(ctrl, samples = 3) {
+    let sum = 0;
+    for (let n = 0; n < samples; n++) {
+        sum += await ctrl.getPosition();
+        if (n < samples - 1) await sleep(15);
+    }
+    return sum / samples;
+}
+
+async function waitSettle(ctrl) {
+    for (let i = 0; i < 150; i++) {
+        const moving = await ctrl.isMoving().catch(() => false);
+        if (!moving) break;
+        await sleep(30);
+    }
+    await sleep(SETTLE_EXTRA);
+}
+
+async function unlockAndWritePID(ctrl, p, d, i, startup) {
+    await ctrl.writeData(REG_EEPROM_LOCK, [0]);
+    await sleep(25);
+    await ctrl.writeData(REG_P_COEF, [p, d, i, startup]);
+    await sleep(40);
+}
+
+/**
+ * Move to targetSteps, settle, read actual; return to homeSteps, settle, read actual.
+ * Returns { forwardErr, returnErr, score } all in degrees.
+ */
+async function stepResponse(ctrl, homeSteps, targetSteps) {
+    await ctrl.setSpeed(TEST_SPEED);
+    await ctrl.moveToPosition(Math.round(targetSteps));
+    await waitSettle(ctrl);
+    const atTarget  = await avgPosition(ctrl);
+    const forwardErr = Math.abs(stepsToAngle(atTarget) - stepsToAngle(targetSteps));
+
+    await ctrl.setSpeed(TEST_SPEED);
+    await ctrl.moveToPosition(Math.round(homeSteps));
+    await waitSettle(ctrl);
+    const atHome   = await avgPosition(ctrl);
+    const returnErr = Math.abs(stepsToAngle(atHome) - stepsToAngle(homeSteps));
+
+    // Score: forward tracking weighted higher than return (gravity affects one direction)
+    return { forwardErr, returnErr, score: forwardErr + returnErr * 0.5 };
+}
+
+// ── Per-joint tuning ───────────────────────────────────────────────────────
+async function tuneJoint(ctrl, jointId) {
+    const cfg = JOINT_CONFIG[jointId];
+    console.log(`\n${'─'.repeat(56)}`);
+    console.log(`  ${cfg.label}  (servo ID ${jointId})`);
+    console.log('─'.repeat(56));
+
+    // ── Read diagnostics ──
+    const maxTorqueRaw  = await ctrl.readData(REG_MAX_TORQUE_L, 2);
+    const maxTorque     = maxTorqueRaw[0] | (maxTorqueRaw[1] << 8);
+    const unloading     = (await ctrl.readData(REG_UNLOADING_COND, 1))[0];
+    const protTorque    = (await ctrl.readData(REG_PROT_TORQUE, 1))[0];
+    console.log(`  Diagnostics: MaxTorque=${maxTorque}/1000  UnloadingCond=0b${unloading.toString(2).padStart(8,'0')}  ProtTorque=${protTorque}%`);
+    if (unloading & 0x08) console.log('  ⚠  Stall-detection bit set in UnloadingCond — servo may cut torque when stalled');
+
+    // ── Read current PID ──
+    const pidData = await ctrl.readData(REG_P_COEF, 4);
+    const [origP, origD, origI, origStartup] = pidData;
+    console.log(`  Current PID: P=${origP}  D=${origD}  I=${origI}  MinStartup=${origStartup}`);
+
+    // ── Capture home ──
+    const homeSteps  = await avgPosition(ctrl);
+    const homeDeg    = stepsToAngle(homeSteps);
+    const targetDeg  = homeDeg + cfg.testOffsetDeg;
+    const targetSteps = angleToSteps(targetDeg);
+    console.log(`  Home: ${homeDeg.toFixed(2)}°   Target: ${targetDeg.toFixed(2)}°   (offset ${cfg.testOffsetDeg > 0 ? '+' : ''}${cfg.testOffsetDeg}°)`);
+
+    // ── Baseline with current settings ──
+    const baseline = await stepResponse(ctrl, homeSteps, targetSteps);
+    console.log(`\n  Baseline (P=${origP} D=${origD}): fwd=${baseline.forwardErr.toFixed(3)}°  ret=${baseline.returnErr.toFixed(3)}°  score=${baseline.score.toFixed(3)}`);
+
+    let bestP = origP, bestD = origD, bestScore = baseline.score;
+
+    // ── Sweep P (D held at original) ──
+    console.log(`\n  P sweep (D=${origD} fixed):`);
+    for (const p of P_CANDIDATES) {
+        if (p === origP) {
+            console.log(`    P=${p.toString().padStart(2)}: (baseline — already measured)`);
+            continue;
+        }
+        await unlockAndWritePID(ctrl, p, origD, origI, origStartup);
+        const r = await stepResponse(ctrl, homeSteps, targetSteps);
+        const flag = r.score < bestScore ? ' ←best' : '';
+        console.log(`    P=${p.toString().padStart(2)}: fwd=${r.forwardErr.toFixed(3)}°  ret=${r.returnErr.toFixed(3)}°  score=${r.score.toFixed(3)}${flag}`);
+        if (r.score < bestScore) { bestScore = r.score; bestP = p; }
+    }
+
+    // ── Sweep D (best P held fixed) ──
+    console.log(`\n  D sweep (P=${bestP} fixed):`);
+    for (const d of D_CANDIDATES) {
+        if (d === origD && bestP === origP) {
+            console.log(`    D=${d.toString().padStart(2)}: (baseline — already measured)`);
+            continue;
+        }
+        await unlockAndWritePID(ctrl, bestP, d, origI, origStartup);
+        const r = await stepResponse(ctrl, homeSteps, targetSteps);
+        const flag = r.score < bestScore ? ' ←best' : '';
+        console.log(`    D=${d.toString().padStart(2)}: fwd=${r.forwardErr.toFixed(3)}°  ret=${r.returnErr.toFixed(3)}°  score=${r.score.toFixed(3)}${flag}`);
+        if (r.score < bestScore) { bestScore = r.score; bestD = d; }
+    }
+
+    // ── Detect if EEPROM writes had no effect (all scores identical) ──
+    const noEffect = Math.abs(bestScore - baseline.score) < 0.05;
+    if (noEffect) {
+        console.log('\n  ⚠  No score variation detected — EEPROM writes may not take effect immediately.');
+        console.log('     Keeping original values. A power-cycle may be needed after writing.');
+        await unlockAndWritePID(ctrl, origP, origD, origI, origStartup);
+        bestP = origP; bestD = origD;
+    }
+
+    // ── Write final best values ──
+    await unlockAndWritePID(ctrl, bestP, bestD, origI, origStartup);
+    await sleep(50);
+
+    const improvement = baseline.score > 0 ? ((baseline.score - bestScore) / baseline.score * 100) : 0;
+    console.log(`\n  Result: P=${origP}→${bestP}  D=${origD}→${bestD}  score: ${baseline.score.toFixed(3)}→${bestScore.toFixed(3)}  (${improvement.toFixed(1)}% improvement)`);
+
+    return {
+        p: bestP, d: bestD, i: origI, minStartupForce: origStartup,
+        diagnostics: { maxTorque, unloadingCond: unloading, protTorquePct: protTorque },
+    };
+}
+
+// ── Main ───────────────────────────────────────────────────────────────────
+async function main() {
+    console.log('═'.repeat(56));
+    console.log('  ST3215 Servo PID Tuner');
+    console.log('═'.repeat(56));
+    console.log(`Port: ${SERIAL_PORT}  Baud: ${BAUD_RATE}`);
+    console.log('Ensure st3215-server.service is STOPPED and the arm is in a safe position.\n');
+
+    const port = new SerialPort({
+        path: SERIAL_PORT, baudRate: BAUD_RATE,
+        dataBits: 8, parity: 'none', stopBits: 1, autoOpen: false,
+    });
+    await new Promise((res, rej) => port.open(e => e ? rej(e) : res()));
+    console.log('Serial port open.\n');
+
+    // Create all controllers
+    const controllers = {};
+    for (const idStr of Object.keys(JOINT_CONFIG)) {
+        const id   = parseInt(idStr);
+        const ctrl = new ServoController(id, port, id, BAUD_RATE);
+        await ctrl.open();
+        controllers[id] = ctrl;
+    }
+
+    // Route all bus data to every controller — each filters its own ID
+    port.on('data', data => {
+        for (const c of Object.values(controllers)) c.handleIncomingData(data);
+    });
+
+    await sleep(500);
+
+    const results = {};
+
+    for (const idStr of Object.keys(JOINT_CONFIG)) {
+        const id   = parseInt(idStr);
+        const ctrl = controllers[id];
+
+        const alive = await ctrl.ping().catch(() => false);
+        if (!alive) {
+            console.log(`\nJ${id}: no response to ping — skipping.`);
+            continue;
+        }
+
+        await ctrl.startServo();
+        await sleep(100);
+
+        try {
+            results[id] = await tuneJoint(ctrl, id);
+        } catch (e) {
+            console.error(`\nJ${id} error: ${e.message}`);
+        }
+
+        await sleep(300);
+    }
+
+    // ── Summary ────────────────────────────────────────────────────────────
+    console.log('\n\n' + '═'.repeat(56));
+    console.log('  SUMMARY — recommended servo-pid-config.json values');
+    console.log('═'.repeat(56));
+    for (const [id, r] of Object.entries(results)) {
+        const d = r.diagnostics;
+        console.log(`  J${id}: P=${r.p}  D=${r.d}  I=${r.i}  MinStartup=${r.minStartupForce}`);
+        console.log(`       MaxTorque=${d.maxTorque}  UnloadingCond=0b${d.unloadingCond.toString(2).padStart(8,'0')}  ProtTorque=${d.protTorquePct}%`);
+    }
+
+    // ── Write config file ──────────────────────────────────────────────────
+    const config = {
+        _comment: 'Auto-tuned PID values per joint. Applied by servoWorker.js at startup.',
+        _tuned:   new Date().toISOString(),
+        joints:   {},
+    };
+    for (const [id, r] of Object.entries(results)) {
+        config.joints[id] = { p: r.p, d: r.d, i: r.i, minStartupForce: r.minStartupForce };
+    }
+    fs.writeFileSync(CONFIG_PATH, JSON.stringify(config, null, 2));
+    console.log(`\nConfig written → ${CONFIG_PATH}`);
+    console.log('Restart the st3215-server to apply these values automatically at every startup.\n');
+
+    for (const c of Object.values(controllers)) await c.close().catch(() => {});
+    port.close(() => {});
+}
+
+main().catch(e => {
+    console.error('\nFatal error:', e.message || e);
+    process.exit(1);
+});
