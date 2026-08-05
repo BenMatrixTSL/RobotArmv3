@@ -37,6 +37,7 @@ const REG_PROT_TORQUE    = 0x21;  // protection torque% after overload
 // ── Tuning parameters ──────────────────────────────────────────────────────
 const P_CANDIDATES  = [24, 32, 40, 48, 64, 80];
 const D_CANDIDATES  = [16, 24, 32, 48, 64];
+const I_CANDIDATES  = [0, 1, 2, 4, 8];
 const TEST_SPEED    = 500;   // steps/s (~44 °/s) — moderate speed for testing
 const SETTLE_EXTRA  = 400;   // ms to wait after isMoving clears before reading
 
@@ -79,6 +80,29 @@ async function unlockAndWritePID(ctrl, p, d, i, startup) {
     await sleep(25);
     await ctrl.writeData(REG_P_COEF, [p, d, i, startup]);
     await sleep(40);
+}
+
+/**
+ * Move to targetSteps and measure the final steady-state error after a longer dwell.
+ * Used for I-sweep: waits 800 ms extra so integral has time to drive out residual error.
+ * Returns absolute error in degrees at the settled position.
+ */
+async function settledError(ctrl, homeSteps, targetSteps) {
+    await ctrl.setSpeed(TEST_SPEED);
+    await ctrl.moveToPosition(Math.round(targetSteps));
+    await waitSettle(ctrl);
+    await sleep(800);  // dwell so integral can act
+    const atTarget = await avgPosition(ctrl, 5);
+    const fwdErr   = Math.abs(stepsToAngle(atTarget) - stepsToAngle(targetSteps));
+
+    await ctrl.setSpeed(TEST_SPEED);
+    await ctrl.moveToPosition(Math.round(homeSteps));
+    await waitSettle(ctrl);
+    await sleep(800);
+    const atHome   = await avgPosition(ctrl, 5);
+    const retErr   = Math.abs(stepsToAngle(atHome) - stepsToAngle(homeSteps));
+
+    return { fwdErr, retErr, score: fwdErr + retErr * 0.5 };
 }
 
 /**
@@ -172,15 +196,38 @@ async function tuneJoint(ctrl, jointId) {
         bestP = origP; bestD = origD;
     }
 
+    // ── Sweep I (best P+D fixed) — measures steady-state settled error ──
+    // Baseline for I sweep uses the settled-error metric, not the motion score.
+    console.log(`\n  I sweep (P=${bestP} D=${bestD} fixed) — steady-state dwell test:`);
+    const iBase = await settledError(ctrl, homeSteps, targetSteps);
+    console.log(`    I= 0: fwd=${iBase.fwdErr.toFixed(3)}°  ret=${iBase.retErr.toFixed(3)}°  score=${iBase.score.toFixed(3)}  (baseline)`);
+    let bestI = 0, bestIScore = iBase.score;
+
+    for (const iVal of I_CANDIDATES) {
+        if (iVal === 0) continue;  // already measured above
+        await unlockAndWritePID(ctrl, bestP, bestD, iVal, origStartup);
+        const r = await settledError(ctrl, homeSteps, targetSteps);
+        const flag = r.score < bestIScore ? ' ←best' : '';
+        console.log(`    I= ${iVal}: fwd=${r.fwdErr.toFixed(3)}°  ret=${r.retErr.toFixed(3)}°  score=${r.score.toFixed(3)}${flag}`);
+        if (r.score < bestIScore) { bestIScore = r.score; bestI = iVal; }
+    }
+
+    const iImprove = iBase.score > 0 ? ((iBase.score - bestIScore) / iBase.score * 100) : 0;
+    console.log(`  I result: 0→${bestI}  steady-state score: ${iBase.score.toFixed(3)}→${bestIScore.toFixed(3)}  (${iImprove.toFixed(1)}% improvement)`);
+    if (bestI > 0 && iBase.score - bestIScore < 0.05) {
+        console.log('  ⚠  I improvement negligible (<0.05°) — keeping I=0 to avoid windup risk');
+        bestI = 0;
+    }
+
     // ── Write final best values ──
-    await unlockAndWritePID(ctrl, bestP, bestD, origI, origStartup);
+    await unlockAndWritePID(ctrl, bestP, bestD, bestI, origStartup);
     await sleep(50);
 
     const improvement = baseline.score > 0 ? ((baseline.score - bestScore) / baseline.score * 100) : 0;
-    console.log(`\n  Result: P=${origP}→${bestP}  D=${origD}→${bestD}  score: ${baseline.score.toFixed(3)}→${bestScore.toFixed(3)}  (${improvement.toFixed(1)}% improvement)`);
+    console.log(`\n  Result: P=${origP}→${bestP}  D=${origD}→${bestD}  I=${origI}→${bestI}  score: ${baseline.score.toFixed(3)}→${bestScore.toFixed(3)}  (${improvement.toFixed(1)}% improvement)`);
 
     return {
-        p: bestP, d: bestD, i: origI, minStartupForce: origStartup,
+        p: bestP, d: bestD, i: bestI, minStartupForce: origStartup,
         diagnostics: { maxTorque, unloadingCond: unloading, protTorquePct: protTorque },
     };
 }
@@ -246,7 +293,7 @@ async function main() {
     console.log('═'.repeat(56));
     for (const [id, r] of Object.entries(results)) {
         const d = r.diagnostics;
-        console.log(`  J${id}: P=${r.p}  D=${r.d}  I=${r.i}  MinStartup=${r.minStartupForce}`);
+        console.log(`  J${id}: P=${r.p}  D=${r.d}  I=${r.i}${r.i > 0 ? ' ⚡' : ''}  MinStartup=${r.minStartupForce}`);
         console.log(`       MaxTorque=${d.maxTorque}  UnloadingCond=0b${d.unloadingCond.toString(2).padStart(8,'0')}  ProtTorque=${d.protTorquePct}%`);
     }
 
