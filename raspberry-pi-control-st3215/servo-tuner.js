@@ -277,7 +277,7 @@ async function main() {
         const ctrl = controllers[id];
 
         if (jointFilter && !jointFilter.includes(idStr)) {
-            log(`J${id}: skipped (not in --joint filter)`);
+            console.log(`J${id}: skipped (not in --joint filter)`);
             continue;
         }
 
