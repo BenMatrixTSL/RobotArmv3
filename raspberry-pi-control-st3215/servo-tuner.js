@@ -263,11 +263,23 @@ async function main() {
 
     await sleep(500);
 
+    // Optional: node servo-tuner.js --joint 1,3  to tune specific joints only
+    const jointArg = process.argv.find(a => a.startsWith('--joint=') || a.startsWith('--joint'));
+    const jointFilter = jointArg
+        ? (jointArg.includes('=') ? jointArg.split('=')[1] : process.argv[process.argv.indexOf(jointArg) + 1])
+              .split(',').map(s => s.trim())
+        : null;
+
     const results = {};
 
     for (const idStr of Object.keys(JOINT_CONFIG)) {
         const id   = parseInt(idStr);
         const ctrl = controllers[id];
+
+        if (jointFilter && !jointFilter.includes(idStr)) {
+            log(`J${id}: skipped (not in --joint filter)`);
+            continue;
+        }
 
         const alive = await ctrl.ping().catch(() => false);
         if (!alive) {
@@ -297,12 +309,13 @@ async function main() {
         console.log(`       MaxTorque=${d.maxTorque}  UnloadingCond=0b${d.unloadingCond.toString(2).padStart(8,'0')}  ProtTorque=${d.protTorquePct}%`);
     }
 
-    // ── Write config file ──────────────────────────────────────────────────
-    const config = {
-        _comment: 'Auto-tuned PID values per joint. Applied by servoWorker.js at startup.',
-        _tuned:   new Date().toISOString(),
-        joints:   {},
-    };
+    // ── Write config file — merge with existing so partial runs don't clobber ──
+    let config = { _comment: 'Auto-tuned PID values per joint. Applied by servoWorker.js at startup.', joints: {} };
+    if (fs.existsSync(CONFIG_PATH)) {
+        try { config = JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8')); } catch (_) {}
+        if (!config.joints) config.joints = {};
+    }
+    config._tuned = new Date().toISOString();
     for (const [id, r] of Object.entries(results)) {
         config.joints[id] = { p: r.p, d: r.d, i: r.i, minStartupForce: r.minStartupForce };
     }
