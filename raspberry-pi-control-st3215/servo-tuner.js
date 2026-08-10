@@ -39,7 +39,10 @@ const P_CANDIDATES  = [24, 32, 40, 48, 64, 80];
 const D_CANDIDATES  = [16, 24, 32, 48, 64];
 const I_CANDIDATES  = [0, 1, 2, 4, 8];
 const TEST_SPEED    = 500;   // steps/s (~44 °/s) — moderate speed for testing
-const SETTLE_EXTRA  = 400;   // ms to wait after isMoving clears before reading
+const SETTLE_POLL_MS   = 60;   // ms between position samples during stability check
+const SETTLE_THRESHOLD = 2;    // steps — position must change less than this to be "settled"
+const SETTLE_STABLE_NEEDED = 5; // consecutive stable readings required
+const SETTLE_TIMEOUT_MS = 5000; // max wait before giving up
 
 // Per-joint test: move this many degrees from current position, then back.
 // Signs are chosen to be safe from ~0° home for each joint's limits.
@@ -66,20 +69,33 @@ async function avgPosition(ctrl, samples = 3) {
     return sum / samples;
 }
 
+// Wait until position stops changing for SETTLE_STABLE_NEEDED consecutive reads.
+// Much more reliable than isMoving() which clears before mechanical settling.
 async function waitSettle(ctrl) {
-    for (let i = 0; i < 150; i++) {
-        const moving = await ctrl.isMoving().catch(() => false);
-        if (!moving) break;
-        await sleep(30);
+    let stableCount = 0;
+    let lastPos = await ctrl.getPosition().catch(() => -1);
+    const deadline = Date.now() + SETTLE_TIMEOUT_MS;
+    while (Date.now() < deadline) {
+        await sleep(SETTLE_POLL_MS);
+        const pos = await ctrl.getPosition().catch(() => lastPos);
+        if (Math.abs(pos - lastPos) <= SETTLE_THRESHOLD) {
+            stableCount++;
+            if (stableCount >= SETTLE_STABLE_NEEDED) return;
+        } else {
+            stableCount = 0;
+        }
+        lastPos = pos;
     }
-    await sleep(SETTLE_EXTRA);
+    // Timed out — proceed anyway but add a safety pause
+    await sleep(200);
 }
 
 async function unlockAndWritePID(ctrl, p, d, i, startup) {
+    await sleep(200);  // ensure servo is fully settled before touching EEPROM
     await ctrl.writeData(REG_EEPROM_LOCK, [0]);
-    await sleep(25);
+    await sleep(50);
     await ctrl.writeData(REG_P_COEF, [p, d, i, startup]);
-    await sleep(40);
+    await sleep(100); // give EEPROM write time to complete
 }
 
 /**
@@ -277,13 +293,15 @@ async function main() {
         await ctrl.moveToPosition(HOME_STEPS);
         console.log(`  J${id}: moving to 0°`);
     }
-    // Wait for all joints to settle at home
+    // Wait for all joints to fully settle at home
     console.log('Waiting for all joints to reach home...');
-    await sleep(3000);
+    await sleep(2000);
     for (const idStr of Object.keys(JOINT_CONFIG)) {
         const ctrl = controllers[parseInt(idStr)];
         await waitSettle(ctrl).catch(() => {});
+        console.log(`  J${idStr} settled`);
     }
+    await sleep(500);
     console.log('All joints at home. Starting tuning sweep.\n');
 
     // Optional: node servo-tuner.js --joint 1,3  to tune specific joints only
