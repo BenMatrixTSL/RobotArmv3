@@ -61,6 +61,11 @@ const RESCAN_MIN_INTERVAL_MS    = 10000;
 const SERVO_BACKOFF_FAIL_THRESHOLD   = 3;
 const SERVO_BACKOFF_DURATION_MS      = 2000;
 const SERVO_THERMAL_BACKOFF_DURATION_MS = 30000; // 30 s cool-down after temperature fault
+// Rolling-window failure rate: if a joint fails this many times within the window
+// (even non-consecutively), enter the same 2 s backoff.  Catches post-hardware-recovery
+// intermittent timeouts that never reach the consecutive threshold.
+const SERVO_ROLLING_FAIL_THRESHOLD   = 5;
+const SERVO_ROLLING_FAIL_WINDOW_MS   = 10000;
 
 // ST3215 bus watchdog: self-disables torque ~1 s after the last *write* command.
 // Status-poll reads do not reset it.  A single broadcast WRITE TORQUE_ENABLE=1
@@ -94,6 +99,7 @@ let isWriting           = false;
 
 const servoConsecFails    = new Array(JOINT_COUNT).fill(0);
 const servoBackoffUntilMs = new Array(JOINT_COUNT).fill(0);
+const servoRecentFailTimes = Array.from({ length: JOINT_COUNT }, () => []);
 let lastTorqueHeartbeatAt = 0;
 // Local torque state — set by explicit commands, not by polled status reads.
 // Polled reads are unreliable (stale/timed-out) and would cause spurious
@@ -357,16 +363,30 @@ async function refreshSingleJointStatusFromBus(jointIndex) {
     } catch (error) {
         const isThermal = error.message && error.message.toLowerCase().includes('temperature');
         servoConsecFails[jointIndex]++;
+        const nowFail = Date.now();
+        const recentFails = servoRecentFailTimes[jointIndex];
+        recentFails.push(nowFail);
+        // Prune entries older than the rolling window
+        while (recentFails.length > 0 && nowFail - recentFails[0] > SERVO_ROLLING_FAIL_WINDOW_MS) {
+            recentFails.shift();
+        }
         if (isThermal) {
             // Temperature protection: apply long cool-down backoff immediately and notify parent.
-            servoBackoffUntilMs[jointIndex] = Date.now() + SERVO_THERMAL_BACKOFF_DURATION_MS;
+            servoBackoffUntilMs[jointIndex] = nowFail + SERVO_THERMAL_BACKOFF_DURATION_MS;
             servoConsecFails[jointIndex] = 0;
+            recentFails.length = 0;
             log(`[BUS] Joint ${jointNum}: TEMPERATURE FAULT — entering ${SERVO_THERMAL_BACKOFF_DURATION_MS}ms thermal cool-down`, true);
             try { process.send({ type: 'servoThermalFault', joint: jointNum, message: `Joint ${jointNum} temperature fault — cooling down for ${SERVO_THERMAL_BACKOFF_DURATION_MS / 1000}s` }); } catch (_) {}
         } else if (servoConsecFails[jointIndex] >= SERVO_BACKOFF_FAIL_THRESHOLD) {
-            servoBackoffUntilMs[jointIndex] = Date.now() + SERVO_BACKOFF_DURATION_MS;
+            servoBackoffUntilMs[jointIndex] = nowFail + SERVO_BACKOFF_DURATION_MS;
             servoConsecFails[jointIndex] = 0;
+            recentFails.length = 0;
             log(`[BUS] Joint ${jointNum}: entering ${SERVO_BACKOFF_DURATION_MS}ms backoff after ${SERVO_BACKOFF_FAIL_THRESHOLD} consecutive failures`);
+        } else if (recentFails.length >= SERVO_ROLLING_FAIL_THRESHOLD) {
+            servoBackoffUntilMs[jointIndex] = nowFail + SERVO_BACKOFF_DURATION_MS;
+            servoConsecFails[jointIndex] = 0;
+            recentFails.length = 0;
+            log(`[BUS] Joint ${jointNum}: entering ${SERVO_BACKOFF_DURATION_MS}ms backoff after ${SERVO_ROLLING_FAIL_THRESHOLD} failures in ${SERVO_ROLLING_FAIL_WINDOW_MS / 1000}s`);
         }
         if (previous.lastGoodAt) {
             jointStatusCache[jointIndex] = { ...previous, available: true, readStale: true, pollError: error.message };
