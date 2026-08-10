@@ -263,6 +263,29 @@ async function main() {
 
     await sleep(500);
 
+    // ── Home all joints to 0° before tuning ───────────────────────────────
+    console.log('Homing all joints to 0° — please stand clear...');
+    const HOME_SPEED = 300;   // slow, safe homing speed (~26 °/s)
+    const HOME_STEPS = 2048;  // 0° = centre position
+    for (const idStr of Object.keys(JOINT_CONFIG)) {
+        const id   = parseInt(idStr);
+        const ctrl = controllers[id];
+        const alive = await ctrl.ping().catch(() => false);
+        if (!alive) { console.log(`  J${id}: no response — skipping home`); continue; }
+        await ctrl.startServo();
+        await ctrl.setSpeed(HOME_SPEED);
+        await ctrl.moveToPosition(HOME_STEPS);
+        console.log(`  J${id}: moving to 0°`);
+    }
+    // Wait for all joints to settle at home
+    console.log('Waiting for all joints to reach home...');
+    await sleep(3000);
+    for (const idStr of Object.keys(JOINT_CONFIG)) {
+        const ctrl = controllers[parseInt(idStr)];
+        await waitSettle(ctrl).catch(() => {});
+    }
+    console.log('All joints at home. Starting tuning sweep.\n');
+
     // Optional: node servo-tuner.js --joint 1,3  to tune specific joints only
     const jointArg = process.argv.find(a => a.startsWith('--joint=') || a.startsWith('--joint'));
     const jointFilter = jointArg
@@ -296,6 +319,10 @@ async function main() {
             console.error(`\nJ${id} error: ${e.message}`);
         }
 
+        // Return tuned joint to 0° before moving to next joint
+        await ctrl.setSpeed(HOME_SPEED);
+        await ctrl.moveToPosition(HOME_STEPS);
+        await waitSettle(ctrl).catch(() => {});
         await sleep(300);
     }
 
