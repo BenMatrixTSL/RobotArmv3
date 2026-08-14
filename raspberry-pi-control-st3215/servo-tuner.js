@@ -24,6 +24,26 @@ const SERIAL_PORT  = process.env.SERIAL_PORT  || '/dev/serial0';
 const BAUD_RATE    = 1_000_000;
 const CONFIG_PATH  = path.join(__dirname, 'servo-pid-config.json');
 
+// Same state directory servoWorker.js uses for per-joint recentering
+// (see setJointCenter). A joint that's had its servo swapped may have its
+// 0° redefined well away from the factory 2048 — homing it to raw 2048
+// here would ignore that and could drive it toward a position that's no
+// longer mechanically safe for the new servo's mounting.
+const CENTER_OVERRIDES_PATH = process.env.ROBOT_ARM_STATE_DIR
+    ? path.join(process.env.ROBOT_ARM_STATE_DIR, 'servo-joint-centers.json')
+    : '/var/lib/robot-arm-st3215/servo-joint-centers.json';
+
+function loadCenterOverrides() {
+    if (!fs.existsSync(CENTER_OVERRIDES_PATH)) return {};
+    try {
+        const cfg = JSON.parse(fs.readFileSync(CENTER_OVERRIDES_PATH, 'utf8'));
+        return (cfg && cfg.joints) || {};
+    } catch (e) {
+        console.warn(`Could not read ${CENTER_OVERRIDES_PATH}: ${e.message} — using factory center (2048) for all joints`);
+        return {};
+    }
+}
+
 // ── EEPROM register addresses ──────────────────────────────────────────────
 const REG_EEPROM_LOCK    = 0x37;  // 0 = unlocked
 const REG_MAX_TORQUE_L   = 0x10;  // 2-byte word, 0–1000
@@ -56,9 +76,11 @@ const JOINT_CONFIG = {
 };
 
 // ── Helpers ────────────────────────────────────────────────────────────────
-const sleep        = ms   => new Promise(r => setTimeout(r, ms));
-const stepsToAngle = s    => (s - 2048) / 11.377;
-const angleToSteps = deg  => Math.round(2048 + deg * 11.377);
+// Angle conversion uses each controller's own stepsToAngle()/angleToSteps()
+// (per-instance, center-aware — see robotArmST3215.js) rather than a
+// standalone helper, so a recentered joint's console output reads correctly
+// relative to its actual saved 0°, not always the factory 2048.
+const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 async function avgPosition(ctrl, samples = 3) {
     let sum = 0;
@@ -109,14 +131,14 @@ async function settledError(ctrl, homeSteps, targetSteps) {
     await waitSettle(ctrl);
     await sleep(800);  // dwell so integral can act
     const atTarget = await avgPosition(ctrl, 5);
-    const fwdErr   = Math.abs(stepsToAngle(atTarget) - stepsToAngle(targetSteps));
+    const fwdErr   = Math.abs(ctrl.stepsToAngle(atTarget) - ctrl.stepsToAngle(targetSteps));
 
     await ctrl.setSpeed(TEST_SPEED);
     await ctrl.moveToPosition(Math.round(homeSteps));
     await waitSettle(ctrl);
     await sleep(800);
     const atHome   = await avgPosition(ctrl, 5);
-    const retErr   = Math.abs(stepsToAngle(atHome) - stepsToAngle(homeSteps));
+    const retErr   = Math.abs(ctrl.stepsToAngle(atHome) - ctrl.stepsToAngle(homeSteps));
 
     return { fwdErr, retErr, score: fwdErr + retErr * 0.5 };
 }
@@ -130,13 +152,13 @@ async function stepResponse(ctrl, homeSteps, targetSteps) {
     await ctrl.moveToPosition(Math.round(targetSteps));
     await waitSettle(ctrl);
     const atTarget  = await avgPosition(ctrl);
-    const forwardErr = Math.abs(stepsToAngle(atTarget) - stepsToAngle(targetSteps));
+    const forwardErr = Math.abs(ctrl.stepsToAngle(atTarget) - ctrl.stepsToAngle(targetSteps));
 
     await ctrl.setSpeed(TEST_SPEED);
     await ctrl.moveToPosition(Math.round(homeSteps));
     await waitSettle(ctrl);
     const atHome   = await avgPosition(ctrl);
-    const returnErr = Math.abs(stepsToAngle(atHome) - stepsToAngle(homeSteps));
+    const returnErr = Math.abs(ctrl.stepsToAngle(atHome) - ctrl.stepsToAngle(homeSteps));
 
     // Score: forward tracking weighted higher than return (gravity affects one direction)
     return { forwardErr, returnErr, score: forwardErr + returnErr * 0.5 };
@@ -164,9 +186,9 @@ async function tuneJoint(ctrl, jointId) {
 
     // ── Capture home ──
     const homeSteps  = await avgPosition(ctrl);
-    const homeDeg    = stepsToAngle(homeSteps);
+    const homeDeg    = ctrl.stepsToAngle(homeSteps);
     const targetDeg  = homeDeg + cfg.testOffsetDeg;
-    const targetSteps = angleToSteps(targetDeg);
+    const targetSteps = ctrl.angleToSteps(targetDeg);
     console.log(`  Home: ${homeDeg.toFixed(2)}°   Target: ${targetDeg.toFixed(2)}°   (offset ${cfg.testOffsetDeg > 0 ? '+' : ''}${cfg.testOffsetDeg}°)`);
 
     // ── Baseline with current settings ──
@@ -264,12 +286,23 @@ async function main() {
     console.log('Serial port open.\n');
 
     // Create all controllers
+    const centerOverrides = loadCenterOverrides();
+    const homeStepsFor = {};
     const controllers = {};
     for (const idStr of Object.keys(JOINT_CONFIG)) {
         const id   = parseInt(idStr);
         const ctrl = new ServoController(id, port, id, BAUD_RATE);
         await ctrl.open();
         controllers[id] = ctrl;
+
+        const override = centerOverrides[idStr];
+        if (Number.isFinite(override)) {
+            ctrl.setCenterPosition(override);
+            homeStepsFor[id] = override;
+            console.log(`  J${id}: using saved center ${override} (not factory 2048) — see setJointCenter in the app`);
+        } else {
+            homeStepsFor[id] = 2048;
+        }
     }
 
     // Route all bus data to every controller — each filters its own ID
@@ -280,9 +313,10 @@ async function main() {
     await sleep(500);
 
     // ── Home all joints to 0° before tuning ───────────────────────────────
+    // "0°" per-joint: the saved center override if this joint has one,
+    // otherwise the factory 2048 — see homeStepsFor above.
     console.log('Homing all joints to 0° — please stand clear...');
     const HOME_SPEED = 300;   // slow, safe homing speed (~26 °/s)
-    const HOME_STEPS = 2048;  // 0° = centre position
     for (const idStr of Object.keys(JOINT_CONFIG)) {
         const id   = parseInt(idStr);
         const ctrl = controllers[id];
@@ -290,7 +324,7 @@ async function main() {
         if (!alive) { console.log(`  J${id}: no response — skipping home`); continue; }
         await ctrl.startServo();
         await ctrl.setSpeed(HOME_SPEED);
-        await ctrl.moveToPosition(HOME_STEPS);
+        await ctrl.moveToPosition(homeStepsFor[id]);
         console.log(`  J${id}: moving to 0°`);
     }
     // Wait for all joints to fully settle at home
@@ -339,7 +373,7 @@ async function main() {
 
         // Return tuned joint to 0° before moving to next joint
         await ctrl.setSpeed(HOME_SPEED);
-        await ctrl.moveToPosition(HOME_STEPS);
+        await ctrl.moveToPosition(homeStepsFor[id]);
         await waitSettle(ctrl).catch(() => {});
         await sleep(300);
     }
