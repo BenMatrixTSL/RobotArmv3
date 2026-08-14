@@ -133,8 +133,14 @@ async function waitSettle(ctrl) {
 
 async function unlockAndWritePID(ctrl, p, d, i, startup) {
     await sleep(200);  // ensure servo is fully settled before touching EEPROM
+    // Same gap as moveTo() (see its comment) — this is a bus write like any
+    // other and was going out with no cleared-transaction/quiet-buffer
+    // protection either.
+    if (typeof ctrl.clearPendingBusTransaction === 'function') ctrl.clearPendingBusTransaction();
+    await sleep(QUIET_BEFORE_MOVE_MS);
     await ctrl.writeData(REG_EEPROM_LOCK, [0]);
     await sleep(50);
+    if (typeof ctrl.clearPendingBusTransaction === 'function') ctrl.clearPendingBusTransaction();
     await ctrl.writeData(REG_P_COEF, [p, d, i, startup]);
     await sleep(100); // give EEPROM write time to complete
 }
