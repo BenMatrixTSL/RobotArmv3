@@ -581,7 +581,7 @@ class RobotArmClient {
      * @param {boolean} enabled - True to enable torque, false to disable
      */
     setTorqueAll(enabled) {
-        return this.sendCommand('setTorqueAll', {
+        return this.sendRequest('setTorqueAll', {
             enabled: enabled
         });
     }
