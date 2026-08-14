@@ -334,6 +334,22 @@ class ServoController {
         this.responseTimeout = null;
         this.currentSpeed = 1500; // Default speed, will be updated when setSpeed is called
         this.rxDrainUntilMs = 0;   // discard all RX bytes until this timestamp (post-timeout drain)
+        // Raw step position that this instance treats as 0°. Defaults to the
+        // servo's factory center (2048); recenter() moves it so a physically
+        // reinstalled/replaced servo can be re-zeroed without touching EEPROM.
+        this.centerPosition = CENTER_POSITION;
+    }
+
+    /**
+     * Redefines this servo's logical 0° to be wherever it currently physically
+     * is, without moving it or touching servo EEPROM. Used after a servo swap
+     * or mechanical reseat to re-zero a joint. Purely a software offset applied
+     * in angleToSteps()/stepsToAngle() — the servo's own raw position readback
+     * is unaffected.
+     * @param {number} currentRawPosition - The servo's current raw step position (0-4095)
+     */
+    setCenterPosition(currentRawPosition) {
+        this.centerPosition = currentRawPosition;
     }
 
     /**
@@ -1086,7 +1102,7 @@ class ServoController {
         if (angleDegrees > MAX_ANGLE) angleDegrees = MAX_ANGLE;
         
         // Convert: steps = center + (angle * steps_per_degree)
-        const steps = Math.round(CENTER_POSITION + (angleDegrees * STEPS_PER_DEGREE));
+        const steps = Math.round(this.centerPosition + (angleDegrees * STEPS_PER_DEGREE));
         
         // Clamp to valid step range (should be 1024-3072, but add safety check)
         if (steps < MIN_POSITION) return MIN_POSITION;
@@ -1112,7 +1128,7 @@ class ServoController {
         if (steps > MAX_POSITION) steps = MAX_POSITION;
         
         // Convert: angle = (steps - center) / steps_per_degree
-        const angle = (steps - CENTER_POSITION) / STEPS_PER_DEGREE;
+        const angle = (steps - this.centerPosition) / STEPS_PER_DEGREE;
         
         // Clamp to valid angle range
         if (angle < MIN_ANGLE) return MIN_ANGLE;

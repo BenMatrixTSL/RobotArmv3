@@ -519,6 +519,10 @@ function generateJointStatusCards() {
                         <label for="joint${i}Acceleration">Accel (0-254):</label>
                         <input type="number" id="joint${i}Acceleration" value="50" min="0" max="254" step="1">
                     </div>
+                    <div class="joint-field-group compact joint-center-field">
+                        <label>Center position (after servo swap/reseat):</label>
+                        <button type="button" class="btn btn-small btn-warning" onclick="centerJoint(${i})">Set current position as 0&deg;</button>
+                    </div>
                 </div>
                 <div class="joint-control-fields joint-control-compact">
                     <div class="joint-field-group compact joint-angle-field">
@@ -2510,6 +2514,34 @@ function toggleTorqueAll() {
             torqueEnabled = !torqueEnabled;
             updateTorqueButtons();
         });
+}
+
+/**
+ * Redefines a joint's current physical position as 0° (2048 steps). Software
+ * offset only — does not move the servo or touch its EEPROM. Intended for use
+ * right after a servo swap or mechanical reseat, when the physical position no
+ * longer lines up with the servo's factory center.
+ * @param {number} jointNumber - Joint number (1-based)
+ */
+async function centerJoint(jointNumber) {
+    if (!robotArmClient.isConnected) {
+        showAppMessage('Not connected to robot arm controller');
+        return;
+    }
+
+    const confirmed = confirm(
+        `Set Joint ${jointNumber}'s CURRENT physical position as 0°?\n\n` +
+        `Use this only right after swapping or reseating the servo. ` +
+        `This does not move the joint — it only redefines what "0°" means for it from now on.`
+    );
+    if (!confirmed) return;
+
+    try {
+        await robotArmClient.setJointCenter(jointNumber);
+        showAppMessage(`Joint ${jointNumber} centered — current position is now 0°`);
+    } catch (error) {
+        showAppMessage(`Failed to center Joint ${jointNumber}: ${error.message}`);
+    }
 }
 
 /**

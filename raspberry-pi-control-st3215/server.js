@@ -52,7 +52,7 @@ const INSTANT_SERVER_COMMANDS = {
 const BUS_WRITE_COMMANDS = {
     moveJoint: true, stopJoint: true, stopAll: true, stopAllJoints: true,
     setServo: true, setServoAngle: true, setSpeed: true, setSpeedAll: true,
-    setTorqueAll: true, setAcceleration: true, rescanServos: true,
+    setTorqueAll: true, setAcceleration: true, setJointCenter: true, rescanServos: true,
     toolPing: true, toolSetPwm: true, toolSetServoEnabled: true,
     toolSetServoPosition: true, toolSetServoAngle: true,
     toolSetServoEnabledAndAngle: true,

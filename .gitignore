@@ -26,3 +26,6 @@ yarn-error.log*
 # === Build outputs (general) ===
 **/build/
 
+# === Per-machine hardware calibration (not shared across robots) ===
+raspberry-pi-control-st3215/servo-joint-centers.json
+

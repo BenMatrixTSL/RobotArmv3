@@ -989,6 +989,31 @@ async function handleBusCommand(clientId, data) {
             break;
         }
 
+        case 'setJointCenter': {
+            // Re-zeroes a joint so its CURRENT physical position reads as 0°
+            // (2048 steps) — software offset only, no servo EEPROM write, no
+            // movement. Used after a servo swap/reseat where the mechanical
+            // zero no longer lines up with the servo's factory center.
+            const idx = data.joint - 1;
+            if (idx < 0 || idx >= servos.length) { reply({ type: 'error', message: `Invalid joint number: ${data.joint}` }); return; }
+            const sv = servos[idx];
+            if (!sv) { reply({ type: 'error', message: `Servo ${data.joint} is not available` }); return; }
+            try {
+                const currentRawPosition = await sv.getPosition();
+                if (currentRawPosition < 0) {
+                    reply({ type: 'error', message: `Failed to read current position for servo ${data.joint}` });
+                    return;
+                }
+                sv.setCenterPosition(currentRawPosition);
+                saveJointCenter(data.joint, currentRawPosition);
+                log(`[CENTER] Joint ${data.joint}: centered at raw position ${currentRawPosition} (now reads 0°)`);
+                reply({ type: 'success', message: `Joint ${data.joint} centered — current position is now 0°`, centerPosition: currentRawPosition });
+            } catch (error) {
+                reply({ type: 'error', message: `Failed to center joint: ${error.message}` });
+            }
+            break;
+        }
+
         // ===== End Tool Commands =====
         case 'toolPing': {
             try { reply({ type: 'toolPing', ok: await requireEndTool().pingTool() }); }
@@ -1181,10 +1206,56 @@ async function applyPIDConfig() {
     }
 }
 
+// ===== Joint center offsets (persisted across restarts) =====
+const JOINT_CENTER_CONFIG_PATH = path.join(__dirname, 'servo-joint-centers.json');
+
+function loadJointCenterConfig() {
+    if (!fs.existsSync(JOINT_CENTER_CONFIG_PATH)) return;
+    let cfg;
+    try {
+        cfg = JSON.parse(fs.readFileSync(JOINT_CENTER_CONFIG_PATH, 'utf8'));
+    } catch (e) {
+        log('servo-joint-centers.json parse error: ' + e.message, true);
+        return;
+    }
+    const joints = cfg && cfg.joints;
+    if (!joints) return;
+
+    for (let i = 0; i < servos.length; i++) {
+        const servo = servos[i];
+        if (!servo) continue;
+        const jointId = String(i + 1);
+        const centerPosition = joints[jointId];
+        if (!Number.isFinite(centerPosition)) continue;
+        servo.setCenterPosition(centerPosition);
+        log(`Joint ${jointId} center loaded from config: ${centerPosition}`);
+    }
+}
+
+function saveJointCenter(jointNum, centerPosition) {
+    let cfg = { joints: {} };
+    if (fs.existsSync(JOINT_CENTER_CONFIG_PATH)) {
+        try {
+            cfg = JSON.parse(fs.readFileSync(JOINT_CENTER_CONFIG_PATH, 'utf8'));
+            if (!cfg.joints) cfg.joints = {};
+        } catch (e) {
+            log('servo-joint-centers.json parse error on save, overwriting: ' + e.message, true);
+            cfg = { joints: {} };
+        }
+    }
+    cfg.joints[String(jointNum)] = centerPosition;
+    try {
+        fs.writeFileSync(JOINT_CENTER_CONFIG_PATH, JSON.stringify(cfg, null, 2));
+    } catch (e) {
+        log('Failed to save servo-joint-centers.json: ' + e.message, true);
+    }
+}
+
 // ===== Start =====
 log(`Servo worker starting (pid=${process.pid} VERBOSE_LOG=${VERBOSE_LOG} STATUS_POLL_MS=${STATUS_POLL_INTERVAL_MS} MIN_GAP_MS=${MIN_BUS_TICK_GAP_MS})`);
 initializeServos().then(async () => {
     await applyPIDConfig();
+    loadJointCenterConfig();
     await refreshJointStatusCacheFromBus();
     startBusTickLoop();
     process.send({ type: 'ready', jointConfigs: getJointConfigsSnapshot() });
