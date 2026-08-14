@@ -97,6 +97,15 @@ const BUS_READ_TIMEOUT_MS = 50;
 const BUS_READ_TIMEOUT_END_TOOL_MS = 150;
 const BUS_WRITE_RETRY_DELAY_MS = 30;
 const BUS_WRITE_MAX_ATTEMPTS = 2;
+
+// serialport's write() callback normally fires in well under 1 ms at 1 Mbps
+// for our packet sizes. If the underlying driver ever stalls and that
+// callback never fires, sendPacket() has no other timeout guarding it — the
+// read/write response timeouts below only start counting once sendPacket()
+// has already resolved. This bounds that specific failure mode so a stuck
+// serial write can't hang the caller (and, transitively, the whole bus tick
+// loop) forever.
+const SERIAL_WRITE_CALLBACK_TIMEOUT_MS = 300;
 // Write acks arrive in 1–15 ms normally; when lost they never arrive.
 // 80 ms is ample margin for Pi scheduling jitter while keeping two failed
 // write attempts under 200 ms so a slow joint (4 or 5) cannot hold the bus
@@ -639,7 +648,17 @@ class ServoController {
         // If using shared port, we need to check if there's a write queue
         const writeFn = () => {
             return new Promise((resolve, reject) => {
+                let settled = false;
+                const timer = setTimeout(() => {
+                    if (settled) return;
+                    settled = true;
+                    reject(new Error(`Serial write callback did not fire within ${SERIAL_WRITE_CALLBACK_TIMEOUT_MS}ms`));
+                }, SERIAL_WRITE_CALLBACK_TIMEOUT_MS);
+
                 this.serialPort.write(packet, (error) => {
+                    if (settled) return;
+                    settled = true;
+                    clearTimeout(timer);
                     if (error) {
                         if (DEBUG) console.error(`[DEBUG Servo ${this.servoId}] Write error:`, error);
                         reject(error);

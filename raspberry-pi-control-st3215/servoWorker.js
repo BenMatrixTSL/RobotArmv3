@@ -76,6 +76,15 @@ const TORQUE_WATCHDOG_HEARTBEAT_MS = 700;
 
 const PRIORITY_BUS_COMMANDS = { moveJoint: true, stopJoint: true, stopAll: true, stopAllJoints: true, setTorqueAll: true };
 
+// Safety net for runBusTick(): every bus operation it awaits already has its
+// own internal timeout (read/write response timeouts, retries), so the
+// slowest legitimate op should finish within a few seconds. If something
+// still hangs past this (e.g. a stalled serial driver callback with no
+// timeout of its own), this stops the whole tick loop from freezing forever
+// — which otherwise stalls the write queue permanently until the service is
+// restarted, since diag.busTicks never advances and nothing more gets drained.
+const BUS_TICK_OP_TIMEOUT_MS = 8000;
+
 // ===== State =====
 let sharedSerialPort     = null;
 const servos             = [];
@@ -408,6 +417,18 @@ async function refreshJointStatusCacheFromBus() {
 }
 
 // ===== Bus Tick Loop =====
+function withTimeout(promise, ms, label) {
+    let timer;
+    const timeout = new Promise((_, reject) => {
+        timer = setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms);
+    });
+    // If the timeout wins the race, `promise` may still settle later in the
+    // background — swallow a late rejection so it doesn't surface as an
+    // unhandled promise rejection.
+    promise.catch(() => {});
+    return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+}
+
 async function runBusTick() {
     if (workerShuttingDown || !busTickLoopActive) return;
     if (busTickInProgress) { diag.busTicksSkipped++; return; }
@@ -421,11 +442,11 @@ async function runBusTick() {
         const maxWrites = queueAtStart > 0 ? MAX_BUS_WRITES_WHEN_BUSY : MAX_BUS_WRITES_WHEN_IDLE;
 
         for (let w = 0; w < maxWrites && busWriteQueue.length > 0 && !workerShuttingDown; w++) {
-            const { commandFn, resolve, reject } = busWriteQueue.shift();
+            const { commandFn, resolve, reject, meta } = busWriteQueue.shift();
             diag.busWriteQueueLength = busWriteQueue.length;
             const writeStart = Date.now();
             try {
-                await commandFn();
+                await withTimeout(commandFn(), BUS_TICK_OP_TIMEOUT_MS, (meta && meta.command) || 'queued bus write');
                 await new Promise(r => setTimeout(r, 15));
                 resolve();
                 diag.busWritesCompleted++;
@@ -446,10 +467,10 @@ async function runBusTick() {
             if (nowHb - lastTorqueHeartbeatAt >= TORQUE_WATCHDOG_HEARTBEAT_MS) {
                 lastTorqueHeartbeatAt = nowHb;
                 if (servoTorqueEnabled.some(Boolean)) {
-                    try { await sendHeartbeatBroadcast(); } catch (_) {}
+                    try { await withTimeout(sendHeartbeatBroadcast(), BUS_TICK_OP_TIMEOUT_MS, 'heartbeat broadcast'); } catch (_) {}
                 }
             }
-            await refreshSingleJointStatusFromBus(statusPollJointIndex);
+            await withTimeout(refreshSingleJointStatusFromBus(statusPollJointIndex), BUS_TICK_OP_TIMEOUT_MS, 'joint status poll');
             statusPollJointIndex = (statusPollJointIndex + 1) % JOINT_COUNT;
             if (p < jointsToPoll - 1) await new Promise(r => setTimeout(r, 4));
         }
