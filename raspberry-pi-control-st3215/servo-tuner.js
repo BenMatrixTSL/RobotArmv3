@@ -61,8 +61,14 @@ const I_CANDIDATES  = [0, 1, 2, 4, 8];
 const TEST_SPEED    = 500;   // steps/s (~44 °/s) — moderate speed for testing
 const SETTLE_POLL_MS   = 60;   // ms between position samples during stability check
 const SETTLE_THRESHOLD = 2;    // steps — position must change less than this to be "settled"
-const SETTLE_STABLE_NEEDED = 5; // consecutive stable readings required
-const SETTLE_TIMEOUT_MS = 5000; // max wait before giving up
+const SETTLE_STABLE_NEEDED = 12; // consecutive stable readings required (~720ms of true stillness)
+const SETTLE_TIMEOUT_MS = 8000; // max wait before giving up
+// Extra pause AFTER waitSettle() reports stable, before the next bus command.
+// waitSettle() only confirms the *position sensor* has stopped changing —
+// the arm can still be mechanically vibrating/oscillating for a bit after
+// that, and issuing the next command into that residual motion was causing
+// write timeouts. Give it real time to fully come to rest.
+const POST_SETTLE_DWELL_MS = 1200;
 
 // Per-joint test: move this many degrees from current position, then back.
 // Signs are chosen to be safe from ~0° home for each joint's limits.
@@ -122,21 +128,22 @@ async function unlockAndWritePID(ctrl, p, d, i, startup) {
 
 /**
  * Move to targetSteps and measure the final steady-state error after a longer dwell.
- * Used for I-sweep: waits 800 ms extra so integral has time to drive out residual error.
+ * Used for I-sweep: waits for the arm to truly stop (not just the position
+ * sensor) so integral has time to drive out residual error.
  * Returns absolute error in degrees at the settled position.
  */
 async function settledError(ctrl, homeSteps, targetSteps) {
     await ctrl.setSpeed(TEST_SPEED);
     await ctrl.moveToPosition(Math.round(targetSteps));
     await waitSettle(ctrl);
-    await sleep(800);  // dwell so integral can act
+    await sleep(POST_SETTLE_DWELL_MS);
     const atTarget = await avgPosition(ctrl, 5);
     const fwdErr   = Math.abs(ctrl.stepsToAngle(atTarget) - ctrl.stepsToAngle(targetSteps));
 
     await ctrl.setSpeed(TEST_SPEED);
     await ctrl.moveToPosition(Math.round(homeSteps));
     await waitSettle(ctrl);
-    await sleep(800);
+    await sleep(POST_SETTLE_DWELL_MS);
     const atHome   = await avgPosition(ctrl, 5);
     const retErr   = Math.abs(ctrl.stepsToAngle(atHome) - ctrl.stepsToAngle(homeSteps));
 
@@ -151,12 +158,14 @@ async function stepResponse(ctrl, homeSteps, targetSteps) {
     await ctrl.setSpeed(TEST_SPEED);
     await ctrl.moveToPosition(Math.round(targetSteps));
     await waitSettle(ctrl);
+    await sleep(POST_SETTLE_DWELL_MS);
     const atTarget  = await avgPosition(ctrl);
     const forwardErr = Math.abs(ctrl.stepsToAngle(atTarget) - ctrl.stepsToAngle(targetSteps));
 
     await ctrl.setSpeed(TEST_SPEED);
     await ctrl.moveToPosition(Math.round(homeSteps));
     await waitSettle(ctrl);
+    await sleep(POST_SETTLE_DWELL_MS);
     const atHome   = await avgPosition(ctrl);
     const returnErr = Math.abs(ctrl.stepsToAngle(atHome) - ctrl.stepsToAngle(homeSteps));
 
@@ -333,9 +342,9 @@ async function main() {
     for (const idStr of Object.keys(JOINT_CONFIG)) {
         const ctrl = controllers[parseInt(idStr)];
         await waitSettle(ctrl).catch(() => {});
+        await sleep(POST_SETTLE_DWELL_MS);
         console.log(`  J${idStr} settled`);
     }
-    await sleep(500);
     console.log('All joints at home. Starting tuning sweep.\n');
 
     // Optional: node servo-tuner.js --joint 1,3  to tune specific joints only
@@ -371,11 +380,19 @@ async function main() {
             console.error(`\nJ${id} error: ${e.message}`);
         }
 
-        // Return tuned joint to 0° before moving to next joint
-        await ctrl.setSpeed(HOME_SPEED);
-        await ctrl.moveToPosition(homeStepsFor[id]);
-        await waitSettle(ctrl).catch(() => {});
-        await sleep(300);
+        // Return tuned joint to 0° before moving to next joint. Wrapped in its
+        // own try/catch — this used to be able to throw uncaught (e.g. a
+        // write timeout) and crash the whole run, silently discarding every
+        // joint's results gathered so far even though they'd already been
+        // tuned successfully and just hadn't been written to disk yet.
+        try {
+            await ctrl.setSpeed(HOME_SPEED);
+            await ctrl.moveToPosition(homeStepsFor[id]);
+            await waitSettle(ctrl).catch(() => {});
+            await sleep(POST_SETTLE_DWELL_MS);
+        } catch (e) {
+            console.error(`\nJ${id}: failed to return to 0° after tuning: ${e.message}`);
+        }
     }
 
     // ── Summary ────────────────────────────────────────────────────────────
