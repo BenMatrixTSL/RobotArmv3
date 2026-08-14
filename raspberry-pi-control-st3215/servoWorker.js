@@ -1060,9 +1060,13 @@ async function handleBusCommand(clientId, data) {
                     return;
                 }
                 sv.setCenterPosition(currentRawPosition);
-                saveJointCenter(data.joint, currentRawPosition);
-                log(`[CENTER] Joint ${data.joint}: centered at raw position ${currentRawPosition} (now reads 0°)`);
-                reply({ type: 'success', message: `Joint ${data.joint} centered — current position is now 0°`, centerPosition: currentRawPosition });
+                const saved = saveJointCenter(data.joint, currentRawPosition);
+                log(`[CENTER] Joint ${data.joint}: centered at raw position ${currentRawPosition} (now reads 0°)${saved ? '' : ' — WARNING: not persisted to disk'}`);
+                if (saved) {
+                    reply({ type: 'success', message: `Joint ${data.joint} centered — current position is now 0°`, centerPosition: currentRawPosition });
+                } else {
+                    reply({ type: 'error', message: `Joint ${data.joint} centered for this session, but failed to save — it will revert if the joint reconnects or the service restarts. Check server logs.`, centerPosition: currentRawPosition });
+                }
             } catch (error) {
                 reply({ type: 'error', message: `Failed to center joint: ${error.message}` });
             }
@@ -1262,7 +1266,14 @@ async function applyPIDConfig() {
 }
 
 // ===== Joint center offsets (persisted across restarts) =====
-const JOINT_CENTER_CONFIG_PATH = path.join(__dirname, 'servo-joint-centers.json');
+// Deliberately NOT under __dirname (the git working tree): this service
+// typically runs as a capability-restricted root (see install docs) while
+// the repo is owned by the deploying user for `git pull` to work, so a
+// service-written file living inside the repo silently fails to save with
+// EACCES. /var/lib is the standard location for this kind of persistent,
+// host-specific runtime state — separate from source control either way.
+const JOINT_CENTER_CONFIG_DIR  = process.env.ROBOT_ARM_STATE_DIR || '/var/lib/robot-arm-st3215';
+const JOINT_CENTER_CONFIG_PATH = path.join(JOINT_CENTER_CONFIG_DIR, 'servo-joint-centers.json');
 
 function loadJointCenterConfig() {
     if (!fs.existsSync(JOINT_CENTER_CONFIG_PATH)) return;
@@ -1289,6 +1300,10 @@ function loadJointCenterConfig() {
     }
 }
 
+// Returns true if the offset was actually persisted to disk — callers should
+// surface a false result to the user rather than silently claiming success,
+// since it means the center won't survive a service restart or the servo
+// reconnecting after a comms dropout.
 function saveJointCenter(jointNum, centerPosition) {
     jointCenterOverrides[jointNum - 1] = centerPosition;
 
@@ -1304,9 +1319,12 @@ function saveJointCenter(jointNum, centerPosition) {
     }
     cfg.joints[String(jointNum)] = centerPosition;
     try {
+        fs.mkdirSync(JOINT_CENTER_CONFIG_DIR, { recursive: true });
         fs.writeFileSync(JOINT_CENTER_CONFIG_PATH, JSON.stringify(cfg, null, 2));
+        return true;
     } catch (e) {
         log('Failed to save servo-joint-centers.json: ' + e.message, true);
+        return false;
     }
 }
 
