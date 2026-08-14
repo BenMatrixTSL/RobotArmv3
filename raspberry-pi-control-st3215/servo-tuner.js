@@ -88,6 +88,19 @@ const JOINT_CONFIG = {
 // relative to its actual saved 0°, not always the factory 2048.
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
+// servoWorker.js (the production bus owner) never issues a move without first
+// clearing any pending bus transaction on that controller and giving the bus
+// a brief quiet moment first (BUS_QUIET_BEFORE_MOVE_MS) — this script called
+// ctrl.moveToPosition() directly with neither, and that gap is the most
+// likely explanation for a servo that's reliable through the live app
+// failing bus writes repeatedly here. Route every move through this instead.
+const QUIET_BEFORE_MOVE_MS = 12; // matches servoWorker.js's BUS_QUIET_BEFORE_MOVE_MS
+async function moveTo(ctrl, steps) {
+    if (typeof ctrl.clearPendingBusTransaction === 'function') ctrl.clearPendingBusTransaction();
+    await sleep(QUIET_BEFORE_MOVE_MS);
+    await ctrl.moveToPosition(Math.round(steps));
+}
+
 async function avgPosition(ctrl, samples = 3) {
     let sum = 0;
     for (let n = 0; n < samples; n++) {
@@ -134,14 +147,14 @@ async function unlockAndWritePID(ctrl, p, d, i, startup) {
  */
 async function settledError(ctrl, homeSteps, targetSteps) {
     await ctrl.setSpeed(TEST_SPEED);
-    await ctrl.moveToPosition(Math.round(targetSteps));
+    await moveTo(ctrl, targetSteps);
     await waitSettle(ctrl);
     await sleep(POST_SETTLE_DWELL_MS);
     const atTarget = await avgPosition(ctrl, 5);
     const fwdErr   = Math.abs(ctrl.stepsToAngle(atTarget) - ctrl.stepsToAngle(targetSteps));
 
     await ctrl.setSpeed(TEST_SPEED);
-    await ctrl.moveToPosition(Math.round(homeSteps));
+    await moveTo(ctrl, homeSteps);
     await waitSettle(ctrl);
     await sleep(POST_SETTLE_DWELL_MS);
     const atHome   = await avgPosition(ctrl, 5);
@@ -156,14 +169,14 @@ async function settledError(ctrl, homeSteps, targetSteps) {
  */
 async function stepResponse(ctrl, homeSteps, targetSteps) {
     await ctrl.setSpeed(TEST_SPEED);
-    await ctrl.moveToPosition(Math.round(targetSteps));
+    await moveTo(ctrl, targetSteps);
     await waitSettle(ctrl);
     await sleep(POST_SETTLE_DWELL_MS);
     const atTarget  = await avgPosition(ctrl);
     const forwardErr = Math.abs(ctrl.stepsToAngle(atTarget) - ctrl.stepsToAngle(targetSteps));
 
     await ctrl.setSpeed(TEST_SPEED);
-    await ctrl.moveToPosition(Math.round(homeSteps));
+    await moveTo(ctrl, homeSteps);
     await waitSettle(ctrl);
     await sleep(POST_SETTLE_DWELL_MS);
     const atHome   = await avgPosition(ctrl);
@@ -333,7 +346,7 @@ async function main() {
         if (!alive) { console.log(`  J${id}: no response — skipping home`); continue; }
         await ctrl.startServo();
         await ctrl.setSpeed(HOME_SPEED);
-        await ctrl.moveToPosition(homeStepsFor[id]);
+        await moveTo(ctrl, homeStepsFor[id]);
         console.log(`  J${id}: moving to 0°`);
     }
     // Wait for all joints to fully settle at home
@@ -387,7 +400,7 @@ async function main() {
         // tuned successfully and just hadn't been written to disk yet.
         try {
             await ctrl.setSpeed(HOME_SPEED);
-            await ctrl.moveToPosition(homeStepsFor[id]);
+            await moveTo(ctrl, homeStepsFor[id]);
             await waitSettle(ctrl).catch(() => {});
             await sleep(POST_SETTLE_DWELL_MS);
         } catch (e) {
