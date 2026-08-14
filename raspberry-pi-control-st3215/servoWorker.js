@@ -93,6 +93,11 @@ let allServoControllers  = [];
 const jointStatusCache   = [];
 const jointSettingsCache = [];
 let cachedTorqueEnabled  = null;
+// Per-joint center offset (raw steps) that should be reapplied any time a
+// servo is (re)created — e.g. after a comms dropout — so a recovered servo
+// doesn't silently fall back to the factory center. Populated from
+// servo-joint-centers.json at startup and updated live by setJointCenter.
+const jointCenterOverrides = new Array(JOINT_COUNT).fill(null);
 let busTickTimer         = null;
 let busTickLoopActive    = false;
 let busTickInProgress    = false;
@@ -715,8 +720,20 @@ async function createAndInitializeServo(jointIndex) {
         servos[jointIndex] = null;
         throw new Error(`Servo ${jointIndex + 1} (ID: ${servoId}) did not respond`);
     }
-    await servo.startServo();
-    servoTorqueEnabled[jointIndex] = true;
+
+    // Reapply this joint's saved center offset — a freshly created controller
+    // otherwise defaults back to the factory 2048 center, silently undoing
+    // any recentering the user did before this servo dropped out.
+    if (jointCenterOverrides[jointIndex] !== null) {
+        servo.setCenterPosition(jointCenterOverrides[jointIndex]);
+    }
+
+    // Match whatever torque state is currently in effect rather than always
+    // forcing it on — a servo that drops out while the user has torque
+    // deliberately switched off should come back off, not on.
+    const desiredTorque = cachedTorqueEnabled !== false;
+    if (desiredTorque) await servo.startServo(); else await servo.stopServo();
+    servoTorqueEnabled[jointIndex] = desiredTorque;
     return servo;
 }
 
@@ -749,7 +766,12 @@ async function rescanServos() {
             try {
                 const alive = await existing.isResponsive();
                 if (alive) {
-                    await existing.startServo();
+                    // Match current desired torque state, not force it on —
+                    // this servo was never lost, so don't override the user's
+                    // choice just because a rescan touched it.
+                    const desiredTorque = cachedTorqueEnabled !== false;
+                    if (desiredTorque) await existing.startServo(); else await existing.stopServo();
+                    servoTorqueEnabled[i] = desiredTorque;
                     results.push({ joint: jointNumber, servoId, available: true, action: 'kept_existing' });
                     continue;
                 }
@@ -761,7 +783,6 @@ async function rescanServos() {
             await createAndInitializeServo(i);
             servoConsecFails[i] = 0;
             servoBackoffUntilMs[i] = 0;
-            servoTorqueEnabled[i] = true;
             results.push({ joint: jointNumber, servoId, available: true, action: 'rediscovered' });
         } catch (e) {
             servos[i] = null;
@@ -1232,18 +1253,22 @@ function loadJointCenterConfig() {
     const joints = cfg && cfg.joints;
     if (!joints) return;
 
-    for (let i = 0; i < servos.length; i++) {
-        const servo = servos[i];
-        if (!servo) continue;
+    for (let i = 0; i < JOINT_COUNT; i++) {
         const jointId = String(i + 1);
         const centerPosition = joints[jointId];
         if (!Number.isFinite(centerPosition)) continue;
-        servo.setCenterPosition(centerPosition);
+        // Recorded regardless of whether the servo is currently connected, so
+        // it's ready to reapply the moment a dropped-out servo reconnects
+        // (see createAndInitializeServo) — not just at this one-time load.
+        jointCenterOverrides[i] = centerPosition;
+        if (servos[i]) servos[i].setCenterPosition(centerPosition);
         log(`Joint ${jointId} center loaded from config: ${centerPosition}`);
     }
 }
 
 function saveJointCenter(jointNum, centerPosition) {
+    jointCenterOverrides[jointNum - 1] = centerPosition;
+
     let cfg = { joints: {} };
     if (fs.existsSync(JOINT_CENTER_CONFIG_PATH)) {
         try {
