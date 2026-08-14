@@ -936,31 +936,31 @@
                     </div>
                     <div class="setting-item">
                         <label>Min X (mm):</label>
-                        <input type="text" id="deadZoneMinX" value="0">
+                        <input type="text" id="deadZoneMinX" value="0" data-kbd="numeric">
                     </div>
                     <div class="setting-item">
                         <label>Max X (mm):</label>
-                        <input type="text" id="deadZoneMaxX" value="100">
+                        <input type="text" id="deadZoneMaxX" value="100" data-kbd="numeric">
                     </div>
                     <div class="setting-item">
                         <label>Min Y (mm):</label>
-                        <input type="text" id="deadZoneMinY" value="-50">
+                        <input type="text" id="deadZoneMinY" value="-50" data-kbd="numeric">
                     </div>
                     <div class="setting-item">
                         <label>Max Y (mm):</label>
-                        <input type="text" id="deadZoneMaxY" value="50">
+                        <input type="text" id="deadZoneMaxY" value="50" data-kbd="numeric">
                     </div>
                     <div class="setting-item">
                         <label>Min Z (mm):</label>
-                        <input type="text" id="deadZoneMinZ" value="0">
+                        <input type="text" id="deadZoneMinZ" value="0" data-kbd="numeric">
                     </div>
                     <div class="setting-item">
                         <label>Max Z (mm):</label>
-                        <input type="text" id="deadZoneMaxZ" value="150">
+                        <input type="text" id="deadZoneMaxZ" value="150" data-kbd="numeric">
                     </div>
                     <div class="setting-item">
                         <label>Safe Z Height (mm):</label>
-                        <input type="text" id="deadZoneSafeZ" value="300">
+                        <input type="text" id="deadZoneSafeZ" value="300" data-kbd="numeric">
                     </div>
                 </div>
                 <button class="btn btn-primary" id="addDeadZoneButton">Add / Update Dead Zone</button>
@@ -1139,9 +1139,9 @@
                         <p>Calculate joint angles from end effector position:</p>
                         <div class="test-inputs">
                             <label>Target Position (mm):</label>
-                            <input type="text" id="ikX" placeholder="X" style="width: 80px;">,
-                            <input type="text" id="ikY" placeholder="Y" style="width: 80px;">,
-                            <input type="text" id="ikZ" placeholder="Z" style="width: 80px;">
+                            <input type="text" id="ikX" placeholder="X" style="width: 80px;" data-kbd="numeric">,
+                            <input type="text" id="ikY" placeholder="Y" style="width: 80px;" data-kbd="numeric">,
+                            <input type="text" id="ikZ" placeholder="Z" style="width: 80px;" data-kbd="numeric">
                             <button class="btn btn-small" onclick="testInverseKinematics()">Calculate</button>
                         </div>
                         <div id="ikResult" class="test-result"></div>
@@ -1419,6 +1419,8 @@
     <script src="cameraView.js?v=20260616"></script>
     <!-- Main Application: UI logic and event handlers -->
     <script src="app.js?v=20260603f"></script>
+    <!-- On-Screen Keyboard: touch keyboard for kiosk mode (no system OSK in Chromium kiosk) -->
+    <script src="keyboard.js?v=20260814"></script>
     
     <!-- Check if Blockly loaded after page load -->
     <!-- This verifies that Blockly loaded successfully and hides the loading message -->
