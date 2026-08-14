@@ -309,6 +309,10 @@ async function refreshAllJointStatusSyncRead() {
             if (!status.torqueEnabled && servoTorqueEnabled[jointIndex]) {
                 log(`[TORQUE] Joint ${jointNum}: servo self-disabled torque (fault/overload) — will re-enable on next move`);
                 servoTorqueEnabled[jointIndex] = false;
+                // See the matching comment in the moveJoint handler: this
+                // changed one joint's torque state outside of setTorqueAll,
+                // so the cached "all on/off" state can no longer be trusted.
+                cachedTorqueEnabled = null;
             }
             vlog(`[POLL] joint=${jointNum} pos=${status.position} angle=${status.angleDegrees.toFixed(1)} torque=${status.torqueEnabled} moving=${status.isMoving}`);
             jointStatusCache[jointIndex] = {
@@ -371,6 +375,7 @@ async function refreshSingleJointStatusFromBus(jointIndex) {
         if (!status.torqueEnabled && servoTorqueEnabled[jointIndex]) {
             log(`[TORQUE] Joint ${jointNum}: servo self-disabled torque — will re-enable on next move. pos=${status.position} angle=${status.angleDegrees.toFixed(1)}`);
             servoTorqueEnabled[jointIndex] = false;
+            cachedTorqueEnabled = null; // see matching comment in the moveJoint handler
         }
         vlog(`[POLL] joint=${jointNum} pos=${status.position} angle=${status.angleDegrees.toFixed(1)} torque=${status.torqueEnabled} moving=${status.isMoving}`);
         jointStatusCache[jointIndex] = { joint: jointNum, available: true, ...status, stepPosition: status.position, readStale: false, lastGoodAt: Date.now() };
@@ -874,6 +879,14 @@ async function handleBusCommand(clientId, data) {
                     const torqueOk = await servo.startServo();
                     log(`[TORQUE] joint=${data.joint}: startServo ${torqueOk ? 'OK' : 'ack lost — assuming received'}`);
                     servoTorqueEnabled[jointIndex] = true;
+                    // This just turned ONE joint's torque back on outside of
+                    // setTorqueAll, so the "all torque off" cache is now wrong.
+                    // Invalidate it (rather than guessing true/false) so the
+                    // next setTorqueAll call can't short-circuit as a no-op
+                    // and skip actually writing to the servos — that's exactly
+                    // what let a torque-off request silently do nothing after
+                    // a home/move re-enabled torque on individual joints.
+                    cachedTorqueEnabled = null;
                 }
                 await servo.moveToAngle(angle, moveSpeed);
                 diag.busMovesCompleted++;
@@ -898,6 +911,7 @@ async function handleBusCommand(clientId, data) {
                 const stopped = await sv.stopServo();
                 if (stopped) {
                     servoTorqueEnabled[idx] = false;
+                    cachedTorqueEnabled = null; // see matching comment in the moveJoint handler
                     log(`[TORQUE] joint=${data.joint}: torque disabled`);
                     reply({ type: 'success', message: `Servo ${data.joint} stopped` });
                 } else {
@@ -919,8 +933,17 @@ async function handleBusCommand(clientId, data) {
                     if (servos[i] !== null) {
                         const ok = await servos[i].stopServo();
                         if (ok) { servoTorqueEnabled[i] = false; } else { failed.push(i + 1); }
+                    } else {
+                        // Disconnected servo isn't holding torque either way —
+                        // don't leave a stale `true` here (see setTorqueAll).
+                        servoTorqueEnabled[i] = false;
                     }
                 }
+                // This bypasses setTorqueAll, so its cache can no longer be
+                // trusted (see matching comment in the moveJoint handler) —
+                // invalidate rather than assume, since some writes may have
+                // failed above.
+                cachedTorqueEnabled = null;
                 if (failed.length === 0) {
                     reply({ type: 'success', message: 'All servos stopped' });
                 } else {
