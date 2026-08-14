@@ -958,14 +958,25 @@ async function handleBusCommand(clientId, data) {
             try {
                 if (cachedTorqueEnabled === torqueEnabled) {
                     log(`[TORQUE] setTorqueAll: already ${torqueEnabled ? 'enabled' : 'disabled'}, no-op`);
+                    // Still self-heal servoTorqueEnabled[] in case a joint was
+                    // momentarily disconnected during a previous call and its
+                    // flag never got cleared (see below) — a stale `true` here
+                    // keeps the watchdog heartbeat re-enabling torque bus-wide
+                    // even though cachedTorqueEnabled correctly says off.
+                    for (let i = 0; i < servos.length; i++) servoTorqueEnabled[i] = torqueEnabled;
                     reply({ type: 'success', message: `All servos torque already ${torqueEnabled ? 'enabled' : 'disabled'}` });
                     return;
                 }
                 for (let i = 0; i < servos.length; i++) {
                     if (servos[i] !== null) {
                         if (torqueEnabled) await servos[i].startServo(); else await servos[i].stopServo();
-                        servoTorqueEnabled[i] = torqueEnabled;
                     }
+                    // Set regardless of connection state: a disconnected servo
+                    // isn't holding torque, and leaving a stale `true` here for
+                    // a momentarily-null joint would keep servoTorqueEnabled.some(Boolean)
+                    // true forever, causing the watchdog heartbeat broadcast to
+                    // keep re-enabling torque on every other servo on the bus.
+                    servoTorqueEnabled[i] = torqueEnabled;
                 }
                 cachedTorqueEnabled = torqueEnabled;
                 reply({ type: 'success', message: `All servos torque ${torqueEnabled ? 'enabled' : 'disabled'}` });
