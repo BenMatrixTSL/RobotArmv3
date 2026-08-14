@@ -58,7 +58,10 @@
         panel.id = 'onScreenKeyboard';
         panel.className = 'osk-panel';
         // Prevent the keyboard from stealing focus away from the active field.
+        // On touchscreens, focus moves on touchstart (before any synthesized
+        // mousedown fires), so that has to be guarded too, not just mousedown.
         panel.addEventListener('mousedown', (e) => e.preventDefault());
+        panel.addEventListener('touchstart', (e) => e.preventDefault(), { passive: false });
         document.body.appendChild(panel);
     }
 
