@@ -3320,3 +3320,44 @@ body.osk-open .container {
     max-width: none;
 }
 
+/* Blockly variable-name prompt (replaces native window.prompt so the
+   on-screen keyboard can attach to a real <input>) */
+.blockly-prompt-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 10001;
+    background-color: rgba(0, 0, 0, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.blockly-prompt-box {
+    background-color: #ffffff;
+    border-radius: 8px;
+    padding: 20px;
+    width: 320px;
+    max-width: 90vw;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.blockly-prompt-message {
+    margin-bottom: 10px;
+    color: #0e0d0d;
+}
+
+.blockly-prompt-input {
+    width: 100%;
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    margin-bottom: 14px;
+}
+
+.blockly-prompt-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
