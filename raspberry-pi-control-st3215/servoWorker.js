@@ -162,6 +162,19 @@ function formatCommandError(error) {
  * zero bus contention risk.  All servos receive the write and reset their
  * internal bus watchdog timers, preventing self-disable.
  */
+// Bounds this write the same way ServoController.sendPacket() bounds its own
+// (see SERIAL_WRITE_CALLBACK_TIMEOUT_MS in robotArmST3215.js). This one is
+// especially important to bound: it goes through the same shared write queue
+// every servo's commands use (sharedSerialPort._writeQueue), and unlike
+// sendPacket()'s writeFn, it previously had no internal timeout at all. If
+// serialPort.write()'s callback ever failed to fire, processWriteQueue()
+// would await it forever — permanently jamming every future write from every
+// joint behind it, not just this broadcast. That was the "bus write queue is
+// full" total-freeze bug (ticks stop advancing, everything times out) — the
+// same failure mode as the sendPacket() one, just a second unprotected raw
+// write site the earlier fix didn't cover.
+const HEARTBEAT_WRITE_TIMEOUT_MS = 300;
+
 async function sendHeartbeatBroadcast() {
     // STS_TORQUE_ENABLE = 0x28, value = 1, INST_WRITE = 0x03, broadcast ID = 0xFE
     const buf = Buffer.from([0xFF, 0xFF, 0xFE, 0x04, 0x03, 0x28, 0x01, 0x00]);
@@ -169,7 +182,18 @@ async function sendHeartbeatBroadcast() {
     for (let i = 2; i < buf.length - 1; i++) sum += buf[i];
     buf[buf.length - 1] = (~sum) & 0xFF;
     await sharedSerialPort._writeQueue(() => new Promise((resolve, reject) => {
-        sharedSerialPort.write(buf, err => err ? reject(err) : resolve());
+        let settled = false;
+        const timer = setTimeout(() => {
+            if (settled) return;
+            settled = true;
+            reject(new Error(`Heartbeat write callback did not fire within ${HEARTBEAT_WRITE_TIMEOUT_MS}ms`));
+        }, HEARTBEAT_WRITE_TIMEOUT_MS);
+        sharedSerialPort.write(buf, err => {
+            if (settled) return;
+            settled = true;
+            clearTimeout(timer);
+            err ? reject(err) : resolve();
+        });
     }));
 }
 
