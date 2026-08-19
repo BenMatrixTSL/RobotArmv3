@@ -54,6 +54,39 @@ You can override serial device path with:
 SERIAL_PORT=/dev/ttyUSB0 node server.js
 ```
 
+## Client Libraries
+
+Ready-made client libraries for controlling the arm from a PC.
+Both expose the same API and work against the same server.
+
+| Language | Directory | Notes |
+|----------|-----------|-------|
+| **Python** | `Python/` | `pip install -r requirements.txt`, then run the examples directly |
+| **C++** | `Cpp/` | C++17, no external WS library; uses nlohmann/json (bundled) |
+
+See each directory's `README.md` for build instructions, API reference, and usage examples.
+
+**Quick start (Python):**
+```bash
+cd Firmware/Python
+pip install -r requirements.txt
+python example_basic.py
+```
+
+**Quick start (C++, Windows):**
+```bat
+cd Firmware\Cpp
+cmake -B build -G "Visual Studio 17 2022" -A x64
+cmake --build build --config Release
+build\Release\example_basic.exe
+```
+
+Both examples accept an optional IP argument to override the default `192.168.1.112`:
+```bash
+python example_basic.py          # Python uses the constant inside the script
+build\Release\example_basic.exe 192.168.1.50   # C++ accepts it on the command line
+```
+
 ## API and Protocol Docs
 
 - WebSocket API:

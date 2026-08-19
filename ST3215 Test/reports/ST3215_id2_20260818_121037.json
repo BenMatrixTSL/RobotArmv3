@@ -1,0 +1,868 @@
+{
+  "servo_id": 2,
+  "port": "COM16",
+  "baud": 1000000,
+  "timestamp": "2026-08-18T12:10:37",
+  "overall": "PASS",
+  "config": {
+    "fw_major": 3,
+    "fw_minor": 9,
+    "model_major": 9,
+    "model_minor": 3,
+    "id": 2,
+    "baud_index": 0,
+    "return_delay": 0,
+    "status_return_level": 1,
+    "min_angle_limit": 0,
+    "max_angle_limit": 4095,
+    "max_temperature": 70,
+    "max_voltage": 140,
+    "min_voltage": 40,
+    "max_torque": 1000,
+    "phase": 12,
+    "unloading_condition": 44,
+    "led_alarm_condition": 47,
+    "kp": 32,
+    "kd": 32,
+    "ki": 0,
+    "min_startup_force": 16,
+    "cw_deadband": 1,
+    "ccw_deadband": 1,
+    "protection_current": 310,
+    "angular_resolution": 1,
+    "position_offset": 3015,
+    "operating_mode": 0,
+    "protective_torque": 20,
+    "protection_time": 200,
+    "overload_torque": 80,
+    "speed_loop_p": 10,
+    "overcurrent_time": 200,
+    "speed_loop_i": 200
+  },
+  "tests": [
+    {
+      "test": "Identity and EEPROM configuration",
+      "status": "PASS",
+      "metrics": {
+        "firmware": "3.9",
+        "model": "9.3",
+        "id": 2,
+        "angle limits": "0 .. 4095",
+        "PID (P/I/D)": "32/0/32",
+        "deadband CW/CCW": "1/1",
+        "position offset": 3015,
+        "protection current": 310,
+        "limits (temp / voltage)": "70 degC, 40-140 (0.1 V units)",
+        "operating mode": 0
+      },
+      "notes": [],
+      "comms": {
+        "attempts": 33,
+        "ok": 33,
+        "timeout": 0,
+        "corrupt": 0,
+        "rx_fail": 0,
+        "tx_fail": 0,
+        "other": 0,
+        "hw_error_frames": 0,
+        "retried_ops": 0,
+        "failed_ops": 0,
+        "latency_ms_avg": 0.334,
+        "latency_ms_max": 0.511
+      },
+      "comms_fail_rate": 0.0
+    },
+    {
+      "test": "Communications reliability",
+      "status": "PASS",
+      "metrics": {
+        "ping failures": "0/200",
+        "31-byte read failures": "0/200",
+        "overall failure rate": "0.00%",
+        "ping latency avg/max": "0.58 / 0.78 ms"
+      },
+      "notes": [],
+      "comms": {
+        "attempts": 400,
+        "ok": 400,
+        "timeout": 0,
+        "corrupt": 0,
+        "rx_fail": 0,
+        "tx_fail": 0,
+        "other": 0,
+        "hw_error_frames": 0,
+        "retried_ops": 0,
+        "failed_ops": 0,
+        "latency_ms_avg": 0.612,
+        "latency_ms_max": 0.79
+      },
+      "comms_fail_rate": 0.0
+    },
+    {
+      "test": "Power and idle electrical check",
+      "status": "PASS",
+      "metrics": {
+        "voltage": "11.8 V (min 11.8, max 11.9)",
+        "temperature": "22 degC",
+        "current (torque off)": "0 mA (peak 0)",
+        "load": "0.0 %",
+        "status flags": "none"
+      },
+      "notes": [],
+      "comms": {
+        "attempts": 21,
+        "ok": 21,
+        "timeout": 0,
+        "corrupt": 0,
+        "rx_fail": 0,
+        "tx_fail": 0,
+        "other": 0,
+        "hw_error_frames": 0,
+        "retried_ops": 0,
+        "failed_ops": 0,
+        "latency_ms_avg": 0.751,
+        "latency_ms_max": 0.946
+      },
+      "comms_fail_rate": 0.0
+    },
+    {
+      "test": "Encoder stability (torque off)",
+      "status": "PASS",
+      "metrics": {
+        "samples": 200,
+        "position": "1901 counts (-12.9 deg from centre)",
+        "peak-to-peak": "0 counts",
+        "std dev": "0.00 counts",
+        "jumps > 20 counts": 0
+      },
+      "notes": [],
+      "comms": {
+        "attempts": 201,
+        "ok": 201,
+        "timeout": 0,
+        "corrupt": 0,
+        "rx_fail": 0,
+        "tx_fail": 0,
+        "other": 0,
+        "hw_error_frames": 0,
+        "retried_ops": 0,
+        "failed_ops": 0,
+        "latency_ms_avg": 0.419,
+        "latency_ms_max": 0.648
+      },
+      "comms_fail_rate": 0.0
+    },
+    {
+      "test": "Torque enable and position hold",
+      "status": "PASS",
+      "metrics": {
+        "settled": "yes in 0.40 s",
+        "holding current mean/max": "3 / 6 mA",
+        "load": "2.4 %",
+        "temperature": "22 degC",
+        "status flags": "none"
+      },
+      "notes": [],
+      "comms": {
+        "attempts": 207,
+        "ok": 207,
+        "timeout": 0,
+        "corrupt": 0,
+        "rx_fail": 0,
+        "tx_fail": 0,
+        "other": 0,
+        "hw_error_frames": 0,
+        "retried_ops": 0,
+        "failed_ops": 0,
+        "latency_ms_avg": 0.76,
+        "latency_ms_max": 0.901
+      },
+      "comms_fail_rate": 0.0
+    },
+    {
+      "test": "Step response",
+      "status": "PASS",
+      "metrics": {
+        "steps run": 6,
+        "steps settled": "6/6",
+        "settle time avg/max": "0.54 / 0.88 s",
+        "|error| avg/max": "2.0 / 3 counts",
+        "overshoot max": "0 counts",
+        "peak current max": "143 mA",
+        "detail": [
+          {
+            "delta": 50,
+            "settled": true,
+            "settle_s": 0.298,
+            "error_counts": -1,
+            "overshoot_counts": 0,
+            "peak_current_ma": 20,
+            "moved_counts": 51
+          },
+          {
+            "delta": -50,
+            "settled": true,
+            "settle_s": 0.255,
+            "error_counts": 3,
+            "overshoot_counts": 0,
+            "peak_current_ma": 20,
+            "moved_counts": 50
+          },
+          {
+            "delta": 200,
+            "settled": true,
+            "settle_s": 0.454,
+            "error_counts": -2,
+            "overshoot_counts": 0,
+            "peak_current_ma": 46,
+            "moved_counts": 200
+          },
+          {
+            "delta": -200,
+            "settled": true,
+            "settle_s": 0.501,
+            "error_counts": 1,
+            "overshoot_counts": 0,
+            "peak_current_ma": 46,
+            "moved_counts": 202
+          },
+          {
+            "delta": 800,
+            "settled": true,
+            "settle_s": 0.879,
+            "error_counts": -2,
+            "overshoot_counts": 0,
+            "peak_current_ma": 143,
+            "moved_counts": 800
+          },
+          {
+            "delta": -800,
+            "settled": true,
+            "settle_s": 0.845,
+            "error_counts": 3,
+            "overshoot_counts": 0,
+            "peak_current_ma": 117,
+            "moved_counts": 800
+          }
+        ]
+      },
+      "notes": [],
+      "comms": {
+        "attempts": 812,
+        "ok": 812,
+        "timeout": 0,
+        "corrupt": 0,
+        "rx_fail": 0,
+        "tx_fail": 0,
+        "other": 0,
+        "hw_error_frames": 0,
+        "retried_ops": 0,
+        "failed_ops": 0,
+        "latency_ms_avg": 0.752,
+        "latency_ms_max": 1.164
+      },
+      "comms_fail_rate": 0.0
+    },
+    {
+      "test": "Bidirectional sweep (friction, dead spots, backlash)",
+      "status": "PASS",
+      "metrics": {
+        "range swept": "1047 .. 3047 counts (176 deg)",
+        "points (each direction)": 17,
+        "points not settled": 0,
+        "|error| avg/max": "2.3 / 4 counts",
+        "hysteresis (backlash)": "4.2 counts (0.37 deg)",
+        "running current avg/peak": "7 / 39 mA",
+        "detail": [
+          {
+            "target": 1047,
+            "reached": 1048,
+            "error": 1,
+            "settled": true,
+            "peak_current_ma": 0,
+            "mean_current_ma": 0,
+            "load_pct": 0.0
+          },
+          {
+            "target": 1172,
+            "reached": 1169,
+            "error": -3,
+            "settled": true,
+            "peak_current_ma": 32,
+            "mean_current_ma": 8,
+            "load_pct": 23.6
+          },
+          {
+            "target": 1297,
+            "reached": 1294,
+            "error": -3,
+            "settled": true,
+            "peak_current_ma": 32,
+            "mean_current_ma": 8,
+            "load_pct": 23.2
+          },
+          {
+            "target": 1422,
+            "reached": 1418,
+            "error": -4,
+            "settled": true,
+            "peak_current_ma": 39,
+            "mean_current_ma": 10,
+            "load_pct": 24.4
+          },
+          {
+            "target": 1547,
+            "reached": 1544,
+            "error": -3,
+            "settled": true,
+            "peak_current_ma": 39,
+            "mean_current_ma": 9,
+            "load_pct": 24.8
+          },
+          {
+            "target": 1672,
+            "reached": 1669,
+            "error": -3,
+            "settled": true,
+            "peak_current_ma": 32,
+            "mean_current_ma": 9,
+            "load_pct": 23.6
+          },
+          {
+            "target": 1797,
+            "reached": 1795,
+            "error": -2,
+            "settled": true,
+            "peak_current_ma": 32,
+            "mean_current_ma": 7,
+            "load_pct": 23.6
+          },
+          {
+            "target": 1922,
+            "reached": 1920,
+            "error": -2,
+            "settled": true,
+            "peak_current_ma": 32,
+            "mean_current_ma": 8,
+            "load_pct": 23.2
+          },
+          {
+            "target": 2047,
+            "reached": 2045,
+            "error": -2,
+            "settled": true,
+            "peak_current_ma": 32,
+            "mean_current_ma": 8,
+            "load_pct": 23.6
+          },
+          {
+            "target": 2172,
+            "reached": 2169,
+            "error": -3,
+            "settled": true,
+            "peak_current_ma": 32,
+            "mean_current_ma": 8,
+            "load_pct": 24.0
+          },
+          {
+            "target": 2297,
+            "reached": 2294,
+            "error": -3,
+            "settled": true,
+            "peak_current_ma": 39,
+            "mean_current_ma": 8,
+            "load_pct": 24.0
+          },
+          {
+            "target": 2422,
+            "reached": 2420,
+            "error": -2,
+            "settled": true,
+            "peak_current_ma": 39,
+            "mean_current_ma": 7,
+            "load_pct": 24.4
+          },
+          {
+            "target": 2547,
+            "reached": 2545,
+            "error": -2,
+            "settled": true,
+            "peak_current_ma": 39,
+            "mean_current_ma": 7,
+            "load_pct": 24.4
+          },
+          {
+            "target": 2672,
+            "reached": 2670,
+            "error": -2,
+            "settled": true,
+            "peak_current_ma": 39,
+            "mean_current_ma": 8,
+            "load_pct": 24.4
+          },
+          {
+            "target": 2797,
+            "reached": 2794,
+            "error": -3,
+            "settled": true,
+            "peak_current_ma": 32,
+            "mean_current_ma": 8,
+            "load_pct": 24.0
+          },
+          {
+            "target": 2922,
+            "reached": 2921,
+            "error": -1,
+            "settled": true,
+            "peak_current_ma": 32,
+            "mean_current_ma": 6,
+            "load_pct": 23.6
+          },
+          {
+            "target": 3047,
+            "reached": 3045,
+            "error": -2,
+            "settled": true,
+            "peak_current_ma": 32,
+            "mean_current_ma": 7,
+            "load_pct": 23.6
+          },
+          {
+            "target": 3047,
+            "reached": 3045,
+            "error": -2,
+            "settled": true,
+            "peak_current_ma": 6,
+            "mean_current_ma": 1,
+            "load_pct": 2.4
+          },
+          {
+            "target": 2922,
+            "reached": 2925,
+            "error": 3,
+            "settled": true,
+            "peak_current_ma": 32,
+            "mean_current_ma": 8,
+            "load_pct": 24.0
+          },
+          {
+            "target": 2797,
+            "reached": 2798,
+            "error": 1,
+            "settled": true,
+            "peak_current_ma": 32,
+            "mean_current_ma": 7,
+            "load_pct": 23.2
+          },
+          {
+            "target": 2672,
+            "reached": 2674,
+            "error": 2,
+            "settled": true,
+            "peak_current_ma": 32,
+            "mean_current_ma": 7,
+            "load_pct": 24.4
+          },
+          {
+            "target": 2547,
+            "reached": 2550,
+            "error": 3,
+            "settled": true,
+            "peak_current_ma": 32,
+            "mean_current_ma": 9,
+            "load_pct": 24.0
+          },
+          {
+            "target": 2422,
+            "reached": 2425,
+            "error": 3,
+            "settled": true,
+            "peak_current_ma": 32,
+            "mean_current_ma": 8,
+            "load_pct": 23.6
+          },
+          {
+            "target": 2297,
+            "reached": 2299,
+            "error": 2,
+            "settled": true,
+            "peak_current_ma": 32,
+            "mean_current_ma": 8,
+            "load_pct": 23.2
+          },
+          {
+            "target": 2172,
+            "reached": 2174,
+            "error": 2,
+            "settled": true,
+            "peak_current_ma": 39,
+            "mean_current_ma": 7,
+            "load_pct": 24.0
+          },
+          {
+            "target": 2047,
+            "reached": 2050,
+            "error": 3,
+            "settled": true,
+            "peak_current_ma": 32,
+            "mean_current_ma": 7,
+            "load_pct": 24.0
+          },
+          {
+            "target": 1922,
+            "reached": 1923,
+            "error": 1,
+            "settled": true,
+            "peak_current_ma": 26,
+            "mean_current_ma": 6,
+            "load_pct": 24.0
+          },
+          {
+            "target": 1797,
+            "reached": 1800,
+            "error": 3,
+            "settled": true,
+            "peak_current_ma": 32,
+            "mean_current_ma": 8,
+            "load_pct": 23.6
+          },
+          {
+            "target": 1672,
+            "reached": 1675,
+            "error": 3,
+            "settled": true,
+            "peak_current_ma": 32,
+            "mean_current_ma": 8,
+            "load_pct": 24.8
+          },
+          {
+            "target": 1547,
+            "reached": 1550,
+            "error": 3,
+            "settled": true,
+            "peak_current_ma": 39,
+            "mean_current_ma": 9,
+            "load_pct": 23.6
+          },
+          {
+            "target": 1422,
+            "reached": 1424,
+            "error": 2,
+            "settled": true,
+            "peak_current_ma": 32,
+            "mean_current_ma": 8,
+            "load_pct": 23.6
+          },
+          {
+            "target": 1297,
+            "reached": 1298,
+            "error": 1,
+            "settled": true,
+            "peak_current_ma": 32,
+            "mean_current_ma": 7,
+            "load_pct": 24.0
+          },
+          {
+            "target": 1172,
+            "reached": 1174,
+            "error": 2,
+            "settled": true,
+            "peak_current_ma": 32,
+            "mean_current_ma": 7,
+            "load_pct": 22.8
+          },
+          {
+            "target": 1047,
+            "reached": 1048,
+            "error": 1,
+            "settled": true,
+            "peak_current_ma": 32,
+            "mean_current_ma": 6,
+            "load_pct": 24.0
+          }
+        ]
+      },
+      "notes": [],
+      "comms": {
+        "attempts": 2020,
+        "ok": 2020,
+        "timeout": 0,
+        "corrupt": 0,
+        "rx_fail": 0,
+        "tx_fail": 0,
+        "other": 0,
+        "hw_error_frames": 0,
+        "retried_ops": 0,
+        "failed_ops": 0,
+        "latency_ms_avg": 0.753,
+        "latency_ms_max": 1.084
+      },
+      "comms_fail_rate": 0.0
+    },
+    {
+      "test": "Speed capability",
+      "status": "PASS",
+      "metrics": {
+        "detail": [
+          {
+            "commanded": 500,
+            "goal_speed_readback": 500,
+            "cruise": 500,
+            "peak_reported": 550,
+            "average_over_move": 481,
+            "ratio": 1.0,
+            "peak_current_ma": 26
+          },
+          {
+            "commanded": 1500,
+            "goal_speed_readback": 1500,
+            "cruise": 1500,
+            "peak_reported": 1550,
+            "average_over_move": 1161,
+            "ratio": 1.0,
+            "peak_current_ma": 84
+          }
+        ],
+        "speed 500": "cruised 500 counts/s (ratio 1.0), peak 550, avg over move 481, 26 mA",
+        "speed 1500": "cruised 1500 counts/s (ratio 1.0), peak 1550, avg over move 1161, 84 mA"
+      },
+      "notes": [
+        "3000 counts/s cannot plateau within 2000 counts at acc 50; top speed is measured by the constant-speed test instead"
+      ],
+      "comms": {
+        "attempts": 770,
+        "ok": 770,
+        "timeout": 0,
+        "corrupt": 0,
+        "rx_fail": 0,
+        "tx_fail": 0,
+        "other": 0,
+        "hw_error_frames": 0,
+        "retried_ops": 0,
+        "failed_ops": 0,
+        "latency_ms_avg": 0.765,
+        "latency_ms_max": 1.219
+      },
+      "comms_fail_rate": 0.0
+    },
+    {
+      "test": "Constant-speed mode (full revolutions, both directions)",
+      "status": "PASS",
+      "metrics": {
+        "forward": "2.0 rev, 1446 counts/s (cmd 1500), 53 mA avg / 78 mA peak",
+        "reverse": "2.0 rev, 1446 counts/s (cmd 1500), 50 mA avg / 72 mA peak",
+        "full circle covered": "24/24 forward, 24/24 reverse (24 sectors)",
+        "top speed": "cruised 3000 of 3000 counts/s (ratio 1.0), 147 mA",
+        "detail": {
+          "forward": {
+            "revolutions": 2.0,
+            "elapsed_s": 5.67,
+            "commanded_speed": 1500,
+            "mean_speed": 1446,
+            "speed_ratio": 0.96,
+            "speed_min/median/max": [
+              1100,
+              1500,
+              1550
+            ],
+            "current_mean_ma": 53,
+            "current_peak_ma": 78,
+            "sectors_covered": "24/24",
+            "sector_speed": [
+              1500,
+              1500,
+              1500,
+              1500,
+              1500,
+              1500,
+              1500,
+              1500,
+              1500,
+              1500,
+              1500,
+              1500,
+              1500,
+              1450,
+              1500,
+              1500,
+              1500,
+              1500,
+              1500,
+              1500,
+              1500,
+              1500,
+              1500,
+              1500
+            ],
+            "sector_current_ma": [
+              52,
+              52,
+              52,
+              52,
+              52,
+              52,
+              52,
+              52,
+              52,
+              52,
+              52,
+              52,
+              55,
+              58,
+              52,
+              52,
+              58,
+              52,
+              52,
+              52,
+              52,
+              55,
+              52,
+              52
+            ],
+            "stall_samples": 0,
+            "encoder_jumps": [],
+            "error_flags": []
+          },
+          "reverse": {
+            "revolutions": 2.0,
+            "elapsed_s": 5.67,
+            "commanded_speed": 1500,
+            "mean_speed": 1446,
+            "speed_ratio": 0.96,
+            "speed_min/median/max": [
+              1150,
+              1500,
+              1600
+            ],
+            "current_mean_ma": 50,
+            "current_peak_ma": 72,
+            "sectors_covered": "24/24",
+            "sector_speed": [
+              1500,
+              1500,
+              1500,
+              1500,
+              1500,
+              1500,
+              1500,
+              1500,
+              1500,
+              1500,
+              1500,
+              1500,
+              1500,
+              1500,
+              1500,
+              1500,
+              1500,
+              1500,
+              1500,
+              1500,
+              1500,
+              1500,
+              1500,
+              1500
+            ],
+            "sector_current_ma": [
+              52,
+              46,
+              46,
+              52,
+              52,
+              49,
+              46,
+              52,
+              52,
+              52,
+              52,
+              52,
+              58,
+              52,
+              52,
+              52,
+              52,
+              46,
+              52,
+              46,
+              46,
+              52,
+              46,
+              52
+            ],
+            "stall_samples": 0,
+            "encoder_jumps": [],
+            "error_flags": []
+          },
+          "top_speed": {
+            "commanded": 3000,
+            "cruise": 3000,
+            "peak_reported": 3050,
+            "mean_speed": 2654,
+            "ratio": 1.0,
+            "current_mean_ma": 147,
+            "revolutions": 2.0
+          }
+        }
+      },
+      "notes": [],
+      "comms": {
+        "attempts": 1324,
+        "ok": 1323,
+        "timeout": 1,
+        "corrupt": 0,
+        "rx_fail": 0,
+        "tx_fail": 0,
+        "other": 0,
+        "hw_error_frames": 0,
+        "retried_ops": 1,
+        "failed_ops": 0,
+        "latency_ms_avg": 0.791,
+        "latency_ms_max": 34.247
+      },
+      "comms_fail_rate": 0.00076
+    },
+    {
+      "test": "Thermal and latched error flags",
+      "status": "PASS",
+      "metrics": {
+        "temperature start/end": "22 / 26 degC",
+        "rise": "4 degC",
+        "voltage at end": "11.8 V",
+        "status flags": "none"
+      },
+      "notes": [],
+      "comms": {
+        "attempts": 3,
+        "ok": 3,
+        "timeout": 0,
+        "corrupt": 0,
+        "rx_fail": 0,
+        "tx_fail": 0,
+        "other": 0,
+        "hw_error_frames": 0,
+        "retried_ops": 0,
+        "failed_ops": 0,
+        "latency_ms_avg": 0.318,
+        "latency_ms_max": 0.324
+      },
+      "comms_fail_rate": 0.0
+    }
+  ],
+  "comms_total": {
+    "transactions": 5809,
+    "failed": 1,
+    "failure_rate_pct": 0.017,
+    "timeouts": 1,
+    "corrupt_packets": 0,
+    "rx_fail": 0,
+    "tx_fail": 0,
+    "other": 0,
+    "hw_error_replies": 0,
+    "retried_ops": 1,
+    "failed_ops": 0,
+    "latency_ms_avg": 0.738,
+    "latency_ms_max": 34.247
+  },
+  "latched_error_flags": []
+}
