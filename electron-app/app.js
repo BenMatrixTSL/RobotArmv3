@@ -7818,7 +7818,7 @@ function setToolPump(on) {
         showAppMessage('Connect to the robot arm controller first');
         return;
     }
-    const duty = on ? 102 : 0;
+    const duty = on ? 80 : 0;
     robotArmClient.sendCommand('toolSetPwm', { pwm1Duty: duty, enable1: on })
         .catch(err => console.warn('setToolPump failed:', err));
 }
@@ -7863,7 +7863,7 @@ function updateEndToolPneumaticButtonsState() {
 function setEndToolPumpEnabled(enabled) {
     if (!robotArmClient.isConnected) { showAppMessage('Not connected'); return; }
     if (!robotArmClient.hasArmControl) { showAppMessage('Read-only — use Take control on the Connection tab first'); return; }
-    endToolPwmState.pwm1Duty = enabled ? 102 : 0;
+    endToolPwmState.pwm1Duty = enabled ? 80 : 0;
     endToolPwmState.enable1 = enabled;
     sendEndToolPwm();
     const stateEl = document.getElementById('endToolPumpStateText');
