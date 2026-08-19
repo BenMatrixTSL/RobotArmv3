@@ -2684,10 +2684,6 @@ header h1 {
     margin: 10px 0 15px 0;
 }
 
-.deadzone-table {
-    align-items: left;
-}
-
 /* Simulation Panel */
 .simulation-panel {
     background-color: #f8f9fa;
@@ -3263,101 +3259,649 @@ body.kiosk-mode #connection-tab input[type="text"] {
     }
 }
 
-/* On-screen keyboard (kiosk mode, touch-only, no system OSK available) */
-.osk-panel {
-    position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 10000;
-    background-color: #2c3e50;
-    padding: 10px 10px calc(10px + env(safe-area-inset-bottom, 0px));
-    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.3);
-    transform: translateY(100%);
-    transition: transform 0.2s ease-out;
+
+/* ================================================================
+   Touch baseline
+   ================================================================
+   Applies app-wide instead of tab by tab. Two layers:
+
+   1. Press feedback, tap-delay removal and focus rings — always on,
+      because they cost nothing with a mouse and a finger never
+      triggers :hover.
+   2. Minimum target sizes — only under body.touch-mode, which app.js
+      sets for a real touchscreen, a coarse pointer, ?kiosk=1, or the
+      manual override.
+
+   The hand-tuned per-tab rules earlier in this file (the kiosk layout,
+   pendant2) are more specific and deliberately still win, so the
+   800x480 layouts keep their measured geometry.
+   ================================================================ */
+
+:root {
+    --tap-min: 44px;        /* never smaller than this      */
+    --tap-comfort: 56px;    /* commits, saves, connects     */
+    --tap-primary: 72px;    /* starts or stops arm movement */
 }
 
-.osk-panel.osk-visible {
-    transform: translateY(0);
+/* No 300 ms tap delay, and no text selection when a finger slides
+   across a button mid-press */
+.btn,
+.tab-button,
+button,
+select,
+.direction-btn,
+.step-preset-btn {
+    touch-action: manipulation;
 }
 
-body.osk-open .container {
-    padding-bottom: 260px;
+.btn,
+.tab-button,
+button {
+    -webkit-user-select: none;
+    user-select: none;
 }
 
-.osk-row {
-    display: flex;
-    gap: 6px;
-    margin-bottom: 6px;
-    justify-content: center;
+/* Press feedback. Without this most of the app gives no sign that a
+   tap registered, because :hover never fires on a touchscreen. */
+.btn,
+.tab-button,
+.direction-btn,
+.step-preset-btn {
+    transition: background-color 0.2s, transform 0.08s, opacity 0.08s;
 }
 
-.osk-key {
-    flex: 1;
-    min-width: 0;
-    max-width: 70px;
-    height: 46px;
-    border: none;
-    border-radius: 6px;
-    background-color: #ffffff;
-    color: #0e0d0d;
+.btn:active:not(.pendant2-jog-btn),
+.tab-button:active,
+.direction-btn:active,
+.step-preset-btn:active {
+    transform: scale(0.97);
+    opacity: 0.9;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .btn,
+    .tab-button,
+    .direction-btn,
+    .step-preset-btn {
+        transition: background-color 0.2s;
+    }
+
+    .btn:active:not(.pendant2-jog-btn),
+    .tab-button:active,
+    .direction-btn:active,
+    .step-preset-btn:active {
+        transform: none;
+    }
+}
+
+/* Keyboard focus had no visible state anywhere in the app */
+.btn:focus-visible,
+.tab-button:focus-visible,
+button:focus-visible,
+select:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+    outline: 3px solid #3498db;
+    outline-offset: 2px;
+}
+
+/* ---- Minimum target size ---- */
+
+/* Keep these selectors flat. Every :not() raises specificity, and a
+   branch like button:not(.foo) would then outrank .btn-motion below and
+   silently cap it at 44 px. Exceptions are written as their own rules
+   after this one instead. */
+body.touch-mode .btn,
+body.touch-mode .tab-button,
+body.touch-mode button,
+body.touch-mode select,
+body.touch-mode input[type="text"],
+body.touch-mode input[type="number"],
+body.touch-mode input[type="password"],
+body.touch-mode input[type="search"] {
+    min-height: var(--tap-min);
+    font-size: 15px;
+}
+
+/* The joint status cards are tuned to fit 800x480; their expand toggle
+   stays compact deliberately. */
+body.touch-mode .joint-details-toggle {
+    min-height: 24px;
+    height: 24px;
     font-size: 16px;
-    box-shadow: 0 2px 3px rgba(0, 0, 0, 0.25);
 }
 
-.osk-key:active {
-    background-color: #3498db;
-    color: #ffffff;
+/* btn-small stays visually quieter — it just stops being a smaller
+   target. This one rule lifts 41 buttons across the app. */
+body.touch-mode .btn-small {
+    padding: 6px 14px;
+    font-size: 13px;
 }
 
-.osk-key-active {
-    background-color: #3498db;
-    color: #ffffff;
+/* Native checkboxes render at about 13 px. Six sit raw in the 3D
+   Visualisation panel and one in every dead zone row. */
+body.touch-mode input[type="checkbox"],
+body.touch-mode input[type="radio"] {
+    width: 24px;
+    height: 24px;
+    accent-color: #3498db;
 }
 
-.osk-key-wide {
-    flex: 2;
-    max-width: none;
+body.touch-mode label > input[type="checkbox"],
+body.touch-mode label > input[type="radio"] {
+    margin-right: 10px;
+    vertical-align: middle;
 }
 
-/* Blockly variable-name prompt (replaces native window.prompt so the
-   on-screen keyboard can attach to a real <input>) */
-.blockly-prompt-overlay {
+/* The whole label becomes the target, not just the box */
+body.touch-mode .visualization-toggles label,
+body.touch-mode .simulation-toggle {
+    display: flex;
+    align-items: center;
+    min-height: var(--tap-min);
+    cursor: pointer;
+}
+
+/* ---- Size by consequence ---- */
+
+/* Anything that starts or stops the arm moving */
+body.touch-mode .btn-motion {
+    min-height: var(--tap-primary);
+    padding-left: 24px;
+    padding-right: 24px;
+    font-size: 17px;
+    font-weight: 600;
+}
+
+/* Commits, saves, connects, changes state */
+body.touch-mode .btn-major {
+    min-height: var(--tap-comfort);
+    padding-left: 20px;
+    padding-right: 20px;
+    font-size: 16px;
+}
+
+/* ---- Room to wrap ----
+   Taller buttons overflow a narrow screen unless their rows wrap.
+   These containers are already flex; only wrap and gap need setting. */
+body.touch-mode .control-buttons,
+body.touch-mode .gcode-editor-controls,
+body.touch-mode .positions-list-controls,
+body.touch-mode .file-controls,
+body.touch-mode .view-buttons,
+body.touch-mode .calibration-controls,
+body.touch-mode .simulation-buttons,
+body.touch-mode .positions-xyz-buttons {
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+/* Destructive actions sit right beside the ones people mean to press */
+body.touch-mode .positions-list-item .btn-danger {
+    margin-left: 6px;
+}
+
+/* ================================================================
+   Touch components
+   ================================================================
+   The pieces that needed more than a size change: the in-app dialog,
+   switches, dead zone cards, position rows, steppers and the grouped
+   control rows. Sized from the same --tap-* tokens as the baseline.
+   ================================================================ */
+
+/* ---- In-app dialog ---- */
+.app-dialog-backdrop {
     position: fixed;
     inset: 0;
-    z-index: 10001;
-    background-color: rgba(0, 0, 0, 0.4);
+    background: rgba(20, 28, 38, 0.55);
     display: flex;
     align-items: center;
     justify-content: center;
-}
-
-.blockly-prompt-box {
-    background-color: #ffffff;
-    border-radius: 8px;
     padding: 20px;
-    width: 320px;
-    max-width: 90vw;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    z-index: 3000;
 }
 
-.blockly-prompt-message {
-    margin-bottom: 10px;
-    color: #0e0d0d;
+.app-dialog-backdrop[hidden] {
+    display: none;
 }
 
-.blockly-prompt-input {
-    width: 100%;
-    padding: 10px;
-    font-size: 16px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    margin-bottom: 14px;
-}
-
-.blockly-prompt-buttons {
+.app-dialog {
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+    padding: 24px;
+    width: min(460px, 100%);
     display: flex;
-    justify-content: flex-end;
-    gap: 8px;
+    flex-direction: column;
+    gap: 18px;
 }
 
+.app-dialog-message {
+    font-size: 17px;
+    line-height: 1.45;
+    color: #2c3e50;
+    margin: 0;
+}
+
+.app-dialog-input {
+    width: 100%;
+    padding: 12px;
+    font-size: 16px;
+    border: 2px solid #bdc3c7;
+    border-radius: 6px;
+}
+
+.app-dialog-input[hidden] {
+    display: none;
+}
+
+.app-dialog-buttons {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+}
+
+.app-dialog-buttons .btn {
+    min-height: 56px;
+    min-width: 120px;
+    font-size: 16px;
+}
+
+/* ---- Switch ----
+   A checkbox is about 13 px of target. This keeps the input for state and
+   accessibility but draws it as something a finger can actually hit. */
+.switch {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    min-height: var(--tap-min);
+    cursor: pointer;
+    user-select: none;
+}
+
+.switch input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.switch-track {
+    position: relative;
+    width: 56px;
+    height: 32px;
+    border-radius: 999px;
+    background: #bdc3c7;
+    transition: background 0.15s;
+    flex: none;
+}
+
+.switch-thumb {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    transition: transform 0.15s;
+}
+
+.switch input[type="checkbox"]:checked + .switch-track {
+    background: #27ae60;
+}
+
+.switch input[type="checkbox"]:checked + .switch-track .switch-thumb {
+    transform: translateX(24px);
+}
+
+.switch input[type="checkbox"]:focus-visible + .switch-track {
+    outline: 3px solid #3498db;
+    outline-offset: 2px;
+}
+
+.switch-text {
+    font-size: 14px;
+    color: #5a6878;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .switch-track,
+    .switch-thumb {
+        transition: none;
+    }
+}
+
+/* ---- Dead zone cards ----
+   Replaces a nine-column table that could not fit an 800 px screen. */
+.deadzone-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 12px;
+}
+
+.deadzone-empty {
+    color: #888;
+    font-style: italic;
+    margin: 0;
+}
+
+.deadzone-card {
+    background: #fff;
+    border: 1px solid #dde3ea;
+    border-left: 4px solid #e74c3c;
+    border-radius: 8px;
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.deadzone-card-off {
+    border-left-color: #bdc3c7;
+    opacity: 0.72;
+}
+
+.deadzone-card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.deadzone-name {
+    font-weight: 700;
+    font-size: 16px;
+    color: #2c3e50;
+    word-break: break-word;
+}
+
+.deadzone-bounds {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.deadzone-axis {
+    display: flex;
+    gap: 10px;
+    font-size: 14px;
+    font-variant-numeric: tabular-nums;
+}
+
+.deadzone-axis span {
+    color: #7f8c8d;
+    font-weight: 700;
+    min-width: 16px;
+}
+
+.deadzone-card-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.deadzone-card-actions .btn {
+    flex: 1;
+}
+
+/* ---- Stored position rows ----
+   Was: a clickable row with two small buttons nested inside it, one of
+   them destructive. Now the row is one button and the actions are their
+   own group. */
+.positions-list-item {
+    display: flex;
+    align-items: stretch;
+    gap: 12px;
+    background: #f8f9fa;
+    border-radius: 6px;
+    padding: 8px;
+    flex-wrap: wrap;
+}
+
+.positions-list-item:hover {
+    background: #e9ecef;
+}
+
+.position-item-select {
+    flex: 1;
+    min-width: 200px;
+    min-height: 64px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 10px 12px;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    text-align: left;
+    cursor: pointer;
+    font: inherit;
+    color: inherit;
+}
+
+.position-item-select:hover {
+    border-color: #3498db;
+    background: #fff;
+}
+
+.position-item-select:active {
+    background: #eaf3fb;
+}
+
+.position-item-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.position-item-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+/* ---- Steppers ----
+   Number fields that can be changed without a keyboard. */
+.stepper {
+    display: flex;
+    align-items: stretch;
+    gap: 6px;
+}
+
+.stepper input {
+    flex: 1;
+    min-width: 0;
+    text-align: center;
+}
+
+.stepper-btn {
+    flex: none;
+    width: var(--tap-min);
+    min-height: var(--tap-min);
+    border: 1px solid #bdc3c7;
+    border-radius: 6px;
+    background: #fff;
+    font-size: 22px;
+    line-height: 1;
+    font-weight: 600;
+    color: #2c3e50;
+    cursor: pointer;
+    touch-action: manipulation;
+}
+
+.stepper-btn:hover {
+    background: #ecf0f1;
+    border-color: #3498db;
+}
+
+.stepper-btn:active {
+    background: #d5dbdb;
+}
+
+/* ---- Grouped control rows ----
+   Execution controls sit in their own row; everything else goes in a
+   drawer, so Run is not the same size as Load Example. */
+.control-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.control-row-primary {
+    margin-bottom: 10px;
+}
+
+.control-row-divider {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid #ddd;
+}
+
+.control-row-label {
+    font-weight: 700;
+    color: #5a6878;
+    font-size: 14px;
+}
+
+.control-drawer {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 12px;
+    background: #f4f6f8;
+    border-radius: 8px;
+}
+
+.control-drawer[hidden] {
+    display: none;
+}
+
+/* ---- Touch-mode adjustments ---- */
+
+/* The joint card expand toggle was 24x24 in the corner. Under touch it
+   becomes a strip across the bottom of the card — same footprint, far
+   more target. Absolute positioning keeps the markup, and the desktop
+   layout, exactly as they were. */
+body.touch-mode .joint-card-compact {
+    position: relative;
+    padding-bottom: 46px;
+}
+
+body.touch-mode .joint-card-compact .joint-details-toggle {
+    position: absolute;
+    left: 8px;
+    right: 8px;
+    bottom: 6px;
+    width: auto;
+    height: 34px;
+    min-height: 34px;
+    font-size: 15px;
+}
+
+/* Text fields want 16px so the browser does not zoom on focus */
+body.touch-mode input[type="text"],
+body.touch-mode input[type="number"],
+body.touch-mode input[type="password"],
+body.touch-mode textarea {
+    font-size: 16px;
+}
+
+/* Raw checkboxes elsewhere (3D Visualisation toggles) get drawn larger
+   rather than restyled, so their labels keep working */
+body.touch-mode .visualization-toggles label,
+body.touch-mode .simulation-toggle {
+    padding: 4px 0;
+}
+
+body.touch-mode .deadzone-card-actions .btn,
+body.touch-mode .position-item-actions .btn {
+    min-width: 96px;
+}
+
+/* A stepper inside a flex row must be allowed to shrink, or its content
+   width pushes the row past the viewport. */
+.position-joint-item .stepper,
+.xyz-item .stepper,
+.setting-item .stepper {
+    flex: 1;
+    min-width: 0;
+}
+
+.position-joint-item .stepper input,
+.xyz-item .stepper input {
+    width: auto;
+}
+
+/* Full-height strip on a normal screen; the kiosk keeps it shorter
+   because 480 px of height is the constraint there. */
+body.touch-mode .joint-card-compact {
+    padding-bottom: 52px;
+}
+
+body.touch-mode .joint-card-compact .joint-details-toggle {
+    height: 40px;
+    min-height: 40px;
+}
+
+body.touch-mode.kiosk-mode .joint-card-compact {
+    padding-bottom: 46px;
+}
+
+body.touch-mode.kiosk-mode .joint-card-compact .joint-details-toggle {
+    height: 34px;
+    min-height: 34px;
+    font-size: 14px;
+}
+
+/* The expand strip has to read as a button. At full card width, with the
+   app default white field styling, it looked like an empty text input. */
+body.touch-mode .joint-card-compact .joint-details-toggle {
+    background: #dfe6e9;
+    border: 1px solid #c3ccd1;
+    color: #4a5b66;
+    font-weight: 700;
+}
+
+body.touch-mode .joint-card-compact .joint-details-toggle:hover {
+    background: #d0dade;
+    border-color: #3498db;
+    color: #2c3e50;
+}
+
+body.touch-mode .joint-card-compact .joint-details-toggle:active {
+    background: #c3ccd1;
+}
+
+/* The RAPID editor never had a size of its own, so it rendered as a
+   two-row box. It gets the same treatment as the G-Code editor. */
+#rapidContent {
+    width: 100%;
+    height: 300px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    line-height: 1.5;
+    resize: vertical;
+    background-color: white;
+}
+
+@media (max-width: 800px), (max-height: 600px) {
+    #rapidContent {
+        height: 150px;
+        font-size: 12px;
+        padding: 5px;
+    }
+}
+
+body.touch-mode #rapidContent,
+body.touch-mode #gcodeContent {
+    font-size: 15px;
+    line-height: 1.55;
+}

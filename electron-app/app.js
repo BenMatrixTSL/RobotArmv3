@@ -498,7 +498,7 @@ function generateJointStatusCards() {
             <div class="joint-status-card joint-card-compact">
                 <div class="joint-card-header">
                     <span class="joint-card-title">J${i}</span>
-                    <button type="button" class="joint-details-toggle" data-joint-details-toggle="${i}" onclick="toggleJointDetails(${i})" aria-expanded="false" title="Show position, load, voltage, temperature, speed and acceleration">+</button>
+                    <button type="button" class="joint-details-toggle" data-joint-details-toggle="${i}" onclick="toggleJointDetails(${i})" aria-expanded="false" title="Show position, load, voltage, temperature, speed and acceleration">${document.body.classList.contains('touch-mode') ? '+ Details' : '+'}</button>
                 </div>
                 <div class="joint-status-summary">
                     <div class="joint-angle-line"><span id="joint${i}Angle" class="joint-angle-value">0.0</span>°</div>
@@ -518,10 +518,6 @@ function generateJointStatusCards() {
                     <div class="joint-field-group compact">
                         <label for="joint${i}Acceleration">Accel (0-254):</label>
                         <input type="number" id="joint${i}Acceleration" value="50" min="0" max="254" step="1">
-                    </div>
-                    <div class="joint-field-group compact joint-center-field">
-                        <label>Center position (after servo swap/reseat):</label>
-                        <button type="button" class="btn btn-small btn-warning" onclick="centerJoint(${i})">Set current position as 0&deg;</button>
                     </div>
                 </div>
                 <div class="joint-control-fields joint-control-compact">
@@ -563,7 +559,10 @@ function toggleJointDetails(jointNumber) {
 
     const willShow = details.hidden;
     details.hidden = !willShow;
-    button.textContent = willShow ? '−' : '+';
+    // Under touch sizing the toggle is a full-width strip with room for a
+    // word; in the compact desktop corner it stays a single glyph.
+    const wide = document.body.classList.contains('touch-mode');
+    button.textContent = willShow ? (wide ? '− Hide' : '−') : (wide ? '+ Details' : '+');
     button.setAttribute('aria-expanded', willShow ? 'true' : 'false');
     button.title = willShow ? 'Hide details' : 'Show position, load, voltage, temperature, speed and acceleration';
 }
@@ -631,6 +630,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Three.js renderer can size itself correctly.
     initializePositions();
     initializeGCodeEditor();
+
+    // Put the last saved G-Code / RAPID programs back in their editors
+    restoreSavedPrograms();
     initializeDeadZones();
     if (typeof initializeCameraTab === 'function') {
         initializeCameraTab();
@@ -652,6 +654,43 @@ document.addEventListener('DOMContentLoaded', function() {
     } catch (error) {
         console.error('Failed to auto-load demo kinematics:', error);
     }
+
+    // In-app dialog wiring: replaces window.confirm/prompt, whose buttons
+    // are drawn by the OS at a fixed, untouchable size.
+    const dialogOk = document.getElementById('appDialogConfirm');
+    const dialogCancel = document.getElementById('appDialogCancel');
+    const dialogInput = document.getElementById('appDialogInput');
+    const dialogBackdrop = document.getElementById('appDialogBackdrop');
+    if (dialogOk && dialogCancel && dialogInput && dialogBackdrop) {
+        dialogOk.addEventListener('click', function () {
+            closeAppDialog(dialogInput.hidden ? true : dialogInput.value);
+        });
+        dialogCancel.addEventListener('click', function () {
+            closeAppDialog(dialogInput.hidden ? false : null);
+        });
+        dialogBackdrop.addEventListener('click', function (e) {
+            if (e.target === dialogBackdrop) {
+                closeAppDialog(dialogInput.hidden ? false : null);
+            }
+        });
+        dialogInput.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') {
+                closeAppDialog(dialogInput.value);
+            }
+        });
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && !dialogBackdrop.hidden) {
+                closeAppDialog(dialogInput.hidden ? false : null);
+            }
+        });
+    }
+
+    // Touch sizing: driven by what the hardware actually is, not by how the
+    // page was opened. The Electron build loads index.html with no query
+    // string, so keying this off ?kiosk=1 alone left every touchscreen PC on
+    // desktop-sized controls. Override with ?touch=1 / ?touch=0, or from the
+    // Settings tab, which stores the choice in localStorage.
+    applyTouchMode();
 
     // Chromium kiosk on the Pi (?kiosk=1): connect to local WebSocket server
     if (window.location.search.indexOf('kiosk=1') >= 0) {
@@ -727,6 +766,498 @@ document.addEventListener('DOMContentLoaded', function() {
     // Re-check screen size on window resize
     window.addEventListener('resize', detectScreenSize);
 });
+
+// ===== Saving G-Code and RAPID Programs =====
+
+const GCODE_STORAGE_KEY = 'robotArmGcodeProgram';
+const RAPID_STORAGE_KEY = 'robotArmRapidProgram';
+
+/**
+ * Offers a text file to the browser as a download.
+ * @param {string} filename - Name to save as
+ * @param {string} text - File contents
+ * @param {string} mimeType - Content type
+ */
+function downloadTextFile(filename, text, mimeType) {
+    const blob = new Blob([text], { type: mimeType || 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+/**
+ * Makes a filename safe to write to disk.
+ * @param {string} name - Proposed name
+ * @param {string} extension - Extension to enforce, including the dot
+ * @returns {string} A usable filename
+ */
+function normaliseProgramFilename(name, extension) {
+    let clean = String(name || '').trim().replace(/[\\/:*?"<>|]/g, '_');
+    if (!clean) {
+        clean = 'program';
+    }
+    if (clean.toLowerCase().slice(-extension.length) !== extension) {
+        clean += extension;
+    }
+    return clean;
+}
+
+/**
+ * Saves the editor contents: kept in this browser so the program is still
+ * there next time, and offered as a file so it can be kept or moved.
+ * @param {Object} options - textareaId, storageKey, defaultName, extension, mimeType, label
+ */
+function saveProgramFromEditor(options) {
+    const textarea = document.getElementById(options.textareaId);
+    if (!textarea) {
+        showAppMessage(options.label + ' editor not found');
+        return;
+    }
+
+    const content = textarea.value;
+    if (!content.trim()) {
+        showAppMessage('Nothing to save — the ' + options.label + ' editor is empty.');
+        return;
+    }
+
+    showPrompt('Save ' + options.label + ' program as:', options.defaultName).then(name => {
+        if (name === null) {
+            return;
+        }
+
+        const filename = normaliseProgramFilename(name, options.extension);
+
+        try {
+            localStorage.setItem(options.storageKey, JSON.stringify({
+                filename: filename,
+                savedAt: new Date().toISOString(),
+                content: content
+            }));
+        } catch (e) {
+            console.warn('Could not save ' + options.label + ' program locally:', e);
+        }
+
+        downloadTextFile(filename, content, options.mimeType);
+        showAppMessage(options.label + ' program saved as ' + filename);
+    });
+}
+
+/**
+ * Saves the G-Code editor contents.
+ */
+function saveGCodeProgram() {
+    const fileNameEl = document.getElementById('fileName');
+    const loaded = fileNameEl ? fileNameEl.textContent : '';
+    const isRealFile = loaded && loaded !== 'No file selected' && loaded.indexOf('(loaded)') === -1;
+
+    saveProgramFromEditor({
+        textareaId: 'gcodeContent',
+        storageKey: GCODE_STORAGE_KEY,
+        defaultName: isRealFile ? loaded : 'program.gcode',
+        extension: '.gcode',
+        mimeType: 'text/plain',
+        label: 'G-Code'
+    });
+}
+
+/**
+ * Saves the RAPID editor contents. ".mod" is ABB's module extension.
+ */
+function saveRapidProgram() {
+    saveProgramFromEditor({
+        textareaId: 'rapidContent',
+        storageKey: RAPID_STORAGE_KEY,
+        defaultName: 'program.mod',
+        extension: '.mod',
+        mimeType: 'text/plain',
+        label: 'RAPID'
+    });
+}
+
+/**
+ * Loads a G-Code or RAPID program from a file on disk.
+ * @param {Object} options - accept, textareaId, label, afterLoad
+ */
+function openProgramFile(options) {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = options.accept;
+    input.onchange = function (event) {
+        const file = event.target.files[0];
+        if (!file) {
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            const textarea = document.getElementById(options.textareaId);
+            if (!textarea) {
+                return;
+            }
+            textarea.value = e.target.result;
+            if (typeof options.afterLoad === 'function') {
+                options.afterLoad(file.name, e.target.result);
+            }
+            showAppMessage(options.label + ' program loaded from ' + file.name);
+        };
+        reader.readAsText(file);
+    };
+    input.click();
+}
+
+/**
+ * Opens a RAPID program file. The RAPID tab had no way to load one back in,
+ * which would have made saving a dead end.
+ */
+function loadRapidProgramFile() {
+    openProgramFile({
+        accept: '.mod,.prg,.txt',
+        textareaId: 'rapidContent',
+        label: 'RAPID'
+    });
+}
+
+/**
+ * Puts the last saved programs back in their editors at startup, so Save
+ * survives closing the app. Anything already in an editor is left alone.
+ */
+function restoreSavedPrograms() {
+    const restore = (storageKey, textareaId, after) => {
+        let saved = null;
+        try {
+            saved = JSON.parse(localStorage.getItem(storageKey) || 'null');
+        } catch (e) {
+            return null;
+        }
+        if (!saved || !saved.content) {
+            return null;
+        }
+        const textarea = document.getElementById(textareaId);
+        if (!textarea || textarea.value.trim()) {
+            return null;
+        }
+        textarea.value = saved.content;
+        if (typeof after === 'function') {
+            after(saved);
+        }
+        return saved.filename || true;
+    };
+
+    const gcode = restore(GCODE_STORAGE_KEY, 'gcodeContent', saved => {
+        const fileNameEl = document.getElementById('fileName');
+        if (fileNameEl) {
+            fileNameEl.textContent = (saved.filename || 'Saved program') + ' (restored)';
+        }
+        if (typeof applyGCodeChanges === 'function') {
+            applyGCodeChanges();
+        }
+    });
+
+    const rapid = restore(RAPID_STORAGE_KEY, 'rapidContent');
+
+    if (gcode || rapid) {
+        console.log('Restored saved program(s):',
+                    [gcode ? 'G-Code' : null, rapid ? 'RAPID' : null].filter(Boolean).join(', '));
+    }
+}
+
+// ===== In-App Dialogs and Touch Controls =====
+
+let appDialogResolve = null;
+
+/**
+ * Escapes text before it goes into innerHTML.
+ * @param {string} text - Raw text
+ * @returns {string} HTML-safe text
+ */
+function escapeHtml(text) {
+    return String(text === null || text === undefined ? '' : text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+/**
+ * Closes the dialog and settles the promise.
+ * @param {*} result - Value to resolve with
+ */
+function closeAppDialog(result) {
+    const backdrop = document.getElementById('appDialogBackdrop');
+    if (backdrop) {
+        backdrop.hidden = true;
+    }
+    const resolve = appDialogResolve;
+    appDialogResolve = null;
+    if (resolve) {
+        resolve(result);
+    }
+}
+
+/**
+ * Shows the in-app dialog. window.confirm and window.prompt draw their
+ * buttons through the OS, which cannot be made touch-sized, so those are
+ * replaced by this.
+ * @param {Object} options - message, confirmLabel, cancelLabel, danger, input, defaultValue
+ * @returns {Promise<*>} false/null on cancel, true or the typed string on confirm
+ */
+function showAppDialog(options) {
+    const opts = options || {};
+    const backdrop = document.getElementById('appDialogBackdrop');
+    const messageEl = document.getElementById('appDialogMessage');
+    const inputEl = document.getElementById('appDialogInput');
+    const okBtn = document.getElementById('appDialogConfirm');
+    const cancelBtn = document.getElementById('appDialogCancel');
+
+    // Without the dialog markup, fall back so callers still work
+    if (!backdrop || !messageEl || !inputEl || !okBtn || !cancelBtn) {
+        if (opts.input) {
+            return Promise.resolve(window.prompt(opts.message, opts.defaultValue || ''));
+        }
+        return Promise.resolve(window.confirm(opts.message));
+    }
+
+    // A second dialog cancels the first rather than orphaning its promise
+    if (appDialogResolve) {
+        closeAppDialog(opts.input ? null : false);
+    }
+
+    messageEl.textContent = opts.message || '';
+    okBtn.textContent = opts.confirmLabel || 'OK';
+    cancelBtn.textContent = opts.cancelLabel || 'Cancel';
+    okBtn.className = 'btn btn-major ' + (opts.danger ? 'btn-danger' : 'btn-primary');
+
+    inputEl.hidden = !opts.input;
+    inputEl.value = opts.input ? (opts.defaultValue || '') : '';
+
+    backdrop.hidden = false;
+
+    setTimeout(function () {
+        if (opts.input) {
+            inputEl.focus();
+            inputEl.select();
+        } else {
+            okBtn.focus();
+        }
+    }, 30);
+
+    return new Promise(function (resolve) {
+        appDialogResolve = resolve;
+    });
+}
+
+/**
+ * Asks a yes/no question.
+ * @param {string} message - The question
+ * @param {Object} [options] - confirmLabel, danger
+ * @returns {Promise<boolean>} True if confirmed
+ */
+function showConfirm(message, options) {
+    const opts = Object.assign({}, options || {}, { message: message, input: false });
+    return showAppDialog(opts);
+}
+
+/**
+ * Asks for a value.
+ * @param {string} message - The question
+ * @param {string} [defaultValue] - Pre-filled value
+ * @returns {Promise<string|null>} The typed value, or null if cancelled
+ */
+function showPrompt(message, defaultValue) {
+    return showAppDialog({ message: message, input: true, defaultValue: defaultValue });
+}
+
+/**
+ * Shows or hides a secondary button group.
+ * @param {string} drawerId - Element id of the drawer
+ * @param {HTMLElement} button - The button that toggles it
+ */
+function toggleControlDrawer(drawerId, button) {
+    const drawer = document.getElementById(drawerId);
+    if (!drawer) {
+        return;
+    }
+    const open = drawer.hasAttribute('hidden');
+    if (open) {
+        drawer.removeAttribute('hidden');
+    } else {
+        drawer.setAttribute('hidden', '');
+    }
+    if (button) {
+        button.setAttribute('aria-expanded', open ? 'true' : 'false');
+        button.classList.toggle('active', open);
+    }
+}
+
+/**
+ * Puts minus and plus buttons either side of a number field so values can
+ * be changed without a keyboard. Only touches the tabs where the fields
+ * are set once and read often.
+ */
+function enhanceNumberInputs() {
+    const selectors = [
+        '#settings-tab input[type="number"]',
+        '#positions-tab input[type="number"]',
+        '#deadzones-tab input[type="text"][id^="deadZone"]'
+    ];
+
+    document.querySelectorAll(selectors.join(', ')).forEach(function (input) {
+        if (input.dataset.stepperApplied === '1' || input.id === 'deadZoneName') {
+            return;
+        }
+        input.dataset.stepperApplied = '1';
+
+        const wrap = document.createElement('div');
+        wrap.className = 'stepper';
+        input.parentNode.insertBefore(wrap, input);
+
+        const minus = document.createElement('button');
+        minus.type = 'button';
+        minus.className = 'stepper-btn';
+        minus.textContent = '−';
+        minus.setAttribute('aria-label', 'Decrease');
+
+        const plus = document.createElement('button');
+        plus.type = 'button';
+        plus.className = 'stepper-btn';
+        plus.textContent = '+';
+        plus.setAttribute('aria-label', 'Increase');
+
+        wrap.appendChild(minus);
+        wrap.appendChild(input);
+        wrap.appendChild(plus);
+
+        const nudge = function (direction) {
+            const step = parseFloat(input.step) || 1;
+            const current = parseFloat(input.value);
+            let next = (isNaN(current) ? 0 : current) + direction * step;
+
+            const min = parseFloat(input.min);
+            const max = parseFloat(input.max);
+            if (!isNaN(min)) next = Math.max(min, next);
+            if (!isNaN(max)) next = Math.min(max, next);
+
+            // Keep the decimals the step implies, so 0.1 steps do not drift
+            const decimals = (String(step).split('.')[1] || '').length;
+            input.value = decimals ? next.toFixed(decimals) : String(next);
+
+            // Inline onchange handlers listen for this
+            input.dispatchEvent(new Event('change', { bubbles: true }));
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+        };
+
+        minus.addEventListener('click', function () { nudge(-1); });
+        plus.addEventListener('click', function () { nudge(1); });
+    });
+}
+
+// ===== Touch Mode =====
+
+const TOUCH_MODE_STORAGE_KEY = 'robotArmTouchMode';
+
+/**
+ * Decides whether the app should use touch-sized controls.
+ * Order of precedence: URL override, saved preference, then the hardware.
+ * @returns {boolean} True if touch sizing should be applied
+ */
+function detectTouchCapability() {
+    const search = window.location.search;
+
+    if (search.indexOf('touch=1') >= 0) {
+        return true;
+    }
+    if (search.indexOf('touch=0') >= 0) {
+        return false;
+    }
+
+    let saved = null;
+    try {
+        saved = localStorage.getItem(TOUCH_MODE_STORAGE_KEY);
+    } catch (e) {
+        // localStorage can be unavailable in some kiosk profiles
+    }
+    if (saved === 'on') {
+        return true;
+    }
+    if (saved === 'off') {
+        return false;
+    }
+
+    // The Pi kiosk is always a touchscreen
+    if (search.indexOf('kiosk=1') >= 0) {
+        return true;
+    }
+
+    if (navigator.maxTouchPoints > 0) {
+        return true;
+    }
+
+    return !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
+}
+
+/**
+ * Applies or removes the touch-sized control layer and syncs the
+ * Connection tab buttons that set it.
+ * @returns {boolean} Whether touch mode ended up on
+ */
+function applyTouchMode() {
+    const on = detectTouchCapability();
+    document.body.classList.toggle('touch-mode', on);
+
+    if (on) {
+        enhanceNumberInputs();
+    }
+
+    // The expand toggle is a corner glyph on desktop and a labelled strip
+    // under touch, so its text has to follow the mode.
+    document.querySelectorAll('[data-joint-details-toggle]').forEach(function (btn) {
+        const open = btn.getAttribute('aria-expanded') === 'true';
+        btn.textContent = open ? (on ? '− Hide' : '−') : (on ? '+ Details' : '+');
+    });
+
+    let saved = null;
+    try {
+        saved = localStorage.getItem(TOUCH_MODE_STORAGE_KEY);
+    } catch (e) {
+        // ignore
+    }
+    const preference = saved === 'on' || saved === 'off' ? saved : 'auto';
+
+    document.querySelectorAll('[data-touch-mode]').forEach(function (btn) {
+        btn.classList.toggle('active', btn.getAttribute('data-touch-mode') === preference);
+    });
+
+    const status = document.getElementById('touchModeStatus');
+    if (status) {
+        status.textContent = on
+            ? 'Touch sizing is on — controls are at least 44 px.'
+            : 'Touch sizing is off — desktop control sizes.';
+    }
+
+    return on;
+}
+
+/**
+ * Sets the touch sizing preference from the Connection tab.
+ * @param {string} preference - 'auto', 'on' or 'off'
+ */
+function setTouchModePreference(preference) {
+    try {
+        if (preference === 'auto') {
+            localStorage.removeItem(TOUCH_MODE_STORAGE_KEY);
+        } else {
+            localStorage.setItem(TOUCH_MODE_STORAGE_KEY, preference);
+        }
+    } catch (e) {
+        console.warn('Could not save touch mode preference:', e);
+    }
+    applyTouchMode();
+}
 
 // ===== Screen Size Detection =====
 
@@ -1212,39 +1743,44 @@ function addDeadZoneFromForm() {
  * Renders the dead zones table
  */
 function renderDeadZonesTable() {
-    const tbody = document.getElementById('deadZonesTableBody');
-    if (!tbody) {
+    const list = document.getElementById('deadZonesList');
+    if (!list) {
         return;
     }
 
     if (!deadZones || deadZones.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; color: #888;">No dead zones defined.</td></tr>';
+        list.innerHTML = '<p class="deadzone-empty">No dead zones defined.</p>';
         return;
     }
 
     let html = '';
     deadZones.forEach(zone => {
+        const name = escapeHtml(zone.name);
         html += `
-            <tr>
-                <td>${zone.name}</td>
-                <td>${zone.minX}</td>
-                <td>${zone.maxX}</td>
-                <td>${zone.minY}</td>
-                <td>${zone.maxY}</td>
-                <td>${zone.minZ}</td>
-                <td>${zone.maxZ}</td>
-                <td>
-                    <input type="checkbox" ${zone.enabled ? 'checked' : ''} onclick="toggleDeadZoneEnabled(${zone.id}, this.checked)">
-                </td>
-                <td>
-                    <button class="btn btn-small" onclick="editDeadZone(${zone.id})">Edit</button>
-                    <button class="btn btn-small btn-danger" onclick="deleteDeadZone(${zone.id})">Delete</button>
-                </td>
-            </tr>
+            <div class="deadzone-card${zone.enabled ? '' : ' deadzone-card-off'}">
+                <div class="deadzone-card-head">
+                    <span class="deadzone-name">${name}</span>
+                    <label class="switch">
+                        <input type="checkbox" ${zone.enabled ? 'checked' : ''}
+                               onchange="toggleDeadZoneEnabled(${zone.id}, this.checked)">
+                        <span class="switch-track"><span class="switch-thumb"></span></span>
+                        <span class="switch-text">${zone.enabled ? 'Enabled' : 'Disabled'}</span>
+                    </label>
+                </div>
+                <div class="deadzone-bounds">
+                    <div class="deadzone-axis"><span>X</span><b>${zone.minX} to ${zone.maxX}</b></div>
+                    <div class="deadzone-axis"><span>Y</span><b>${zone.minY} to ${zone.maxY}</b></div>
+                    <div class="deadzone-axis"><span>Z</span><b>${zone.minZ} to ${zone.maxZ}</b></div>
+                </div>
+                <div class="deadzone-card-actions">
+                    <button class="btn btn-secondary" onclick="editDeadZone(${zone.id})">Edit</button>
+                    <button class="btn btn-danger" onclick="deleteDeadZone(${zone.id})">Delete</button>
+                </div>
+            </div>
         `;
     });
 
-    tbody.innerHTML = html;
+    list.innerHTML = html;
 }
 
 /**
@@ -1301,6 +1837,24 @@ function editDeadZone(id) {
  * @param {number} id - Dead zone ID
  */
 function deleteDeadZone(id) {
+    const zone = deadZones.find(z => z.id === id);
+    const label = zone ? zone.name : 'this dead zone';
+
+    showConfirm(`Delete dead zone "${label}"?`, {
+        confirmLabel: 'Delete',
+        danger: true
+    }).then(confirmed => {
+        if (confirmed) {
+            removeDeadZone(id);
+        }
+    });
+}
+
+/**
+ * Removes a dead zone once deletion has been confirmed.
+ * @param {number} id - Dead zone ID
+ */
+function removeDeadZone(id) {
     deadZones = deadZones.filter(z => z.id !== id);
     renderDeadZonesTable();
     if (robotArm3D && typeof robotArm3D.updateDeadZones === 'function') {
@@ -2514,34 +3068,6 @@ function toggleTorqueAll() {
             torqueEnabled = !torqueEnabled;
             updateTorqueButtons();
         });
-}
-
-/**
- * Redefines a joint's current physical position as 0° (2048 steps). Software
- * offset only — does not move the servo or touch its EEPROM. Intended for use
- * right after a servo swap or mechanical reseat, when the physical position no
- * longer lines up with the servo's factory center.
- * @param {number} jointNumber - Joint number (1-based)
- */
-async function centerJoint(jointNumber) {
-    if (!robotArmClient.isConnected) {
-        showAppMessage('Not connected to robot arm controller');
-        return;
-    }
-
-    const confirmed = confirm(
-        `Set Joint ${jointNumber}'s CURRENT physical position as 0°?\n\n` +
-        `Use this only right after swapping or reseating the servo. ` +
-        `This does not move the joint — it only redefines what "0°" means for it from now on.`
-    );
-    if (!confirmed) return;
-
-    try {
-        await robotArmClient.setJointCenter(jointNumber);
-        showAppMessage(`Joint ${jointNumber} centered — current position is now 0°`);
-    } catch (error) {
-        showAppMessage(`Failed to center Joint ${jointNumber}: ${error.message}`);
-    }
 }
 
 /**

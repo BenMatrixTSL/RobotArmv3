@@ -205,7 +205,7 @@
                         Controller Address:
                         <input type="text" id="piAddress" value="192.168.1.160" placeholder="192.168.1.160">
                     </label>
-                    <button id="connectButton" class="btn btn-primary">Connect</button>
+                    <button id="connectButton" class="btn btn-primary btn-major">Connect</button>
                     <button id="autoDetectButton" class="btn btn-secondary">Auto-Detect</button>
                     <button id="disconnectButton" class="btn btn-secondary" disabled>Disconnect</button>
                     <div id="autoDetectStatus" class="auto-detect-status"></div>
@@ -217,7 +217,21 @@
                 <p class="info-text">
                     Only one app can move the arm at a time. If another window or kiosk has control, use the button below to take over.
                 </p>
-                <button id="takeControlButton" class="btn btn-warning" disabled>Take control</button>
+                <button id="takeControlButton" class="btn btn-warning btn-major" disabled>Take control</button>
+            </div>
+
+            <div class="connection-panel">
+                <h3>Touch controls</h3>
+                <p class="info-text">
+                    Larger buttons and fields for touchscreen use. Auto turns them on whenever the
+                    display reports touch input.
+                </p>
+                <div class="control-buttons">
+                    <button class="btn btn-secondary" data-touch-mode="auto" onclick="setTouchModePreference('auto')">Auto</button>
+                    <button class="btn btn-secondary" data-touch-mode="on" onclick="setTouchModePreference('on')">Always on</button>
+                    <button class="btn btn-secondary" data-touch-mode="off" onclick="setTouchModePreference('off')">Off</button>
+                </div>
+                <p class="info-text" id="touchModeStatus"></p>
             </div>
 
             <div class="connection-panel" id="serverDiagnosticsPanel" style="display: none;">
@@ -247,9 +261,9 @@
                         <div class="joint-controls" id="jointControlsContainer"></div>
 
                         <div class="control-buttons">
-                            <button class="btn btn-danger" onclick="stopAllJoints()">Emergency Stop</button>
-                            <button class="btn btn-secondary" onclick="homeAllJoints()">Home All Joints</button>
-                            <button class="btn btn-warning torque-toggle-button" id="torqueToggleButton" onclick="toggleTorqueAll()">Torque: On</button>
+                            <button class="btn btn-danger btn-motion" onclick="stopAllJoints()">Emergency Stop</button>
+                            <button class="btn btn-secondary btn-motion" onclick="homeAllJoints()">Home All Joints</button>
+                            <button class="btn btn-warning btn-major torque-toggle-button" id="torqueToggleButton" onclick="toggleTorqueAll()">Torque: On</button>
                         </div>
                     </div>
                 </div><!-- .kiosk-joints-left -->
@@ -442,8 +456,24 @@
                 <div class="file-controls">
                     <input type="file" id="gcodeFileInput" accept=".gcode,.nc,.txt" style="display: none;">
                     <button class="btn btn-primary" onclick="document.getElementById('gcodeFileInput').click()">Select G-Code File</button>
+                    <button class="btn btn-primary btn-major" onclick="saveGCodeProgram()">Save Program</button>
                     <button class="btn btn-secondary" onclick="loadDefaultGCode()">Load Default Example</button>
                     <span id="fileName" class="file-name">No file selected</span>
+                </div>
+            </div>
+
+            <!-- G-Code Control -->
+            <div class="gcode-controls">
+                <h3>Execution Control</h3>
+                <div class="control-buttons">
+                    <button class="btn btn-primary btn-motion" id="startGcodeButton" onclick="startGcode()" disabled>Start Execution</button>
+                    <button class="btn btn-warning btn-motion" id="pauseGcodeButton" onclick="togglePauseResume()" disabled>Pause</button>
+                    <button class="btn btn-danger btn-motion" id="stopGcodeButton" onclick="stopGcode()" disabled>Stop</button>
+                </div>
+                <div class="execution-status">
+                    <div>Status: <span id="gcodeStatus">Ready</span></div>
+                    <div>Current Line: <span id="currentLine">-</span> / <span id="totalLines">-</span></div>
+                    <div>Progress: <span id="gcodeProgress">0</span>%</div>
                 </div>
             </div>
 
@@ -459,21 +489,6 @@
                     <span>Lines: <span id="gcodeLineCount">0</span></span>
                     <span>Commands: <span id="gcodeCommandCount">0</span></span>
                     <span id="gcodeModified" style="color: #e74c3c; display: none;">● Modified</span>
-                </div>
-            </div>
-
-            <!-- G-Code Control -->
-            <div class="gcode-controls">
-                <h3>Execution Control</h3>
-                <div class="control-buttons">
-                    <button class="btn btn-primary" id="startGcodeButton" onclick="startGcode()" disabled>Start Execution</button>
-                    <button class="btn btn-warning" id="pauseGcodeButton" onclick="togglePauseResume()" disabled>Pause</button>
-                    <button class="btn btn-danger" id="stopGcodeButton" onclick="stopGcode()" disabled>Stop</button>
-                </div>
-                <div class="execution-status">
-                    <div>Status: <span id="gcodeStatus">Ready</span></div>
-                    <div>Current Line: <span id="currentLine">-</span> / <span id="totalLines">-</span></div>
-                    <div>Progress: <span id="gcodeProgress">0</span>%</div>
                 </div>
             </div>
 
@@ -592,11 +607,19 @@
                 At the moment we only support simple joint moves using <code>MoveJ</code> with a list of joint angles.
             </p>
 
+            <div class="gcode-controls">
+                <h3>Execution Control</h3>
+                <div class="control-buttons">
+                    <button class="btn btn-primary btn-motion" onclick="runRapidProgram()">Run RAPID Program</button>
+                </div>
+            </div>
+
             <div class="gcode-preview">
                 <h3>RAPID Editor</h3>
                 <div class="gcode-editor-controls">
-                    <button class="btn btn-small" onclick="loadDefaultRapid()">Load RAPID Example</button>
-                    <button class="btn btn-small" onclick="runRapidProgram()">Run RAPID Program</button>
+                    <button class="btn btn-primary btn-major" onclick="saveRapidProgram()">Save Program</button>
+                    <button class="btn btn-secondary" onclick="loadRapidProgramFile()">Open Program File</button>
+                    <button class="btn btn-secondary" onclick="loadDefaultRapid()">Load RAPID Example</button>
                 </div>
                 <textarea id="rapidContent" placeholder="Type simple RAPID code here...&#10;Example:&#10;! Absolute joint move&#10;MoveJ [[0,10,20,0,0,0]];&#10;! Cartesian move&#10;MoveLXYZ [[150,0,200]];"></textarea>
             </div>
@@ -861,11 +884,11 @@
                         <label>Label:</label>
                         <input type="text" id="positionLabel" placeholder="e.g., Home, Pick, Place" style="width: 200px;">
                     </div>
-                    <button class="btn btn-primary" onclick="savePosition()">Save Position</button>
-                    <button class="btn btn-secondary" onclick="loadPosition()">Load Position</button>
+                    <button class="btn btn-primary btn-major" onclick="savePosition()">Save Position</button>
+                    <button class="btn btn-secondary btn-major" onclick="loadPosition()">Load Position</button>
                     <button class="btn btn-small" onclick="loadCurrentRobotAngles()">Load from Robot</button>
                     <button class="btn btn-danger" onclick="deletePosition()">Delete Position</button>
-                    <button class="btn btn-warning torque-toggle-button" onclick="toggleTorqueAll()">Torque: On</button>
+                    <button class="btn btn-warning btn-major torque-toggle-button" onclick="toggleTorqueAll()">Torque: On</button>
                 </div>
                 
                 <div class="positions-joints">
@@ -936,57 +959,42 @@
                     </div>
                     <div class="setting-item">
                         <label>Min X (mm):</label>
-                        <input type="text" id="deadZoneMinX" value="0" data-kbd="numeric">
+                        <input type="text" id="deadZoneMinX" value="0">
                     </div>
                     <div class="setting-item">
                         <label>Max X (mm):</label>
-                        <input type="text" id="deadZoneMaxX" value="100" data-kbd="numeric">
+                        <input type="text" id="deadZoneMaxX" value="100">
                     </div>
                     <div class="setting-item">
                         <label>Min Y (mm):</label>
-                        <input type="text" id="deadZoneMinY" value="-50" data-kbd="numeric">
+                        <input type="text" id="deadZoneMinY" value="-50">
                     </div>
                     <div class="setting-item">
                         <label>Max Y (mm):</label>
-                        <input type="text" id="deadZoneMaxY" value="50" data-kbd="numeric">
+                        <input type="text" id="deadZoneMaxY" value="50">
                     </div>
                     <div class="setting-item">
                         <label>Min Z (mm):</label>
-                        <input type="text" id="deadZoneMinZ" value="0" data-kbd="numeric">
+                        <input type="text" id="deadZoneMinZ" value="0">
                     </div>
                     <div class="setting-item">
                         <label>Max Z (mm):</label>
-                        <input type="text" id="deadZoneMaxZ" value="150" data-kbd="numeric">
+                        <input type="text" id="deadZoneMaxZ" value="150">
                     </div>
                     <div class="setting-item">
                         <label>Safe Z Height (mm):</label>
-                        <input type="text" id="deadZoneSafeZ" value="300" data-kbd="numeric">
+                        <input type="text" id="deadZoneSafeZ" value="300">
                     </div>
                 </div>
-                <button class="btn btn-primary" id="addDeadZoneButton">Add / Update Dead Zone</button>
+                <button class="btn btn-primary btn-major" id="addDeadZoneButton">Add / Update Dead Zone</button>
             </div>
 
             <div class="settings-panel">
                 <h3>Defined Dead Zones</h3>
                 <p class="info-text">Enabled dead zones will be checked when planning XYZ moves.</p>
-                <table class="deadzone-table">
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>X Min</th>
-                            <th>X Max</th>
-                            <th>Y Min</th>
-                            <th>Y Max</th>
-                            <th>Z Min</th>
-                            <th>Z Max</th>
-                            <th>Enabled</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="deadZonesTableBody">
-                        <!-- Populated by app.js -->
-                    </tbody>
-                </table>
+                <div id="deadZonesList" class="deadzone-list">
+                    <!-- Populated by app.js -->
+                </div>
             </div>
         </div>
 
@@ -1003,18 +1011,25 @@
             </div>
             
             <div class="blockly-controls" id="blocklyControls" style="display: none;">
-                <button class="btn btn-primary" id="runBlocklyButton" onclick="runBlocklyProgram()">Run Program</button>
-                <button class="btn btn-warning" id="pauseBlocklyButton" onclick="toggleBlocklyPauseResume()" disabled>Pause</button>
-                <button class="btn btn-danger" id="stopBlocklyButton" onclick="stopBlocklyProgram()" disabled>Stop</button>
-                <button class="btn btn-secondary" onclick="clearBlocklyWorkspace()">Clear</button>
-                <button class="btn btn-small" onclick="loadBlocklyExample()">Load Example</button>
-                <button class="btn btn-small" onclick="saveBlocklyProgram()">Save Program</button>
-                <button class="btn btn-small" onclick="loadBlocklyProgram()">Load Program</button>
-                <button class="btn btn-small" onclick="setAllJointAccelerations()">Set All Accelerations</button>
-                <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #ddd;">
-                    <strong>Convert to:</strong>
-                    <button class="btn btn-small btn-primary" onclick="convertBlocklyToGCodeAndOpen()">Convert to G-Code</button>
-                    <button class="btn btn-small btn-primary" onclick="convertBlocklyToRapidAndOpen()">Convert to RAPID</button>
+                <div class="control-row control-row-primary">
+                    <button class="btn btn-primary btn-motion" id="runBlocklyButton" onclick="runBlocklyProgram()">Run Program</button>
+                    <button class="btn btn-warning btn-motion" id="pauseBlocklyButton" onclick="toggleBlocklyPauseResume()" disabled>Pause</button>
+                    <button class="btn btn-danger btn-motion" id="stopBlocklyButton" onclick="stopBlocklyProgram()" disabled>Stop</button>
+                    <button class="btn btn-secondary btn-major" id="blocklyMoreButton" onclick="toggleControlDrawer('blocklyMoreActions', this)" aria-expanded="false">More actions</button>
+                </div>
+                <div class="control-drawer" id="blocklyMoreActions" hidden>
+                    <div class="control-row">
+                        <button class="btn btn-secondary" onclick="clearBlocklyWorkspace()">Clear</button>
+                        <button class="btn btn-secondary" onclick="loadBlocklyExample()">Load Example</button>
+                        <button class="btn btn-secondary" onclick="saveBlocklyProgram()">Save Program</button>
+                        <button class="btn btn-secondary" onclick="loadBlocklyProgram()">Load Program</button>
+                        <button class="btn btn-secondary" onclick="setAllJointAccelerations()">Set All Accelerations</button>
+                    </div>
+                    <div class="control-row control-row-divider">
+                        <span class="control-row-label">Convert to</span>
+                        <button class="btn btn-primary" onclick="convertBlocklyToGCodeAndOpen()">G-Code</button>
+                        <button class="btn btn-primary" onclick="convertBlocklyToRapidAndOpen()">RAPID</button>
+                    </div>
                 </div>
             </div>
             
@@ -1139,9 +1154,9 @@
                         <p>Calculate joint angles from end effector position:</p>
                         <div class="test-inputs">
                             <label>Target Position (mm):</label>
-                            <input type="text" id="ikX" placeholder="X" style="width: 80px;" data-kbd="numeric">,
-                            <input type="text" id="ikY" placeholder="Y" style="width: 80px;" data-kbd="numeric">,
-                            <input type="text" id="ikZ" placeholder="Z" style="width: 80px;" data-kbd="numeric">
+                            <input type="text" id="ikX" placeholder="X" style="width: 80px;">,
+                            <input type="text" id="ikY" placeholder="Y" style="width: 80px;">,
+                            <input type="text" id="ikZ" placeholder="Z" style="width: 80px;">
                             <button class="btn btn-small" onclick="testInverseKinematics()">Calculate</button>
                         </div>
                         <div id="ikResult" class="test-result"></div>
@@ -1164,8 +1179,8 @@
                         <label>Joint Number:</label>
                         <input type="number" id="calibrationJoint" value="1" min="1" max="6" style="width: 80px;">
                     </div>
-                    <button class="btn btn-primary" id="startCalibrationButton" onclick="startCalibration()">Start Calibration</button>
-                    <button class="btn btn-danger" id="stopCalibrationButton" onclick="stopCalibration()" style="display: none;">Stop Calibration</button>
+                    <button class="btn btn-primary btn-motion" id="startCalibrationButton" onclick="startCalibration()">Start Calibration</button>
+                    <button class="btn btn-danger btn-motion" id="stopCalibrationButton" onclick="stopCalibration()" style="display: none;">Stop Calibration</button>
                 </div>
                 <div id="calibrationStatus" class="calibration-status"></div>
                 <div id="calibrationProgress" class="calibration-progress"></div>
@@ -1264,7 +1279,7 @@
                 </div>
             </div>
                 
-            <button class="btn btn-primary" onclick="saveSettings()">Save Settings</button>
+            <button class="btn btn-primary btn-major" onclick="saveSettings()">Save Settings</button>
         </div> <!-- end settings-tab -->
 
         <!-- Curriculum Tab -->
@@ -1273,6 +1288,19 @@
         </div>
 
             </div> <!-- end tab-content-container -->
+
+        <!-- In-app dialog. Replaces window.confirm/prompt, whose buttons are
+             drawn by the OS and cannot be made touch-sized. -->
+        <div id="appDialogBackdrop" class="app-dialog-backdrop" hidden>
+            <div class="app-dialog" role="dialog" aria-modal="true" aria-labelledby="appDialogMessage">
+                <p class="app-dialog-message" id="appDialogMessage"></p>
+                <input type="text" class="app-dialog-input" id="appDialogInput" hidden>
+                <div class="app-dialog-buttons">
+                    <button type="button" class="btn btn-secondary btn-major" id="appDialogCancel">Cancel</button>
+                    <button type="button" class="btn btn-primary btn-major" id="appDialogConfirm">OK</button>
+                </div>
+            </div>
+        </div>
         </div> <!-- end main-layout -->
 
     </div>
@@ -1419,8 +1447,6 @@
     <script src="cameraView.js?v=20260616"></script>
     <!-- Main Application: UI logic and event handlers -->
     <script src="app.js?v=20260603f"></script>
-    <!-- On-Screen Keyboard: touch keyboard for kiosk mode (no system OSK in Chromium kiosk) -->
-    <script src="keyboard.js?v=20260814"></script>
     
     <!-- Check if Blockly loaded after page load -->
     <!-- This verifies that Blockly loaded successfully and hides the loading message -->

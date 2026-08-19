@@ -43,6 +43,13 @@ function updatePositionJointsGrid() {
         `;
         grid.appendChild(jointDiv);
     }
+
+    // These inputs are rebuilt whenever the joint count changes, so the
+    // steppers have to be re-applied to the new ones.
+    if (document.body.classList.contains('touch-mode') &&
+        typeof enhanceNumberInputs === 'function') {
+        enhanceNumberInputs();
+    }
 }
 
 /**
@@ -332,34 +339,62 @@ function loadPosition() {
  */
 function deletePosition() {
     const positionNumber = parseInt(document.getElementById('positionNumber').value);
-    
+
     if (isNaN(positionNumber) || positionNumber < 0 || positionNumber > 99) {
         updatePositionsStatus('Error: Position number must be between 0 and 99', 'error');
         return;
     }
-    
-    if (!confirm(`Delete position ${positionNumber}?`)) {
+
+    const positions = getAllPositions();
+    if (!positions[positionNumber]) {
+        updatePositionsStatus(`Position ${positionNumber} not found`, 'error');
         return;
     }
-    
-    const positions = getAllPositions();
-    if (positions[positionNumber]) {
-        delete positions[positionNumber];
-        if (saveAllPositions(positions)) {
+
+    const label = positions[positionNumber].label;
+    const name = label ? `${positionNumber} "${label}"` : `${positionNumber}`;
+
+    showConfirm(`Delete position ${name}?`, { confirmLabel: 'Delete', danger: true })
+        .then(confirmed => {
+            if (!confirmed) {
+                return;
+            }
+
+            delete positions[positionNumber];
+
+            if (!saveAllPositions(positions)) {
+                updatePositionsStatus('Error: Failed to delete position', 'error');
+                return;
+            }
+
             updatePositionsStatus(`Position ${positionNumber} deleted`, 'success');
             refreshPositionsList();
+
             // Clear editor
             document.getElementById('positionLabel').value = '';
             setPositionAngles(Array(getNumJoints()).fill(0));
+
             if (typeof update3DStoredPositionsIfAvailable === 'function') {
                 update3DStoredPositionsIfAvailable();
             }
-        } else {
-            updatePositionsStatus('Error: Failed to delete position', 'error');
-        }
-    } else {
-        updatePositionsStatus(`Position ${positionNumber} not found`, 'error');
+        });
+}
+
+/**
+ * Escapes a label before it goes into innerHTML.
+ * @param {string} text - Raw label
+ * @returns {string} HTML-safe label
+ */
+function escapePositionText(text) {
+    if (typeof escapeHtml === 'function') {
+        return escapeHtml(text);
     }
+    return String(text === null || text === undefined ? '' : text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
 }
 
 /**
@@ -384,16 +419,22 @@ function refreshPositionsList() {
         const xyzStr = pos.xyz
             ? `X:${pos.xyz.x.toFixed(1)} Y:${pos.xyz.y.toFixed(1)} Z:${pos.xyz.z.toFixed(1)} mm`
             : '';
+        const safeLabel = escapePositionText(pos.label || `Position ${num}`);
         html += `
-            <div class="positions-list-item" onclick="selectPosition(${num})">
-                <div class="position-item-number">${num}</div>
-                <div class="position-item-info">
-                    <div class="position-item-label">${pos.label || `Position ${num}`}</div>
-                    <div class="position-item-angles">${anglesStr}</div>
-                    ${xyzStr ? `<div class="position-item-xyz">${xyzStr}</div>` : ''}
+            <div class="positions-list-item">
+                <button type="button" class="position-item-select" onclick="selectPosition(${num})"
+                        aria-label="Select position ${num}">
+                    <span class="position-item-number">${num}</span>
+                    <span class="position-item-info">
+                        <span class="position-item-label">${safeLabel}</span>
+                        <span class="position-item-angles">${anglesStr}</span>
+                        ${xyzStr ? `<span class="position-item-xyz">${xyzStr}</span>` : ''}
+                    </span>
+                </button>
+                <div class="position-item-actions">
+                    <button class="btn btn-secondary" onclick="loadPositionToEditor(${num})">Load</button>
+                    <button class="btn btn-danger" onclick="deletePositionByNumber(${num})">Delete</button>
                 </div>
-                <button class="btn btn-small" onclick="event.stopPropagation(); loadPositionToEditor(${num})">Load</button>
-                <button class="btn btn-small btn-danger" onclick="event.stopPropagation(); deletePositionByNumber(${num})">Delete</button>
             </div>
         `;
     });
@@ -445,23 +486,34 @@ function loadPositionToEditor(number) {
  * Deletes a position by number
  */
 function deletePositionByNumber(number) {
-    if (!confirm(`Delete position ${number}?`)) {
+    const positions = getAllPositions();
+    if (!positions[number]) {
         return;
     }
-    
-    const positions = getAllPositions();
-    if (positions[number]) {
-        delete positions[number];
-        if (saveAllPositions(positions)) {
+
+    const label = positions[number].label;
+    const name = label ? `${number} "${label}"` : `${number}`;
+
+    showConfirm(`Delete position ${name}?`, { confirmLabel: 'Delete', danger: true })
+        .then(confirmed => {
+            if (!confirmed) {
+                return;
+            }
+
+            delete positions[number];
+
+            if (!saveAllPositions(positions)) {
+                updatePositionsStatus('Error: Failed to delete position', 'error');
+                return;
+            }
+
             updatePositionsStatus(`Position ${number} deleted`, 'success');
             refreshPositionsList();
+
             if (typeof update3DStoredPositionsIfAvailable === 'function') {
                 update3DStoredPositionsIfAvailable();
             }
-        } else {
-            updatePositionsStatus('Error: Failed to delete position', 'error');
-        }
-    }
+        });
 }
 
 /**

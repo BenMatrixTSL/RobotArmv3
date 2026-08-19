@@ -97,82 +97,6 @@ let blocklyProgramPaused = false;
 let blocklyProgramResumeResolve = null;
 let currentHighlightedBlock = null; // Track currently highlighted block
 
-let blocklyPromptDialogInstalled = false;
-
-/**
- * Replaces Blockly's default window.prompt()-based dialog (used for naming
- * variables, renaming, etc.) with an HTML modal containing a real <input>.
- * window.prompt() is a native browser dialog with no DOM input for the
- * on-screen keyboard to attach to, so touch users on the kiosk couldn't type
- * into it. This is a one-time global override (Blockly.dialog.setPrompt),
- * safe to call before Blockly.inject.
- */
-function setupBlocklyPromptDialog() {
-    if (blocklyPromptDialogInstalled) return;
-    if (typeof Blockly === 'undefined' || !Blockly.dialog || typeof Blockly.dialog.setPrompt !== 'function') {
-        return;
-    }
-
-    Blockly.dialog.setPrompt(function (message, defaultValue, callback) {
-        const overlay = document.createElement('div');
-        overlay.className = 'blockly-prompt-overlay';
-
-        const box = document.createElement('div');
-        box.className = 'blockly-prompt-box';
-
-        const label = document.createElement('p');
-        label.className = 'blockly-prompt-message';
-        label.textContent = message;
-
-        const input = document.createElement('input');
-        input.type = 'text';
-        input.className = 'blockly-prompt-input';
-        input.value = defaultValue || '';
-
-        const buttonRow = document.createElement('div');
-        buttonRow.className = 'blockly-prompt-buttons';
-
-        const okBtn = document.createElement('button');
-        okBtn.type = 'button';
-        okBtn.className = 'btn btn-primary';
-        okBtn.textContent = 'OK';
-
-        const cancelBtn = document.createElement('button');
-        cancelBtn.type = 'button';
-        cancelBtn.className = 'btn';
-        cancelBtn.textContent = 'Cancel';
-
-        buttonRow.appendChild(cancelBtn);
-        buttonRow.appendChild(okBtn);
-        box.appendChild(label);
-        box.appendChild(input);
-        box.appendChild(buttonRow);
-        overlay.appendChild(box);
-        document.body.appendChild(overlay);
-
-        const finish = (result) => {
-            overlay.remove();
-            callback(result);
-        };
-
-        okBtn.addEventListener('click', () => finish(input.value));
-        cancelBtn.addEventListener('click', () => finish(null));
-        input.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                finish(input.value);
-            } else if (e.key === 'Escape') {
-                finish(null);
-            }
-        });
-
-        input.focus();
-        input.select();
-    });
-
-    blocklyPromptDialogInstalled = true;
-}
-
 /**
  * Initializes the Blockly workspace
  * Call this when the Blockly tab is opened
@@ -258,12 +182,6 @@ function initializeBlockly() {
     }
 
     try {
-        // Blockly's default variable-name prompt (and similar dialogs) uses the
-        // native window.prompt(), which is not a DOM <input> — our on-screen
-        // keyboard (keyboard.js) can't attach to it. Replace it with an HTML
-        // dialog so kiosk touch users get the keyboard when naming variables.
-        setupBlocklyPromptDialog();
-
         // Create the Blockly workspace
         blocklyWorkspace = Blockly.inject(workspaceDiv, {
             toolbox: getBlocklyToolbox(),
@@ -276,7 +194,8 @@ function initializeBlockly() {
             zoom: {
                 controls: true,
                 wheel: true,
-                startScale: 1.0,
+                // Blocks need to be bigger to be draggable with a finger
+                startScale: document.body.classList.contains('touch-mode') ? 1.25 : 1.0,
                 maxScale: 3,
                 minScale: 0.3,
                 scaleSpeed: 1.1
@@ -1364,22 +1283,29 @@ function setAllJointAccelerations() {
         return;
     }
 
-    // Ask the user for a single acceleration value
-    const input = prompt('Enter acceleration value for all joints (0-254):', '50');
+    // Ask for a single acceleration value. showPrompt is the in-app dialog:
+    // window.prompt draws OS buttons that cannot be made touch-sized.
+    showPrompt('Enter acceleration value for all joints (0-254):', '50').then(input => {
+        // If the user cancelled, do nothing
+        if (input === null) {
+            return;
+        }
 
-    // If the user clicked Cancel, do nothing
-    if (input === null) {
-        return;
-    }
+        const parsed = parseInt(input, 10);
+        if (isNaN(parsed) || parsed < 0 || parsed > 254) {
+            showAppMessage('Please enter a whole number between 0 and 254.');
+            return;
+        }
 
-    const parsed = parseInt(input, 10);
-    if (isNaN(parsed) || parsed < 0 || parsed > 254) {
-        showAppMessage('Please enter a whole number between 0 and 254.');
-        return;
-    }
+        applyAccelerationToAllJoints(parsed);
+    });
+}
 
-    const accelerationValue = parsed;
-
+/**
+ * Sends one acceleration value to every joint.
+ * @param {number} accelerationValue - Acceleration, 0-254 (unit: 100 step/s²)
+ */
+function applyAccelerationToAllJoints(accelerationValue) {
     // Get number of joints (falls back to 6 if function not available)
     let numJoints = 6;
     if (typeof getNumJoints === 'function') {
