@@ -321,6 +321,18 @@ function getBlocklyToolbox() {
             },
             {
                 kind: 'category',
+                name: 'Vision',
+                colour: '#A6945C',
+                contents: [
+                    { kind: 'block', type: 'block_count' },
+                    { kind: 'block', type: 'block_x_at' },
+                    { kind: 'block', type: 'block_y_at' },
+                    { kind: 'block', type: 'block_color_at' },
+                    { kind: 'block', type: 'save_block_to_position' }
+                ]
+            },
+            {
+                kind: 'category',
                 name: 'Loops',
                 colour: '#5C68A6',
                 contents: [
@@ -746,6 +758,74 @@ function defineCustomBlocks() {
             this.setNextStatement(true, null);
             this.setColour(165);
             this.setTooltip('Set the end tool servo to a specific angle (0° = closed, 180° = open)');
+        }
+    };
+
+    // Vision: how many blocks the camera currently sees. Blocks are indexed
+    // 0, 1, 2… by position in the camera's view, nearest the top first — a
+    // block lower down in view always gets a higher index.
+    Blockly.Blocks['block_count'] = {
+        init: function() {
+            this.appendDummyInput()
+                .appendField('detected block count');
+            this.setOutput(true, 'Number');
+            this.setColour(20);
+            this.setTooltip('Number of coloured blocks the camera currently sees');
+        }
+    };
+
+    Blockly.Blocks['block_x_at'] = {
+        init: function() {
+            this.appendValueInput('INDEX')
+                .setCheck('Number')
+                .appendField('block X (mm) at index');
+            this.setInputsInline(true);
+            this.setOutput(true, 'Number');
+            this.setColour(20);
+            this.setTooltip('World X position in mm of the detected block at this index. Requires ArUco markers to be visible.');
+        }
+    };
+
+    Blockly.Blocks['block_y_at'] = {
+        init: function() {
+            this.appendValueInput('INDEX')
+                .setCheck('Number')
+                .appendField('block Y (mm) at index');
+            this.setInputsInline(true);
+            this.setOutput(true, 'Number');
+            this.setColour(20);
+            this.setTooltip('World Y position in mm of the detected block at this index. Requires ArUco markers to be visible.');
+        }
+    };
+
+    Blockly.Blocks['block_color_at'] = {
+        init: function() {
+            this.appendValueInput('INDEX')
+                .setCheck('Number')
+                .appendField('block colour at index');
+            this.setInputsInline(true);
+            this.setOutput(true, 'String');
+            this.setColour(20);
+            this.setTooltip('Colour name of the detected block at this index');
+        }
+    };
+
+    Blockly.Blocks['save_block_to_position'] = {
+        init: function() {
+            this.appendValueInput('INDEX')
+                .setCheck('Number')
+                .appendField('save block at index');
+            this.appendValueInput('SLOT')
+                .setCheck('Number')
+                .appendField('to position slot');
+            this.appendValueInput('Z')
+                .setCheck('Number')
+                .appendField('at height (mm)');
+            this.setInputsInline(true);
+            this.setPreviousStatement(true, null);
+            this.setNextStatement(true, null);
+            this.setColour(20);
+            this.setTooltip("Saves the detected block's position into a Stored Position slot (0-99) so it can be moved to later");
         }
     };
 }
@@ -1927,6 +2007,42 @@ function registerBlocklyGenerators() {
         appendBlocklyOutput('End tool servo to ${angle}°');
         moveEndToolServoTo(${angle});
         await new Promise(resolve => setTimeout(resolve, 500));
+        `;
+    };
+
+    Blockly.JavaScript['block_count'] = function(block) {
+        return ['(await getDetectedBlockCount())', Blockly.JavaScript.ORDER_ATOMIC];
+    };
+
+    Blockly.JavaScript['block_x_at'] = function(block) {
+        const index = Blockly.JavaScript.valueToCode(block, 'INDEX', Blockly.JavaScript.ORDER_NONE) || '0';
+        return [`(await getDetectedBlockXAt(${index}))`, Blockly.JavaScript.ORDER_ATOMIC];
+    };
+
+    Blockly.JavaScript['block_y_at'] = function(block) {
+        const index = Blockly.JavaScript.valueToCode(block, 'INDEX', Blockly.JavaScript.ORDER_NONE) || '0';
+        return [`(await getDetectedBlockYAt(${index}))`, Blockly.JavaScript.ORDER_ATOMIC];
+    };
+
+    Blockly.JavaScript['block_color_at'] = function(block) {
+        const index = Blockly.JavaScript.valueToCode(block, 'INDEX', Blockly.JavaScript.ORDER_NONE) || '0';
+        return [`(await getDetectedBlockColorAt(${index}))`, Blockly.JavaScript.ORDER_ATOMIC];
+    };
+
+    Blockly.JavaScript['save_block_to_position'] = function(block) {
+        const blockId = block.id;
+        const index = Blockly.JavaScript.valueToCode(block, 'INDEX', Blockly.JavaScript.ORDER_NONE) || '0';
+        const slot = Blockly.JavaScript.valueToCode(block, 'SLOT', Blockly.JavaScript.ORDER_NONE) || '0';
+        const z = Blockly.JavaScript.valueToCode(block, 'Z', Blockly.JavaScript.ORDER_NONE) || '0';
+        return `
+        highlightBlocklyBlock('${blockId}');
+        await checkBlocklyPauseStop();
+        {
+            const blockIndex = ${index};
+            const slotNumber = ${slot};
+            const result = await saveDetectedBlockToPositionSlot(blockIndex, slotNumber, ${z});
+            appendBlocklyOutput('Saved block ' + blockIndex + ' (' + result.block.color + ') to position ' + slotNumber);
+        }
         `;
     };
 

@@ -100,9 +100,10 @@ class GCodeProcessor {
             params.P = pStringMatch[1]; // Store as string
         }
         
-        // Match standard parameters: X, Y, Z, I, J, K, F, R, S, P
+        // Match standard parameters: X, Y, Z, I, J, K, F, R, S, P, L
+        // (L is the detected-block-scan position slot, e.g. M781 P0 L10)
         // Also match joint parameters: J1, J2, J3, etc. (with number)
-        const paramPattern = /([XYZIJKFRSP])([-+]?\d*\.?\d+)/gi;
+        const paramPattern = /([XYZIJKFRSPL])([-+]?\d*\.?\d+)/gi;
         let paramMatch;
         
         while ((paramMatch = paramPattern.exec(line)) !== null) {

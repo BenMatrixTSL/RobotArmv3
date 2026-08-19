@@ -96,6 +96,94 @@ function updateCameraStatusFromVision() {
         });
 }
 
+// ===== Detected block scanning =====
+// Shared by the G-code (M780/M781), RAPID (GetBlockCount/SaveBlockToPos) and
+// Blockly (Vision category) programming modes, so "how many blocks / what is
+// at index N" behaves identically no matter which language calls it. Blocks
+// are sorted by image Y ascending — the block nearest the top of what the
+// camera sees gets index 0, so a block "below" another (further down in the
+// camera's view) always gets a higher index. This works even when no ArUco
+// markers are visible (pixel coordinates are always present); world_x_mm/
+// world_y_mm are only added by camera-vision.py once 3-4 ArUco markers give
+// it a homography, so hasWorldCoords can be false right after starting the
+// vision service.
+
+/**
+ * Fetches current vision data and returns blocks sorted top-of-view first.
+ * @returns {Promise<Array<{index:number, color:string, pixelX:number, pixelY:number, worldX:number|null, worldY:number|null, hasWorldCoords:boolean}>>}
+ */
+function getSortedDetectedBlocks() {
+    return fetch(buildCameraVisionUrl())
+        .then(function (response) {
+            if (!response.ok) {
+                throw new Error('Vision endpoint returned ' + response.status);
+            }
+            return response.json();
+        })
+        .then(function (data) {
+            var blocks = (data && Array.isArray(data.blocks)) ? data.blocks.slice() : [];
+            blocks.sort(function (a, b) {
+                if (a.pixel_y !== b.pixel_y) return a.pixel_y - b.pixel_y;
+                return a.pixel_x - b.pixel_x;
+            });
+            return blocks.map(function (b, i) {
+                var hasWorld = typeof b.world_x_mm === 'number' && typeof b.world_y_mm === 'number';
+                return {
+                    index: i,
+                    color: b.color,
+                    pixelX: b.pixel_x,
+                    pixelY: b.pixel_y,
+                    worldX: hasWorld ? b.world_x_mm : null,
+                    worldY: hasWorld ? b.world_y_mm : null,
+                    hasWorldCoords: hasWorld
+                };
+            });
+        });
+}
+
+/**
+ * @returns {Promise<number>} How many coloured blocks the camera currently sees
+ */
+function getDetectedBlockCount() {
+    return getSortedDetectedBlocks().then(function (blocks) { return blocks.length; });
+}
+
+/**
+ * @param {number} index - Position in the sorted list (0 = topmost in view)
+ * @returns {Promise<Object|null>} The block at that index, or null if out of range
+ */
+function getDetectedBlockAt(index) {
+    return getSortedDetectedBlocks().then(function (blocks) {
+        if (index < 0 || index >= blocks.length) return null;
+        return blocks[index];
+    });
+}
+
+/**
+ * Convenience getters for Blockly's value blocks — throw (rather than
+ * return null/NaN) so a bad index surfaces as a clear error in the Blockly
+ * output log instead of silently sending the arm somewhere wrong.
+ */
+async function getDetectedBlockXAt(index) {
+    var block = await getDetectedBlockAt(index);
+    if (!block) throw new Error('No detected block at index ' + index);
+    if (!block.hasWorldCoords) throw new Error('Block ' + index + ' has no world coordinates — ArUco markers must be visible first');
+    return block.worldX;
+}
+
+async function getDetectedBlockYAt(index) {
+    var block = await getDetectedBlockAt(index);
+    if (!block) throw new Error('No detected block at index ' + index);
+    if (!block.hasWorldCoords) throw new Error('Block ' + index + ' has no world coordinates — ArUco markers must be visible first');
+    return block.worldY;
+}
+
+async function getDetectedBlockColorAt(index) {
+    var block = await getDetectedBlockAt(index);
+    if (!block) throw new Error('No detected block at index ' + index);
+    return block.color;
+}
+
 function setCameraStatus(message, color) {
     var status = document.getElementById('cameraStreamStatus');
     if (status) {

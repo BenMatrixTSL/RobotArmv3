@@ -871,6 +871,76 @@ function saveProgramFromEditor(options) {
     });
 }
 
+// Table Z=0 in the robot's own frame (see robotArm3D.js) is the assumed pick
+// height when a program doesn't specify one.
+const DEFAULT_BLOCK_PICK_Z_MM = 0;
+
+/**
+ * Saves a detected block's position into a Stored Position slot (0-99).
+ * G-code and RAPID have no variables in this app, so a command can't hand a
+ * value to a later line — writing to a position slot is the one mechanism
+ * all three programming modes (G-code, RAPID, Blockly) can already read
+ * from, so it's the common path for all of them here too.
+ *
+ * Assumes the camera's calibrated world frame (from ArUco corner markers,
+ * see camera-vision.py) shares its origin/axes with the robot's own
+ * kinematic frame — nothing in this app cross-checks that independently.
+ * Jog to a known block once and confirm before trusting this for
+ * unattended picking.
+ *
+ * @param {number} blockIndex - Index from getSortedDetectedBlocks() order
+ * @param {number} slotNumber - Position slot 0-99 to write into
+ * @param {number} [zMm] - Pick height in mm, defaults to DEFAULT_BLOCK_PICK_Z_MM
+ * @returns {Promise<{block: Object, xyz: Object, angles: Array}>}
+ */
+async function saveDetectedBlockToPositionSlot(blockIndex, slotNumber, zMm) {
+    if (isNaN(slotNumber) || slotNumber < 0 || slotNumber > 99) {
+        throw new Error('Position slot must be 0-99');
+    }
+    const block = await getDetectedBlockAt(blockIndex);
+    if (!block) {
+        throw new Error('No detected block at index ' + blockIndex);
+    }
+    if (!block.hasWorldCoords) {
+        throw new Error('Block ' + blockIndex + ' has no world coordinates — ArUco markers must be visible first');
+    }
+
+    const z = (typeof zMm === 'number' && !isNaN(zMm)) ? zMm : DEFAULT_BLOCK_PICK_Z_MM;
+    const xyz = { x: block.worldX, y: block.worldY, z: z };
+
+    if (typeof robotKinematics === 'undefined' || !robotKinematics.isConfigured()) {
+        throw new Error('Kinematics not configured — cannot convert block position to joint angles');
+    }
+    const currentAngles = lastGoodJointStatus.map(function (j) {
+        return (j && typeof j.angleDegrees === 'number') ? j.angleDegrees : 0;
+    });
+    const angles = robotKinematics.inverseKinematics(xyz, currentAngles);
+    if (!angles) {
+        throw new Error('Block position (' + xyz.x + ', ' + xyz.y + ', ' + xyz.z + ') mm is unreachable');
+    }
+
+    const positions = getAllPositions();
+    positions[slotNumber] = {
+        label: 'Block ' + blockIndex + ' (' + block.color + ')',
+        angles: angles,
+        xyz: xyz,
+        timestamp: new Date().toISOString()
+    };
+    if (!saveAllPositions(positions)) {
+        throw new Error('Failed to save position slot ' + slotNumber);
+    }
+
+    refreshPositionsList();
+    if (typeof update3DStoredPositionsIfAvailable === 'function') {
+        update3DStoredPositionsIfAvailable();
+    }
+    if (typeof updateBlocklyPositionBlocks === 'function') {
+        setTimeout(updateBlocklyPositionBlocks, 100);
+    }
+
+    return { block: block, xyz: xyz, angles: angles };
+}
+
 /**
  * Saves the G-Code editor contents.
  */
@@ -5161,6 +5231,31 @@ async function executeGCodeCommand(command) {
             // M65 = Solenoid valve off (independent of pump)
             gcodeProcessor.log('M65: Solenoid off');
             setEndToolSolenoidEnabled(false);
+        } else if (command.code === 'M780') {
+            // M780 = report how many coloured blocks the camera currently sees
+            try {
+                const count = await getDetectedBlockCount();
+                gcodeProcessor.log(`M780: ${count} block(s) detected`);
+            } catch (e) {
+                gcodeProcessor.log(`M780: vision error — ${e.message}`);
+            }
+        } else if (command.code === 'M781') {
+            // M781 P<block index> L<position slot> [Z<height mm>]
+            // Saves the detected block's position into a Stored Position
+            // slot, e.g. M781 P0 L10 or M781 P0 L10 Z50
+            const idx = command.params.P;
+            const slot = command.params.L;
+            const z = command.params.Z;
+            if (typeof idx !== 'number' || typeof slot !== 'number') {
+                gcodeProcessor.log('M781: needs P<block index> and L<position slot>, e.g. M781 P0 L10');
+            } else {
+                try {
+                    const result = await saveDetectedBlockToPositionSlot(idx, slot, z);
+                    gcodeProcessor.log(`M781: block ${idx} (${result.block.color}) saved to position ${slot} — X${result.xyz.x} Y${result.xyz.y} Z${result.xyz.z}`);
+                } catch (e) {
+                    gcodeProcessor.log(`M781: ${e.message}`);
+                }
+            }
         } else if (command.code === 'M30' || command.code === 'M2') {
             // Program end
             gcodeProcessor.log(`M-code: ${command.code} (program end)`);
@@ -5679,6 +5774,31 @@ async function runRapidProgram() {
         } else if (/^SolenoidOff\b/i.test(line)) {
             console.log('RAPID: SolenoidOff on line', i + 1);
             setEndToolSolenoidEnabled(false);
+        } else if (/^GetBlockCount\b/i.test(line)) {
+            console.log('RAPID: GetBlockCount on line', i + 1);
+            try {
+                const count = await getDetectedBlockCount();
+                showAppMessage(`RAPID: ${count} block(s) detected`);
+            } catch (e) {
+                showAppMessage('RAPID: GetBlockCount failed — ' + e.message);
+            }
+        } else if (/^SaveBlockToPos\b/i.test(line)) {
+            // SaveBlockToPos <index>, <slot>[, <zmm>];
+            const m = line.match(/^SaveBlockToPos\s+(\d+)\s*,\s*(\d+)\s*(?:,\s*(-?[\d.]+))?/i);
+            if (m) {
+                const idx = parseInt(m[1], 10);
+                const slot = parseInt(m[2], 10);
+                const z = m[3] !== undefined ? parseFloat(m[3]) : undefined;
+                console.log('RAPID: SaveBlockToPos', idx, slot, z, 'on line', i + 1);
+                try {
+                    const result = await saveDetectedBlockToPositionSlot(idx, slot, z);
+                    showAppMessage(`RAPID: block ${idx} (${result.block.color}) saved to position ${slot}`);
+                } catch (e) {
+                    showAppMessage('RAPID: SaveBlockToPos failed — ' + e.message);
+                }
+            } else {
+                console.warn('RAPID: Could not parse SaveBlockToPos on line', i + 1, ':', line);
+            }
         } else if (/^ServoTo\b/i.test(line)) {
             // ServoTo <angle>;  e.g. ServoTo 90;
             const m = line.match(/^ServoTo\s+([\d.]+)/i);
@@ -5693,7 +5813,7 @@ async function runRapidProgram() {
                 console.warn('RAPID: ServoTo missing angle on line', i + 1);
             }
         } else {
-            console.warn('RAPID: Unsupported line (MoveJ/MoveAbsJ/MoveJOffs/MoveLXYZ/MoveLOffs/WaitTime/SetDO/Home/GripperOpen/GripperClose/PumpOn/PumpOff/SolenoidOn/SolenoidOff/ServoTo):', line);
+            console.warn('RAPID: Unsupported line (MoveJ/MoveAbsJ/MoveJOffs/MoveLXYZ/MoveLOffs/WaitTime/SetDO/Home/GripperOpen/GripperClose/PumpOn/PumpOff/SolenoidOn/SolenoidOff/ServoTo/GetBlockCount/SaveBlockToPos):', line);
         }
     }
 

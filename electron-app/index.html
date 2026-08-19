@@ -580,6 +580,16 @@
                             </td>
                         </tr>
                         <tr>
+                            <td><strong>M780</strong>, <strong>M781</strong></td>
+                            <td>
+                                Camera block detection. Blocks are indexed 0, 1, 2… by position in the camera's view, nearest the top first (a block lower down gets a higher index).<br>
+                                <code>M780</code> → logs how many coloured blocks are currently visible.<br>
+                                <code>M781 P0 L10</code> → saves block index&nbsp;0's position into Stored Position slot&nbsp;10 (table height, Z=0).<br>
+                                <code>M781 P0 L10 Z50</code> → same, but at height 50&nbsp;mm.<br>
+                                Requires ArUco markers to be visible so the camera has a world coordinate frame.
+                            </td>
+                        </tr>
+                        <tr>
                             <td><strong>M30</strong>, <strong>M2</strong></td>
                             <td>
                                 Program end marker. Execution stops when these are reached.<br>
@@ -713,6 +723,16 @@
                                 Vacuum pump control.<br>
                                 <code>PumpOn;</code> → turn vacuum pump on.<br>
                                 <code>PumpOff;</code> → turn vacuum pump off.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>GetBlockCount</strong><br><strong>SaveBlockToPos</strong></td>
+                            <td>
+                                Camera block detection. Blocks are indexed 0, 1, 2… by position in the camera's view, nearest the top first (a block lower down gets a higher index).<br>
+                                <code>GetBlockCount;</code> → shows how many coloured blocks are currently visible.<br>
+                                <code>SaveBlockToPos 0, 10;</code> → saves block index&nbsp;0's position into Stored Position slot&nbsp;10 (table height, Z=0).<br>
+                                <code>SaveBlockToPos 0, 10, 50;</code> → same, but at height 50&nbsp;mm.<br>
+                                Requires ArUco markers to be visible so the camera has a world coordinate frame.
                             </td>
                         </tr>
                     </tbody>
