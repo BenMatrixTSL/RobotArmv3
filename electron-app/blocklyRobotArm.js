@@ -1267,8 +1267,15 @@ function appendBlocklyOutput(text) {
     const output = document.getElementById('blocklyOutput');
     const timestamp = new Date().toLocaleTimeString();
     // Format similar to G-code log: [HH:MM:SS] Message
-    output.textContent += `[${timestamp}] ${text}\n`;
-    output.scrollTop = output.scrollHeight;
+    const line = `[${timestamp}] ${text}`;
+    if (typeof appendCappedLog === 'function') {
+        appendCappedLog(output, line);
+    } else if (output) {
+        // app.js not loaded (shouldn't happen in the real app) — fall back
+        // to the old unbounded behavior rather than throwing.
+        output.textContent += line + '\n';
+        output.scrollTop = output.scrollHeight;
+    }
 }
 
 /**

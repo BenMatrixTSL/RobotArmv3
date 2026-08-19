@@ -791,6 +791,30 @@ function downloadTextFile(filename, text, mimeType) {
 }
 
 /**
+ * Appends a line to a log <pre>/<div>, trimming from the front once it
+ * passes maxChars. G-code and Blockly programs can log for a long-running
+ * or looping job with no natural end, and textContent += with no cap grows
+ * without bound — each append also gets slower as the string grows, since
+ * the whole text node is rebuilt every time.
+ * @param {HTMLElement} element - Log container (uses textContent)
+ * @param {string} line - Text to append (newline added automatically)
+ * @param {number} [maxChars] - Trim point, defaults to ~200KB of scrollback
+ */
+function appendCappedLog(element, line, maxChars) {
+    if (!element) return;
+    const limit = maxChars || 200000;
+    let next = element.textContent + line + '\n';
+    if (next.length > limit) {
+        // Cut at the next newline after the trim point so we don't leave a
+        // partial line dangling at the top of the log.
+        const cut = next.indexOf('\n', next.length - limit);
+        next = next.slice(cut >= 0 ? cut + 1 : next.length - limit);
+    }
+    element.textContent = next;
+    element.scrollTop = element.scrollHeight;
+}
+
+/**
  * Makes a filename safe to write to disk.
  * @param {string} name - Proposed name
  * @param {string} extension - Extension to enforce, including the dot
@@ -2463,9 +2487,7 @@ function initializeStatusUpdates() {
     gcodeProcessor.onLog = function(message) {
         const logElement = document.getElementById('gcodeLog');
         if (logElement) {
-            logElement.textContent += message + '\n';
-            // Auto-scroll to bottom
-            logElement.scrollTop = logElement.scrollHeight;
+            appendCappedLog(logElement, message);
         }
     };
     
