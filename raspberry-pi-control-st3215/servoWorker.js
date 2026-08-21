@@ -663,7 +663,18 @@ async function runImmediateCommand(msg, moreMovesQueued) {
     try {
         clearAllServoPendingTransactions();
         await new Promise(r => setTimeout(r, quietBefore));
-        await handleBusCommand(msg.clientId, msg);
+        // Bounded the same way runBusTick() bounds its queued commands (see
+        // BUS_TICK_OP_TIMEOUT_MS). This call previously had no timeout at
+        // all — if the bus was still busy (e.g. a slow end-tool operation
+        // still in flight), handleBusCommand() could hang indefinitely.
+        // Since busTickLoopActive was already set false above, that left
+        // the finally block below unreached forever: the tick loop never
+        // resumed, and every future command failed with "Bus write queue
+        // is full" until the service was restarted. Same class of bug as
+        // the heartbeat-write and PID-EEPROM-write freezes fixed earlier —
+        // an unprotected await able to jam the shared bus resource, just a
+        // third call site those fixes didn't cover.
+        await withTimeout(handleBusCommand(msg.clientId, msg), BUS_TICK_OP_TIMEOUT_MS, msg.command || 'immediate bus command');
         diag.immediateBusCommands++;
         await new Promise(r => setTimeout(r, quietAfter));
         if (DEBUG) log('Immediate bus command OK: ' + msg.command + ' (' + (Date.now() - cmdStart) + ' ms)');
