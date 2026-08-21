@@ -6768,7 +6768,7 @@ async function applyLoadedUrdf(urdfText, source) {
     let revoluteJoints = [];
 
     if (robotKinematics.urdfData && robotKinematics.urdfData.joints) {
-        allJoints = robotKinematics.urdfData.joints;
+        allJoints = robotKinematics.filterChainJoints(robotKinematics.urdfData.joints);
         revoluteJoints = robotKinematics.getJointConfigs();
     }
 
@@ -6779,7 +6779,7 @@ async function applyLoadedUrdf(urdfText, source) {
             .then(function (loaded) {
                 if (!loaded) return;
                 const serverAllJoints = (loaded.urdfData && loaded.urdfData.joints && loaded.urdfData.joints.length > 0)
-                    ? loaded.urdfData.joints
+                    ? robotKinematics.filterChainJoints(loaded.urdfData.joints)
                     : null;
                 const serverRevoluteJoints = (Array.isArray(loaded.joints) && loaded.joints.length > 0)
                     ? loaded.joints
@@ -7330,7 +7330,7 @@ function update3DVisualizationWithAngles(jointAngles) {
     // fall back to revolute-only configs if needed.
     let configs = [];
     if (robotKinematics && robotKinematics.urdfData && Array.isArray(robotKinematics.urdfData.joints)) {
-        configs = robotKinematics.urdfData.joints;
+        configs = robotKinematics.filterChainJoints(robotKinematics.urdfData.joints);
     } else {
         configs = robotKinematics.getJointConfigs() || [];
     }

@@ -1248,6 +1248,32 @@ class RobotKinematics {
     getJointConfigs() {
         return this.joints;
     }
+
+    /**
+     * Filters a raw URDF joints array (e.g. urdfData.joints, or the
+     * equivalent from the Pi's parsed URDF) down to the joints that form
+     * the single kinematic chain to draw or compute forward kinematics
+     * through: every revolute joint, ordinary fixed joints (e.g.
+     * tool_mount), and — only if one is fitted — the active end tool's
+     * fixed joint. The URDF can describe several end tools as sibling
+     * branches off the same mount link (only one <end_tool> joint per
+     * tool type); passing the raw array straight to code that assumes a
+     * single linear chain (like the 3D view) draws every possible tool
+     * stacked one after another instead of just the one that's fitted.
+     * @param {Array} joints - Raw joints array
+     * @returns {Array}
+     */
+    filterChainJoints(joints) {
+        if (!Array.isArray(joints)) return [];
+        const activeId = this.activeEndToolId;
+        return joints.filter((j) => {
+            if (!j) return false;
+            if (j.endTool) {
+                return activeId !== null && activeId !== undefined && j.endTool.id === activeId;
+            }
+            return true;
+        });
+    }
 }
 
 // Create a global instance
