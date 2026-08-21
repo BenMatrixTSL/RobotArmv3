@@ -54,6 +54,10 @@ function parseURDF(urdfXml) {
             // Optional zero offset (in degrees) to shift the "zero" angle
             // If provided in the URDF, the kinematics will add this to the angle
             zeroOffsetDegrees: null,
+            // Set when the joint carries an <end_tool id=".." label=".."/> tag,
+            // which ties it to a tool type ID reported in register 3 of the
+            // ESP32 end tool. Null for ordinary joints.
+            endTool: null,
             // limits will hold both radians and degrees so other parts
             // of the app can easily work in degrees
             limits: {
@@ -161,6 +165,27 @@ function parseURDF(urdfXml) {
             }
         }
         
+        // End tool tag: <end_tool id="3" label="Pen"/>
+        const endToolElement = jointElement.querySelector('end_tool');
+        if (endToolElement) {
+            const toolId = parseInt(endToolElement.getAttribute('id'), 10);
+            if (!isNaN(toolId)) {
+                const controlsAttr = endToolElement.getAttribute('controls');
+                joint.endTool = {
+                    id: toolId,
+                    label: endToolElement.getAttribute('label') || joint.name || ('Tool ' + toolId),
+                    // Which powered outputs this tool has. null (attribute
+                    // absent) means unknown, which the UI treats as "show
+                    // everything" rather than hiding controls that may work.
+                    controls: controlsAttr === null || controlsAttr === undefined
+                        ? null
+                        : controlsAttr.split(',').map(c => c.trim().toLowerCase()).filter(Boolean),
+                    // The length is a guess until someone measures the tool
+                    provisional: endToolElement.getAttribute('provisional') === 'true'
+                };
+            }
+        }
+
         joints.push(joint);
     });
     

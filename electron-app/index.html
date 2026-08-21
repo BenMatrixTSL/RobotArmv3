@@ -294,7 +294,7 @@
             <!-- End Tool Controls — pendant-style cards -->
             <div class="pendant2-end-tools-row">
 
-                <div class="pendant2-card pendant2-end-tool-card" id="endToolServoPanel">
+                <div class="pendant2-card pendant2-end-tool-card" id="endToolServoPanel" data-end-tool-control="servo">
                     <div class="pendant2-card-title">End Tool — Servo</div>
                     <div class="pendant2-end-tool-btns">
                         <button class="btn btn-secondary pendant2-tool-btn end-tool-on-btn" id="endToolServoEnableBtn" data-end-tool-action="servo-enable" onclick="setEndToolServoEnabled(true)">Enable</button>
@@ -309,7 +309,7 @@
                     </div>
                 </div>
 
-                <div class="pendant2-card pendant2-end-tool-card" id="endToolPneumaticPanel">
+                <div class="pendant2-card pendant2-end-tool-card" id="endToolPneumaticPanel" data-end-tool-control="pump">
                     <div class="pendant2-card-title">End Tool — Pump</div>
                     <div class="pendant2-end-tool-btns">
                         <button class="btn btn-secondary pendant2-tool-btn end-tool-on-btn" id="endToolPumpEnableBtn" data-end-tool-action="pump-enable" onclick="setEndToolPumpEnabled(true)">Pump ON</button>
@@ -317,13 +317,15 @@
                     </div>
                 </div>
 
-                <div class="pendant2-card pendant2-end-tool-card">
+                <div class="pendant2-card pendant2-end-tool-card" data-end-tool-control="solenoid">
                     <div class="pendant2-card-title">End Tool — Solenoid Valve</div>
                     <div class="pendant2-end-tool-btns">
                         <button class="btn btn-secondary pendant2-tool-btn end-tool-on-btn" id="endToolSolenoidEnableBtn" data-end-tool-action="solenoid-enable" onclick="setEndToolSolenoidEnabled(true)">Valve ON</button>
                         <button class="btn btn-secondary pendant2-tool-btn end-tool-off-btn" id="endToolSolenoidDisableBtn" data-end-tool-action="solenoid-disable" onclick="setEndToolSolenoidEnabled(false)">Valve OFF</button>
                     </div>
                 </div>
+
+                <p class="end-tool-none-note" data-end-tool-note hidden></p>
 
             </div>
         </div>
@@ -412,7 +414,7 @@
             <!-- End tool controls (full width) -->
             <div class="pendant2-end-tools-row">
 
-                <div class="pendant2-card pendant2-end-tool-card">
+                <div class="pendant2-card pendant2-end-tool-card" data-end-tool-control="servo">
                     <div class="pendant2-card-title">End Tool — Servo</div>
                     <div class="pendant2-end-tool-btns">
                         <button class="btn btn-secondary pendant2-tool-btn end-tool-on-btn" data-end-tool-action="servo-enable" onclick="setEndToolServoEnabled(true)">Enable</button>
@@ -427,7 +429,7 @@
                     </div>
                 </div>
 
-                <div class="pendant2-card pendant2-end-tool-card">
+                <div class="pendant2-card pendant2-end-tool-card" data-end-tool-control="pump">
                     <div class="pendant2-card-title">End Tool — Pump</div>
                     <div class="pendant2-end-tool-btns">
                         <button class="btn btn-secondary pendant2-tool-btn end-tool-on-btn" data-end-tool-action="pump-enable" onclick="setEndToolPumpEnabled(true)">Pump ON</button>
@@ -435,13 +437,15 @@
                     </div>
                 </div>
 
-                <div class="pendant2-card pendant2-end-tool-card">
+                <div class="pendant2-card pendant2-end-tool-card" data-end-tool-control="solenoid">
                     <div class="pendant2-card-title">End Tool — Solenoid Valve</div>
                     <div class="pendant2-end-tool-btns">
                         <button class="btn btn-secondary pendant2-tool-btn end-tool-on-btn" data-end-tool-action="solenoid-enable" onclick="setEndToolSolenoidEnabled(true)">Valve ON</button>
                         <button class="btn btn-secondary pendant2-tool-btn end-tool-off-btn" data-end-tool-action="solenoid-disable" onclick="setEndToolSolenoidEnabled(false)">Valve OFF</button>
                     </div>
                 </div>
+
+                <p class="end-tool-none-note" data-end-tool-note hidden></p>
 
             </div>
         </div>
@@ -828,6 +832,38 @@
         <!-- Kinematics Tab -->
         <div id="kinematics-tab" class="tab-content">
             <h2>Kinematics and Transform Matrices</h2>
+
+            <div class="settings-panel end-tool-panel">
+                <h3>End Tool</h3>
+                <p class="info-text">
+                    The tool reports what it is in register 3, and the controller applies the matching
+                    tool from <code>kinematics.urdf</code>. Every position below, and every XYZ move,
+                    is measured to that tool's working tip.
+                </p>
+                <div class="end-tool-summary" id="endToolSummary">
+                    <span class="end-tool-state" id="endToolState">Not connected</span>
+                    <span class="end-tool-detail" id="endToolDetail"></span>
+                </div>
+                <div class="control-row">
+                    <button class="btn btn-secondary" onclick="refreshEndTool()">Re-check tool</button>
+                </div>
+                <div class="end-tool-table-wrap">
+                    <table class="end-tool-table" id="endToolTable">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Tool</th>
+                                <th>Offset from mount (mm)</th>
+                                <th>Length</th>
+                            </tr>
+                        </thead>
+                        <tbody id="endToolTableBody">
+                            <!-- Populated from the URDF -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
             <div class="simulation-panel">
                 <h3>Simulated Joint Angles (for Kinematics)</h3>
                 <p class="info-text">
@@ -1467,7 +1503,9 @@
     <script src="cameraView.js?v=20260616"></script>
     <!-- Main Application: UI logic and event handlers -->
     <script src="app.js?v=20260603f"></script>
-    
+    <!-- On-Screen Keyboard: touch keyboard for kiosk mode (no system OSK in Chromium kiosk) -->
+    <script src="keyboard.js?v=20260814"></script>
+
     <!-- Check if Blockly loaded after page load -->
     <!-- This verifies that Blockly loaded successfully and hides the loading message -->
     <script>

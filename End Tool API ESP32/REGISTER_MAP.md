@@ -12,6 +12,11 @@ All multi-byte values are little-endian:
 - `1` - Firmware major (RO)
 - `2` - Firmware minor (RO)
 - `3` - Tool type ID (RW)
+  - `0` = unassigned, `1` = pneumatic vacuum and valve, `2` = servo motor, `3` = pen
+  - The Pi reads this every 15 s and applies the matching `<end_tool id="...">`
+    entry from `kinematics.urdf`, which sets the tool length used by FK and IK.
+    A tool type with no matching URDF entry leaves the TCP at the bare mount face.
+    See "End Tool Kinematics" in `raspberry-pi-control-st3215/API_DOCUMENTATION.md`.
 - `4` - Status flags (RW)
 
 ## PWM Control

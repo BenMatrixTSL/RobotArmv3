@@ -633,6 +633,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Put the last saved G-Code / RAPID programs back in their editors
     restoreSavedPrograms();
+
+    // Show the end tools the URDF describes, before any controller reports in
+    renderEndToolPanel();
+    applyEndToolControlVisibility();
     initializeDeadZones();
     if (typeof initializeCameraTab === 'function') {
         initializeCameraTab();
@@ -766,6 +770,181 @@ document.addEventListener('DOMContentLoaded', function() {
     // Re-check screen size on window resize
     window.addEventListener('resize', detectScreenSize);
 });
+
+// ===== End Tool Kinematics =====
+// The ESP32 end tool reports its type in register 3 (servo ID 64). The Pi reads
+// that, resolves it against the <end_tool> entries in kinematics.urdf, and
+// tells us. We apply the same tool locally so the app's FK/IK, the 3D view and
+// the reported XYZ all measure to the same working tip as the controller.
+
+let lastEndToolState = null;
+
+/**
+ * Applies an end tool report from the Pi.
+ * @param {Object} payload - endTool message from the server
+ */
+function applyEndToolState(payload) {
+    if (!payload) {
+        return;
+    }
+    lastEndToolState = payload;
+
+    // Follow the controller: it owns register 3, we mirror it
+    if (typeof robotKinematics !== 'undefined' && robotKinematics &&
+        typeof robotKinematics.setActiveEndTool === 'function') {
+        robotKinematics.setActiveEndTool(payload.present ? payload.toolTypeId : 0);
+    }
+
+    renderEndToolPanel();
+    applyEndToolControlVisibility();
+
+    // The tool changes where the tip is, so anything showing a position or a
+    // 3D pose needs recomputing.
+    if (typeof update3DVisualization === 'function' && typeof robotArm3D !== 'undefined' && robotArm3D) {
+        try {
+            update3DVisualization();
+        } catch (e) {
+            console.warn('End tool: could not refresh the 3D view:', e);
+        }
+    }
+}
+
+/**
+ * Shows only the end tool controls the fitted tool actually has.
+ *
+ * Which controls a tool has is declared in kinematics.urdf next to its
+ * geometry (controls="pump,solenoid"), so adding a tool is still a URDF edit
+ * and nothing here needs changing.
+ *
+ * The rules, in order:
+ *   nothing reported yet   -> show everything (we cannot know yet)
+ *   no tool responding     -> hide everything, there is nothing to drive
+ *   tool type not in URDF  -> show everything, since we cannot tell what it has
+ *   tool with no controls  -> hide everything (a pen has nothing to switch)
+ *   tool with controls     -> show exactly those
+ */
+function applyEndToolControlVisibility() {
+    const cards = document.querySelectorAll('[data-end-tool-control]');
+    const notes = document.querySelectorAll('[data-end-tool-note]');
+    if (!cards.length) {
+        return;
+    }
+
+    const s = lastEndToolState;
+    let allowed = null;   // null means "show everything"
+    let note = '';
+
+    if (!s) {
+        allowed = null;
+    } else if (!s.present) {
+        allowed = [];
+        note = 'No end tool detected. Fit a tool to use these controls.';
+    } else if (!s.known || !s.tool) {
+        allowed = null;
+        note = 'Tool type ' + s.toolTypeId + ' is not described in kinematics.urdf, ' +
+               'so every control is shown.';
+    } else if (!s.tool.controls) {
+        // Tool is known but does not say what it has — do not hide anything
+        allowed = null;
+    } else {
+        allowed = s.tool.controls;
+        if (allowed.length === 0) {
+            note = '"' + s.tool.label + '" has no powered controls.';
+        }
+    }
+
+    cards.forEach(function (card) {
+        const control = card.getAttribute('data-end-tool-control');
+        const show = (allowed === null) || allowed.indexOf(control) >= 0;
+        card.hidden = !show;
+    });
+
+    notes.forEach(function (el) {
+        el.textContent = note;
+        el.hidden = !note;
+    });
+}
+
+/**
+ * Draws the End Tool panel on the Kinematics tab.
+ */
+function renderEndToolPanel() {
+    const stateEl = document.getElementById('endToolState');
+    const detailEl = document.getElementById('endToolDetail');
+    const tbody = document.getElementById('endToolTableBody');
+    if (!stateEl || !detailEl || !tbody) {
+        return;
+    }
+
+    const s = lastEndToolState;
+
+    if (!s) {
+        stateEl.textContent = 'Not connected';
+        stateEl.className = 'end-tool-state';
+        detailEl.textContent = 'Connect to the controller to read the fitted tool.';
+    } else if (!s.present) {
+        stateEl.textContent = 'No tool responding';
+        stateEl.className = 'end-tool-state end-tool-state-absent';
+        detailEl.textContent = 'Positions are measured to the bare mount face.' +
+            (s.lastError ? ' (' + s.lastError + ')' : '');
+    } else if (!s.known) {
+        stateEl.textContent = 'Tool type ' + s.toolTypeId + ' — not in the URDF';
+        stateEl.className = 'end-tool-state end-tool-state-unknown';
+        detailEl.textContent = 'The tool reports type ' + s.toolTypeId + ', which kinematics.urdf ' +
+            'does not describe. Add an <end_tool id="' + s.toolTypeId + '"/> joint to it. ' +
+            'Until then positions are measured to the bare mount face.';
+    } else {
+        const t = s.tool;
+        stateEl.textContent = t.label + (t.provisional ? ' — length not measured' : '');
+        stateEl.className = 'end-tool-state ' +
+            (t.provisional ? 'end-tool-state-unknown' : 'end-tool-state-known');
+        detailEl.textContent = 'Type ' + t.id + ' · ' + t.lengthMm.toFixed(1) + ' mm from the mount face' +
+            ' · frame "' + t.jointName + '"' +
+            (t.provisional
+                ? ' — this length is a placeholder, so the tip position is only as good as the guess. ' +
+                  'Measure the tool and correct kinematics.urdf.'
+                : '');
+    }
+
+    const tools = (s && s.tools && s.tools.length)
+        ? s.tools
+        : (typeof robotKinematics !== 'undefined' && robotKinematics &&
+           typeof robotKinematics.getEndTools === 'function' ? robotKinematics.getEndTools() : []);
+
+    if (!tools.length) {
+        tbody.innerHTML = '<tr><td colspan="4" class="end-tool-empty">' +
+            'No end tools defined in kinematics.urdf.</td></tr>';
+        return;
+    }
+
+    const activeId = s && s.present ? s.toolTypeId : null;
+    tbody.innerHTML = tools.map(function (t) {
+        const active = t.id === activeId;
+        return '<tr class="' + (active ? 'end-tool-row-active' : '') + '">' +
+            '<td class="end-tool-id">' + t.id + (active ? ' <span class="end-tool-badge">fitted</span>' : '') + '</td>' +
+            '<td>' + escapeHtml(t.label) +
+                (t.provisional ? ' <span class="end-tool-badge end-tool-badge-warn">not measured</span>' : '') +
+            '</td>' +
+            '<td class="end-tool-offset">' +
+                t.offsetMm.x.toFixed(1) + ', ' + t.offsetMm.y.toFixed(1) + ', ' + t.offsetMm.z.toFixed(1) +
+            '</td>' +
+            '<td class="end-tool-offset">' + t.lengthMm.toFixed(1) + ' mm</td>' +
+        '</tr>';
+    }).join('');
+}
+
+/**
+ * Asks the controller to read register 3 again, for when a tool is swapped
+ * and you would rather not wait for the next poll.
+ */
+function refreshEndTool() {
+    if (!robotArmClient || !robotArmClient.isConnected) {
+        showAppMessage('Not connected to the controller.');
+        return;
+    }
+    robotArmClient.sendCommand('refreshEndTool');
+    showAppMessage('Re-reading the end tool...');
+}
 
 // ===== Saving G-Code and RAPID Programs =====
 
@@ -6378,17 +6557,17 @@ const DEFAULT_URDF = `<?xml version="1.0"?>
     <child link="link1"/>
     <origin xyz="0 0 0.05" rpy="0 0 0"/>
     <axis xyz="0 0 1"/>
-    <limit lower="-3.14" upper="3.14" effort="10" velocity="2"/>
+    <limit lower="-3.14159" upper="3.14159" effort="10" velocity="2"/>
   </joint>
 
   <!-- ================= JOINT 2 ================= -->
   <!-- Shoulder Pitch -->
-  <joint name="joint2_shoulder_pitch" type="revolute" zero_offset_degrees="-90">
+  <joint name="joint2_shoulder_pitch" type="revolute">
     <parent link="link1"/>
     <child link="link2"/>
     <origin xyz="0 0 0.058" rpy="0 0 0"/>
-    <axis xyz="0 1 0"/>
-    <limit lower="-1.57" upper="1.57" effort="10" velocity="2"/>
+    <axis xyz="0 -1 0"/>
+    <limit lower="-1.5708" upper="0.698132" effort="10" velocity="2"/>
   </joint>
 
   <!-- ================= JOINT 3 ================= -->
@@ -6396,9 +6575,9 @@ const DEFAULT_URDF = `<?xml version="1.0"?>
   <joint name="joint3_elbow_pitch" type="revolute">
     <parent link="link2"/>
     <child link="link3"/>
-    <origin xyz="0.135 0 0" rpy="0 0 0"/>
+    <origin xyz="0 0 0.135" rpy="0 0 0"/>
     <axis xyz="0 -1 0"/>
-    <limit lower="-1.74533" upper="1.74533" effort="10" velocity="2"/>
+    <limit lower="-1.5708" upper="1.5708" effort="10" velocity="2"/>
   </joint>
 
   <!-- ================= JOINT 4 ================= -->
@@ -6406,9 +6585,9 @@ const DEFAULT_URDF = `<?xml version="1.0"?>
   <joint name="joint4_wrist_roll" type="revolute">
     <parent link="link3"/>
     <child link="link4"/>
-    <origin xyz="0.0678 0 0" rpy="0 0 0"/>
+    <origin xyz="0.03965 0 0.055" rpy="0 0 0"/>
     <axis xyz="1 0 0"/>
-    <limit lower="-3.14" upper="3.14" effort="5" velocity="3"/>
+    <limit lower="-1.5708" upper="1.5708" effort="5" velocity="3"/>
   </joint>
 
   <!-- ================= JOINT 5 ================= -->
@@ -6417,25 +6596,93 @@ const DEFAULT_URDF = `<?xml version="1.0"?>
     <parent link="link4"/>
     <child link="link5"/>
     <origin xyz="0.06285 0 0" rpy="0 0 0"/>
-    <axis xyz="0 1 0"/>
-    <limit lower="-1.57" upper="1.57" effort="5" velocity="3"/>
+    <axis xyz="0 -1 0"/>
+    <limit lower="-0.0872665" upper="1.5708" effort="5" velocity="3"/>
   </joint>
-  
+
   <!-- ================= JOINT 6 ================= -->
   <!-- Wrist Roll 2 -->
   <joint name="joint6_wrist_roll_2" type="revolute">
     <parent link="link5"/>
     <child link="link6"/>
-    <origin xyz="0.0678 0 0" rpy="0 0 0"/>
+    <origin xyz="0.055 0 -0.03965" rpy="0 0 0"/>
     <axis xyz="1 0 0"/>
-    <limit lower="-3.14" upper="3.14" effort="5" velocity="3"/>
+    <limit lower="-1.5708" upper="1.5708" effort="5" velocity="3"/>
   </joint>
 
   <!-- ================= TOOL (Fixed) ================= -->
   <joint name="tool_mount" type="fixed">
     <parent link="link6"/>
     <child link="tool_link"/>
-    <origin xyz="0.042 0 0" rpy="0 0 0"/>
+    <origin xyz="0 0 -0.035" rpy="0 0 0"/>
+  </joint>
+
+  <!-- ================= END TOOLS =================
+       One fixed joint per end tool, from tool_link (the mount face) to that
+       tool's own TCP frame. The id on <end_tool> is the value the ESP32 end
+       tool reports in register 3 (servo ID 64) — the Pi reads that register
+       and applies the matching joint below, so the reported tool tip and the
+       IK target are the real working point of whatever is fitted.
+
+       Offsets are measured from the mount face along -Z, the direction the
+       tool points (same sense as tool_mount above). Add rpy if a tool is
+       mounted at an angle, and x/y if its tip is off the mount axis.
+
+       provisional="true" marks a length nobody has measured yet. The app
+       shows a warning while such a tool is fitted, so a guessed number is
+       never mistaken for a real one.
+
+       "controls" lists the powered outputs the tool actually has. The app
+       shows only those cards on the Joint Control and Pendant tabs. Known
+       values: servo, pump, solenoid (comma separated; empty for a passive
+       tool). A tool with no controls attribute shows every card, because we
+       cannot tell what it has.
+
+       Lengths are measured from the mount face to the working tip, in
+       metres. Anything still marked provisional needs measuring.
+  -->
+  <link name="tcp_unassigned"/>
+  <link name="tcp_vacuum"/>
+  <link name="tcp_servo"/>
+  <link name="tcp_pen"/>
+
+  <!-- 0 — nothing fitted: the TCP is the mount face itself -->
+  <joint name="tool_unassigned" type="fixed">
+    <parent link="tool_link"/>
+    <child link="tcp_unassigned"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <end_tool id="0" label="Unassigned" controls=""/>
+  </joint>
+
+  <!-- 1 — pneumatic vacuum and valve: TCP is the face of the suction cup.
+       140.62 mm, measured. -->
+  <joint name="tool_vacuum" type="fixed">
+    <parent link="tool_link"/>
+    <child link="tcp_vacuum"/>
+    <origin xyz="0 0 -0.14062" rpy="0 0 0"/>
+    <end_tool id="1" label="Pneumatic vacuum and valve" controls="pump,solenoid"/>
+  </joint>
+
+  <!-- 2 — servo gripper: TCP is the midpoint between the closed fingers.
+       152.19 mm, measured. -->
+  <joint name="tool_servo" type="fixed">
+    <parent link="tool_link"/>
+    <child link="tcp_servo"/>
+    <origin xyz="0 0 -0.15219" rpy="0 0 0"/>
+    <end_tool id="2" label="Servo motor" controls="servo"/>
+  </joint>
+
+  <!-- 3 — pen: TCP is the writing tip, with the pen retracted.
+       NOT MEASURED. 155 mm is a deliberate overestimate: a tool set longer
+       than it really is stops short of the work, while one set too short
+       drives the tip into it. provisional="true" makes the app say so.
+       Replace with the measured value and drop the provisional flag.
+       If your pen holder lifts with the hobby servo, use controls="servo". -->
+  <joint name="tool_pen" type="fixed">
+    <parent link="tool_link"/>
+    <child link="tcp_pen"/>
+    <origin xyz="0 0 -0.155" rpy="0 0 0"/>
+    <end_tool id="3" label="Pen" controls="" provisional="true"/>
   </joint>
 
 </robot>`;

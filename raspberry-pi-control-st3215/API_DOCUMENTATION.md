@@ -970,6 +970,118 @@ elif response["type"] == "success":
    - Check network latency
    - Reduce status polling frequency
 
+### 12. End Tool Kinematics
+
+The ESP32 end tool reports what it is in **register 3** (tool type ID). The server
+reads that register every 15 seconds and on start-up, resolves the ID against the
+`<end_tool>` entries in `kinematics.urdf`, and applies that tool's offset to its
+own forward and inverse kinematics. Every position the server reports, and every
+XYZ target it solves, is therefore measured to the fitted tool's working tip.
+
+Register 3 is the only source of truth — there is no manual override. If no tool
+answers, or it reports an ID the URDF does not describe, the TCP falls back to the
+bare mount face rather than keeping a stale tool length.
+
+#### Defining a tool
+
+Add one fixed joint per tool to `kinematics.urdf`, from `tool_link` (the mount
+face) to that tool's own TCP frame, tagged with the register 3 value:
+
+```xml
+<link name="tcp_gripper"/>
+
+<joint name="tool_servo" type="fixed">
+  <parent link="tool_link"/>
+  <child  link="tcp_gripper"/>
+  <origin xyz="0 0 -0.15219" rpy="0 0 0"/>
+  <end_tool id="2" label="Servo motor" controls="servo"/>
+</joint>
+```
+
+- `id` must match what the tool writes to register 3.
+- `origin` is measured from the mount face, in metres, along **-Z** (the direction
+  the tool points). Use `x`/`y` for a tip that is off the mount axis, and `rpy`
+  for a tool mounted at an angle.
+- `controls` lists the powered outputs the tool has: `servo`, `pump`, `solenoid`,
+  comma separated. The app shows only those cards on the Joint Control and
+  Pendant tabs. An empty value means a passive tool with nothing to switch;
+  omitting the attribute entirely means "unknown", and every control is shown.
+- `provisional="true"` marks a length nobody has measured yet. The server logs a
+  warning while such a tool is fitted and the app labels it in the UI, so a
+  guessed number is never mistaken for a real one. Prefer to guess **long**: a
+  tool set longer than it really is stops short of the work, while one set too
+  short drives the tip into it.
+- `<end_tool>` is an extension to standard URDF. Other URDF tools ignore it, and
+  the frames themselves remain valid URDF.
+
+`kinematics.urdf` exists in three places: the app's copy, the Pi's copy, and the
+`DEFAULT_URDF` fallback embedded in `app.js`. They are kept identical by
+`npm run sync-urdf` in `electron-app`, which regenerates the Pi's copy and the
+fallback from the app's copy. `npm run check-urdf` fails if they have drifted, and
+`postinstall` runs the sync automatically.
+
+#### 12.1 `getEndTool`
+
+Returns the fitted tool and every tool the URDF describes. Answered from cache,
+so it never touches the bus.
+
+**Request:**
+```json
+{
+  "command": "getEndTool"
+}
+```
+
+**Response:**
+```json
+{
+  "type": "endTool",
+  "present": true,
+  "toolTypeId": 3,
+  "known": true,
+  "tool": {
+    "id": 3,
+    "label": "Pen",
+    "jointName": "tool_pen",
+    "origin": { "x": 0, "y": 0, "z": -0.06, "roll": 0, "pitch": 0, "yaw": 0 },
+    "offsetMm": { "x": 0, "y": 0, "z": -60 },
+    "lengthMm": 60
+  },
+  "tools": [ "...every <end_tool> in the URDF..." ],
+  "lastProbeAt": 1755782400000,
+  "lastError": null
+}
+```
+
+| Field | Meaning |
+|---|---|
+| `present` | The tool answered the last probe |
+| `toolTypeId` | Register 3, or `null` if nothing answered |
+| `known` | The URDF describes that ID. `false` means the bare mount is in use |
+| `tool` | The tool definition being applied, or `null` |
+| `tools` | Every tool the URDF describes, for display |
+| `lastError` | Why the last probe failed, when it did |
+
+The same `endTool` message is **pushed unprompted** when a client connects and
+whenever the fitted tool changes, so clients do not need to poll.
+
+#### 12.2 `refreshEndTool`
+
+Asks the server to read register 3 now rather than waiting for the next poll —
+useful straight after swapping a tool.
+
+**Request:**
+```json
+{
+  "command": "refreshEndTool"
+}
+```
+
+**Response:** `{ "type": "success", "message": "End tool probe requested" }`,
+followed by an `endTool` message if the answer differs from the current state.
+
+`kinematicsGetInfo` also carries an `endTool` object with the same shape.
+
 ## Additional Resources
 
 - Server source code: `server.js`

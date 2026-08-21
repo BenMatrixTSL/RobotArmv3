@@ -27,6 +27,8 @@ class RobotArmClient {
         this.hasArmControl = false;
         this.controlHolder = null;
         this.onControlUpdate = null;
+        this.onEndToolUpdate = null; // Callback for end tool changes
+        this.endToolState = null;    // Last end tool report from the server
         this.onReconnected = null;
         this.onPushModeReady = null;
         // Linear path state
@@ -329,6 +331,18 @@ class RobotArmClient {
             }
             
             console.log('Joint configurations loaded:', this.jointConfigs);
+        }
+
+        // End tool: the controller read register 3 and resolved it against the
+        // URDF. Mirror it so the app measures to the same tool tip.
+        if (data.type === 'endTool') {
+            this.endToolState = data;
+            if (typeof applyEndToolState === 'function') {
+                applyEndToolState(data);
+            }
+            if (this.onEndToolUpdate) {
+                this.onEndToolUpdate(data);
+            }
         }
 
         if (data.type === 'urdfConfig') {

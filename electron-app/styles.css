@@ -3905,3 +3905,101 @@ body.touch-mode #gcodeContent {
     font-size: 15px;
     line-height: 1.55;
 }
+
+/* ---- End tool panel (Kinematics tab) ---- */
+.end-tool-panel .end-tool-summary {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin: 10px 0;
+}
+
+.end-tool-state {
+    font-size: 18px;
+    font-weight: 700;
+    color: #7f8c8d;
+}
+
+.end-tool-state-known { color: #157f5b; }
+.end-tool-state-unknown { color: #a96a05; }
+.end-tool-state-absent { color: #7f8c8d; }
+
+.end-tool-detail {
+    font-size: 13px;
+    color: #5a6878;
+}
+
+.end-tool-table-wrap {
+    overflow-x: auto;
+    margin-top: 12px;
+}
+
+.end-tool-table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 14px;
+}
+
+.end-tool-table th {
+    text-align: left;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #7f8c8d;
+    padding: 8px 10px;
+    border-bottom: 1px solid #ddd;
+    white-space: nowrap;
+}
+
+.end-tool-table td {
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+.end-tool-row-active {
+    background: #eaf6f1;
+    font-weight: 600;
+}
+
+.end-tool-id,
+.end-tool-offset {
+    font-family: 'Courier New', monospace;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.end-tool-badge {
+    display: inline-block;
+    font-family: inherit;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    background: #157f5b;
+    color: #fff;
+    border-radius: 999px;
+    padding: 2px 7px;
+    margin-left: 6px;
+}
+
+.end-tool-empty {
+    color: #888;
+    font-style: italic;
+}
+
+/* End tool cards are shown only for the fitted tool's actual controls */
+[data-end-tool-control][hidden] {
+    display: none !important;
+}
+
+.end-tool-none-note {
+    width: 100%;
+    margin: 4px 2px;
+    font-size: 13px;
+    font-style: italic;
+    color: #7f8c8d;
+}
+
+.end-tool-badge-warn {
+    background: #a96a05;
+}

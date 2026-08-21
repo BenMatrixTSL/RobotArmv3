@@ -38,6 +38,7 @@ const INSTANT_SERVER_COMMANDS = {
     setPiEthernetSettings: true,
     updatePiServerFromGit: true,
     kinematicsLoadURDF: true,
+    getEndTool: true, refreshEndTool: true,
     kinematicsForwardKinematics: true,
     kinematicsForwardKinematicsSteps: true,
     kinematicsForwardKinematicsBatch: true,
@@ -127,6 +128,118 @@ process.on('uncaughtException', (error) => {
 process.on('exit', (code) => { debugLog('Process exit, code=' + code); });
 
 // ===== URDF: load at startup so kinematics are ready before any client connects =====
+
+// ===== End Tool Kinematics =====
+// The ESP32 end tool reports what it is in register 3 (servo ID 64). That ID
+// selects one of the <end_tool> entries in kinematics.urdf, which is what
+// makes the reported TCP and the IK target the real working point of whatever
+// is fitted. Register 3 is the only source of truth: nothing here guesses.
+const END_TOOL_PROBE_CLIENT_ID = '__server_end_tool__';
+const END_TOOL_PROBE_INTERVAL_MS = 15000;
+
+let endToolState = {
+    present: false,          // did the tool answer the last probe?
+    toolTypeId: null,        // register 3, or null if it did not answer
+    known: false,            // does the URDF describe that ID?
+    tool: null,              // the resolved tool definition
+    lastProbeAt: null,
+    lastError: null
+};
+let endToolProbeTimer = null;
+
+/**
+ * Asks the end tool what it is. The reply comes back through
+ * handleWorkerMessage as a commandResponse carrying our internal client ID.
+ */
+function probeEndTool() {
+    if (!servoWorker) return;
+    servoWorker.send({
+        type: 'busCommand',
+        clientId: END_TOOL_PROBE_CLIENT_ID,
+        command: 'toolGetIdentity'
+    });
+}
+
+/**
+ * Applies a tool type ID to the kinematics and tells clients, but only when
+ * something actually changed.
+ * @param {number|null} toolTypeId - Register 3 value, or null if unreachable
+ * @param {string|null} errorMessage - Why it was unreachable, if it was
+ */
+function applyEndToolTypeId(toolTypeId, errorMessage) {
+    const previousId = endToolState.toolTypeId;
+    const previousPresent = endToolState.present;
+
+    const present = toolTypeId !== null && toolTypeId !== undefined;
+    let resolved = null;
+    try {
+        // With no tool answering, fall back to the bare mount (ID 0) so the
+        // TCP stays at the mount face rather than keeping a stale tool length.
+        resolved = robotKinematics.setActiveEndTool(present ? toolTypeId : 0);
+    } catch (e) {
+        debugLog('End tool: could not apply tool type to kinematics: ' + e.message, true);
+    }
+
+    endToolState = {
+        present: present,
+        toolTypeId: present ? toolTypeId : null,
+        // "known" means the URDF describes the ID the tool reported. With no
+        // tool answering there is no ID to know, whatever we fall back to.
+        known: present && !!resolved,
+        tool: resolved,
+        lastProbeAt: Date.now(),
+        lastError: errorMessage || null
+    };
+
+    if (previousId !== endToolState.toolTypeId || previousPresent !== present) {
+        if (present && resolved) {
+            debugLog('End tool: type ' + toolTypeId + ' ("' + resolved.label + '", ' +
+                     resolved.lengthMm.toFixed(1) + ' mm) — kinematics updated');
+            if (resolved.provisional) {
+                debugLog('End tool: "' + resolved.label + '" has an unmeasured length ' +
+                         '(' + resolved.lengthMm.toFixed(1) + ' mm is a placeholder). ' +
+                         'Positions to its tip will be wrong until kinematics.urdf is corrected.', true);
+            }
+        } else if (present) {
+            debugLog('End tool: type ' + toolTypeId + ' is not described in kinematics.urdf — ' +
+                     'using the bare mount. Add an <end_tool id="' + toolTypeId + '"/> joint.', true);
+        } else {
+            debugLog('End tool: not responding — using the bare mount' +
+                     (errorMessage ? ' (' + errorMessage + ')' : ''));
+        }
+        broadcastEndTool();
+    }
+}
+
+/**
+ * @returns {Object} The end tool payload sent to clients
+ */
+function buildEndToolPayload() {
+    return {
+        type: 'endTool',
+        present: endToolState.present,
+        toolTypeId: endToolState.toolTypeId,
+        known: endToolState.known,
+        tool: endToolState.tool,
+        tools: robotKinematics.isConfigured() ? robotKinematics.getEndTools() : [],
+        lastProbeAt: endToolState.lastProbeAt,
+        lastError: endToolState.lastError
+    };
+}
+
+function broadcastEndTool() {
+    const payload = JSON.stringify(buildEndToolPayload());
+    connectedClients.forEach((ws) => {
+        if (ws.readyState === WebSocket.OPEN) ws.send(payload);
+    });
+}
+
+function startEndToolProbing() {
+    if (endToolProbeTimer) return;
+    probeEndTool();
+    endToolProbeTimer = setInterval(probeEndTool, END_TOOL_PROBE_INTERVAL_MS);
+}
+
 const URDF_PATH = path.join(__dirname, 'kinematics.urdf');
 let serverUrdfText = null;
 try {
@@ -290,6 +403,9 @@ function handleWorkerMessage(msg) {
         ledIsRecovering = false;
         updateLed();
         if (firstBoot) startServer();
+        // Ask the end tool what it is, and keep asking so a tool change is
+        // picked up without restarting anything.
+        startEndToolProbing();
         return;
     }
 
@@ -297,6 +413,16 @@ function handleWorkerMessage(msg) {
         lastKnownJointConfigs = { count: msg.count, total: msg.total, joints: msg.joints };
         broadcastJointConfigs();
         updateLed();
+        return;
+    }
+
+    if (msg.type === 'commandResponse' && msg.clientId === END_TOOL_PROBE_CLIENT_ID) {
+        const payload = msg.payload || {};
+        if (payload.type === 'toolIdentity' && Number.isFinite(payload.toolTypeId)) {
+            applyEndToolTypeId(payload.toolTypeId, null);
+        } else {
+            applyEndToolTypeId(null, payload.message || 'end tool did not respond');
+        }
         return;
     }
 
@@ -630,6 +756,17 @@ async function handleCommand(ws, data) {
             break;
         }
 
+        case 'getEndTool': {
+            sendResponse(buildEndToolPayload());
+            break;
+        }
+
+        case 'refreshEndTool': {
+            probeEndTool();
+            sendResponse({ type: 'success', message: 'End tool probe requested' });
+            break;
+        }
+
         case 'kinematicsGetInfo': {
             try {
                 const info = robotKinematics.getKinematicsInfo();
@@ -747,6 +884,7 @@ function startServer() {
 
         // Send cached state immediately (no bus hit)
         ws.send(JSON.stringify({ type: 'status', joints: lastKnownStatusJoints, cacheAgeMs: lastKnownCacheAgeMs, pushed: true }));
+        ws.send(JSON.stringify(buildEndToolPayload()));
         ws.send(JSON.stringify({ type: 'jointConfigs', count: lastKnownJointConfigs.count, total: lastKnownJointConfigs.total, joints: lastKnownJointConfigs.joints }));
         ws.send(JSON.stringify(getControlStatusPayload(ws)));
         // Push URDF so client can configure its local kinematics without uploading a file

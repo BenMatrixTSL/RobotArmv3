@@ -246,6 +246,11 @@ class RobotKinematics {
         this.enableDebugLogging = true;
         // Approximate maximum reach of the robot in mm (computed from URDF)
         this.maxReachMm = null;
+        // End tools declared in the URDF, keyed by the tool type ID the ESP32
+        // end tool reports in register 3. activeEndToolId picks which one FK
+        // applies, and the Pi is what tells us that ID.
+        this.endTools = {};
+        this.activeEndToolId = 0;
     }
 
     /**
@@ -297,9 +302,105 @@ class RobotKinematics {
                 }
             });
         }
-        // Add a small safety margin
-        this.maxReachMm = totalLengthMm * 1.05;
+        this.baseLengthMm = totalLengthMm;
+
+        // Collect the end tools the URDF describes
+        this.endTools = {};
+        (this.urdfData.joints || []).forEach((j) => {
+            if (j.endTool && typeof j.endTool.id === 'number') {
+                const ox = j.origin.x || 0;
+                const oy = j.origin.y || 0;
+                const oz = j.origin.z || 0;
+                this.endTools[j.endTool.id] = {
+                    id: j.endTool.id,
+                    label: j.endTool.label,
+                    controls: j.endTool.controls,
+                    provisional: !!j.endTool.provisional,
+                    jointName: j.name,
+                    origin: j.origin,
+                    offsetMm: { x: ox * 1000, y: oy * 1000, z: oz * 1000 },
+                    lengthMm: Math.sqrt(ox * ox + oy * oy + oz * oz) * 1000
+                };
+            }
+        });
+        const toolCount = Object.keys(this.endTools).length;
+        if (toolCount > 0) {
+            console.log('Kinematics: URDF describes ' + toolCount + ' end tool(s): ' +
+                this.getEndTools().map(t => t.id + '=' + t.label).join(', '));
+        }
+
+        // Keep the selected tool if the new URDF still describes it
+        if (!this.endTools[this.activeEndToolId]) {
+            this.activeEndToolId = this.endTools[0] ? 0 : null;
+        }
+
+        this.updateMaxReach();
         console.log('Kinematics: approximate max reach =', this.maxReachMm.toFixed(1), 'mm');
+    }
+
+    /**
+     * Reach is the arm plus whatever tool is fitted.
+     */
+    updateMaxReach() {
+        const tool = this.getActiveEndTool();
+        const toolMm = tool ? tool.lengthMm : 0;
+        // Add a small safety margin
+        this.maxReachMm = ((this.baseLengthMm || 0) + toolMm) * 1.05;
+    }
+
+    /**
+     * Selects the end tool whose kinematics apply, by the tool type ID read
+     * from register 3 of the ESP32 end tool. An ID the URDF does not describe
+     * leaves the TCP at the bare mount face rather than guessing.
+     * @param {number|null} toolTypeId - Tool type ID, or null for none
+     * @returns {Object|null} The tool that is now active, or null
+     */
+    setActiveEndTool(toolTypeId) {
+        const id = (typeof toolTypeId === 'number' && isFinite(toolTypeId)) ? toolTypeId : null;
+        const previous = this.activeEndToolId;
+        this.activeEndToolId = id;
+        this.updateMaxReach();
+        const active = this.getActiveEndTool();
+        if (previous !== id) {
+            console.log('Kinematics: end tool ' + (active
+                ? ('#' + active.id + ' "' + active.label + '" (' + active.lengthMm.toFixed(1) + ' mm)')
+                : ('#' + id + ' — not described in the URDF, using the bare mount')));
+        }
+        return active;
+    }
+
+    /**
+     * @returns {Object|null} The active tool definition, or null when the ID
+     *   is unknown to the URDF
+     */
+    getActiveEndTool() {
+        if (this.activeEndToolId === null || this.activeEndToolId === undefined) {
+            return null;
+        }
+        return this.endTools[this.activeEndToolId] || null;
+    }
+
+    /**
+     * @returns {Array} Every end tool the URDF describes, by ID
+     */
+    getEndTools() {
+        return Object.keys(this.endTools)
+            .map((k) => this.endTools[k])
+            .sort((a, b) => a.id - b.id);
+    }
+
+    /**
+     * Tool state for the UI.
+     * @returns {Object}
+     */
+    getEndToolInfo() {
+        const active = this.getActiveEndTool();
+        return {
+            activeToolTypeId: this.activeEndToolId,
+            known: !!active,
+            tool: active,
+            tools: this.getEndTools()
+        };
     }
 
     /**
@@ -408,6 +509,15 @@ class RobotKinematics {
             }
         }
 
+        // ...then the fitted end tool, so the reported point is its working tip
+        const activeTool = this.getActiveEndTool();
+        if (activeTool) {
+            if (this.enableDebugLogging) {
+                console.log(`  End tool "${activeTool.label}": offset=(${activeTool.offsetMm.x.toFixed(1)}, ${activeTool.offsetMm.y.toFixed(1)}, ${activeTool.offsetMm.z.toFixed(1)}) mm`);
+            }
+            T = multiplyMatrices(T, originToMatrix(activeTool.origin));
+        }
+
         // Standard: position in meters is column 3 (rows 0,1,2). Convert to mm.
         const pMeters = positionFromMatrix(T);
         const position = {
@@ -466,10 +576,16 @@ class RobotKinematics {
             });
         }
 
-        // Apply fixed tool joints as additional step(s)
-        if (this.fixedToolJoints && this.fixedToolJoints.length > 0) {
-            for (let f = 0; f < this.fixedToolJoints.length; f++) {
-                const toolJoint = this.fixedToolJoints[f];
+        // Apply fixed tool joints, then the fitted end tool, as extra step(s)
+        const activeToolForSteps = this.getActiveEndTool();
+        const toolChain = (this.fixedToolJoints || []).concat(
+            activeToolForSteps
+                ? [{ name: activeToolForSteps.jointName, origin: activeToolForSteps.origin }]
+                : []
+        );
+        if (toolChain.length > 0) {
+            for (let f = 0; f < toolChain.length; f++) {
+                const toolJoint = toolChain[f];
                 const T_tool = originToMatrix(toolJoint.origin);
                 T = multiplyMatrices(T, T_tool);
 

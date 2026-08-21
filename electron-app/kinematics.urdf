@@ -78,4 +78,72 @@
     <origin xyz="0 0 -0.035" rpy="0 0 0"/>
   </joint>
 
+  <!-- ================= END TOOLS =================
+       One fixed joint per end tool, from tool_link (the mount face) to that
+       tool's own TCP frame. The id on <end_tool> is the value the ESP32 end
+       tool reports in register 3 (servo ID 64) — the Pi reads that register
+       and applies the matching joint below, so the reported tool tip and the
+       IK target are the real working point of whatever is fitted.
+
+       Offsets are measured from the mount face along -Z, the direction the
+       tool points (same sense as tool_mount above). Add rpy if a tool is
+       mounted at an angle, and x/y if its tip is off the mount axis.
+
+       provisional="true" marks a length nobody has measured yet. The app
+       shows a warning while such a tool is fitted, so a guessed number is
+       never mistaken for a real one.
+
+       "controls" lists the powered outputs the tool actually has. The app
+       shows only those cards on the Joint Control and Pendant tabs. Known
+       values: servo, pump, solenoid (comma separated; empty for a passive
+       tool). A tool with no controls attribute shows every card, because we
+       cannot tell what it has.
+
+       Lengths are measured from the mount face to the working tip, in
+       metres. Anything still marked provisional needs measuring.
+  -->
+  <link name="tcp_unassigned"/>
+  <link name="tcp_vacuum"/>
+  <link name="tcp_servo"/>
+  <link name="tcp_pen"/>
+
+  <!-- 0 — nothing fitted: the TCP is the mount face itself -->
+  <joint name="tool_unassigned" type="fixed">
+    <parent link="tool_link"/>
+    <child link="tcp_unassigned"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <end_tool id="0" label="Unassigned" controls=""/>
+  </joint>
+
+  <!-- 1 — pneumatic vacuum and valve: TCP is the face of the suction cup.
+       140.62 mm, measured. -->
+  <joint name="tool_vacuum" type="fixed">
+    <parent link="tool_link"/>
+    <child link="tcp_vacuum"/>
+    <origin xyz="0 0 -0.14062" rpy="0 0 0"/>
+    <end_tool id="1" label="Pneumatic vacuum and valve" controls="pump,solenoid"/>
+  </joint>
+
+  <!-- 2 — servo gripper: TCP is the midpoint between the closed fingers.
+       152.19 mm, measured. -->
+  <joint name="tool_servo" type="fixed">
+    <parent link="tool_link"/>
+    <child link="tcp_servo"/>
+    <origin xyz="0 0 -0.15219" rpy="0 0 0"/>
+    <end_tool id="2" label="Servo motor" controls="servo"/>
+  </joint>
+
+  <!-- 3 — pen: TCP is the writing tip, with the pen retracted.
+       NOT MEASURED. 155 mm is a deliberate overestimate: a tool set longer
+       than it really is stops short of the work, while one set too short
+       drives the tip into it. provisional="true" makes the app say so.
+       Replace with the measured value and drop the provisional flag.
+       If your pen holder lifts with the hobby servo, use controls="servo". -->
+  <joint name="tool_pen" type="fixed">
+    <parent link="tool_link"/>
+    <child link="tcp_pen"/>
+    <origin xyz="0 0 -0.155" rpy="0 0 0"/>
+    <end_tool id="3" label="Pen" controls="" provisional="true"/>
+  </joint>
+
 </robot>

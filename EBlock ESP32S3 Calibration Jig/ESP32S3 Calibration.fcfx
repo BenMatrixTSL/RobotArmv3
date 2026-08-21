@@ -117,8 +117,8 @@ Connected boards:
 					</def>
 				</variable>
 				<variable public='0' >
-					<def class_type='variable' name='IDs' type='u8' description='' isconst='0' isHidden='0' isinit='1' usrinit='&quot; 1,2,3,4,5,6 &quot;' setinit='{1,2,3,4,5,6}' >
-						<array size='6' />
+					<def class_type='variable' name='IDs' type='u8' description='' isconst='0' isHidden='0' isinit='1' usrinit='&quot; 1,2,3,4,5,6,64 &quot;' setinit='{1,2,3,4,5,6,64}' >
+						<array size='7' />
 					</def>
 				</variable>
 				<variable public='0' >
@@ -1169,7 +1169,7 @@ Connected boards:
 					<value target='DrawHighlight' data='1' />
 					<value target='UseCallback' data='1' />
 					<value target='TouchCallback' data='DC_Touched' />
-					<value target='Text' data='Detect Servo' />
+					<value target='Text' data='Detect Servos' />
 					<value target='Font' data='000' />
 					<value target='HAlignment' data='001' />
 					<value target='VAlignment' data='001' />
@@ -1850,7 +1850,7 @@ Connected boards:
 					<value target='DrawHighlight' data='1' />
 					<value target='UseCallback' data='1' />
 					<value target='TouchCallback' data='DC_Touched' />
-					<value target='Text' data='Zero All' />
+					<value target='Text' data='Home All' />
 					<value target='Font' data='000' />
 					<value target='HAlignment' data='001' />
 					<value target='VAlignment' data='001' />
@@ -1868,10 +1868,10 @@ Connected boards:
 	<keymap />
 	<panel2d shadows='0' lighting='2' brightness='0' >
 		<background rgb='7292207' img='' style='0' />
-		<camera xe='0' ye='0' ze='1281.65' xt='0' yt='0' zt='0' xquat='0' yquat='0' zquat='0' wquat='1' />
-		<viewport dx='298' dy='820' zoom='28.1341' fix_topleft='0' />
+		<camera xe='0' ye='0' ze='2004.19' xt='0' yt='0' zt='0' xquat='0' yquat='0' zquat='0' wquat='1' />
+		<viewport dx='466' dy='425' zoom='28.1341' fix_topleft='0' />
 		<page x='1000' y='1000' show='0' rgb='7360576' />
-		<winpos ID='7005' RectRecentFloat='0,458,644,873' RectRecentDocked='0,0,298,843' RecentFrameAlignment='16384' RecentRowIndex='0' IsFloating='0' MRUWidth='32767' PinState='0' IsMaximized='0' IsVisible='0' />
+		<winpos ID='7005' RectRecentFloat='0,458,644,873' RectRecentDocked='0,0,466,448' RecentFrameAlignment='16384' RecentRowIndex='0' IsFloating='0' MRUWidth='32767' PinState='0' IsMaximized='0' IsVisible='0' />
 	</panel2d>
 	<panel3d shadows='0' lighting='2' brightness='0' perspective='1' >
 		<background rgb='8409120' img='' style='0' />
@@ -1884,28 +1884,28 @@ Connected boards:
 		<camerakey4 xe='-300' ye='-6.66134e-14' ze='6.66134e-14' xt='0' yt='0' zt='0' xquat='-0.5' yquat='0.5' zquat='0.5' wquat='0.5' />
 		<camerakey5 xe='300' ye='-6.66134e-14' ze='6.66134e-14' xt='0' yt='0' zt='0' xquat='-0.5' yquat='-0.5' zquat='-0.5' wquat='0.5' />
 		<camerakey6 xe='-173.205' ye='-173.205' ze='173.205' xt='0' yt='0' zt='0' xquat='-0.424708' yquat='0.17592' zquat='0.339851' wquat='0.820473' />
-		<winpos ID='7004' RectRecentFloat='764,124,1087,942' RectRecentDocked='0,0,495,920' RecentFrameAlignment='16384' RecentRowIndex='0' IsFloating='0' MRUWidth='32767' PinState='0' IsMaximized='0' IsVisible='0' />
+		<winpos ID='7004' RectRecentFloat='764,124,1087,942' RectRecentDocked='0,0,462,872' RecentFrameAlignment='16384' RecentRowIndex='0' IsFloating='0' MRUWidth='32767' PinState='0' IsMaximized='0' IsVisible='0' />
 	</panel3d>
 	<panels2d count='2' >
 		<panel2d_0 id='0' name='2D Panel' type='0' >
-			<winpos ID='1171' RectRecentFloat='-721,89,-71,539' RectRecentDocked='994,141,1489,1013' RecentFrameAlignment='16384' RecentRowIndex='0' IsFloating='1' MRUWidth='32767' PinState='0' IsMaximized='0' IsVisible='1' />
+			<winpos ID='1171' RectRecentFloat='1209,97,1859,547' RectRecentDocked='927,141,1393,1013' RecentFrameAlignment='16384' RecentRowIndex='0' IsFloating='1' MRUWidth='32767' PinState='0' IsMaximized='0' IsVisible='1' />
 			<background fill='288230376151053813' showgrid='1' gridstyle='0' gridsize='5' gridbrush='71776119075691740' snaptogrid='1' fitcomp='0' disp_x='300' disp_y='400' scale='100' disp_col='16777215' />
 		</panel2d_0>
 		<panel2d_1 id='1' name='Scene0' type='1' >
-			<winpos ID='1172' RectRecentFloat='958,-607,1560,-108' RectRecentDocked='994,141,1489,1013' RecentFrameAlignment='16384' RecentRowIndex='0' IsFloating='1' MRUWidth='32767' PinState='0' IsMaximized='0' IsVisible='1' />
+			<winpos ID='1172' RectRecentFloat='184,24,786,523' RectRecentDocked='927,141,1393,1013' RecentFrameAlignment='16384' RecentRowIndex='0' IsFloating='1' MRUWidth='32767' PinState='0' IsMaximized='0' IsVisible='1' />
 			<background fill='288230376151053813' showgrid='1' gridstyle='0' gridsize='5' gridbrush='71776119075691740' snaptogrid='0' fitcomp='0' disp_x='480' disp_y='320' scale='110' disp_col='13816530' />
 		</panel2d_1>
 	</panels2d>
 	<layout >
-		<view type='0' name='Main' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA2QMAAGMDAAA' zoom='100' scrollx='0' scrolly='135' flags='0' />
-		<view type='0' name='DC_Touched' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA2QMAAGMDAAA' zoom='85' scrollx='0' scrolly='2508' flags='0' />
-		<view type='0' name='SwitchInterrupt' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA2QMAAGMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
-		<view type='0' name='DetectServos' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA2QMAAGMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
-		<view type='0' name='MoveServoBy' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA2QMAAGMDAAA' zoom='100' scrollx='0' scrolly='507' flags='0' />
-		<view type='0' name='AssignID' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA2QMAAGMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
-		<view type='0' name='SetCenterPoint' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA2QMAAGMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
-		<view type='0' name='AssignActiveServo' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA2QMAAGMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
-		<view type='0' name='ZeroAllServos' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA2QMAAGMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
+		<view type='0' name='Main' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAAnwMAAGMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
+		<view type='0' name='DC_Touched' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAAnwMAAGMDAAA' zoom='85' scrollx='0' scrolly='0' flags='0' />
+		<view type='0' name='SwitchInterrupt' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAAnwMAAGMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
+		<view type='0' name='DetectServos' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAAnwMAAGMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
+		<view type='0' name='MoveServoBy' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAAnwMAAGMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
+		<view type='0' name='AssignID' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAAnwMAAGMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
+		<view type='0' name='SetCenterPoint' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAAnwMAAGMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
+		<view type='0' name='AssignActiveServo' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAAnwMAAGMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
+		<view type='0' name='ZeroAllServos' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAAnwMAAGMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
 	</layout>
 </document>
 </root>
