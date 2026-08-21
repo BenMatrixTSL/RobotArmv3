@@ -283,7 +283,12 @@ function getBlocklyToolbox() {
                     },
                     {
                         kind: 'block',
-                        type: 'move_xyz_offset'
+                        type: 'move_xyz_offset',
+                        inputs: {
+                            DX: { shadow: { type: 'math_number', fields: { NUM: 0 } } },
+                            DY: { shadow: { type: 'math_number', fields: { NUM: 0 } } },
+                            DZ: { shadow: { type: 'math_number', fields: { NUM: 0 } } }
+                        }
                     },
                     {
                         kind: 'block',
@@ -606,14 +611,15 @@ function defineCustomBlocks() {
     // Move TCP by an XYZ offset relative to the current position
     Blockly.Blocks['move_xyz_offset'] = {
         init: function() {
-            this.appendDummyInput()
-                .appendField('Move TCP by dX')
-                .appendField(new Blockly.FieldNumber(0, -500, 500, 1), 'DX')
-                .appendField('mm  dY')
-                .appendField(new Blockly.FieldNumber(0, -500, 500, 1), 'DY')
-                .appendField('mm  dZ')
-                .appendField(new Blockly.FieldNumber(0, -500, 500, 1), 'DZ')
-                .appendField('mm');
+            this.appendValueInput('DX')
+                .setCheck('Number')
+                .appendField('Move TCP by dX (mm)');
+            this.appendValueInput('DY')
+                .setCheck('Number')
+                .appendField('dY (mm)');
+            this.appendValueInput('DZ')
+                .setCheck('Number')
+                .appendField('dZ (mm)');
             this.appendDummyInput()
                 .appendField('at speed')
                 .appendField(new Blockly.FieldNumber(40, 0, 300, 1), 'SPEED')
@@ -621,7 +627,7 @@ function defineCustomBlocks() {
             this.setPreviousStatement(true, null);
             this.setNextStatement(true, null);
             this.setColour(200);
-            this.setTooltip('Move the end effector by an XYZ offset from the current position using kinematics');
+            this.setTooltip('Move the end effector by an XYZ offset from the current position using kinematics. Plug in a number, variable, or math block for dX/dY/dZ.');
         }
     };
 
@@ -1834,9 +1840,9 @@ function registerBlocklyGenerators() {
     // Move TCP by XYZ offset using kinematics
     Blockly.JavaScript['move_xyz_offset'] = function(block) {
         const blockId = block.id;
-        const dx = block.getFieldValue('DX') || 0;
-        const dy = block.getFieldValue('DY') || 0;
-        const dz = block.getFieldValue('DZ') || 0;
+        const dx = Blockly.JavaScript.valueToCode(block, 'DX', Blockly.JavaScript.ORDER_ATOMIC) || '0';
+        const dy = Blockly.JavaScript.valueToCode(block, 'DY', Blockly.JavaScript.ORDER_ATOMIC) || '0';
+        const dz = Blockly.JavaScript.valueToCode(block, 'DZ', Blockly.JavaScript.ORDER_ATOMIC) || '0';
         const speedDegreesPerSecond = block.getFieldValue('SPEED') || 40;
         const speedStepsPerSecond = degreesPerSecondToStepsPerSecond(speedDegreesPerSecond);
 
