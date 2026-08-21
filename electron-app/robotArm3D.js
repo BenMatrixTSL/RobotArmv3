@@ -186,7 +186,14 @@ class RobotArm3D {
                     console.log('URDF robot loaded for 3D visualization');
                     this.urdfRobot = robot;
                     this.scene.add(robot);
-                    if (this.robotArm) this.robotArm.visible = false;
+                    // NOTE: this bundled URDFLoader never implements setJointValue()
+                    // on the parsed robot, and kinematics.urdf has no <visual> tags
+                    // to render anyway — so the URDF-driven path in update() (which
+                    // checks this.urdfRobot.setJointValue) never actually runs.
+                    // updateArmGeometry()'s manual fallback is the only thing that
+                    // ever draws the arm; hiding this.robotArm here left the whole
+                    // arm invisible with only free-floating markers (tool mount,
+                    // stored positions) visible. Leave it shown.
                 });
             } catch (error) {
                 console.error('Failed to load URDF robot:', error);
