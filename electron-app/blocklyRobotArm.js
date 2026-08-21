@@ -1826,8 +1826,8 @@ function registerBlocklyGenerators() {
                         await robotArmClient.moveJoint(i + 1, refinedAngles[i], ${speedStepsPerSecond});
                     }
 
-                    const posErr = refined.positionErrorMm.toFixed(2);
-                    const oriErr = refined.orientationErrorDeg.toFixed(1);
+                    const posErr = formatFiniteNumber(refined.positionErrorMm, 2);
+                    const oriErr = formatFiniteNumber(refined.orientationErrorDeg, 1);
                     const ach = refined.achievedPosition;
                     const xyzStr = ach ? ' X=' + ach.x.toFixed(1) + ' Y=' + ach.y.toFixed(1) + ' Z=' + ach.z.toFixed(1) + ' mm' : '';
                     appendBlocklyOutput('Accuracy: position ' + posErr + ' mm, orientation ' + oriErr + '°' + (xyzStr ? '; achieved' + xyzStr : ''));
@@ -1923,8 +1923,8 @@ function registerBlocklyGenerators() {
                         await robotArmClient.moveJoint(i + 1, refinedAngles[i], ${speedStepsPerSecond});
                     }
 
-                    const posErr = refined.positionErrorMm.toFixed(2);
-                    const oriErr = refined.orientationErrorDeg.toFixed(1);
+                    const posErr = formatFiniteNumber(refined.positionErrorMm, 2);
+                    const oriErr = formatFiniteNumber(refined.orientationErrorDeg, 1);
                     const ach = refined.achievedPosition;
                     const xyzStr = ach ? ' X=' + ach.x.toFixed(1) + ' Y=' + ach.y.toFixed(1) + ' Z=' + ach.z.toFixed(1) + ' mm' : '';
                     appendBlocklyOutput('Accuracy: position ' + posErr + ' mm, orientation ' + oriErr + '°' + (xyzStr ? '; achieved' + xyzStr : ''));

@@ -57,6 +57,20 @@ let useSimulatedAngles = false; // Whether to use simulated angles instead of re
 let simulatedAngles = [0, 0, 0, 0]; // Simulated joint angles
 const PI_SERVER_PORT = 8080; // ST3215 server port is fixed
 
+/**
+ * Formats a number for display, guarding against null/Infinity. IK
+ * refinement reports Infinity when it can't find a solution (e.g. an
+ * unreachable target) — that value becomes null after a JSON round-trip
+ * over the WebSocket (JSON has no Infinity), so accuracy figures can
+ * arrive as null even though the server never intended to send one.
+ * @param {*} value
+ * @param {number} decimals
+ * @returns {string}
+ */
+function formatFiniteNumber(value, decimals) {
+    return (typeof value === 'number' && isFinite(value)) ? value.toFixed(decimals) : 'unreachable';
+}
+
 // Movement mode — 'ptp' (point-to-point, all joints simultaneously) or
 // 'linear' (Cartesian straight-line interpolation computed on the server).
 let movementMode         = 'ptp';
@@ -3833,7 +3847,7 @@ async function moveToXYZ(xArg, yArg, zArg, orientationOverride, skipRefinement) 
         }
 
         if (lastAccuracy) {
-            const msg = `Move complete. Position error: ${lastAccuracy.positionErrorMm.toFixed(2)} mm, orientation: ${lastAccuracy.orientationErrorDeg.toFixed(1)}°`;
+            const msg = `Move complete. Position error: ${formatFiniteNumber(lastAccuracy.positionErrorMm, 2)} mm, orientation: ${formatFiniteNumber(lastAccuracy.orientationErrorDeg, 1)}°`;
             showAppMessage(msg);
         }
         
@@ -7199,7 +7213,7 @@ async function testInverseKinematics() {
         } else {
             const anglesText = angles.map((a, i) => `Joint ${i + 1}: ${a.toFixed(2)}°`).join('<br>');
             const accLine = refined && refined.achievedPosition
-                ? `<br><strong>Achieved position:</strong> X: ${refined.achievedPosition.x.toFixed(2)} mm, Y: ${refined.achievedPosition.y.toFixed(2)} mm, Z: ${refined.achievedPosition.z.toFixed(2)} mm<br><strong>Accuracy:</strong> position ${refined.positionErrorMm.toFixed(2)} mm, orientation ${refined.orientationErrorDeg.toFixed(1)}°`
+                ? `<br><strong>Achieved position:</strong> X: ${refined.achievedPosition.x.toFixed(2)} mm, Y: ${refined.achievedPosition.y.toFixed(2)} mm, Z: ${refined.achievedPosition.z.toFixed(2)} mm<br><strong>Accuracy:</strong> position ${formatFiniteNumber(refined.positionErrorMm, 2)} mm, orientation ${formatFiniteNumber(refined.orientationErrorDeg, 1)}°`
                 : '';
             document.getElementById('ikResult').innerHTML = `
                 <strong>Joint Angles:</strong><br>
