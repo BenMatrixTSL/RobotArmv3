@@ -750,6 +750,20 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.body.classList.remove('touch-scrolling');
             }
         });
+    } else if (window.location.protocol === 'http:' || window.location.protocol === 'https:') {
+        // Accessed remotely over the network (not the Electron desktop app,
+        // which loads index.html via file://, and not the kiosk build above).
+        // This page is always served by the same Pi that runs the WebSocket
+        // control server, so the controller address is just this page's own
+        // host — skip the manual "enter the address, click Connect" step.
+        const addrInput = document.getElementById('piAddress');
+        if (addrInput && window.location.hostname) {
+            addrInput.value = window.location.hostname;
+        }
+        setTimeout(function () {
+            const connectButton = document.getElementById('connectButton');
+            if (connectButton) connectButton.click();
+        }, 500);
     }
 
     // Local Raspberry Pi panel (only shown on the Pi)
