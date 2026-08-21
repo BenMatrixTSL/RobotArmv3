@@ -513,11 +513,11 @@ function generateJointStatusCards() {
                     <div class="status-value compact">Temperature: <span id="joint${i}Temperature">0</span>°C</div>
                     <div class="joint-field-group compact">
                         <label for="joint${i}Speed">Speed (deg/s):</label>
-                        <input type="number" id="joint${i}Speed" value="45" min="0" max="300" step="1">
+                        <input type="number" id="joint${i}Speed" value="40" min="0" max="300" step="1">
                     </div>
                     <div class="joint-field-group compact">
                         <label for="joint${i}Acceleration">Accel (0-254):</label>
-                        <input type="number" id="joint${i}Acceleration" value="50" min="0" max="254" step="1" onchange="applyJointAcceleration(${i})">
+                        <input type="number" id="joint${i}Acceleration" value="5" min="0" max="254" step="1" onchange="applyJointAcceleration(${i})">
                     </div>
                 </div>
                 <div class="joint-control-fields joint-control-compact">
@@ -3007,9 +3007,9 @@ function moveJoint(jointNumber) {
         console.warn('moveJoint: failed to clamp to URDF limits, sending raw angle', e);
     }
     
-    // Get the speed from the input field (optional, defaults to 45 degrees/s)
+    // Get the speed from the input field (optional, defaults to 40 degrees/s)
     const speedInputElement = document.getElementById(`joint${jointNumber}Speed`);
-    let speedDegreesPerSecond = 45; // Default speed in degrees/s
+    let speedDegreesPerSecond = 40; // Default speed in degrees/s
     if (speedInputElement) {
         // Check if it's an input element (not a span)
         if (speedInputElement.tagName === 'INPUT') {
@@ -3017,7 +3017,7 @@ function moveJoint(jointNumber) {
             if (!isNaN(speedValue) && speedValue >= 0 && speedValue <= 300) {
                 speedDegreesPerSecond = speedValue;
             } else if (speedInputElement.value !== '') {
-                console.warn(`Invalid speed value for joint ${jointNumber}: ${speedInputElement.value}, using default 45 degrees/s`);
+                console.warn(`Invalid speed value for joint ${jointNumber}: ${speedInputElement.value}, using default 40 degrees/s`);
             }
         } else {
             console.error(`Element joint${jointNumber}Speed is not an input field (found ${speedInputElement.tagName})`);
@@ -3038,8 +3038,8 @@ function moveJoint(jointNumber) {
         speedStepsPerSecond = Math.round(speedDegreesPerSecond * 11.37);
     }
     
-    // Get the acceleration from the input field (optional, defaults to 50)
-    let accelerationValue = 50;
+    // Get the acceleration from the input field (optional, defaults to 5)
+    let accelerationValue = 5;
     const accelerationInputElement = document.getElementById(`joint${jointNumber}Acceleration`);
     if (accelerationInputElement) {
         if (accelerationInputElement.tagName === 'INPUT') {
@@ -3047,7 +3047,7 @@ function moveJoint(jointNumber) {
             if (!isNaN(acc) && acc >= 0 && acc <= 254) {
                 accelerationValue = acc;
             } else if (accelerationInputElement.value !== '') {
-                console.warn(`Invalid acceleration value for joint ${jointNumber}: ${accelerationInputElement.value}, using default 50`);
+                console.warn(`Invalid acceleration value for joint ${jointNumber}: ${accelerationInputElement.value}, using default 5`);
             }
         } else {
             console.error(`Element joint${jointNumber}Acceleration is not an input field (found ${accelerationInputElement.tagName})`);
@@ -3133,7 +3133,7 @@ async function homeAllJoints() {
     jogCommandedPose = null; // arm is moving to a known position; next jog re-initialises
 
     // Convert default speed from degrees/s to steps/s
-    const defaultSpeedDegreesPerSecond = 45;
+    const defaultSpeedDegreesPerSecond = 40;
     let speedStepsPerSecond;
     if (typeof degreesPerSecondToStepsPerSecond === 'function') {
         speedStepsPerSecond = degreesPerSecondToStepsPerSecond(defaultSpeedDegreesPerSecond);
@@ -3411,7 +3411,7 @@ async function moveToStoredPositionFromPendant() {
     }
 
     const numJoints = getNumJoints();
-    const speedDegreesPerSecond = 45;
+    const speedDegreesPerSecond = 40;
     showAppMessage(`Moving to stored position ${positionNumber}...`);
 
     // Use dead-zone-aware joint movement
@@ -3474,7 +3474,7 @@ function quickMove(jointNumber, direction) {
     }
 
     const speedInputElement = document.getElementById(`joint${jointNumber}Speed`);
-    let speedDegreesPerSecond = 45; // Default speed in degrees/s
+    let speedDegreesPerSecond = 40; // Default speed in degrees/s
     if (speedInputElement && speedInputElement.tagName === 'INPUT') {
         const speedValue = parseFloat(speedInputElement.value);
         if (!isNaN(speedValue) && speedValue >= 0 && speedValue <= 300) {
@@ -3798,7 +3798,7 @@ async function moveToXYZ(xArg, yArg, zArg, orientationOverride, skipRefinement) 
 
             // Dispatch all joints simultaneously with proportional speeds so they arrive together.
             const defaultStepsPerSec = typeof degreesPerSecondToStepsPerSecond === 'function'
-                ? degreesPerSecondToStepsPerSecond(45) : 1500;
+                ? degreesPerSecondToStepsPerSecond(40) : 455;
             const coordSpeeds = computeCoordinatedSpeeds(refAngles, jointAngles, defaultStepsPerSec);
             const xyzMovePromises = [];
             for (let i = 0; i < jointAngles.length; i++) {
@@ -4466,7 +4466,7 @@ async function moveJointsToAnglesWithDeadZones(targetAngles, speedDegreesPerSeco
     }
 
     const numJoints = getNumJoints();
-    const baseSpeed = speedDegreesPerSecond || 45;
+    const baseSpeed = speedDegreesPerSecond || 40;
 
     // Convert speed to steps/s
     let speedStepsPerSecond;
@@ -4702,7 +4702,7 @@ function loadDefaultGCode() {
 ; 
 ; Commands used:
 ;   J1=angle J2=angle J3=angle J4=angle J5=angle J6=angle - Move individual or multiple joints simultaneously
-;   F speed - Set movement speed in degrees/s (0-300, default: 45)
+;   F speed - Set movement speed in degrees/s (0-300, default: 40)
 ;   G28 - Home all joints to 0 degrees
 ;   M0 - Pause (default: 2 seconds)
 ;   M0 P milliseconds - Pause for specified time (e.g., M0 P5000 = pause 5 seconds)
@@ -4980,7 +4980,7 @@ async function executeGCodeCommand(command) {
             }
             
             // Get speed from F parameter (feed rate) - F parameter is in degrees/s
-            const speedDegreesPerSecond = command.params.F || 45; // Default speed in degrees/s
+            const speedDegreesPerSecond = command.params.F || 40; // Default speed in degrees/s
             
             gcodeProcessor.log(`Moving to stored position ${positionNumber} (${positionLabel}) at speed ${speedDegreesPerSecond} degrees/s`);
             
@@ -5057,7 +5057,7 @@ async function executeGCodeCommand(command) {
         }
 
         // Get speed from F parameter (feed rate) - F parameter is in degrees/s
-        const speedDegreesPerSecond = command.params.F || 45; // Default speed in degrees/s
+        const speedDegreesPerSecond = command.params.F || 40; // Default speed in degrees/s
         // Convert degrees/s to steps/s for the API
         let speedStepsPerSecond;
         if (typeof degreesPerSecondToStepsPerSecond === 'function') {
@@ -5185,7 +5185,7 @@ async function executeGCodeCommand(command) {
         gcodeProcessor.log('Homing all joints to 0 degrees');
         
         // Get speed from F parameter (in degrees/s)
-        const speedDegreesPerSecond = command.params.F || 45; // Default speed in degrees/s
+        const speedDegreesPerSecond = command.params.F || 40; // Default speed in degrees/s
         // Convert degrees/s to steps/s for the API
         let speedStepsPerSecond;
         if (typeof degreesPerSecondToStepsPerSecond === 'function') {
@@ -5233,7 +5233,7 @@ async function executeGCodeCommand(command) {
         // Uses linear interpolation to scale speeds so all joints arrive simultaneously
         
         // Get speed from F parameter (in degrees/s)
-        const speedDegreesPerSecond = command.params.F || 45; // Default speed in degrees/s
+        const speedDegreesPerSecond = command.params.F || 40; // Default speed in degrees/s
         const numJoints = getNumJoints();
         let movedAny = false;
         
@@ -5639,7 +5639,7 @@ async function runRapidProgram() {
     const numJoints = getNumJoints();
 
     // Fixed speed for now (degrees per second)
-    const speedDegreesPerSecond = 45;
+    const speedDegreesPerSecond = 40;
     let speedStepsPerSecond;
     if (typeof degreesPerSecondToStepsPerSecond === 'function') {
         speedStepsPerSecond = degreesPerSecondToStepsPerSecond(speedDegreesPerSecond);

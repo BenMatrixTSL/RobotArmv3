@@ -581,9 +581,9 @@ class RobotArmClient {
      */
     setAcceleration(jointNumber, acceleration) {
         // Ensure acceleration is a valid number and within range
-        const accValue = (typeof acceleration === 'number' && !isNaN(acceleration) && acceleration >= 0) 
-            ? Math.max(0, Math.min(254, Math.round(acceleration))) 
-            : 50; // Default acceleration
+        const accValue = (typeof acceleration === 'number' && !isNaN(acceleration) && acceleration >= 0)
+            ? Math.max(0, Math.min(254, Math.round(acceleration)))
+            : 5; // Default acceleration
         return this.sendCommand('setAcceleration', {
             joint: jointNumber,
             acceleration: accValue

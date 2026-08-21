@@ -431,7 +431,7 @@ function defineCustomBlocks() {
                 .appendField('degrees');
             this.appendDummyInput()
                 .appendField('at speed')
-                .appendField(new Blockly.FieldNumber(45, 0, 300, 1), 'SPEED')
+                .appendField(new Blockly.FieldNumber(40, 0, 300, 1), 'SPEED')
                 .appendField('degrees/s');
             this.setPreviousStatement(true, null);
             this.setNextStatement(true, null);
@@ -485,7 +485,7 @@ function defineCustomBlocks() {
                 .appendField('Joint 6 (degrees)');
             this.appendDummyInput()
                 .appendField('at speed')
-                .appendField(new Blockly.FieldNumber(45, 0, 300, 1), 'SPEED')
+                .appendField(new Blockly.FieldNumber(40, 0, 300, 1), 'SPEED')
                 .appendField('degrees/s');
             this.setPreviousStatement(true, null);
             this.setNextStatement(true, null);
@@ -543,7 +543,7 @@ function defineCustomBlocks() {
                 .appendField(new Blockly.FieldDropdown(this.getPositions), 'POSITION');
             this.appendDummyInput()
                 .appendField('at speed')
-                .appendField(new Blockly.FieldNumber(45, 0, 300, 1), 'SPEED')
+                .appendField(new Blockly.FieldNumber(40, 0, 300, 1), 'SPEED')
                 .appendField('degrees/s');
             this.setPreviousStatement(true, null);
             this.setNextStatement(true, null);
@@ -588,7 +588,7 @@ function defineCustomBlocks() {
                 .appendField('mm');
             this.appendDummyInput()
                 .appendField('at speed')
-                .appendField(new Blockly.FieldNumber(45, 0, 300, 1), 'SPEED')
+                .appendField(new Blockly.FieldNumber(40, 0, 300, 1), 'SPEED')
                 .appendField('degrees/s');
             this.setPreviousStatement(true, null);
             this.setNextStatement(true, null);
@@ -610,7 +610,7 @@ function defineCustomBlocks() {
                 .appendField('mm');
             this.appendDummyInput()
                 .appendField('at speed')
-                .appendField(new Blockly.FieldNumber(45, 0, 300, 1), 'SPEED')
+                .appendField(new Blockly.FieldNumber(40, 0, 300, 1), 'SPEED')
                 .appendField('degrees/s');
             this.setPreviousStatement(true, null);
             this.setNextStatement(true, null);
@@ -666,7 +666,7 @@ function defineCustomBlocks() {
                 .appendField('Set Acceleration for Joint')
                 .appendField(new Blockly.FieldNumber(1, 1, 6, 1), 'JOINT')
                 .appendField('to')
-                .appendField(new Blockly.FieldNumber(50, 0, 254, 1), 'ACCELERATION')
+                .appendField(new Blockly.FieldNumber(5, 0, 254, 1), 'ACCELERATION')
                 .appendField('(0-254)');
             this.setPreviousStatement(true, null);
             this.setNextStatement(true, null);
@@ -1099,7 +1099,7 @@ function loadBlocklyExample() {
     num1_6.render();
     moveAll1.getInput('JOINT6').connection.connect(num1_6.outputConnection);
     
-    moveAll1.setFieldValue('45', 'SPEED');
+    moveAll1.setFieldValue('40', 'SPEED');
     moveAll1.initSvg();
     moveAll1.render();
 
@@ -1112,7 +1112,7 @@ function loadBlocklyExample() {
     const moveJoint1 = blocklyWorkspace.newBlock('move_joint');
     moveJoint1.setFieldValue('1', 'JOINT');
     moveJoint1.setFieldValue('45', 'ANGLE');
-    moveJoint1.setFieldValue('45', 'SPEED');
+    moveJoint1.setFieldValue('40', 'SPEED');
     moveJoint1.initSvg();
     moveJoint1.render();
     wait1.nextConnection.connect(moveJoint1.previousConnection);
@@ -1162,7 +1162,7 @@ function loadBlocklyExample() {
     num2_6.render();
     moveAll2.getInput('JOINT6').connection.connect(num2_6.outputConnection);
     
-    moveAll2.setFieldValue('45', 'SPEED');
+    moveAll2.setFieldValue('40', 'SPEED');
     moveAll2.initSvg();
     moveAll2.render();
     wait2.nextConnection.connect(moveAll2.previousConnection);
@@ -1372,7 +1372,7 @@ function setAllJointAccelerations() {
 
     // Ask for a single acceleration value. showPrompt is the in-app dialog:
     // window.prompt draws OS buttons that cannot be made touch-sized.
-    showPrompt('Enter acceleration value for all joints (0-254):', '50').then(input => {
+    showPrompt('Enter acceleration value for all joints (0-254):', '5').then(input => {
         // If the user cancelled, do nothing
         if (input === null) {
             return;
@@ -1468,7 +1468,7 @@ function registerBlocklyGenerators() {
         const blockId = block.id;
         const joint = block.getFieldValue('JOINT');
         const angle = block.getFieldValue('ANGLE');
-        const speedDegreesPerSecond = block.getFieldValue('SPEED') || 45;
+        const speedDegreesPerSecond = block.getFieldValue('SPEED') || 40;
         return `
         highlightBlocklyBlock('${blockId}');
         await checkBlocklyPauseStop();
@@ -1498,7 +1498,7 @@ function registerBlocklyGenerators() {
         const joint4 = Blockly.JavaScript.valueToCode(block, 'JOINT4', Blockly.JavaScript.ORDER_ATOMIC) || '0';
         const joint5 = Blockly.JavaScript.valueToCode(block, 'JOINT5', Blockly.JavaScript.ORDER_ATOMIC) || '0';
         const joint6 = Blockly.JavaScript.valueToCode(block, 'JOINT6', Blockly.JavaScript.ORDER_ATOMIC) || '0';
-        const speedDegreesPerSecond = block.getFieldValue('SPEED') || 45;
+        const speedDegreesPerSecond = block.getFieldValue('SPEED') || 40;
         // Sanitize block ID to make it a valid JavaScript identifier
         const sanitizedId = blockId.replace(/[^a-zA-Z0-9_]/g, '_');
         // Use unique variable names based on block ID to avoid conflicts
@@ -1539,7 +1539,7 @@ function registerBlocklyGenerators() {
     Blockly.JavaScript['set_acceleration'] = function(block) {
         const blockId = block.id;
         const joint = block.getFieldValue('JOINT');
-        const acceleration = block.getFieldValue('ACCELERATION') || 50;
+        const acceleration = block.getFieldValue('ACCELERATION') || 5;
         return `
         highlightBlocklyBlock('${blockId}');
         await checkBlocklyPauseStop();
@@ -1684,7 +1684,7 @@ function registerBlocklyGenerators() {
         // Sanitize block ID to make it a valid JavaScript identifier
         const sanitizedId = blockId.replace(/[^a-zA-Z0-9_]/g, '_');
         const positionNumber = block.getFieldValue('POSITION');
-        const speedDegreesPerSecond = block.getFieldValue('SPEED') || 45;
+        const speedDegreesPerSecond = block.getFieldValue('SPEED') || 40;
         
         // Get the position data
         if (typeof getPosition === 'function') {
@@ -1741,7 +1741,7 @@ function registerBlocklyGenerators() {
         const x = block.getFieldValue('X') || 0;
         const y = block.getFieldValue('Y') || 0;
         const z = block.getFieldValue('Z') || 0;
-        const speedDegreesPerSecond = block.getFieldValue('SPEED') || 45;
+        const speedDegreesPerSecond = block.getFieldValue('SPEED') || 40;
         const speedStepsPerSecond = degreesPerSecondToStepsPerSecond(speedDegreesPerSecond);
 
         return `
@@ -1831,7 +1831,7 @@ function registerBlocklyGenerators() {
         const dx = block.getFieldValue('DX') || 0;
         const dy = block.getFieldValue('DY') || 0;
         const dz = block.getFieldValue('DZ') || 0;
-        const speedDegreesPerSecond = block.getFieldValue('SPEED') || 45;
+        const speedDegreesPerSecond = block.getFieldValue('SPEED') || 40;
         const speedStepsPerSecond = degreesPerSecondToStepsPerSecond(speedDegreesPerSecond);
 
         return `
