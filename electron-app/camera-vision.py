@@ -65,6 +65,18 @@ MARKER_SPACING_Y_MM = float(os.environ.get("ROBOT_ARM_MARKER_SPACING_Y_MM", "230
 BLOCK_WORKSPACE_MARGIN_MM = float(os.environ.get("ROBOT_ARM_BLOCK_WORKSPACE_MARGIN_MM", "15"))
 JPEG_QUALITY = 80
 MIN_BLOCK_AREA = 300
+# Upper area bound (px² on the 640x480 detection frame) — a real block is
+# small and close to the camera's ground plane; anything bigger is more
+# likely an arm part or a large patch of background matching by colour.
+MAX_BLOCK_AREA = float(os.environ.get("ROBOT_ARM_MAX_BLOCK_AREA", "6000"))
+# A cube viewed from above (at any rotation) has a roughly square footprint.
+# long-side/short-side of the rotated bounding rect must stay under this to
+# reject elongated shapes (arm links, cables, reflections).
+BLOCK_MAX_ASPECT_RATIO = float(os.environ.get("ROBOT_ARM_BLOCK_MAX_ASPECT_RATIO", "1.6"))
+# contourArea / rotated-bounding-rect-area. A solid cube fills most of its
+# own bounding rect; irregular silhouettes (the arm's joints, screws, gaps
+# between parts) leave a lot of the rect empty and score low here.
+BLOCK_MIN_SOLIDITY = float(os.environ.get("ROBOT_ARM_BLOCK_MIN_SOLIDITY", "0.65"))
 BOUNDARY = b"--jpgboundary"
 
 # Try these dictionaries in order (most common first).
@@ -493,7 +505,21 @@ def detect_color_blocks(frame):
 
         contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         for contour in contours:
-            if cv2.contourArea(contour) < MIN_BLOCK_AREA:
+            contour_area = cv2.contourArea(contour)
+            if contour_area < MIN_BLOCK_AREA or contour_area > MAX_BLOCK_AREA:
+                continue
+
+            # Shape check: a cube's footprint is a roughly-filled square at
+            # any rotation, so use the rotated (not axis-aligned) bounding
+            # rect for both the aspect-ratio and solidity tests below.
+            (_, _), (rot_w, rot_h), _ = cv2.minAreaRect(contour)
+            if rot_w <= 0 or rot_h <= 0:
+                continue
+            long_side, short_side = max(rot_w, rot_h), min(rot_w, rot_h)
+            if long_side / short_side > BLOCK_MAX_ASPECT_RATIO:
+                continue
+            solidity = contour_area / (rot_w * rot_h)
+            if solidity < BLOCK_MIN_SOLIDITY:
                 continue
 
             x, y, w, h = cv2.boundingRect(contour)
