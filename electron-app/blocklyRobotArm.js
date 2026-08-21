@@ -274,7 +274,12 @@ function getBlocklyToolbox() {
                     },
                     {
                         kind: 'block',
-                        type: 'move_xyz'
+                        type: 'move_xyz',
+                        inputs: {
+                            X: { shadow: { type: 'math_number', fields: { NUM: 0 } } },
+                            Y: { shadow: { type: 'math_number', fields: { NUM: 0 } } },
+                            Z: { shadow: { type: 'math_number', fields: { NUM: 0 } } }
+                        }
                     },
                     {
                         kind: 'block',
@@ -578,14 +583,15 @@ function defineCustomBlocks() {
     // Move TCP to an absolute XYZ position (uses kinematics / inverseKinematics)
     Blockly.Blocks['move_xyz'] = {
         init: function() {
-            this.appendDummyInput()
-                .appendField('Move TCP to X')
-                .appendField(new Blockly.FieldNumber(0, -500, 500, 1), 'X')
-                .appendField('mm  Y')
-                .appendField(new Blockly.FieldNumber(0, -500, 500, 1), 'Y')
-                .appendField('mm  Z')
-                .appendField(new Blockly.FieldNumber(0, -500, 500, 1), 'Z')
-                .appendField('mm');
+            this.appendValueInput('X')
+                .setCheck('Number')
+                .appendField('Move TCP to X (mm)');
+            this.appendValueInput('Y')
+                .setCheck('Number')
+                .appendField('Y (mm)');
+            this.appendValueInput('Z')
+                .setCheck('Number')
+                .appendField('Z (mm)');
             this.appendDummyInput()
                 .appendField('at speed')
                 .appendField(new Blockly.FieldNumber(40, 0, 300, 1), 'SPEED')
@@ -593,7 +599,7 @@ function defineCustomBlocks() {
             this.setPreviousStatement(true, null);
             this.setNextStatement(true, null);
             this.setColour(200);
-            this.setTooltip('Move the end effector to an absolute XYZ position using kinematics');
+            this.setTooltip('Move the end effector to an absolute XYZ position using kinematics. Plug in a number, variable, or math block for X/Y/Z.');
         }
     };
 
@@ -1738,9 +1744,9 @@ function registerBlocklyGenerators() {
     // Move TCP to absolute XYZ using kinematics
     Blockly.JavaScript['move_xyz'] = function(block) {
         const blockId = block.id;
-        const x = block.getFieldValue('X') || 0;
-        const y = block.getFieldValue('Y') || 0;
-        const z = block.getFieldValue('Z') || 0;
+        const x = Blockly.JavaScript.valueToCode(block, 'X', Blockly.JavaScript.ORDER_ATOMIC) || '0';
+        const y = Blockly.JavaScript.valueToCode(block, 'Y', Blockly.JavaScript.ORDER_ATOMIC) || '0';
+        const z = Blockly.JavaScript.valueToCode(block, 'Z', Blockly.JavaScript.ORDER_ATOMIC) || '0';
         const speedDegreesPerSecond = block.getFieldValue('SPEED') || 40;
         const speedStepsPerSecond = degreesPerSecondToStepsPerSecond(speedDegreesPerSecond);
 
