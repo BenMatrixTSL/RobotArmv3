@@ -517,7 +517,7 @@ function generateJointStatusCards() {
                     </div>
                     <div class="joint-field-group compact">
                         <label for="joint${i}Acceleration">Accel (0-254):</label>
-                        <input type="number" id="joint${i}Acceleration" value="50" min="0" max="254" step="1">
+                        <input type="number" id="joint${i}Acceleration" value="50" min="0" max="254" step="1" onchange="applyJointAcceleration(${i})">
                     </div>
                 </div>
                 <div class="joint-control-fields joint-control-compact">
@@ -3068,6 +3068,36 @@ function moveJoint(jointNumber) {
 }
 
 /**
+ * Pushes the per-joint Accel (0-254) field to the servo. Acceleration is a
+ * sticky servo setting, not a per-move parameter, so this fires on change
+ * of the input rather than being sent with every move command.
+ * @param {number} jointNumber - Joint number (1-based)
+ */
+function applyJointAcceleration(jointNumber) {
+    if (!robotArmClient || !robotArmClient.isConnected) {
+        showAppMessage('Not connected to robot arm controller');
+        return;
+    }
+    if (!robotArmClient.hasArmControl) {
+        showAppMessage('Read-only — use Take control on the Connection tab first');
+        return;
+    }
+    const accelerationInputElement = document.getElementById(`joint${jointNumber}Acceleration`);
+    if (!accelerationInputElement) return;
+
+    const acc = parseInt(accelerationInputElement.value, 10);
+    if (isNaN(acc) || acc < 0 || acc > 254) {
+        showAppMessage(`Invalid acceleration value for joint ${jointNumber}: must be 0-254`);
+        return;
+    }
+
+    robotArmClient.setAcceleration(jointNumber, acc)
+        .catch(function(error) {
+            showAppMessage('Set acceleration failed (joint ' + jointNumber + '): ' + error.message);
+        });
+}
+
+/**
  * Stops all joints immediately
  */
 function stopAllJoints() {
@@ -3443,10 +3473,19 @@ function quickMove(jointNumber, direction) {
         angleElement.textContent = newAngle.toFixed(2);
     }
 
+    const speedInputElement = document.getElementById(`joint${jointNumber}Speed`);
+    let speedDegreesPerSecond = 45; // Default speed in degrees/s
+    if (speedInputElement && speedInputElement.tagName === 'INPUT') {
+        const speedValue = parseFloat(speedInputElement.value);
+        if (!isNaN(speedValue) && speedValue >= 0 && speedValue <= 300) {
+            speedDegreesPerSecond = speedValue;
+        }
+    }
+
     const speedStepsPerSecond = (typeof degreesPerSecondToStepsPerSecond === 'function') ?
-        degreesPerSecondToStepsPerSecond(45) :
+        degreesPerSecondToStepsPerSecond(speedDegreesPerSecond) :
         (typeof window !== 'undefined' && typeof window.degreesPerSecondToStepsPerSecond === 'function' ?
-            window.degreesPerSecondToStepsPerSecond(45) : Math.round(45 * 11.37));
+            window.degreesPerSecondToStepsPerSecond(speedDegreesPerSecond) : Math.round(speedDegreesPerSecond * 11.37));
 
     robotArmClient.moveJointJog(jointNumber, newAngle, speedStepsPerSecond);
 }
