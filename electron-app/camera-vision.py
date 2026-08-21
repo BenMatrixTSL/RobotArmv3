@@ -56,6 +56,13 @@ COLOR_DETECTION_ENABLED = os.environ.get("ROBOT_ARM_COLOR_DETECTION", "1").strip
 # Used to compute world (mm) positions of detected colour blocks.
 MARKER_SPACING_X_MM = float(os.environ.get("ROBOT_ARM_MARKER_SPACING_X_MM", "240"))
 MARKER_SPACING_Y_MM = float(os.environ.get("ROBOT_ARM_MARKER_SPACING_Y_MM", "230"))
+# Colour blocks are only reported when their world position falls within the
+# marker-defined mat (0..MARKER_SPACING_X_MM, 0..MARKER_SPACING_Y_MM), plus
+# this margin. Keeps the arm itself (or anything else outside the mat) from
+# being picked up as a false-positive block. Requires at least 3 markers
+# visible (a homography) — with fewer, no world position can be computed and
+# every colour blob is discarded rather than reported unfiltered.
+BLOCK_WORKSPACE_MARGIN_MM = float(os.environ.get("ROBOT_ARM_BLOCK_WORKSPACE_MARGIN_MM", "15"))
 JPEG_QUALITY = 80
 MIN_BLOCK_AREA = 300
 BOUNDARY = b"--jpgboundary"
@@ -630,12 +637,24 @@ def process_frame(frame, detectors):
                 frame, (STREAM_WIDTH, STREAM_HEIGHT), interpolation=cv2.INTER_AREA
             )
             blocks = detect_color_blocks(clean_small)
-            # Annotate each block with its world position if homography is ready.
+            # Annotate each block with its world position, then drop anything
+            # outside the marker-defined mat — without this, HSV colour
+            # matches on the arm itself (or the background) get reported as
+            # blocks just like a real one on the mat. With fewer than 3
+            # markers visible there's no homography to check against, so
+            # every detection is discarded rather than reported unfiltered.
             if homography is not None:
+                in_bounds = []
+                margin = BLOCK_WORKSPACE_MARGIN_MM
                 for block in blocks:
                     wx, wy = transform_to_world(homography, block["center_x"], block["center_y"])
-                    block["world_x_mm"] = round(wx, 1)
-                    block["world_y_mm"] = round(wy, 1)
+                    if -margin <= wx <= MARKER_SPACING_X_MM + margin and -margin <= wy <= MARKER_SPACING_Y_MM + margin:
+                        block["world_x_mm"] = round(wx, 1)
+                        block["world_y_mm"] = round(wy, 1)
+                        in_bounds.append(block)
+                blocks = in_bounds
+            else:
+                blocks = []
             draw_color_blocks(stream_frame, blocks)
         except Exception as exc:
             print(f"Colour detection error: {exc}", file=sys.stderr)
