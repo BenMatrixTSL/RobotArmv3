@@ -489,8 +489,6 @@ def draw_coordinate_frame(frame, markers, frame_width, frame_height):
             cv2.arrowedLine(frame, origin_px, lerp_pt(origin_px, bl_px, 0.25), (0, 200, 0), 3, tipLength=0.3)
             put_text_bg(frame, "Y", lerp_pt(origin_px, bl_px, 0.28),
                         scale=0.7, color=(0, 200, 0), thickness=2)
-        put_text_bg(frame, "0,0", (origin_px[0] + 8, origin_px[1] - 8),
-                    scale=0.6, color=(255, 255, 0), thickness=2)
 
     if n_found == 3:
         put_text_bg(frame, "3/4 markers (affine)", (10, frame_height - 10),
