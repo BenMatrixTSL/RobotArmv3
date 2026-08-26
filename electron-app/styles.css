@@ -177,6 +177,33 @@ header h1 {
     font-size: 14px;
 }
 
+.control-lock-title {
+    margin-top: 18px;
+    margin-bottom: 6px;
+    font-size: 15px;
+    color: #3a3f4b;
+}
+
+.control-lock-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-top: 8px;
+}
+
+.control-lock-password {
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    min-width: 160px;
+}
+
+#controlLockStatus {
+    margin-top: 8px;
+}
+
 /* Simple toast message */
 .app-message {
     position: fixed;

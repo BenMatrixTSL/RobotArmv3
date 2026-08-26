@@ -218,6 +218,18 @@
                     Only one app can move the arm at a time. If another window or kiosk has control, use the button below to take over.
                 </p>
                 <button id="takeControlButton" class="btn btn-warning btn-major" disabled>Take control</button>
+
+                <h4 class="control-lock-title">Lock control</h4>
+                <p class="info-text">
+                    Take control and keep it exclusively — no other app can take over, even with "Take control" —
+                    until you release it or the lock times out. Requires a password to set.
+                </p>
+                <div class="control-lock-row">
+                    <input type="password" id="controlLockPassword" placeholder="Lock password" class="control-lock-password" autocomplete="off">
+                    <button id="lockControlButton" class="btn btn-secondary" disabled>Lock control</button>
+                    <button id="unlockControlButton" class="btn btn-secondary" style="display: none;">Unlock control</button>
+                </div>
+                <p class="info-text" id="controlLockStatus"></p>
             </div>
 
             <div class="connection-panel">

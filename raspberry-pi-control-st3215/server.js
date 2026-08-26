@@ -33,6 +33,8 @@ const INSTANT_SERVER_COMMANDS = {
     getControlStatus: true,
     takeControl: true,
     releaseControl: true,
+    lockControl: true,
+    unlockControl: true,
     getPiNetworkInfo: true,
     getPiEthernetSettings: true,
     setPiEthernetSettings: true,
@@ -67,6 +69,15 @@ const IMMEDIATE_BUS_COMMANDS = {
 
 const CONTROL_IDLE_TIMEOUT_MS       = 5 * 60 * 1000;
 const CONTROL_IDLE_CHECK_INTERVAL_MS = 30 * 1000;
+
+// "Lock control" — holds the control session exclusively (no other client can
+// take/force-take it, and the idle timeout is suspended) until released or
+// the lock duration expires. Requires a password to set, matching the
+// lightweight/hardcoded auth style already used elsewhere on this trusted
+// local network (see CLAUDE.md's Pi SSH credentials).
+const CONTROL_LOCK_PASSWORD    = 'MatrixRA123';
+const CONTROL_LOCK_DEFAULT_MS  = 15 * 60 * 1000;
+const CONTROL_LOCK_MAX_MS      = 60 * 60 * 1000;
 
 // Linear path execution state — only one path runs at a time.
 let linearPathRunning = false;
@@ -268,7 +279,7 @@ let lastKnownJointConfigs  = { count: 0, total: 6, joints: [] };
 let lastWorkerDiagnostics  = {};
 
 // Control session (one app at a time can move the arm).
-const controlSession = { ws: null, label: '', hostname: null, clientIp: null, since: null, lastMoveAt: null };
+const controlSession = { ws: null, label: '', hostname: null, clientIp: null, since: null, lastMoveAt: null, locked: false, lockedUntil: null };
 
 // ===== Control Session =====
 function normalizeClientIp(raw) {
@@ -301,6 +312,24 @@ function releaseControlSession(ws) {
         controlSession.ws = null; controlSession.label = '';
         controlSession.hostname = null; controlSession.clientIp = null;
         controlSession.since = null; controlSession.lastMoveAt = null;
+        controlSession.locked = false; controlSession.lockedUntil = null;
+    }
+}
+function isControlLocked() {
+    if (!controlSession.locked) return false;
+    if (controlSession.lockedUntil && Date.now() >= controlSession.lockedUntil) {
+        controlSession.locked = false;
+        controlSession.lockedUntil = null;
+        return false;
+    }
+    return true;
+}
+function checkControlLockExpiry() {
+    if (controlSession.locked && controlSession.lockedUntil && Date.now() >= controlSession.lockedUntil) {
+        controlSession.locked = false;
+        controlSession.lockedUntil = null;
+        broadcastControlStatus({ ws: controlSession.ws, data: { message: 'Arm control lock expired' } });
+        debugLog('Arm control lock expired');
     }
 }
 function pruneStaleControlSession() {
@@ -335,6 +364,7 @@ function formatControlHolder(info) {
     return 'another app';
 }
 function getControlStatusPayload(ws, extra) {
+    const locked = isControlLocked();
     const payload = {
         type: 'controlStatus',
         hasControl:      controlSession.ws === ws,
@@ -343,7 +373,9 @@ function getControlStatusPayload(ws, extra) {
         holder:          controlSession.ws ? formatControlHolder(controlSession) : null,
         holderHostname:  controlSession.hostname || null,
         holderIp:        controlSession.clientIp || null,
-        holderLabel:     controlSession.label || null
+        holderLabel:     controlSession.label || null,
+        locked:          locked,
+        lockedUntil:     locked ? controlSession.lockedUntil : null
     };
     if (extra) Object.assign(payload, extra);
     return payload;
@@ -359,6 +391,7 @@ function broadcastControlStatus(extraForClient) {
 }
 function releaseControlForIdle() {
     if (!controlSession.ws || !controlSession.lastMoveAt) return;
+    if (isControlLocked()) return; // locked sessions are exempt from the idle timeout
     if (Date.now() - controlSession.lastMoveAt < CONTROL_IDLE_TIMEOUT_MS) return;
     const idleWs = controlSession.ws;
     releaseControlSession(idleWs);
@@ -612,23 +645,79 @@ async function handleCommand(ws, data) {
         }
 
         case 'takeControl': {
-            const forceTake      = data.force === true;
-            const previousWs     = controlSession.ws;
-            const previousHolder = controlSession.ws ? formatControlHolder(controlSession) : null;
+            pruneStaleControlSession();
+            const forceTake        = data.force === true;
+            const suppliedPassword = typeof data.password === 'string' ? data.password : null;
+            const locked           = isControlLocked();
+            const heldByOther      = !!(controlSession.ws && controlSession.ws !== ws);
+            const previousWs       = controlSession.ws;
+            const previousHolder   = controlSession.ws ? formatControlHolder(controlSession) : null;
+
             if (typeof data.hostname === 'string' && data.hostname.trim()) ws.clientHostname = data.hostname.trim();
-            if (controlSession.ws && controlSession.ws !== ws && !forceTake) { sendResponse(getControlStatusPayload(ws)); return; }
+
+            if (heldByOther && locked && suppliedPassword !== CONTROL_LOCK_PASSWORD) {
+                const until = controlSession.lockedUntil ? new Date(controlSession.lockedUntil).toLocaleTimeString() : null;
+                sendResponse(getControlStatusPayload(ws, {
+                    message: 'Arm control is locked by ' + (previousHolder || 'another client') + (until ? (' until ' + until) : '') + '.'
+                }));
+                return;
+            }
+            if (heldByOther && !locked && !forceTake) { sendResponse(getControlStatusPayload(ws)); return; }
+
             const label = (typeof data.label === 'string' && data.label) ? data.label : 'client';
             assignControlSession(ws, label);
-            if (previousWs && previousWs !== ws && forceTake) {
+            controlSession.locked = false;
+            controlSession.lockedUntil = null;
+            if (previousWs && previousWs !== ws) {
                 try { previousWs.send(JSON.stringify(getControlStatusPayload(previousWs, { message: 'Another app took arm control' }))); } catch (e) { /* disconnected */ }
             }
-            sendResponse(getControlStatusPayload(ws, { takenFrom: (forceTake && previousWs && previousWs !== ws) ? previousHolder : null }));
+            sendResponse(getControlStatusPayload(ws, { takenFrom: (previousWs && previousWs !== ws) ? previousHolder : null }));
             break;
         }
 
         case 'releaseControl': {
             if (controlSession.ws === ws) releaseControlSession(ws);
             sendResponse(getControlStatusPayload(ws));
+            break;
+        }
+
+        case 'lockControl': {
+            const suppliedPassword = typeof data.password === 'string' ? data.password : null;
+            if (suppliedPassword !== CONTROL_LOCK_PASSWORD) {
+                sendResponse({ type: 'lockControlResult', ok: false, message: 'Incorrect lock password' });
+                return;
+            }
+            pruneStaleControlSession();
+            if (controlSession.ws && controlSession.ws !== ws) {
+                sendResponse({ type: 'lockControlResult', ok: false, message: 'Arm control is held by ' + (formatControlHolder(controlSession) || 'another client') + ' — take control first.' });
+                return;
+            }
+            if (!controlSession.ws) {
+                if (typeof data.hostname === 'string' && data.hostname.trim()) ws.clientHostname = data.hostname.trim();
+                const label = (typeof data.label === 'string' && data.label) ? data.label : 'client';
+                assignControlSession(ws, label);
+            }
+            let durationMs = Number(data.durationMs);
+            if (!Number.isFinite(durationMs) || durationMs <= 0) durationMs = CONTROL_LOCK_DEFAULT_MS;
+            durationMs = Math.min(durationMs, CONTROL_LOCK_MAX_MS);
+            controlSession.locked = true;
+            controlSession.lockedUntil = Date.now() + durationMs;
+            broadcastControlStatus();
+            sendResponse(getControlStatusPayload(ws, { ok: true }));
+            break;
+        }
+
+        case 'unlockControl': {
+            const suppliedPassword = typeof data.password === 'string' ? data.password : null;
+            const isHolder = controlSession.ws === ws;
+            if (!isHolder && suppliedPassword !== CONTROL_LOCK_PASSWORD) {
+                sendResponse({ type: 'unlockControlResult', ok: false, message: 'Incorrect password' });
+                return;
+            }
+            controlSession.locked = false;
+            controlSession.lockedUntil = null;
+            broadcastControlStatus();
+            sendResponse(getControlStatusPayload(ws, { ok: true }));
             break;
         }
 
@@ -953,6 +1042,7 @@ function startServer() {
     });
 
     setInterval(releaseControlForIdle, CONTROL_IDLE_CHECK_INTERVAL_MS);
+    setInterval(checkControlLockExpiry, CONTROL_IDLE_CHECK_INTERVAL_MS);
     debugLog('WebSocket server listening on port ' + PORT);
 }
 

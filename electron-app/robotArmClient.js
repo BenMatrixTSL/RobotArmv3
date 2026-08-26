@@ -26,6 +26,8 @@ class RobotArmClient {
         this.lastStatusPushAt = 0;
         this.hasArmControl = false;
         this.controlHolder = null;
+        this.controlLocked = false;
+        this.controlLockedUntil = null;
         this.onControlUpdate = null;
         this.onEndToolUpdate = null; // Callback for end tool changes
         this.endToolState = null;    // Last end tool report from the server
@@ -113,6 +115,8 @@ class RobotArmClient {
                     this.isConnecting = false;
                     this.hasArmControl = false;
                     this.controlHolder = null;
+                    this.controlLocked = false;
+                    this.controlLockedUntil = null;
                     this.updateConnectionStatus(false);
                     // Only start reconnecting if we had successfully connected before
                     if (this.hasEverConnected) {
@@ -141,6 +145,8 @@ class RobotArmClient {
         this.isConnected = false;
         this.hasArmControl = false;
         this.controlHolder = null;
+        this.controlLocked = false;
+        this.controlLockedUntil = null;
         this.serverPushesStatus = false;
         this.lastStatusPushAt = 0;
         this.updateConnectionStatus(false);
@@ -224,6 +230,11 @@ class RobotArmClient {
             this.controlHolder = null;
         } else if (data.holder !== undefined) {
             this.controlHolder = data.holder || null;
+        }
+
+        if (data.locked !== undefined) {
+            this.controlLocked = !!data.locked;
+            this.controlLockedUntil = data.locked ? (data.lockedUntil || null) : null;
         }
     }
 
@@ -675,12 +686,14 @@ class RobotArmClient {
      * Request exclusive control of arm bus writes (moves, torque, etc.).
      * @param {string} label - Display name for this client
      * @param {boolean} force - If true, take control from another app instance
+     * @param {string} [password] - Lock password, needed only to override another client's active lock
      */
-    takeControl(label, force) {
+    takeControl(label, force, password) {
         return this.sendRequest('takeControl', {
             label: label || 'electron',
             force: force === true,
-            hostname: this.getClientHostname()
+            hostname: this.getClientHostname(),
+            password: password || undefined
         }, 3000);
     }
 
@@ -689,6 +702,30 @@ class RobotArmClient {
      */
     releaseControl() {
         return this.sendRequest('releaseControl', {}, 3000);
+    }
+
+    /**
+     * Take control (if free) and lock it exclusively until released or timed out.
+     * @param {string} password - Lock password
+     * @param {number} [durationMs] - Lock duration; server defaults to 15 min, caps at 60 min
+     * @param {string} [label] - Display name for this client
+     */
+    lockControl(password, durationMs, label) {
+        return this.sendRequest('lockControl', {
+            password: password,
+            durationMs: durationMs || undefined,
+            label: label || 'electron',
+            hostname: this.getClientHostname()
+        }, 3000);
+    }
+
+    /**
+     * Clear the control lock. The current holder needs no password; anyone
+     * else must supply the lock password.
+     * @param {string} [password]
+     */
+    unlockControl(password) {
+        return this.sendRequest('unlockControl', { password: password || undefined }, 3000);
     }
 
     /**

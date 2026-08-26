@@ -2354,6 +2354,20 @@ function initializeConnection() {
             requestArmControl();
         });
     }
+
+    const lockControlButton = document.getElementById('lockControlButton');
+    if (lockControlButton) {
+        lockControlButton.addEventListener('click', function() {
+            lockArmControl();
+        });
+    }
+
+    const unlockControlButton = document.getElementById('unlockControlButton');
+    if (unlockControlButton) {
+        unlockControlButton.addEventListener('click', function() {
+            unlockArmControl();
+        });
+    }
     } else {
         console.warn('Disconnect button not found');
     }
@@ -2607,11 +2621,14 @@ function updateArmControlDisplay(controlInfo) {
         if (releaseButton) {
             releaseButton.style.display = 'none';
         }
+        updateControlLockDisplay(null, false);
         return;
     }
 
     const iHaveControl = robotArmClient.hasArmControl ||
         (controlInfo && (controlInfo.youHaveControl || controlInfo.hasControl));
+
+    updateControlLockDisplay(controlInfo, iHaveControl);
 
     if (iHaveControl) {
         text.textContent = 'In control';
@@ -2671,6 +2688,41 @@ function updateTakeControlButtonState() {
 }
 
 /**
+ * Updates the "Lock control" status text and Lock/Unlock button visibility.
+ * @param {Object|null} controlInfo - From server controlStatus
+ * @param {boolean} iHaveControl - Whether this app currently holds arm control
+ */
+function updateControlLockDisplay(controlInfo, iHaveControl) {
+    const statusEl = document.getElementById('controlLockStatus');
+    const lockButton = document.getElementById('lockControlButton');
+    const unlockButton = document.getElementById('unlockControlButton');
+    if (!statusEl) {
+        return;
+    }
+
+    if (!robotArmClient.isConnected) {
+        statusEl.textContent = '';
+        if (lockButton) lockButton.disabled = true;
+        if (unlockButton) unlockButton.style.display = 'none';
+        return;
+    }
+
+    const locked = controlInfo ? !!controlInfo.locked : robotArmClient.controlLocked;
+    const lockedUntil = controlInfo ? controlInfo.lockedUntil : robotArmClient.controlLockedUntil;
+
+    if (locked) {
+        const untilText = lockedUntil ? new Date(lockedUntil).toLocaleTimeString() : null;
+        const holderLabel = iHaveControl ? 'you' : formatControlHolderLabel(controlInfo);
+        statusEl.textContent = 'Locked by ' + holderLabel + (untilText ? (' until ' + untilText) : '') + '.';
+    } else {
+        statusEl.textContent = '';
+    }
+
+    if (lockButton) lockButton.disabled = false;
+    if (unlockButton) unlockButton.style.display = (locked && iHaveControl) ? 'inline-block' : 'none';
+}
+
+/**
  * Take arm control from another app instance (Connection tab).
  */
 async function requestArmControl() {
@@ -2680,20 +2732,75 @@ async function requestArmControl() {
     }
 
     try {
-        const info = await robotArmClient.takeControl('electron', true);
+        const passwordField = document.getElementById('controlLockPassword');
+        const password = passwordField && passwordField.value ? passwordField.value : undefined;
+        const info = await robotArmClient.takeControl('electron', true, password);
         updateArmControlDisplay(info);
 
         if (info && info.youHaveControl) {
+            if (passwordField) passwordField.value = '';
             if (info.takenFrom) {
                 showAppMessage('Arm control taken from ' + info.takenFrom + '.');
             } else {
                 showAppMessage('You have arm control.');
             }
         } else {
-            showAppMessage('Could not take control — held by ' + formatControlHolderLabel(info));
+            showAppMessage(info && info.message ? info.message : ('Could not take control — held by ' + formatControlHolderLabel(info)));
         }
     } catch (error) {
         showAppMessage('Take control failed: ' + error.message);
+    }
+}
+
+/**
+ * Take control (if free) and lock it exclusively — see index.html "Lock control".
+ */
+async function lockArmControl() {
+    if (!robotArmClient.isConnected) {
+        showAppMessage('Connect to the robot arm controller first');
+        return;
+    }
+
+    const passwordField = document.getElementById('controlLockPassword');
+    const password = passwordField ? passwordField.value : '';
+    if (!password) {
+        showAppMessage('Enter the lock password first');
+        return;
+    }
+
+    try {
+        const info = await robotArmClient.lockControl(password, undefined, 'electron');
+        if (info && info.ok !== false) {
+            if (passwordField) passwordField.value = '';
+            updateArmControlDisplay(info);
+            showAppMessage('Arm control locked.');
+        } else {
+            showAppMessage(info && info.message ? info.message : 'Could not lock control');
+        }
+    } catch (error) {
+        showAppMessage('Lock control failed: ' + error.message);
+    }
+}
+
+/**
+ * Clear the control lock (no password needed if this app is the holder).
+ */
+async function unlockArmControl() {
+    if (!robotArmClient.isConnected) {
+        showAppMessage('Connect to the robot arm controller first');
+        return;
+    }
+
+    try {
+        const info = await robotArmClient.unlockControl();
+        if (info && info.ok !== false) {
+            updateArmControlDisplay(info);
+            showAppMessage('Arm control unlocked.');
+        } else {
+            showAppMessage(info && info.message ? info.message : 'Could not unlock control');
+        }
+    } catch (error) {
+        showAppMessage('Unlock control failed: ' + error.message);
     }
 }
 

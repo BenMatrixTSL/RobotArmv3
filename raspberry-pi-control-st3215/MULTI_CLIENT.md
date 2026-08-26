@@ -31,9 +31,27 @@ Read-only commands always work: `getStatus`, `getJointConfigs`, kinematics, etc.
 |---------|---------|
 | `takeControl` | Claim control (`force: true` takes it from another app). |
 | `releaseControl` | Give up control so another app can move the arm. |
-| `getControlStatus` | See who has control. |
+| `lockControl` | Take control (if free) and **lock** it — see below. |
+| `unlockControl` | Clear the lock (holder: no password needed; anyone else: needs the lock password). |
+| `getControlStatus` | See who has control, and whether it's locked. |
 
-When a client disconnects, control is released automatically.
+When a client disconnects, control is released automatically (including a locked session).
+
+### Control lock
+
+`lockControl` takes control if nobody has it, then marks the session **locked** for a
+duration (`durationMs`, default 15 min, capped at 60 min). While locked:
+
+- Other clients' `takeControl` — even with `force: true` — is rejected unless they supply
+  the correct `password` (hardcoded server-side as `MatrixRA123`, same lightweight/local-network
+  style as the Pi SSH credentials in the root `CLAUDE.md`).
+- The 5-minute idle-control timeout is suspended, so the lock survives periods with no
+  movement commands.
+- The lock ends when the holder calls `releaseControl`/`unlockControl`, when its duration
+  elapses, or when the holder disconnects — whichever comes first.
+
+`lockControl` and `unlockControl` both require `password: "MatrixRA123"` (the holder can
+`unlockControl` without one — it's their own lock).
 
 ### Electron app
 
