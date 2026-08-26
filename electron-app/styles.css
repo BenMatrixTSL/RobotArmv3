@@ -2828,15 +2828,24 @@ header h1 {
     margin-bottom: 10px;
 }
 
+.camera-content {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 16px;
+}
+
 .camera-stream-frame {
     background-color: #1a1a1a;
     border-radius: 8px;
     padding: 4px;
     min-height: 200px;
+    max-width: 640px;
     display: flex;
     align-items: center;
     justify-content: center;
     position: relative;
+    flex: 0 1 auto;
 }
 
 .camera-stream-placeholder {
@@ -2869,7 +2878,8 @@ header h1 {
 }
 
 .camera-detections-panel {
-    margin-top: 12px;
+    flex: 1 1 260px;
+    min-width: 220px;
 }
 
 .camera-detections-title {

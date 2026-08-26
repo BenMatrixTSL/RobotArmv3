@@ -1109,20 +1109,22 @@
                     <button type="button" id="cameraRefreshButton" class="btn btn-secondary">Refresh</button>
                 </div>
                 <p id="cameraStreamStatus" class="camera-stream-status">Open this tab to start the camera.</p>
-                <div id="cameraStreamFrame" class="camera-stream-frame">
-                    <img id="cameraStreamImage" alt="USB camera stream" class="camera-stream-image">
-                    <p class="camera-stream-placeholder">Press Start camera to view the USB camera.</p>
-                </div>
-                <div class="camera-detections-panel">
-                    <h3 class="camera-detections-title">Detected blocks</h3>
-                    <table class="camera-detections-table">
-                        <thead>
-                            <tr><th>Index</th><th>Colour</th><th>X (mm)</th><th>Y (mm)</th></tr>
-                        </thead>
-                        <tbody id="cameraDetectionsTableBody">
-                            <tr><td colspan="4" class="camera-detections-empty">No blocks detected</td></tr>
-                        </tbody>
-                    </table>
+                <div class="camera-content">
+                    <div id="cameraStreamFrame" class="camera-stream-frame">
+                        <img id="cameraStreamImage" alt="USB camera stream" class="camera-stream-image">
+                        <p class="camera-stream-placeholder">Press Start camera to view the USB camera.</p>
+                    </div>
+                    <div class="camera-detections-panel">
+                        <h3 class="camera-detections-title">Detected blocks</h3>
+                        <table class="camera-detections-table">
+                            <thead>
+                                <tr><th>Index</th><th>Colour</th><th>X (mm)</th><th>Y (mm)</th></tr>
+                            </thead>
+                            <tbody id="cameraDetectionsTableBody">
+                                <tr><td colspan="4" class="camera-detections-empty">No blocks detected</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
                 <p class="info-text camera-help-text">
                     Point the camera at the workspace. ArUco markers will be detected automatically
