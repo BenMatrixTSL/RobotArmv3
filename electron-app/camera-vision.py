@@ -540,22 +540,6 @@ def update_marker_tracks(corners, ids):
 
 
 block_tracks = []
-block_indices_in_use = {}
-
-
-def _allocate_block_index(color):
-    used = block_indices_in_use.setdefault(color, set())
-    index = 0
-    while index in used:
-        index += 1
-    used.add(index)
-    return index
-
-
-def _release_block_index(color, index):
-    used = block_indices_in_use.get(color)
-    if used is not None:
-        used.discard(index)
 
 
 def update_block_tracks(detections):
@@ -563,9 +547,12 @@ def update_block_tracks(detections):
     Debounce colour-block detections across frames the same way as
     update_marker_tracks: a block only appears after TRACK_STABILITY_FRAMES
     consecutive detections, and only disappears after that many consecutive
-    misses. Also assigns each track a persistent per-colour index (the
-    lowest free integer for that colour), used for on-screen labels like
-    "red block (0)".
+    misses. Each confirmed block is then given a per-colour index ordered
+    top-to-bottom, then left-to-right (row-major over its centre position),
+    used for on-screen labels like "red block (0)". Since this is
+    recomputed from current position every frame rather than being a fixed
+    per-track slot, a block's index can shift if another block of the same
+    colour appears/disappears above or to the left of it.
     """
     unmatched = list(detections)
 
@@ -593,14 +580,12 @@ def update_block_tracks(detections):
 
     for track in list(block_tracks):
         if track["absent"] >= TRACK_STABILITY_FRAMES:
-            _release_block_index(track["color"], track["index"])
             block_tracks.remove(track)
 
     for det in unmatched:
         block_tracks.append(
             {
                 "color": det["color"],
-                "index": _allocate_block_index(det["color"]),
                 "data": det,
                 "present": 1,
                 "absent": 0,
@@ -608,12 +593,18 @@ def update_block_tracks(detections):
             }
         )
 
+    confirmed = [track for track in block_tracks if track["confirmed"]]
+    confirmed.sort(key=lambda track: (track["data"]["center_y"], track["data"]["center_x"]))
+
+    next_index = {}
     output = []
-    for track in block_tracks:
-        if track["confirmed"]:
-            block = dict(track["data"])
-            block["index"] = track["index"]
-            output.append(block)
+    for track in confirmed:
+        color = track["color"]
+        index = next_index.get(color, 0)
+        next_index[color] = index + 1
+        block = dict(track["data"])
+        block["index"] = index
+        output.append(block)
     return output
 
 
