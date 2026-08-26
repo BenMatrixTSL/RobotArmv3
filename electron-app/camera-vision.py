@@ -671,7 +671,12 @@ def detect_color_blocks(frame):
 
 
 def draw_color_blocks(frame, blocks):
-    """Draw bounding boxes and world-position labels onto frame for a list of block dicts."""
+    """
+    Draw a border box per block with its index centered inside. Colour name
+    and world position are left out of the overlay (they cluttered the feed
+    when several blocks sat close together) — the UI shows them in a table
+    built from the /vision JSON instead.
+    """
     fh, fw = frame.shape[:2]
     for block in blocks:
         x = int((block["center_x"] - block["width"] / 2) * fw)
@@ -679,15 +684,13 @@ def draw_color_blocks(frame, blocks):
         w = int(block["width"] * fw)
         h = int(block["height"] * fh)
         cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 255), 2)
-        label = f"{block['color']} block ({block['index']})"
-        put_text_bg(frame, label,
-                    (x, max(y - 8, 20)),
-                    scale=0.6, color=(0, 255, 255), thickness=2)
-        if "world_x_mm" in block:
-            pos_label = f"X:{block['world_x_mm']:.1f}  Y:{block['world_y_mm']:.1f} mm"
-            put_text_bg(frame, pos_label,
-                        (x, min(y + h + 22, fh - 4)),
-                        scale=0.6, color=(255, 220, 0), thickness=2)
+
+        label = str(block["index"])
+        (tw, th), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.7, 2)
+        center_x = x + w // 2
+        center_y = y + h // 2
+        put_text_bg(frame, label, (center_x - tw // 2, center_y + th // 2),
+                    scale=0.7, color=(0, 255, 255), thickness=2)
 
 
 def open_camera(device_path):

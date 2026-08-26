@@ -2864,6 +2864,56 @@ header h1 {
     font-size: 12px;
 }
 
+.camera-detections-panel {
+    margin-top: 12px;
+}
+
+.camera-detections-title {
+    font-size: 14px;
+    margin: 0 0 6px;
+    color: #3a3f4b;
+}
+
+.camera-detections-table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: #fff;
+    border-radius: 6px;
+    overflow: hidden;
+    font-size: 13px;
+}
+
+.camera-detections-table th,
+.camera-detections-table td {
+    padding: 6px 10px;
+    text-align: left;
+    border-bottom: 1px solid #e6e8eb;
+}
+
+.camera-detections-table th {
+    background-color: #eef0f3;
+    color: #5c6370;
+    font-weight: 600;
+}
+
+.camera-detections-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.camera-detections-empty {
+    color: #aaa;
+    text-align: center;
+}
+
+.camera-detections-swatch {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 6px;
+    vertical-align: middle;
+}
+
 body.kiosk-mode .camera-stream-image {
     max-height: calc(100vh - 180px);
 }

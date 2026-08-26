@@ -90,10 +90,47 @@ function updateCameraStatusFromVision() {
             }
             cameraVisionStatus = msg;
             setCameraStatus(msg, '#27ae60');
+            renderCameraDetectionsTable(data.blocks);
         })
         .catch(function () {
             // Vision endpoint may be unavailable on older ffmpeg-only installs.
         });
+}
+
+var CAMERA_DETECTION_SWATCH_COLORS = {
+    red: '#e74c3c',
+    green: '#27ae60',
+    blue: '#2980b9',
+    yellow: '#f1c40f',
+    purple: '#8e44ad'
+};
+
+function renderCameraDetectionsTable(blocks) {
+    var tbody = document.getElementById('cameraDetectionsTableBody');
+    if (!tbody) {
+        return;
+    }
+
+    blocks = Array.isArray(blocks) ? blocks.slice() : [];
+    blocks.sort(function (a, b) { return (a.index || 0) - (b.index || 0); });
+
+    if (blocks.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="camera-detections-empty">No blocks detected</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = blocks.map(function (block) {
+        var swatchColor = CAMERA_DETECTION_SWATCH_COLORS[block.color] || '#999';
+        var hasWorld = typeof block.world_x_mm === 'number' && typeof block.world_y_mm === 'number';
+        var xText = hasWorld ? block.world_x_mm.toFixed(1) : '—';
+        var yText = hasWorld ? block.world_y_mm.toFixed(1) : '—';
+        return '<tr>'
+            + '<td>' + block.index + '</td>'
+            + '<td><span class="camera-detections-swatch" style="background-color:' + swatchColor + '"></span>' + block.color + '</td>'
+            + '<td>' + xText + '</td>'
+            + '<td>' + yText + '</td>'
+            + '</tr>';
+    }).join('');
 }
 
 // ===== Detected block scanning =====
@@ -349,6 +386,7 @@ function stopCameraView() {
     hideCameraFrame();
     updateCameraButtons(false);
     setCameraStatus('Stopped', '#5c6370');
+    renderCameraDetectionsTable([]);
 }
 
 function refreshCameraView() {

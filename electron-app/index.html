@@ -1116,6 +1116,17 @@
                     <img id="cameraStreamImage" alt="USB camera stream" class="camera-stream-image">
                     <p class="camera-stream-placeholder">Press Start camera to view the USB camera.</p>
                 </div>
+                <div class="camera-detections-panel">
+                    <h3 class="camera-detections-title">Detected blocks</h3>
+                    <table class="camera-detections-table">
+                        <thead>
+                            <tr><th>Index</th><th>Colour</th><th>X (mm)</th><th>Y (mm)</th></tr>
+                        </thead>
+                        <tbody id="cameraDetectionsTableBody">
+                            <tr><td colspan="4" class="camera-detections-empty">No blocks detected</td></tr>
+                        </tbody>
+                    </table>
+                </div>
                 <p class="info-text camera-help-text">
                     Point the camera at the workspace. ArUco markers will be detected automatically
                     and coloured blocks will be highlighted. Marker IDs 0–3 define the workspace
