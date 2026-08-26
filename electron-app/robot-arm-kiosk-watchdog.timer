@@ -1,0 +1,10 @@
+[Unit]
+Description=Run robot-arm-kiosk-watchdog periodically
+
+[Timer]
+OnBootSec=60
+OnUnitActiveSec=30
+AccuracySec=5
+
+[Install]
+WantedBy=timers.target

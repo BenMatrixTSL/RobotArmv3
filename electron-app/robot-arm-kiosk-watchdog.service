@@ -1,0 +1,7 @@
+[Unit]
+Description=Robot Arm kiosk watchdog (detect and restart a hung/crashed Chromium)
+After=graphical.target
+
+[Service]
+Type=oneshot
+ExecStart=KIOSK_SCRIPT_DIR/kiosk-watchdog.sh KIOSK_USER KIOSK_SCRIPT_DIR/start-kiosk.sh

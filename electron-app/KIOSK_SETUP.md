@@ -193,6 +193,33 @@ The installer removes that service and installs desktop autostart instead.
 sudo ./uninstall-kiosk-service.sh
 ```
 
+## Watchdog (auto-recover from a hung/crashed browser)
+
+`start-kiosk.sh`'s own monitor loop only checks whether *any* Chromium-related
+process exists (zygote, GPU, utility, ...) — if a renderer or GPU process
+crashes but sibling processes stay alive, the loop never notices and the
+touchscreen is left frozen indefinitely.
+
+The watchdog is a systemd timer that runs every 30s and restarts the kiosk
+when it detects either:
+- no kiosk processes running at all, or
+- a defunct (`<defunct>`) Chromium child process that persists more than 45s
+  — the signature of a crash the browser failed to recover from.
+
+Install after the kiosk itself is installed:
+
+```bash
+chmod +x install-kiosk-watchdog.sh kiosk-watchdog.sh
+sudo ./install-kiosk-watchdog.sh /opt/RobotArm/electron-app
+```
+
+Check it:
+
+```bash
+systemctl status robot-arm-kiosk-watchdog.timer
+journalctl -t robot-arm-kiosk-watchdog -n 50
+```
+
 ## Troubleshooting
 
 | Problem | What to try |
@@ -212,6 +239,7 @@ sudo ./uninstall-kiosk-service.sh
 | Port 3080 already in use | Only if using `ROBOT_ARM_KIOSK_PORT=3080` — reboot or `fuser -k 3080/tcp` |
 | `command not found` (file exists) | `chmod +x install-kiosk-service.sh` then `sed -i 's/\r$//' install-kiosk-service.sh` — or run `sudo bash install-kiosk-service.sh /opt/RobotArm/electron-app` |
 | `bad interpreter` / `/bin/bash^M` | Windows line endings — run `sed -i 's/\r$//' *.sh` in `electron-app`, then try again |
+| Touchscreen unresponsive, browser looks frozen | Chromium renderer/GPU crash the monitor loop can't see — install the [watchdog](#watchdog-auto-recover-from-a-hungcrashed-browser) to auto-restart, or manually: `sudo pkill -u <kiosk-user> -f chromium` then `sudo -u <kiosk-user> ./start-kiosk.sh` |
 
 ## Differences from Electron on a PC
 
