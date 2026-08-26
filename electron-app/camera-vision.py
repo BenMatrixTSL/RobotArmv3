@@ -631,7 +631,7 @@ def detect_color_blocks(frame):
             # Shape check: a cube's footprint is a roughly-filled square at
             # any rotation, so use the rotated (not axis-aligned) bounding
             # rect for both the aspect-ratio and solidity tests below.
-            (_, _), (rot_w, rot_h), _ = cv2.minAreaRect(contour)
+            (_, _), (rot_w, rot_h), angle = cv2.minAreaRect(contour)
             if rot_w <= 0 or rot_h <= 0:
                 continue
             long_side, short_side = max(rot_w, rot_h), min(rot_w, rot_h)
@@ -640,6 +640,10 @@ def detect_color_blocks(frame):
             solidity = contour_area / (rot_w * rot_h)
             if solidity < BLOCK_MIN_SOLIDITY:
                 continue
+
+            # A square footprint repeats every 90°, so fold into 0-90 range
+            # regardless of OpenCV's minAreaRect angle sign convention.
+            rotation_deg = round(angle % 90.0, 1)
 
             x, y, w, h = cv2.boundingRect(contour)
             center_x = x + (w / 2.0)
@@ -653,6 +657,7 @@ def detect_color_blocks(frame):
                     "height": round(h / frame_height, 4),
                     "pixel_x": round(center_x, 1),
                     "pixel_y": round(center_y, 1),
+                    "rotation_deg": rotation_deg,
                 }
             )
 

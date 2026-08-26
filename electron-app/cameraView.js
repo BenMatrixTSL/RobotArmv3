@@ -115,7 +115,7 @@ function renderCameraDetectionsTable(blocks) {
     blocks.sort(function (a, b) { return (a.index || 0) - (b.index || 0); });
 
     if (blocks.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" class="camera-detections-empty">No blocks detected</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" class="camera-detections-empty">No blocks detected</td></tr>';
         return;
     }
 
@@ -124,11 +124,13 @@ function renderCameraDetectionsTable(blocks) {
         var hasWorld = typeof block.world_x_mm === 'number' && typeof block.world_y_mm === 'number';
         var xText = hasWorld ? block.world_x_mm.toFixed(1) : '—';
         var yText = hasWorld ? block.world_y_mm.toFixed(1) : '—';
+        var rotationText = typeof block.rotation_deg === 'number' ? block.rotation_deg.toFixed(1) + '°' : '—';
         return '<tr>'
             + '<td>' + block.index + '</td>'
             + '<td><span class="camera-detections-swatch" style="background-color:' + swatchColor + '"></span>' + block.color + '</td>'
             + '<td>' + xText + '</td>'
             + '<td>' + yText + '</td>'
+            + '<td>' + rotationText + '</td>'
             + '</tr>';
     }).join('');
 }
