@@ -25,6 +25,9 @@ Environment:
   ROBOT_ARM_STREAM_HEIGHT        default 480
   ROBOT_ARM_DETECTION_FPS        default 5     (camera + processing rate)
   ROBOT_ARM_COLOR_DETECTION      default 1     (set 0 to disable colour block detection)
+  ROBOT_ARM_TRACK_STABILITY_FRAMES  default 5  (frames a marker/block must be
+                                                 consistently present/absent
+                                                 before it is shown/hidden)
 """
 
 import json
@@ -77,6 +80,13 @@ BLOCK_MAX_ASPECT_RATIO = float(os.environ.get("ROBOT_ARM_BLOCK_MAX_ASPECT_RATIO"
 # own bounding rect; irregular silhouettes (the arm's joints, screws, gaps
 # between parts) leave a lot of the rect empty and score low here.
 BLOCK_MIN_SOLIDITY = float(os.environ.get("ROBOT_ARM_BLOCK_MIN_SOLIDITY", "0.65"))
+# A marker/block must be detected (or absent) this many consecutive frames
+# before it is added to (or removed from) the output — smooths out one-off
+# missed detections instead of letting overlays flicker on and off.
+TRACK_STABILITY_FRAMES = max(1, int(os.environ.get("ROBOT_ARM_TRACK_STABILITY_FRAMES", "5")))
+# Max centroid distance (normalised 0-1 image coords) for matching a colour
+# block detection to an existing track between frames.
+BLOCK_MATCH_MAX_DIST = float(os.environ.get("ROBOT_ARM_BLOCK_MATCH_MAX_DIST", "0.08"))
 BOUNDARY = b"--jpgboundary"
 
 # Try these dictionaries in order (most common first).
@@ -487,6 +497,126 @@ def draw_coordinate_frame(frame, markers, frame_width, frame_height):
                     scale=0.55, color=(0, 200, 255), thickness=2)
 
 
+marker_tracks = {}
+
+
+def update_marker_tracks(corners, ids):
+    """
+    Debounce ArUco detections across frames: a marker only enters the
+    confirmed set after being seen TRACK_STABILITY_FRAMES times in a row,
+    and only leaves it after being missing that many frames in a row (using
+    its last known corners in between). Returns (corners, ids) built from
+    the confirmed set only, in the same shapes detectMarkers() returns.
+    """
+    seen_ids = set()
+    if ids is not None:
+        for index, marker_id in enumerate(ids.flatten()):
+            marker_id = int(marker_id)
+            seen_ids.add(marker_id)
+            track = marker_tracks.setdefault(
+                marker_id, {"present": 0, "absent": 0, "confirmed": False, "corners": None}
+            )
+            track["present"] = min(track["present"] + 1, TRACK_STABILITY_FRAMES)
+            track["absent"] = 0
+            track["corners"] = corners[index]
+            if track["present"] >= TRACK_STABILITY_FRAMES:
+                track["confirmed"] = True
+
+    for marker_id, track in list(marker_tracks.items()):
+        if marker_id in seen_ids:
+            continue
+        track["present"] = 0
+        track["absent"] += 1
+        if track["absent"] >= TRACK_STABILITY_FRAMES:
+            del marker_tracks[marker_id]
+
+    confirmed_ids = [mid for mid, track in marker_tracks.items() if track["confirmed"]]
+    if not confirmed_ids:
+        return None, None
+
+    confirmed_corners = [marker_tracks[mid]["corners"] for mid in confirmed_ids]
+    confirmed_ids_arr = np.array(confirmed_ids).reshape(-1, 1)
+    return confirmed_corners, confirmed_ids_arr
+
+
+block_tracks = []
+block_indices_in_use = {}
+
+
+def _allocate_block_index(color):
+    used = block_indices_in_use.setdefault(color, set())
+    index = 0
+    while index in used:
+        index += 1
+    used.add(index)
+    return index
+
+
+def _release_block_index(color, index):
+    used = block_indices_in_use.get(color)
+    if used is not None:
+        used.discard(index)
+
+
+def update_block_tracks(detections):
+    """
+    Debounce colour-block detections across frames the same way as
+    update_marker_tracks: a block only appears after TRACK_STABILITY_FRAMES
+    consecutive detections, and only disappears after that many consecutive
+    misses. Also assigns each track a persistent per-colour index (the
+    lowest free integer for that colour), used for on-screen labels like
+    "red block (0)".
+    """
+    unmatched = list(detections)
+
+    for track in block_tracks:
+        track["_matched"] = False
+        best_i, best_dist = None, None
+        for i, det in enumerate(unmatched):
+            if det["color"] != track["color"]:
+                continue
+            dist = ((det["center_x"] - track["data"]["center_x"]) ** 2
+                     + (det["center_y"] - track["data"]["center_y"]) ** 2) ** 0.5
+            if dist <= BLOCK_MATCH_MAX_DIST and (best_dist is None or dist < best_dist):
+                best_i, best_dist = i, dist
+
+        if best_i is not None:
+            track["data"] = unmatched.pop(best_i)
+            track["present"] = min(track["present"] + 1, TRACK_STABILITY_FRAMES)
+            track["absent"] = 0
+            track["_matched"] = True
+            if track["present"] >= TRACK_STABILITY_FRAMES:
+                track["confirmed"] = True
+        else:
+            track["present"] = 0
+            track["absent"] += 1
+
+    for track in list(block_tracks):
+        if track["absent"] >= TRACK_STABILITY_FRAMES:
+            _release_block_index(track["color"], track["index"])
+            block_tracks.remove(track)
+
+    for det in unmatched:
+        block_tracks.append(
+            {
+                "color": det["color"],
+                "index": _allocate_block_index(det["color"]),
+                "data": det,
+                "present": 1,
+                "absent": 0,
+                "confirmed": False,
+            }
+        )
+
+    output = []
+    for track in block_tracks:
+        if track["confirmed"]:
+            block = dict(track["data"])
+            block["index"] = track["index"]
+            output.append(block)
+    return output
+
+
 def detect_color_blocks(frame):
     """Detect coloured blocks using HSV thresholds. Returns list of block dicts.
     Does NOT draw on the frame — call draw_color_blocks() separately."""
@@ -549,7 +679,8 @@ def draw_color_blocks(frame, blocks):
         w = int(block["width"] * fw)
         h = int(block["height"] * fh)
         cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 255), 2)
-        put_text_bg(frame, block["color"] + " block",
+        label = f"{block['color']} block ({block['index']})"
+        put_text_bg(frame, label,
                     (x, max(y - 8, 20)),
                     scale=0.6, color=(0, 255, 255), thickness=2)
         if "world_x_mm" in block:
@@ -636,8 +767,9 @@ def process_frame(frame, detectors):
         gray = prepare_gray_for_aruco(annotated)
         if detectors:
             corners, ids, dictionary_name = find_aruco_markers(gray, detectors)
-            if ids is not None and len(ids) > 0:
-                draw_aruco_overlays(annotated, corners, ids)
+        corners, ids = update_marker_tracks(corners, ids)
+        if ids is not None and len(ids) > 0:
+            draw_aruco_overlays(annotated, corners, ids)
         markers = marker_centers(corners, ids, frame_width, frame_height)
     except Exception as exc:
         print(f"ArUco processing error: {exc}", file=sys.stderr)
@@ -662,7 +794,7 @@ def process_frame(frame, detectors):
             clean_small = cv2.resize(
                 frame, (STREAM_WIDTH, STREAM_HEIGHT), interpolation=cv2.INTER_AREA
             )
-            blocks = detect_color_blocks(clean_small)
+            raw_blocks = detect_color_blocks(clean_small)
             # Annotate each block with its world position, then drop anything
             # outside the marker-defined mat — without this, HSV colour
             # matches on the arm itself (or the background) get reported as
@@ -672,15 +804,16 @@ def process_frame(frame, detectors):
             if homography is not None:
                 in_bounds = []
                 margin = BLOCK_WORKSPACE_MARGIN_MM
-                for block in blocks:
+                for block in raw_blocks:
                     wx, wy = transform_to_world(homography, block["center_x"], block["center_y"])
                     if -margin <= wx <= MARKER_SPACING_X_MM + margin and -margin <= wy <= MARKER_SPACING_Y_MM + margin:
                         block["world_x_mm"] = round(wx, 1)
                         block["world_y_mm"] = round(wy, 1)
                         in_bounds.append(block)
-                blocks = in_bounds
+                filtered_blocks = in_bounds
             else:
-                blocks = []
+                filtered_blocks = []
+            blocks = update_block_tracks(filtered_blocks)
             draw_color_blocks(stream_frame, blocks)
         except Exception as exc:
             print(f"Colour detection error: {exc}", file=sys.stderr)
