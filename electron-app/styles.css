@@ -2819,6 +2819,10 @@ header h1 {
     margin-bottom: 10px;
 }
 
+.camera-toolbar-hidden {
+    display: none;
+}
+
 .camera-stream-status {
     font-size: 14px;
     margin-bottom: 10px;
