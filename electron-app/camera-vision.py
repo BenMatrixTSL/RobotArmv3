@@ -28,6 +28,12 @@ Environment:
   ROBOT_ARM_TRACK_STABILITY_FRAMES  default 5  (frames a marker/block must be
                                                  consistently present/absent
                                                  before it is shown/hidden)
+  ROBOT_ARM_CAMERA_EXPOSURE      unset by default (auto-exposure). Set to a
+                                  manual exposure value (V4L2 driver units,
+                                  try 100-300) to stop glare off the mat from
+                                  clipping the sensor to solid white near
+                                  markers/blocks — see camera-vision.py's
+                                  CAMERA_MANUAL_EXPOSURE comment.
 """
 
 import json
@@ -87,6 +93,14 @@ TRACK_STABILITY_FRAMES = max(1, int(os.environ.get("ROBOT_ARM_TRACK_STABILITY_FR
 # Max centroid distance (normalised 0-1 image coords) for matching a colour
 # block detection to an existing track between frames.
 BLOCK_MATCH_MAX_DIST = float(os.environ.get("ROBOT_ARM_BLOCK_MATCH_MAX_DIST", "0.08"))
+# Manual exposure, in the V4L2 driver's own units (often 100us steps — try
+# small integers like 100-300 first). Unset by default (camera stays on
+# auto-exposure). Auto-exposure can let glare off a glossy mat surface
+# clip the sensor to solid white, permanently losing detail CLAHE/contrast
+# tricks can't recover; a lower fixed exposure avoids the clipping in the
+# first place, at the cost of a darker image elsewhere (which the CLAHE
+# brightness normalisation above is there to compensate for).
+CAMERA_MANUAL_EXPOSURE = os.environ.get("ROBOT_ARM_CAMERA_EXPOSURE", "").strip()
 BOUNDARY = b"--jpgboundary"
 
 # Try these dictionaries in order (most common first).
@@ -741,6 +755,13 @@ def open_camera(device_path):
                 camera.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
                 camera.set(cv2.CAP_PROP_FPS, DETECTION_FPS)
                 camera.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+                if CAMERA_MANUAL_EXPOSURE:
+                    try:
+                        # V4L2 exposure_auto: 1 = manual, 3 = aperture-priority (auto).
+                        camera.set(cv2.CAP_PROP_AUTO_EXPOSURE, 1)
+                        camera.set(cv2.CAP_PROP_EXPOSURE, float(CAMERA_MANUAL_EXPOSURE))
+                    except Exception as exc:
+                        print(f"Camera: could not set manual exposure: {exc}", file=sys.stderr)
 
                 ok, test_frame = camera.read()
                 if not ok or test_frame is None or test_frame.size == 0:
