@@ -234,7 +234,11 @@ def create_aruco_parameters():
 
     parameters.adaptiveThreshWinSizeMin = 3
     parameters.adaptiveThreshWinSizeMax = 23
-    parameters.adaptiveThreshConstant = 7
+    # Lower than the OpenCV default (7) — makes the adaptive threshold more
+    # sensitive so low-contrast markers in shadowed areas still separate
+    # from the background. Low false-positive risk: a candidate still has
+    # to decode a valid marker ID (with error correction) to be reported.
+    parameters.adaptiveThreshConstant = 5
     parameters.minMarkerPerimeterRate = 0.02
     parameters.maxMarkerPerimeterRate = 4.0
     parameters.polygonalApproxAccuracyRate = 0.05
@@ -760,10 +764,17 @@ def open_camera(device_path):
 
 
 def prepare_gray_for_aruco(frame):
-    """Improve contrast so printed markers are easier to detect."""
+    """
+    Improve contrast so printed markers are easier to detect, including in
+    shadowed areas of the mat. A smaller tile grid than the colour-block
+    normalisation (see normalize_brightness()) adapts more locally, and a
+    higher clip limit pushes shadowed regions harder — markers are small
+    and high-contrast (black/white) to begin with, so this tolerates more
+    aggressive equalisation than colour thresholding does.
+    """
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     try:
-        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+        clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(6, 6))
         gray = clahe.apply(gray)
     except Exception:
         pass
