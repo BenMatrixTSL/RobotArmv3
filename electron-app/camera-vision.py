@@ -103,22 +103,25 @@ ARUCO_DICTIONARIES = [
 
 # HSV colour ranges for simple block detection (tune under your lighting).
 # OpenCV hue is 0-179 (half of the 0-360° standard scale).
+# Saturation/value lower bounds are deliberately a bit loose — the frame's V
+# channel is brightness-normalised (see normalize_brightness()) before
+# thresholding, so shadowed blocks no longer need as strict a cutoff.
 COLOR_RANGES = {
     "red": [
-        ((0, 120, 100), (10, 255, 255)),
-        ((170, 120, 100), (180, 255, 255)),
+        ((0, 100, 80), (10, 255, 255)),
+        ((170, 100, 80), (180, 255, 255)),
     ],
     "green": [
-        ((40, 60, 60), (85, 255, 255)),
+        ((40, 45, 50), (85, 255, 255)),
     ],
     "blue": [
-        ((95, 80, 60), (125, 255, 255)),
+        ((95, 65, 50), (125, 255, 255)),
     ],
     "yellow": [
-        ((20, 120, 130), (35, 255, 255)),
+        ((20, 100, 110), (35, 255, 255)),
     ],
     "purple": [
-        ((125, 50, 40), (165, 255, 255)),
+        ((125, 40, 35), (165, 255, 255)),
     ],
 }
 
@@ -606,10 +609,27 @@ def update_block_tracks(detections):
     return output
 
 
+def normalize_brightness(hsv):
+    """
+    Equalise the V (brightness) channel with CLAHE before HSV thresholding —
+    the same contrast trick used for ArUco detection. Shadowed and evenly-lit
+    parts of the mat score closer together afterwards, so a block sitting in
+    a shadow is less likely to fall below the colour thresholds entirely.
+    """
+    h, s, v = cv2.split(hsv)
+    try:
+        clahe = cv2.createCLAHE(clipLimit=2.5, tileGridSize=(8, 8))
+        v = clahe.apply(v)
+    except Exception:
+        pass
+    return cv2.merge([h, s, v])
+
+
 def detect_color_blocks(frame):
     """Detect coloured blocks using HSV thresholds. Returns list of block dicts.
     Does NOT draw on the frame — call draw_color_blocks() separately."""
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+    hsv = normalize_brightness(hsv)
     frame_height, frame_width = frame.shape[:2]
     blocks = []
 
