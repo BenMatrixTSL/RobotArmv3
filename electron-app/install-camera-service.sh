@@ -9,6 +9,13 @@
 # Usage:
 #   sudo ./install-camera-service.sh /opt/RobotArm/electron-app
 #   sudo ROBOT_ARM_CAMERA_DEVICE=/dev/video1 ./install-camera-service.sh /opt/RobotArm/electron-app
+#   sudo ROBOT_ARM_CAMERA_EXPOSURE=80 ROBOT_ARM_CAMERA_BRIGHTNESS=30 ROBOT_ARM_CAMERA_GAMMA=400 \
+#     ./install-camera-service.sh /opt/RobotArm/electron-app
+#
+# Tune exposure/brightness/gamma live first (values are site/lighting-specific):
+#   v4l2-ctl -d /dev/video0 --set-ctrl=auto_exposure=1,exposure_time_absolute=80
+#   v4l2-ctl -d /dev/video0 --set-ctrl=brightness=30,gamma=400
+# then re-run this script with the working values so they persist across restarts/reboots.
 
 set -e
 
@@ -107,11 +114,20 @@ if ! python3 -c "import cv2; import cv2.aruco" 2>/dev/null; then
 fi
 
 CAMERA_DEVICE="$(find_capture_device)"
+# Manual exposure/brightness/gamma (V4L2 units) — site-specific, tune per Pi
+# (see the "Tune ... live first" note above), then pass the working values
+# here so they persist. All unset by default (auto-exposure, no correction).
+CAMERA_EXPOSURE="${ROBOT_ARM_CAMERA_EXPOSURE:-}"
+CAMERA_BRIGHTNESS="${ROBOT_ARM_CAMERA_BRIGHTNESS:-}"
+CAMERA_GAMMA="${ROBOT_ARM_CAMERA_GAMMA:-}"
 
 echo "Install folder:  $INSTALL_DIR"
 echo "Service user:    $SERVICE_USER (group: video)"
 echo "Camera port:     $CAMERA_PORT"
 echo "Camera device:   $CAMERA_DEVICE"
+echo "Manual exposure: ${CAMERA_EXPOSURE:-<unset, auto-exposure>}"
+echo "Brightness:      ${CAMERA_BRIGHTNESS:-<unset>}"
+echo "Gamma:           ${CAMERA_GAMMA:-<unset>}"
 echo ""
 
 # Service user must be in video group to open /dev/video*
@@ -128,6 +144,9 @@ sed -e "s|INSTALL_DIR|$INSTALL_DIR|g" \
     -e "s|SERVICE_USER|$SERVICE_USER|g" \
     -e "s|__CAMERA_PORT__|$CAMERA_PORT|g" \
     -e "s|__CAMERA_DEVICE__|$CAMERA_DEVICE|g" \
+    -e "s|__CAMERA_EXPOSURE__|$CAMERA_EXPOSURE|g" \
+    -e "s|__CAMERA_BRIGHTNESS__|$CAMERA_BRIGHTNESS|g" \
+    -e "s|__CAMERA_GAMMA__|$CAMERA_GAMMA|g" \
     "$INSTALL_DIR/robot-arm-camera.service" > "$TEMP_SERVICE"
 
 cp "$TEMP_SERVICE" "/etc/systemd/system/$SERVICE_NAME"
@@ -158,6 +177,9 @@ echo "Diagnostics:"
 echo "  bash $INSTALL_DIR/check-camera.sh"
 echo "Reinstall with a specific device:"
 echo "  sudo ROBOT_ARM_CAMERA_DEVICE=/dev/video0 ./install-camera-service.sh $INSTALL_DIR"
+echo "Reinstall with exposure/brightness/gamma tuned for this Pi's lighting:"
+echo "  sudo ROBOT_ARM_CAMERA_EXPOSURE=80 ROBOT_ARM_CAMERA_BRIGHTNESS=30 ROBOT_ARM_CAMERA_GAMMA=400 \\"
+echo "    ./install-camera-service.sh $INSTALL_DIR"
 echo ""
 
 systemctl --no-pager status "$SERVICE_NAME" || true

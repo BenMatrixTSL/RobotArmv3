@@ -13,6 +13,9 @@ Group=video
 WorkingDirectory=INSTALL_DIR
 Environment=ROBOT_ARM_CAMERA_PORT=__CAMERA_PORT__
 Environment=ROBOT_ARM_CAMERA_DEVICE=__CAMERA_DEVICE__
+Environment=ROBOT_ARM_CAMERA_EXPOSURE=__CAMERA_EXPOSURE__
+Environment=ROBOT_ARM_CAMERA_BRIGHTNESS=__CAMERA_BRIGHTNESS__
+Environment=ROBOT_ARM_CAMERA_GAMMA=__CAMERA_GAMMA__
 ExecStart=INSTALL_DIR/start-camera-stream.sh
 StandardOutput=journal
 StandardError=journal

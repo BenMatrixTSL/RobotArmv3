@@ -34,11 +34,17 @@ Environment:
                                   clipping the sensor to solid white near
                                   markers/blocks — see camera-vision.py's
                                   CAMERA_MANUAL_EXPOSURE comment.
-  ROBOT_ARM_DISPLAY_TARGET_BRIGHTNESS  default 130 (0-255). Adaptive gamma
-                                  brightens the served feed (not detection)
-                                  up to this mean brightness — compensates
-                                  for a low ROBOT_ARM_CAMERA_EXPOSURE so the
-                                  feed doesn't look dark. 0 disables it.
+  ROBOT_ARM_CAMERA_BRIGHTNESS    unset by default. Hardware brightness
+                                  (V4L2 units) to compensate for a low
+                                  manual exposure — preferred over the
+                                  software fallback below (no colour cast).
+  ROBOT_ARM_CAMERA_GAMMA         unset by default. Hardware gamma (V4L2
+                                  units), same purpose as brightness above.
+  ROBOT_ARM_DISPLAY_TARGET_BRIGHTNESS  default 0 (disabled). Software
+                                  fallback: adaptive gamma on the served
+                                  feed only (not detection) up to this mean
+                                  brightness (0-255) — use only if hardware
+                                  brightness/gamma aren't enough.
 """
 
 import json
@@ -107,14 +113,21 @@ BLOCK_MATCH_MAX_DIST = float(os.environ.get("ROBOT_ARM_BLOCK_MATCH_MAX_DIST", "0
 # first place, at the cost of a darker image elsewhere (which the CLAHE
 # brightness normalisation above is there to compensate for).
 CAMERA_MANUAL_EXPOSURE = os.environ.get("ROBOT_ARM_CAMERA_EXPOSURE", "").strip()
-# Adaptive display brightening — applied to the served snapshot/stream only,
-# never to the frame detection runs on — so a low ROBOT_ARM_CAMERA_EXPOSURE
-# (needed to avoid glare clipping) doesn't leave the operator looking at a
-# dark feed. Target mean brightness (0-255) the gamma correction aims for;
-# it's computed per-frame from the actual mean rather than a fixed gamma
-# constant, so the feed looks roughly the same regardless of how low the
-# capture exposure is set. Set to 0 to disable.
-DISPLAY_TARGET_BRIGHTNESS = float(os.environ.get("ROBOT_ARM_DISPLAY_TARGET_BRIGHTNESS", "95"))
+# Hardware brightness/gamma (V4L2 driver units) to compensate for a low
+# manual exposure — applied at the camera/ISP level, before any software
+# processing, so it doesn't introduce the colour-cast risk a software
+# brightness boost has (see DISPLAY_TARGET_BRIGHTNESS below). This is the
+# preferred way to make a low-exposure capture look normal again; tune with:
+#   v4l2-ctl -d /dev/video0 --set-ctrl=brightness=<value>,gamma=<value>
+CAMERA_MANUAL_BRIGHTNESS = os.environ.get("ROBOT_ARM_CAMERA_BRIGHTNESS", "").strip()
+CAMERA_MANUAL_GAMMA = os.environ.get("ROBOT_ARM_CAMERA_GAMMA", "").strip()
+# Software fallback display brightening — applied to the served snapshot/
+# stream only, never to the frame detection runs on. Off by default (0):
+# the hardware brightness/gamma controls above do this job with better
+# colour fidelity when the camera supports them. Only enable this on a
+# camera where they don't help enough — it works in the HSV V channel
+# (not raw BGR) to avoid a colour-cast, but is still a coarser tool.
+DISPLAY_TARGET_BRIGHTNESS = float(os.environ.get("ROBOT_ARM_DISPLAY_TARGET_BRIGHTNESS", "0"))
 DISPLAY_GAMMA_MAX = 2.2
 BOUNDARY = b"--jpgboundary"
 
@@ -826,6 +839,16 @@ def open_camera(device_path):
                         camera.set(cv2.CAP_PROP_EXPOSURE, float(CAMERA_MANUAL_EXPOSURE))
                     except Exception as exc:
                         print(f"Camera: could not set manual exposure: {exc}", file=sys.stderr)
+                if CAMERA_MANUAL_BRIGHTNESS:
+                    try:
+                        camera.set(cv2.CAP_PROP_BRIGHTNESS, float(CAMERA_MANUAL_BRIGHTNESS))
+                    except Exception as exc:
+                        print(f"Camera: could not set manual brightness: {exc}", file=sys.stderr)
+                if CAMERA_MANUAL_GAMMA:
+                    try:
+                        camera.set(cv2.CAP_PROP_GAMMA, float(CAMERA_MANUAL_GAMMA))
+                    except Exception as exc:
+                        print(f"Camera: could not set manual gamma: {exc}", file=sys.stderr)
 
                 ok, test_frame = camera.read()
                 if not ok or test_frame is None or test_frame.size == 0:

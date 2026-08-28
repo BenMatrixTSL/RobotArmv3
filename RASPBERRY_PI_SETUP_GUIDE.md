@@ -388,6 +388,50 @@ sudo journalctl -u robot-arm-server.service -f
 
 ---
 
+## Networking: Ethernet + WiFi Access Point
+
+The web/WS servers already bind `0.0.0.0`, so they're reachable over ethernet
+and WiFi at the same time with no code changes — this is purely a Pi network
+config step. `install-wifi-ap.sh` (repo root) sets the Pi up as a **local-only**
+WiFi access point (no internet sharing/NAT — WiFi clients can reach the app
+but not the internet) that runs alongside the existing wired connection:
+
+```bash
+cd /opt/RobotArm
+chmod +x install-wifi-ap.sh
+sudo ./install-wifi-ap.sh                          # SSID "RobotArm-$(hostname)", prompts for password
+sudo ./install-wifi-ap.sh RobotArm-Lab2 MyPass123   # explicit SSID/password
+sudo ./install-wifi-ap.sh RobotArm-Lab2 MyPass123 192.168.5.1/24   # custom AP subnet
+```
+
+Requires NetworkManager (Raspberry Pi OS Bookworm+ default) — not compatible
+with older dhcpcd-based images. Safe to re-run to change SSID/password later.
+
+## Camera Tuning (glare / low light)
+
+Auto-exposure can let glare off a glossy mat surface clip the camera sensor
+to solid white near ArUco markers/blocks, permanently losing detail no
+software processing can recover. If detection is unreliable under your
+lighting, tune these live first, then bake the working values into the
+camera service install so they persist:
+
+```bash
+# Tune live (test values, does not persist across restarts)
+v4l2-ctl -d /dev/video0 --list-ctrls                                   # see supported ranges
+v4l2-ctl -d /dev/video0 --set-ctrl=auto_exposure=1,exposure_time_absolute=80
+v4l2-ctl -d /dev/video0 --set-ctrl=brightness=30,gamma=400             # compensate for the darker capture
+
+# Once you have working values, make them persist:
+cd /opt/RobotArm/electron-app
+sudo ROBOT_ARM_CAMERA_EXPOSURE=80 ROBOT_ARM_CAMERA_BRIGHTNESS=30 ROBOT_ARM_CAMERA_GAMMA=400 \
+    ./install-camera-service.sh /opt/RobotArm/electron-app
+```
+
+All three are unset (camera default/auto) unless configured — see
+`camera-vision.py`'s module docstring for the full list of tuning env vars.
+
+---
+
 ## Quick Setup Checklist
 
 ### Raspberry Pi 5 Setup:
