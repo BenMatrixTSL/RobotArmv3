@@ -2857,7 +2857,7 @@ header h1 {
 
 .camera-content {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     align-items: flex-start;
     gap: 16px;
 }
@@ -2866,13 +2866,14 @@ header h1 {
     background-color: #1a1a1a;
     border-radius: 8px;
     padding: 4px;
-    min-height: 200px;
+    min-height: 150px;
     max-width: 640px;
     display: flex;
     align-items: center;
     justify-content: center;
     position: relative;
-    flex: 0 1 auto;
+    flex: 1 1 60%;
+    min-width: 0;
 }
 
 .camera-stream-placeholder {
@@ -2905,8 +2906,10 @@ header h1 {
 }
 
 .camera-detections-panel {
-    flex: 1 1 260px;
-    min-width: 220px;
+    flex: 1 1 240px;
+    min-width: 150px;
+    max-width: 320px;
+    overflow-x: auto;
 }
 
 .camera-detections-title {

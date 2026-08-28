@@ -34,9 +34,15 @@ Environment:
                                   clipping the sensor to solid white near
                                   markers/blocks — see camera-vision.py's
                                   CAMERA_MANUAL_EXPOSURE comment.
+  ROBOT_ARM_DISPLAY_TARGET_BRIGHTNESS  default 130 (0-255). Adaptive gamma
+                                  brightens the served feed (not detection)
+                                  up to this mean brightness — compensates
+                                  for a low ROBOT_ARM_CAMERA_EXPOSURE so the
+                                  feed doesn't look dark. 0 disables it.
 """
 
 import json
+import math
 import os
 import subprocess
 import sys
@@ -101,11 +107,15 @@ BLOCK_MATCH_MAX_DIST = float(os.environ.get("ROBOT_ARM_BLOCK_MATCH_MAX_DIST", "0
 # first place, at the cost of a darker image elsewhere (which the CLAHE
 # brightness normalisation above is there to compensate for).
 CAMERA_MANUAL_EXPOSURE = os.environ.get("ROBOT_ARM_CAMERA_EXPOSURE", "").strip()
-# Gamma correction applied to the served snapshot/stream only — never to the
-# frame detection runs on — so a low ROBOT_ARM_CAMERA_EXPOSURE (needed to
-# avoid glare clipping) doesn't leave the operator looking at a dark feed.
-# >1 brightens; 1.0 disables it entirely.
-DISPLAY_GAMMA = float(os.environ.get("ROBOT_ARM_DISPLAY_GAMMA", "1.8"))
+# Adaptive display brightening — applied to the served snapshot/stream only,
+# never to the frame detection runs on — so a low ROBOT_ARM_CAMERA_EXPOSURE
+# (needed to avoid glare clipping) doesn't leave the operator looking at a
+# dark feed. Target mean brightness (0-255) the gamma correction aims for;
+# it's computed per-frame from the actual mean rather than a fixed gamma
+# constant, so the feed looks roughly the same regardless of how low the
+# capture exposure is set. Set to 0 to disable.
+DISPLAY_TARGET_BRIGHTNESS = float(os.environ.get("ROBOT_ARM_DISPLAY_TARGET_BRIGHTNESS", "130"))
+DISPLAY_GAMMA_MAX = 3.5
 BOUNDARY = b"--jpgboundary"
 
 # Try these dictionaries in order (most common first).
@@ -465,6 +475,25 @@ def apply_display_gamma(frame, gamma):
         lut = np.array([((i / 255.0) ** inv_gamma) * 255 for i in range(256)], dtype="uint8")
         _gamma_lut_cache[gamma] = lut
     return cv2.LUT(frame, lut)
+
+
+def auto_brighten_for_display(frame):
+    """
+    Brighten the frame actually shown to the user — entirely separate from
+    (and applied after) the detection pipeline above, which always runs on
+    its own copy of the raw capture. Computes the gamma needed to lift this
+    specific frame's current mean brightness up to DISPLAY_TARGET_BRIGHTNESS,
+    instead of using one fixed gamma constant, so the feed reads as roughly
+    the same brightness no matter how low ROBOT_ARM_CAMERA_EXPOSURE is set.
+    """
+    if DISPLAY_TARGET_BRIGHTNESS <= 0:
+        return frame
+    mean_brightness = float(np.mean(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)))
+    if mean_brightness <= 1.0 or mean_brightness >= DISPLAY_TARGET_BRIGHTNESS:
+        return frame
+    gamma = math.log(mean_brightness / 255.0) / math.log(DISPLAY_TARGET_BRIGHTNESS / 255.0)
+    gamma = max(1.0, min(gamma, DISPLAY_GAMMA_MAX))
+    return apply_display_gamma(frame, gamma)
 
 
 def put_text_bg(img, text, org, font=cv2.FONT_HERSHEY_SIMPLEX, scale=0.6,
@@ -896,7 +925,7 @@ def process_frame(frame, detectors):
     # Brighten for display only — detection above already ran on the darker
     # capture (see ROBOT_ARM_CAMERA_EXPOSURE), so this has no effect on
     # accuracy, only on how the feed looks to the operator.
-    stream_frame = apply_display_gamma(stream_frame, DISPLAY_GAMMA)
+    stream_frame = auto_brighten_for_display(stream_frame)
 
     ok, jpeg = cv2.imencode(
         ".jpg", stream_frame, [int(cv2.IMWRITE_JPEG_QUALITY), JPEG_QUALITY]
