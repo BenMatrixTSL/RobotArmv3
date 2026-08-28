@@ -395,6 +395,36 @@ def marker_centers(corners, ids, frame_width, frame_height):
     return markers
 
 
+def marker_exclusion_boxes(corners, ids, frame_width, frame_height, margin_ratio=0.4):
+    """
+    Normalised (0-1) bounding box around each detected marker, expanded by
+    margin_ratio. Used to keep colour-block detection from ever scanning a
+    marker's own pixels: MJPEG's chroma-subsampled compression fringes
+    colour at sharp black/white edges (exactly what an ArUco marker's
+    border is), which the colour thresholds can pick up as a small "block"
+    sitting right on top of the marker.
+    """
+    boxes = []
+    if ids is None or corners is None:
+        return boxes
+    for c in corners:
+        pts = c[0]
+        xs = pts[:, 0] / frame_width
+        ys = pts[:, 1] / frame_height
+        x0, x1 = float(xs.min()), float(xs.max())
+        y0, y1 = float(ys.min()), float(ys.max())
+        mx, my = (x1 - x0) * margin_ratio, (y1 - y0) * margin_ratio
+        boxes.append((x0 - mx, y0 - my, x1 + mx, y1 + my))
+    return boxes
+
+
+def point_in_any_box(x, y, boxes):
+    for x0, y0, x1, y1 in boxes:
+        if x0 <= x <= x1 and y0 <= y <= y1:
+            return True
+    return False
+
+
 def get_homography_from_markers(markers):
     """
     Compute a transform matrix from normalised image coordinates (0–1) to
@@ -931,6 +961,15 @@ def process_frame(frame, detectors):
                 frame, (STREAM_WIDTH, STREAM_HEIGHT), interpolation=cv2.INTER_AREA
             )
             raw_blocks = detect_color_blocks(clean_small)
+            # Drop anything overlapping a detected marker's own footprint —
+            # see marker_exclusion_boxes() for why (JPEG colour fringing at
+            # the marker's edges getting mistaken for a small block).
+            exclusion_boxes = marker_exclusion_boxes(corners, ids, frame_width, frame_height)
+            if exclusion_boxes:
+                raw_blocks = [
+                    b for b in raw_blocks
+                    if not point_in_any_box(b["center_x"], b["center_y"], exclusion_boxes)
+                ]
             # Annotate each block with its world position, then drop anything
             # outside the marker-defined mat — without this, HSV colour
             # matches on the arm itself (or the background) get reported as
