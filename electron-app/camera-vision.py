@@ -101,6 +101,11 @@ BLOCK_MATCH_MAX_DIST = float(os.environ.get("ROBOT_ARM_BLOCK_MATCH_MAX_DIST", "0
 # first place, at the cost of a darker image elsewhere (which the CLAHE
 # brightness normalisation above is there to compensate for).
 CAMERA_MANUAL_EXPOSURE = os.environ.get("ROBOT_ARM_CAMERA_EXPOSURE", "").strip()
+# Gamma correction applied to the served snapshot/stream only — never to the
+# frame detection runs on — so a low ROBOT_ARM_CAMERA_EXPOSURE (needed to
+# avoid glare clipping) doesn't leave the operator looking at a dark feed.
+# >1 brightens; 1.0 disables it entirely.
+DISPLAY_GAMMA = float(os.environ.get("ROBOT_ARM_DISPLAY_GAMMA", "1.8"))
 BOUNDARY = b"--jpgboundary"
 
 # Try these dictionaries in order (most common first).
@@ -439,6 +444,27 @@ def transform_to_world(H, nx, ny):
     pt = np.array([[[nx, ny]]], dtype=np.float32)
     world = cv2.perspectiveTransform(pt, H)
     return float(world[0][0][0]), float(world[0][0][1])
+
+
+_gamma_lut_cache = {}
+
+
+def apply_display_gamma(frame, gamma):
+    """
+    Brighten a frame for display via gamma correction (output = (input/255)^(1/gamma) * 255).
+    Deliberately not a flat brightness/gain boost: gamma lifts shadows and
+    midtones while leaving already-bright pixels close to where they were,
+    so it doesn't re-clip the glare highlights a low manual exposure was
+    set specifically to avoid (see ROBOT_ARM_CAMERA_EXPOSURE).
+    """
+    if gamma <= 1.0:
+        return frame
+    lut = _gamma_lut_cache.get(gamma)
+    if lut is None:
+        inv_gamma = 1.0 / gamma
+        lut = np.array([((i / 255.0) ** inv_gamma) * 255 for i in range(256)], dtype="uint8")
+        _gamma_lut_cache[gamma] = lut
+    return cv2.LUT(frame, lut)
 
 
 def put_text_bg(img, text, org, font=cv2.FONT_HERSHEY_SIMPLEX, scale=0.6,
@@ -866,6 +892,11 @@ def process_frame(frame, detectors):
             draw_color_blocks(stream_frame, blocks)
         except Exception as exc:
             print(f"Colour detection error: {exc}", file=sys.stderr)
+
+    # Brighten for display only — detection above already ran on the darker
+    # capture (see ROBOT_ARM_CAMERA_EXPOSURE), so this has no effect on
+    # accuracy, only on how the feed looks to the operator.
+    stream_frame = apply_display_gamma(stream_frame, DISPLAY_GAMMA)
 
     ok, jpeg = cv2.imencode(
         ".jpg", stream_frame, [int(cv2.IMWRITE_JPEG_QUALITY), JPEG_QUALITY]
