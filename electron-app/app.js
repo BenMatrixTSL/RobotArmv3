@@ -6995,6 +6995,15 @@ async function applyLoadedUrdf(urdfText, source) {
     } else {
         console.warn('robotArm3D not initialized yet. Visualization will update when initialized.');
     }
+
+    // initializeKinematicsTab() runs at startup before this (async) load
+    // finishes, so its one-shot updateKinematicsMatrices() call shows
+    // "Kinematics not configured" and nothing refreshes it afterward —
+    // refresh it now that kinematics is actually configured.
+    if (typeof updateKinematicsMatrices === 'function') {
+        updateKinematicsMatrices(Array(robotKinematics.getJointCount()).fill(0));
+    }
+
     console.log('URDF demo configuration loaded:', allJoints);
 }
 
