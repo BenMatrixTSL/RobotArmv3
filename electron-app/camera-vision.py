@@ -114,8 +114,8 @@ CAMERA_MANUAL_EXPOSURE = os.environ.get("ROBOT_ARM_CAMERA_EXPOSURE", "").strip()
 # it's computed per-frame from the actual mean rather than a fixed gamma
 # constant, so the feed looks roughly the same regardless of how low the
 # capture exposure is set. Set to 0 to disable.
-DISPLAY_TARGET_BRIGHTNESS = float(os.environ.get("ROBOT_ARM_DISPLAY_TARGET_BRIGHTNESS", "130"))
-DISPLAY_GAMMA_MAX = 3.5
+DISPLAY_TARGET_BRIGHTNESS = float(os.environ.get("ROBOT_ARM_DISPLAY_TARGET_BRIGHTNESS", "95"))
+DISPLAY_GAMMA_MAX = 2.2
 BOUNDARY = b"--jpgboundary"
 
 # Try these dictionaries in order (most common first).
@@ -485,15 +485,24 @@ def auto_brighten_for_display(frame):
     specific frame's current mean brightness up to DISPLAY_TARGET_BRIGHTNESS,
     instead of using one fixed gamma constant, so the feed reads as roughly
     the same brightness no matter how low ROBOT_ARM_CAMERA_EXPOSURE is set.
+
+    Applied to the HSV V channel only, not the raw BGR channels — gamma on
+    BGR directly amplifies any per-channel imbalance into a colour cast
+    (got a strong green/magenta tint doing it that way at higher gamma).
+    Working in V preserves hue/saturation, so brightening doesn't distort
+    colour.
     """
     if DISPLAY_TARGET_BRIGHTNESS <= 0:
         return frame
-    mean_brightness = float(np.mean(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)))
+    hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+    h, s, v = cv2.split(hsv)
+    mean_brightness = float(np.mean(v))
     if mean_brightness <= 1.0 or mean_brightness >= DISPLAY_TARGET_BRIGHTNESS:
         return frame
     gamma = math.log(mean_brightness / 255.0) / math.log(DISPLAY_TARGET_BRIGHTNESS / 255.0)
     gamma = max(1.0, min(gamma, DISPLAY_GAMMA_MAX))
-    return apply_display_gamma(frame, gamma)
+    v = apply_display_gamma(v, gamma)
+    return cv2.cvtColor(cv2.merge([h, s, v]), cv2.COLOR_HSV2BGR)
 
 
 def put_text_bg(img, text, org, font=cv2.FONT_HERSHEY_SIMPLEX, scale=0.6,
