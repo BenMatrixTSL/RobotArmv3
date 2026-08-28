@@ -673,12 +673,13 @@ def update_block_tracks(detections):
     Debounce colour-block detections across frames the same way as
     update_marker_tracks: a block only appears after TRACK_STABILITY_FRAMES
     consecutive detections, and only disappears after that many consecutive
-    misses. Each confirmed block is then given a per-colour index ordered
-    top-to-bottom, then left-to-right (row-major over its centre position),
-    used for on-screen labels like "red block (0)". Since this is
-    recomputed from current position every frame rather than being a fixed
-    per-track slot, a block's index can shift if another block of the same
-    colour appears/disappears above or to the left of it.
+    misses. Each confirmed block is then given a index, globally unique
+    across all colours (not per-colour — X/Y positions are looked up by
+    this index elsewhere, so two blocks can never share one), ordered
+    top-to-bottom then left-to-right (row-major over centre position).
+    Since this is recomputed from current position every frame rather than
+    being a fixed per-track slot, a block's index can shift if another
+    block appears/disappears above or to the left of it.
     """
     unmatched = list(detections)
 
@@ -722,12 +723,8 @@ def update_block_tracks(detections):
     confirmed = [track for track in block_tracks if track["confirmed"]]
     confirmed.sort(key=lambda track: (track["data"]["center_y"], track["data"]["center_x"]))
 
-    next_index = {}
     output = []
-    for track in confirmed:
-        color = track["color"]
-        index = next_index.get(color, 0)
-        next_index[color] = index + 1
+    for index, track in enumerate(confirmed):
         block = dict(track["data"])
         block["index"] = index
         output.append(block)
