@@ -153,8 +153,14 @@ COLOR_RANGES = {
         ((0, 100, 80), (10, 255, 255)),
         ((170, 100, 80), (180, 255, 255)),
     ],
+    # Saturation/value floor higher than the other colours: the dark mat
+    # background has a natural olive/green tint (hue ~48, S ~65 in testing)
+    # that the general shadow-tolerant floor let through, merging with any
+    # real green block into one background-sized blob that failed the max-
+    # area check — i.e. the block silently vanished. Real block pixels ran
+    # S ~140-200, V ~140+, well clear of the background's ~S65/V65.
     "green": [
-        ((40, 45, 50), (85, 255, 255)),
+        ((40, 110, 70), (85, 255, 255)),
     ],
     "blue": [
         ((95, 65, 50), (125, 255, 255)),
