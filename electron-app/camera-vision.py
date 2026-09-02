@@ -289,10 +289,21 @@ def create_aruco_parameters():
     parameters.adaptiveThreshConstant = 5
     parameters.minMarkerPerimeterRate = 0.02
     parameters.maxMarkerPerimeterRate = 4.0
-    parameters.polygonalApproxAccuracyRate = 0.05
+    # Higher than the OpenCV default (0.03) — a marker near the edge of a
+    # wide-angle lens's field of view gets warped from a square into a
+    # trapezoid by lens distortion, and the default tolerance rejects that
+    # shape as "not a marker" before it ever reaches ID decoding. Loosened
+    # so a distorted-but-real marker still passes the shape check; a
+    # candidate still has to decode a valid ID (with error correction) to
+    # be reported, so this doesn't meaningfully raise false-positive risk.
+    parameters.polygonalApproxAccuracyRate = 0.10
     parameters.minCornerDistanceRate = 0.03
     parameters.minDistanceToBorder = 1
     parameters.minMarkerDistanceRate = 0.03
+    # Default is 0.35 — a bit more tolerance for bit-sampling errors along
+    # the border once perspective correction has already had to stretch a
+    # heavily distorted (edge-of-frame) marker back into a square.
+    parameters.maxErroneousBitsInBorderRate = 0.5
 
     try:
         parameters.cornerRefinementMethod = cv2.aruco.CORNER_REFINE_SUBPIX
