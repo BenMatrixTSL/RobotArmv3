@@ -52,6 +52,11 @@ const HEAVY_UI_INTERVAL_MS = 100;
 let lastGoodJointStatus = [];
 // Tracks the angle we last commanded for jog buttons (avoids stale UI reads)
 let jogCommandedAngles = [];
+// Whether the Accel field defaults have been pushed to the servos for the
+// current control session (reset when control is lost, so a later takeControl
+// re-syncs — the servo's STS_ACC register otherwise keeps whatever value it
+// last had, which is not necessarily what the UI shows).
+let accelerationDefaultsSynced = false;
 let robotArm3D = null; // 3D visualization instance
 let useSimulatedAngles = false; // Whether to use simulated angles instead of real robot angles
 let simulatedAngles = [0, 0, 0, 0]; // Simulated joint angles
@@ -2626,6 +2631,7 @@ function updateArmControlDisplay(controlInfo) {
             releaseButton.style.display = 'none';
         }
         updateControlLockDisplay(null, false);
+        accelerationDefaultsSynced = false;
         return;
     }
 
@@ -2643,8 +2649,14 @@ function updateArmControlDisplay(controlInfo) {
         updateTakeControlButtonState();
         updateEndToolServoButtonsState();
         updateEndToolPneumaticButtonsState();
+        if (!accelerationDefaultsSynced) {
+            accelerationDefaultsSynced = true;
+            syncJointAccelerationDefaults();
+        }
         return;
     }
+
+    accelerationDefaultsSynced = false;
 
     if (!anotherClientHasControl(controlInfo)) {
         text.textContent = 'Robot available for control';
@@ -3230,10 +3242,34 @@ function applyJointAcceleration(jointNumber) {
         return;
     }
 
-    robotArmClient.setAcceleration(jointNumber, acc)
-        .catch(function(error) {
-            showAppMessage('Set acceleration failed (joint ' + jointNumber + '): ' + error.message);
-        });
+    // setAcceleration is fire-and-forget (sendCommand), not a Promise — no .catch to chain.
+    robotArmClient.setAcceleration(jointNumber, acc);
+}
+
+/**
+ * Pushes every joint's Accel field to its servo. The ST3215's acceleration
+ * register is sticky (survives independently of what the UI shows) and is
+ * otherwise only written when a user manually edits an Accel field, so a
+ * servo that has never had it touched runs with whatever acceleration it last
+ * had — including 0, which some Feetech firmware treats as no ramp at all,
+ * jumping straight to goal speed. Called once per control session (see
+ * accelerationDefaultsSynced in updateArmControlDisplay) so jog/moves always
+ * start from a known acceleration rather than leftover servo state.
+ */
+async function syncJointAccelerationDefaults() {
+    const numJoints = getNumJoints();
+    for (let i = 1; i <= numJoints; i++) {
+        const accelerationInputElement = document.getElementById(`joint${i}Acceleration`);
+        if (!accelerationInputElement) continue;
+        const acc = parseInt(accelerationInputElement.value, 10);
+        if (isNaN(acc) || acc < 0 || acc > 254) continue;
+        try {
+            await robotArmClient.setAcceleration(i, acc);
+        } catch (error) {
+            console.warn(`syncJointAccelerationDefaults: failed to set joint ${i} acceleration:`, error.message);
+        }
+        await new Promise(resolve => setTimeout(resolve, 50));
+    }
 }
 
 /**
