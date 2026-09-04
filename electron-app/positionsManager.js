@@ -116,7 +116,51 @@ function updateXYZFromAngles() {
 }
 
 /**
- * Runs IK from the XYZ inputs and populates the joint angle fields
+ * Shows/hides the orientation vector fields when the constraint checkbox is toggled.
+ */
+function updatePositionOrientationEnabled() {
+    const checkbox = document.getElementById('positionOrientationEnabled');
+    const fields = document.getElementById('positionOrientationFields');
+    if (fields) fields.hidden = !(checkbox && checkbox.checked);
+}
+
+/**
+ * Fills the orientation vector fields with a preset direction and enables the constraint.
+ * @param {'down'|'up'} mode
+ */
+function setPositionOrientationPreset(mode) {
+    const xInput = document.getElementById('positionOrientX');
+    const yInput = document.getElementById('positionOrientY');
+    const zInput = document.getElementById('positionOrientZ');
+    if (xInput) xInput.value = 0;
+    if (yInput) yInput.value = 0;
+    if (zInput) zInput.value = mode === 'up' ? 1 : -1;
+
+    const checkbox = document.getElementById('positionOrientationEnabled');
+    if (checkbox) checkbox.checked = true;
+    updatePositionOrientationEnabled();
+}
+
+/**
+ * Reads the orientation constraint fields, if enabled.
+ * @returns {{x:number,y:number,z:number}|null} Desired tool Z-axis direction, or null if the constraint is off/invalid.
+ */
+function getPositionOrientationInput() {
+    const checkbox = document.getElementById('positionOrientationEnabled');
+    if (!checkbox || !checkbox.checked) return null;
+
+    const ox = parseFloat(document.getElementById('positionOrientX').value);
+    const oy = parseFloat(document.getElementById('positionOrientY').value);
+    const oz = parseFloat(document.getElementById('positionOrientZ').value);
+    if (isNaN(ox) || isNaN(oy) || isNaN(oz) || (ox === 0 && oy === 0 && oz === 0)) {
+        return undefined; // signals "enabled but invalid" to the caller
+    }
+    return { x: ox, y: oy, z: oz };
+}
+
+/**
+ * Runs IK from the XYZ inputs and populates the joint angle fields.
+ * When the orientation constraint is enabled, also solves for tool direction.
  */
 function applyIKFromXYZ() {
     if (typeof robotKinematics === 'undefined' || !robotKinematics.isConfigured()) {
@@ -130,10 +174,18 @@ function applyIKFromXYZ() {
         updatePositionsXYZStatus('Enter X, Y, Z values first', 'error');
         return;
     }
+
+    const orientation = getPositionOrientationInput();
+    if (orientation === undefined) {
+        updatePositionsXYZStatus('Enter a valid (non-zero) orientation vector, or uncheck the constraint', 'error');
+        return;
+    }
+
     updatePositionsXYZStatus('Computing IK…', 'info');
     try {
         const currentAngles = getPositionAngles();
-        const angles = robotKinematics.inverseKinematics({ x, y, z }, currentAngles);
+        const target = orientation ? { x, y, z, orientation } : { x, y, z };
+        const angles = robotKinematics.inverseKinematics(target, currentAngles);
         if (!angles) {
             updatePositionsXYZStatus(`Position (${x}, ${y}, ${z}) mm is unreachable`, 'error');
             return;

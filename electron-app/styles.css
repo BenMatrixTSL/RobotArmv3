@@ -1850,6 +1850,28 @@ header h1 {
     min-width: 20px;
 }
 
+.positions-xyz-orientation {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.positions-orientation-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.positions-orientation-fields {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
 .positions-xyz-buttons {
     display: flex;
     gap: 10px;
