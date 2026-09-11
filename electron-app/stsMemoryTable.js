@@ -43,12 +43,15 @@ function decodeBitmask(raw) {
     return active.length ? active.join(', ') : 'none';
 }
 
-function decodeSignedStep(raw) {
+function decodeSignedStepNumeric(raw) {
     // Bit 11 is the sign bit; bits 0-10 are magnitude (datasheet: "Bit11 is the
     // direction bit... other bits can represent the range of 0-2047 steps").
     const magnitude = raw & 0x7FF;
-    const negative = (raw & 0x800) !== 0;
-    return (negative ? -magnitude : magnitude) + ' step';
+    return (raw & 0x800) ? -magnitude : magnitude;
+}
+
+function decodeSignedStep(raw) {
+    return decodeSignedStepNumeric(raw) + ' step';
 }
 
 /**
@@ -108,6 +111,15 @@ const UNIT_DECODERS = {
 // with `UNIT_ENCODERS[unitType] || ((v) => v)`.
 const UNIT_ENCODERS = {
     'signed-step': encodeSignedStep,
+};
+
+// unitType numeric decoders: (raw) => plain number, matching what the field's
+// own min/max describe (e.g. -100, not "-100 step" and not the raw 2148 bit
+// pattern). Used to pre-fill an edit box with a value the field's range
+// actually accepts — showing the raw bit pattern there made small negative
+// edits to Position Correction impractical (2148 looks nothing like -100).
+const UNIT_NUMERIC_DECODERS = {
+    'signed-step': decodeSignedStepNumeric,
 };
 
 /**
@@ -247,6 +259,20 @@ function encodeRegisterValue(reg, value) {
 }
 
 /**
+ * Inverse of encodeRegisterValue: turns a register's raw value into the plain
+ * number its own min/max describe — what an edit box should be pre-filled
+ * with so typing a small adjustment (e.g. -100 -> -99) works as expected,
+ * rather than showing the underlying bit pattern.
+ * @param {object} reg
+ * @param {number} raw
+ * @returns {number}
+ */
+function decodeRegisterValue(reg, raw) {
+    const decoder = UNIT_NUMERIC_DECODERS[reg.unitType];
+    return decoder ? decoder(raw) : raw;
+}
+
+/**
  * Decodes a raw EEPROM byte block (as read from address 0, length 40) into
  * per-register raw values, meaningful values, and default-deviation flags.
  * @param {number[]} bytes - raw bytes for addresses 0x00-0x27 (40 bytes)
@@ -314,5 +340,5 @@ function decodeSramBlock(bytes) {
 }
 
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { STS_EEPROM_REGISTERS, STS_SRAM_REGISTERS, decodeEepromBlock, decodeSramBlock, encodeRegisterValue };
+    module.exports = { STS_EEPROM_REGISTERS, STS_SRAM_REGISTERS, decodeEepromBlock, decodeSramBlock, encodeRegisterValue, decodeRegisterValue };
 }

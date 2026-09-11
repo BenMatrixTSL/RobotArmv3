@@ -111,7 +111,7 @@ function renderEepromTable() {
             if (r.writable) {
                 editCell = `
                     <td>
-                        <input type="number" class="cal-edit-input" id="cal-edit-${r.address}" value="${r.raw}" min="${r.min}" max="${r.max}">
+                        <input type="number" class="cal-edit-input" id="cal-edit-${r.address}" value="${decodeRegisterValue(r, r.raw)}" min="${r.min}" max="${r.max}">
                         <button class="btn btn-small btn-primary" onclick="writeCalibrationRegister(${r.address})">Write</button>
                     </td>
                 `;
