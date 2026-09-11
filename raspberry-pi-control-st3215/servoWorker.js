@@ -1215,7 +1215,11 @@ async function handleBusCommand(clientId, data) {
                 await sv.writeData(0x37, [0]); // unlock EEPROM
                 await new Promise(r => setTimeout(r, 25));
                 await sv.writeData(address, bytesToWrite);
-                await new Promise(r => setTimeout(r, 40));
+                // Longer settle than the 40ms used elsewhere (e.g. writePIDValues) —
+                // this page immediately reads the register back to confirm the write
+                // took effect, so it needs the EEPROM write to have fully committed
+                // first, not just enough time for the next unrelated bus command.
+                await new Promise(r => setTimeout(r, 100));
                 log(`[CALIBRATION] J${data.joint} wrote raw EEPROM address 0x${address.toString(16)} = ${rawValue}`);
                 reply({ type: 'success', message: `Wrote ${rawValue} to address 0x${address.toString(16)} on joint ${data.joint}` });
             } catch (error) {

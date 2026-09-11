@@ -163,13 +163,33 @@ async function writeCalibrationRegister(address) {
     }
 
     const password = document.getElementById('calibrationWritePassword').value;
+    const writeButton = input.nextElementSibling;
+    const addrHex = '0x' + address.toString(16);
+    if (writeButton) writeButton.disabled = true;
+    input.disabled = true;
+
     try {
-        setCalibrationStatus(`Writing Joint ${jointNumber} address 0x${address.toString(16)}...`);
+        setCalibrationStatus(`Writing Joint ${jointNumber} address ${addrHex}...`);
         await robotArmClient.writeServoEepromRaw(jointNumber, address, rawValue, password);
+
+        // The write's own reply already waits for the servo's EEPROM-write
+        // settle time server-side, but read it back explicitly rather than
+        // trusting "success" alone — that's the only way to know the table
+        // reflects what the hardware actually holds, not just what we asked for.
+        setCalibrationStatus(`Verifying Joint ${jointNumber} address ${addrHex}...`);
         await readCalibrationForJoint(jointNumber);
         renderCalibrationTable();
+
+        const confirmedReg = decodeEepromBlock(calibrationRawByJoint[jointNumber]).find(r => r.address === address);
+        if (confirmedReg && confirmedReg.raw === rawValue) {
+            setCalibrationStatus(`Confirmed — Joint ${jointNumber} address ${addrHex} now reads ${rawValue} (${confirmedReg.meaningful}).`);
+        } else {
+            const actual = confirmedReg ? confirmedReg.raw : '(read failed)';
+            setCalibrationStatus(`Wrote ${rawValue} but the read-back shows ${actual} — the write may not have taken effect. Try again or check the servo connection.`);
+        }
     } catch (error) {
-        setCalibrationStatus(`Failed to write Joint ${jointNumber} address 0x${address.toString(16)}: ${error.message}`);
+        setCalibrationStatus(`Failed to write Joint ${jointNumber} address ${addrHex}: ${error.message}`);
+        renderCalibrationTable(); // re-enable the row's controls even on failure
     }
 }
 
@@ -185,5 +205,8 @@ function escapeCalibrationText(text) {
 
 document.addEventListener('DOMContentLoaded', () => {
     const jointSelect = document.getElementById('calibrationJointSelect');
-    if (jointSelect) jointSelect.addEventListener('change', renderCalibrationTable);
+    // Auto-read on joint change so the table always reflects that joint's
+    // actual current EEPROM rather than stale data left over from whichever
+    // joint was last read (or nothing, before the first read).
+    if (jointSelect) jointSelect.addEventListener('change', readCalibrationTable);
 });
