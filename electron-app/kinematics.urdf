@@ -36,7 +36,7 @@
   <joint name="joint3_elbow_pitch" type="revolute">
     <parent link="link2"/>
     <child link="link3"/>
-    <origin xyz="0 0 0.11342" rpy="0 0 0"/>
+    <origin xyz="0 0 0.113" rpy="0 0 0"/>
     <axis xyz="0 -1 0"/>
     <limit lower="-1.5708" upper="1.5708" effort="10" velocity="2"/>
   </joint>
@@ -75,7 +75,7 @@
   <joint name="tool_mount" type="fixed">
     <parent link="link6"/>
     <child link="tool_link"/>
-    <origin xyz="0 0 -0.04463" rpy="0 0 0"/>
+    <origin xyz="0 0 -0.05" rpy="0 0 0"/>
   </joint>
 
   <!-- ================= END TOOLS =================
