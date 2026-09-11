@@ -16,7 +16,7 @@
   <joint name="joint1_base_yaw" type="revolute">
     <parent link="base_link"/>
     <child link="link1"/>
-    <origin xyz="0 0 0.03538" rpy="0 0 0"/>
+    <origin xyz="0 0 0.036" rpy="0 0 0"/>
     <axis xyz="0 0 1"/>
     <limit lower="-3.14159" upper="3.14159" effort="10" velocity="2"/>
   </joint>
@@ -26,7 +26,7 @@
   <joint name="joint2_shoulder_pitch" type="revolute">
     <parent link="link1"/>
     <child link="link2"/>
-    <origin xyz="0 0 0.08553" rpy="0 0 0"/>
+    <origin xyz="0 0 0.086" rpy="0 0 0"/>
     <axis xyz="0 -1 0"/>
     <limit lower="-1.5708" upper="0.698132" effort="10" velocity="2"/>
   </joint>
