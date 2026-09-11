@@ -634,9 +634,10 @@ class RobotArmClient {
     }
 
     /**
-     * Reads the full raw EEPROM block (addresses 0x00-0x27) from a joint's
-     * servo, for the Calibration page — decoding against the STS3215 memory
-     * table happens client-side (see stsMemoryTable.js).
+     * Reads the full raw EEPROM (0x00-0x27) and SRAM (0x28-0x45) blocks from
+     * a joint's servo, for the Calibration page — decoding against the
+     * STS3215 memory table happens client-side (see stsMemoryTable.js).
+     * Resolves to { joint, eepromBytes, sramBytes }.
      * @param {number} jointNumber
      */
     readServoEepromRaw(jointNumber) {

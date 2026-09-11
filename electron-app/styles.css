@@ -1955,6 +1955,12 @@ header h1 {
     margin: 4px 0 0;
 }
 
+.calibration-section-heading {
+    margin: 24px 0 8px;
+    font-size: 15px;
+    color: #3a3f4b;
+}
+
 .calibration-table input.cal-edit-input {
     width: 90px;
     padding: 4px 6px;

@@ -1,11 +1,19 @@
 /**
- * STS3215 EEPROM memory table — transcribed from the manufacturer's
- * datasheet (ST3215 Datasheets/sts3215_memory_table.xlsx, sheet "STS3215").
+ * STS3215 memory table — transcribed from the manufacturer's datasheet
+ * (ST3215 Datasheets/sts3215_memory_table.xlsx, sheet "STS3215").
  *
- * Covers the full EEPROM control table, address 0x00-0x27 (0-39 decimal).
- * SRAM-only registers (target position, current load, torque switch, etc.)
- * are runtime state already surfaced by getStatus() and are deliberately
- * excluded here — this table is for servo *configuration*, not live status.
+ * Two register blocks:
+ *  - STS_EEPROM_REGISTERS: address 0x00-0x27 (0-39), persists across power-off.
+ *  - STS_SRAM_REGISTERS: address 0x28-0x45 (40-69), live/runtime state —
+ *    resets to defaults on power-off, and overlaps what getStatus() already
+ *    surfaces for some fields (position/speed/load/voltage/temperature), but
+ *    this table exposes the raw register view (including ones getStatus()
+ *    doesn't, like Torque Switch, Lock Mark, and the Servo Status fault bits).
+ *    Read-only on the Calibration page even where the datasheet marks a
+ *    field read&write — several of these registers directly command motion
+ *    (Target Location, Running Speed, Torque Switch) and writing them here
+ *    would bypass the app's normal move safety checks (dead zones, control
+ *    session), so this table intentionally doesn't support editing them.
  *
  * Multi-byte registers are little-endian (low byte at the given address,
  * high byte at address+1), per the datasheet's "Low Front High behind" note.
@@ -43,6 +51,28 @@ function decodeSignedStep(raw) {
     return (negative ? -magnitude : magnitude) + ' step';
 }
 
+function decodeSignedLoad(raw) {
+    // Not documented in the datasheet's own text, but confirmed against a real
+    // reading: bit 10 is a direction flag, bits 0-9 are magnitude (0-1000 =
+    // 0-100%) — the datasheet's plain 0.001-unit description alone produces
+    // nonsensical values like "105.2%" whenever this bit happens to be set.
+    const magnitude = raw & 0x3FF;
+    const negative = (raw & 0x400) !== 0;
+    return `${negative ? '-' : ''}${(magnitude / 10).toFixed(1)} %`;
+}
+
+function decodeSigned16(raw) {
+    // Plain two's-complement 16-bit value, used by the SRAM motion-target/
+    // feedback registers (as opposed to the EEPROM Position Correction
+    // register's bit11-sign-plus-11-bit-magnitude scheme above).
+    const signed = raw > 0x7FFF ? raw - 0x10000 : raw;
+    return `${signed} step`;
+}
+
+const STS_TORQUE_SWITCH_STATES = { 0: 'Off', 1: 'On', 128: '(write-only) reset current position to center' };
+const STS_LOCK_MARK_STATES = ['Unlocked — EEPROM writes persist across power-off', 'Locked — EEPROM writes are lost on power-off'];
+const STS_MOVING_STATES = ['Stopped', 'Moving'];
+
 // unitType decoders: (raw) => human-readable string
 const UNIT_DECODERS = {
     raw:              (raw) => String(raw),
@@ -52,14 +82,21 @@ const UNIT_DECODERS = {
     'enum-mode':      (raw) => STS_OPERATION_MODES[raw] || `unknown (${raw})`,
     step:             (raw) => `${raw} step (${(raw * 0.087890625).toFixed(1)}°)`,
     'signed-step':    decodeSignedStep,
+    'signed16-step':  decodeSigned16,
+    'signed-load-pct': decodeSignedLoad,
     '°C':             (raw) => `${raw} °C`,
     '0.1V':           (raw) => `${(raw / 10).toFixed(1)} V`,
     'permille-pct':   (raw) => `${(raw / 10).toFixed(1)} %`,   // 0-1000 range = 0-100.0%
     '2us':            (raw) => `${raw * 2} µs`,
     '6.5mA':          (raw) => `${(raw * 6.5).toFixed(0)} mA`,
     '10ms':           (raw) => `${raw * 10} ms`,
+    '100steps2':      (raw) => `${raw * 100} step/s²`,
+    'steps-per-sec':  (raw) => `${raw} step/s`,
     'percent-direct': (raw) => `${raw} %`,                      // value IS the percent (e.g. 20 = 20%)
     bitmask:          decodeBitmask,
+    'enum-torque':    (raw) => STS_TORQUE_SWITCH_STATES[raw] !== undefined ? STS_TORQUE_SWITCH_STATES[raw] : `unknown (${raw})`,
+    'enum-lock-mark': (raw) => STS_LOCK_MARK_STATES[raw] || `unknown (${raw})`,
+    'enum-moving':    (raw) => STS_MOVING_STATES[raw] || `unknown (${raw})`,
 };
 
 /**
@@ -145,6 +182,46 @@ const STS_EEPROM_REGISTERS = [
 ];
 
 /**
+ * SRAM (live/runtime) register list, in address order. See the file header
+ * for why this page treats every one of these as read-only regardless of the
+ * datasheet's own access column.
+ */
+const STS_SRAM_REGISTERS = [
+    { address: 40, bytes: 1, name: 'Torque switch', access: 'read&write', default: 0, min: 0, max: 2, unit: 'enum', unitType: 'enum-torque',
+      description: 'Whether the servo is actively holding/driving torque right now. Write 128 (not readable back as such) recenters the current position to 2048.' },
+    { address: 41, bytes: 1, name: 'Acceleration', access: 'read&write', default: 0, min: 0, max: 254, unit: '100 step/s²', unitType: '100steps2',
+      description: 'Current move\'s acceleration/deceleration rate.' },
+    { address: 42, bytes: 2, name: 'Target location', access: 'read&write', default: 0, min: -32766, max: 32766, unit: '±step', unitType: 'signed16-step',
+      description: 'The goal position of the current or most recent move, in position-servo mode.' },
+    { address: 44, bytes: 2, name: 'Running time', access: 'read&write', default: 0, min: 0, max: 1000, unit: '0-100%', unitType: 'permille-pct',
+      description: 'Run-time parameter for PWM open-loop mode (operation mode 2).' },
+    { address: 46, bytes: 2, name: 'Running speed', access: 'read&write', default: 0, min: 0, max: 254, unit: 'step/s', unitType: 'steps-per-sec',
+      description: 'Goal speed for the current or most recent move. 50 step/s ≈ 0.732 RPM.' },
+    { address: 48, bytes: 2, name: 'Torque limit', access: 'read&write', default: 1000, min: 0, max: 1000, unit: '0-100%', unitType: 'permille-pct',
+      description: 'Live torque ceiling — initialized from EEPROM Max Torque (address 0x10) at power-on, but can be changed at runtime without touching EEPROM.' },
+    { address: 55, bytes: 1, name: 'Lock mark', access: 'read&write', default: 0, min: 0, max: 1, unit: 'enum', unitType: 'enum-lock-mark',
+      description: 'EEPROM write-protect state. The commissioning/calibration write paths unlock this (write 0) immediately before every EEPROM write and leave it unlocked.' },
+    { address: 56, bytes: 2, name: 'Current location', access: 'read', default: -1, min: -1, max: -1, unit: 'step', unitType: 'signed16-step',
+      description: 'The servo\'s present position feedback (same value getStatus() reports as position/angleDegrees).' },
+    { address: 58, bytes: 2, name: 'Current speed', access: 'read', default: -1, min: -1, max: -1, unit: 'step/s', unitType: 'steps-per-sec',
+      description: 'The servo\'s present rotational speed feedback.' },
+    { address: 60, bytes: 2, name: 'Current load', access: 'read', default: -1, min: -1, max: -1, unit: '±0-100%', unitType: 'signed-load-pct',
+      description: 'Voltage duty cycle currently being applied to drive the motor, signed by direction — a proxy for how hard it\'s working (and holding, e.g. against gravity, even while stationary).' },
+    { address: 62, bytes: 1, name: 'Current voltage', access: 'read', default: -1, min: -1, max: -1, unit: '0.1V', unitType: '0.1V',
+      description: 'The servo\'s present supply voltage feedback.' },
+    { address: 63, bytes: 1, name: 'Current temperature', access: 'read', default: -1, min: -1, max: -1, unit: '°C', unitType: '°C',
+      description: 'The servo\'s present internal temperature feedback.' },
+    { address: 64, bytes: 1, name: 'Asynchronous write flag', access: 'read', default: -1, min: -1, max: -1, unit: '—', unitType: 'raw',
+      description: 'Set while an async-write instruction is pending action.' },
+    { address: 65, bytes: 1, name: 'Servo status', access: 'read', default: -1, min: -1, max: -1, unit: 'bitmask', unitType: 'bitmask',
+      description: 'Currently active fault flags. Same bit layout as Unloading Condition/LED Alarm Condition (Voltage, Sensor, Temperature, Current, Angle, Overload) — a set bit here means that fault is presently occurring.' },
+    { address: 66, bytes: 1, name: 'Mobile sign', access: 'read', default: -1, min: -1, max: -1, unit: 'enum', unitType: 'enum-moving',
+      description: 'Whether the servo is currently moving (same as getStatus()\'s isMoving).' },
+    { address: 69, bytes: 2, name: 'Current current', access: 'read', default: -1, min: -1, max: -1, unit: '6.5mA', unitType: '6.5mA',
+      description: 'The servo\'s present current-draw feedback. Max measurable is 500 × 6.5mA = 3250mA — directly relevant if you\'re chasing an overcurrent/brownout issue.' },
+];
+
+/**
  * Decodes a raw EEPROM byte block (as read from address 0, length 40) into
  * per-register raw values, meaningful values, and default-deviation flags.
  * @param {number[]} bytes - raw bytes for addresses 0x00-0x27 (40 bytes)
@@ -181,6 +258,36 @@ function decodeEepromBlock(bytes) {
     });
 }
 
+/**
+ * Decodes a raw SRAM byte block (as read from address 40, length 31) into
+ * per-register raw and meaningful values. No default/deviation flags — this
+ * is live state, not persistent configuration, so "differs from default"
+ * isn't a meaningful question (e.g. Torque Switch is expected to read 1
+ * whenever the arm is armed).
+ * @param {number[]} bytes - raw bytes for addresses 0x28-0x45 (31 bytes), i.e. bytes[0] is address 40
+ * @returns {Array<object>} one entry per register in STS_SRAM_REGISTERS
+ */
+function decodeSramBlock(bytes) {
+    const base = 40;
+    return STS_SRAM_REGISTERS.map((reg) => {
+        const offset = reg.address - base;
+        let raw;
+        if (reg.bytes === 2) {
+            raw = (bytes[offset] || 0) | ((bytes[offset + 1] || 0) << 8);
+        } else {
+            raw = bytes[offset] || 0;
+        }
+        const decoder = UNIT_DECODERS[reg.unitType] || UNIT_DECODERS.raw;
+        let meaningful;
+        try {
+            meaningful = decoder(raw);
+        } catch (e) {
+            meaningful = `(decode error: ${e.message})`;
+        }
+        return { ...reg, raw, meaningful, writable: false };
+    });
+}
+
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { STS_EEPROM_REGISTERS, decodeEepromBlock };
+    module.exports = { STS_EEPROM_REGISTERS, STS_SRAM_REGISTERS, decodeEepromBlock, decodeSramBlock };
 }

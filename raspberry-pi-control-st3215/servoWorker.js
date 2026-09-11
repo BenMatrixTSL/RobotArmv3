@@ -1170,18 +1170,20 @@ async function handleBusCommand(clientId, data) {
         }
 
         case 'readServoEepromRaw': {
-            // Full raw EEPROM block for the Calibration page — decoded against
-            // the STS3215 memory table client-side, not the small known-field
-            // subset readServoEeprom() above returns.
+            // Full raw EEPROM + SRAM blocks for the Calibration page — decoded
+            // against the STS3215 memory table client-side, not the small
+            // known-field subset readServoEeprom() above returns. Two separate
+            // reads since the ranges aren't contiguous on the servo's own map.
             const idx = data.joint - 1;
             if (idx < 0 || idx >= servos.length) { reply({ type: 'error', message: `Invalid joint number: ${data.joint}` }); return; }
             const sv = servos[idx];
             if (!sv) { reply({ type: 'error', message: `Servo ${data.joint} is not available` }); return; }
             try {
-                const raw = await sv.readData(0, 40); // addresses 0x00-0x27
-                reply({ type: 'servoEepromRaw', joint: data.joint, bytes: Array.from(raw) });
+                const eepromBytes = await sv.readData(0, 40);  // addresses 0x00-0x27
+                const sramBytes   = await sv.readData(40, 31); // addresses 0x28-0x45 (live/runtime state)
+                reply({ type: 'servoEepromRaw', joint: data.joint, eepromBytes: Array.from(eepromBytes), sramBytes: Array.from(sramBytes) });
             } catch (error) {
-                reply({ type: 'error', message: `Failed to read servo ${data.joint} raw EEPROM: ${error.message}` });
+                reply({ type: 'error', message: `Failed to read servo ${data.joint} registers: ${error.message}` });
             }
             break;
         }

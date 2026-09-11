@@ -1,17 +1,21 @@
 /**
- * Calibration tab — reads a servo's full EEPROM block and renders it against
- * the STS3215 memory table (stsMemoryTable.js), highlighting anything that
- * differs from the factory default so a change made at some point in the
- * past (e.g. during PID/overload tuning) is easy to spot later.
+ * Calibration tab — reads a servo's full EEPROM and SRAM blocks and renders
+ * them against the STS3215 memory table (stsMemoryTable.js). The EEPROM
+ * table highlights anything that differs from the factory default so a
+ * change made at some point in the past (e.g. during PID/overload tuning)
+ * is easy to spot later. The SRAM table shows live/runtime state (position,
+ * speed, load, current, fault flags, torque switch, etc.) read-only — see
+ * stsMemoryTable.js for why SRAM writes aren't offered on this page.
  *
- * Editing is off by default. "Enable Editing" switches writable rows into an
- * editable state; each write still requires the control-lock password (typed
- * once into calibrationWritePassword and sent with every write — the server
- * is the actual authority, this page doesn't validate the password itself).
+ * Editing is off by default and EEPROM-only. "Enable Editing" switches
+ * writable EEPROM rows into an editable state; each write still requires the
+ * control-lock password (typed once into calibrationWritePassword and sent
+ * with every write — the server is the actual authority, this page doesn't
+ * validate the password itself).
  */
 
-// Cache of the last-read raw bytes per joint, so the "show only changed"
-// toggle can re-render without a fresh bus read.
+// Cache of the last-read {eeprom, sram} byte arrays per joint, so the "show
+// only changed" toggle can re-render without a fresh bus read.
 const calibrationRawByJoint = {};
 
 let calibrationWriteModeEnabled = false;
@@ -27,22 +31,14 @@ async function readCalibrationTable() {
     renderCalibrationTable();
 }
 
-async function readCalibrationTableAllJoints() {
-    setCalibrationStatus('Reading EEPROM from all joints...');
-    for (let j = 1; j <= getNumJoints(); j++) {
-        await readCalibrationForJoint(j);
-    }
-    renderCalibrationTable();
-}
-
 async function readCalibrationForJoint(jointNumber) {
     try {
-        setCalibrationStatus(`Reading Joint ${jointNumber} EEPROM...`);
+        setCalibrationStatus(`Reading Joint ${jointNumber} registers...`);
         const response = await robotArmClient.readServoEepromRaw(jointNumber);
-        calibrationRawByJoint[jointNumber] = response.bytes;
-        setCalibrationStatus(`Joint ${jointNumber} EEPROM read at ${new Date().toLocaleTimeString()}`);
+        calibrationRawByJoint[jointNumber] = { eeprom: response.eepromBytes, sram: response.sramBytes };
+        setCalibrationStatus(`Joint ${jointNumber} registers read at ${new Date().toLocaleTimeString()}`);
     } catch (error) {
-        setCalibrationStatus(`Failed to read Joint ${jointNumber} EEPROM: ${error.message}`);
+        setCalibrationStatus(`Failed to read Joint ${jointNumber} registers: ${error.message}`);
     }
 }
 
@@ -80,18 +76,23 @@ function toggleCalibrationWriteMode() {
 }
 
 function renderCalibrationTable() {
+    renderEepromTable();
+    renderSramTable();
+}
+
+function renderEepromTable() {
     const jointNumber = parseInt(document.getElementById('calibrationJointSelect').value, 10);
     const tbody = document.getElementById('calibrationTableBody');
     if (!tbody) return;
 
     const colSpan = calibrationWriteModeEnabled ? 9 : 8;
-    const rawBytes = calibrationRawByJoint[jointNumber];
-    if (!rawBytes) {
+    const cached = calibrationRawByJoint[jointNumber];
+    if (!cached) {
         tbody.innerHTML = `<tr><td colspan="${colSpan}" class="calibration-empty">Select a joint and click &quot;Read EEPROM&quot;.</td></tr>`;
         return;
     }
 
-    const decoded = decodeEepromBlock(rawBytes);
+    const decoded = decodeEepromBlock(cached.eeprom);
     const diffOnly = document.getElementById('calibrationDiffOnly').checked;
     const rows = diffOnly ? decoded.filter(r => !r.isDefault) : decoded;
 
@@ -136,15 +137,45 @@ function renderCalibrationTable() {
     }).join('');
 }
 
+function renderSramTable() {
+    const jointNumber = parseInt(document.getElementById('calibrationJointSelect').value, 10);
+    const tbody = document.getElementById('calibrationSramTableBody');
+    if (!tbody) return;
+
+    const cached = calibrationRawByJoint[jointNumber];
+    if (!cached) {
+        tbody.innerHTML = `<tr><td colspan="6" class="calibration-empty">Select a joint and click &quot;Read EEPROM&quot;.</td></tr>`;
+        return;
+    }
+
+    const decoded = decodeSramBlock(cached.sram);
+    tbody.innerHTML = decoded.map(r => {
+        const addrHex = '0x' + r.address.toString(16).toUpperCase().padStart(2, '0');
+        const readOnly = r.access === 'read';
+        const rangeStr = r.min === -1 && r.max === -1 ? '—' : `${r.min}..${r.max} ${r.unit === '—' ? '' : r.unit}`.trim();
+        return `
+            <tr>
+                <td>${addrHex} <span style="color:#999;">(${r.address})</span></td>
+                <td class="cal-name" title="${escapeCalibrationText(r.description)}">${escapeCalibrationText(r.name)}</td>
+                <td>${r.bytes}</td>
+                <td class="cal-value">${r.raw}</td>
+                <td class="cal-value">${escapeCalibrationText(r.meaningful)}</td>
+                <td>${readOnly ? 'read' : 'live (read-only here)'}</td>
+            </tr>
+        `;
+    }).join('');
+}
+
 /**
- * Writes one register's raw value to the servo currently selected in the
- * joint dropdown, after range/confirmation checks, then re-reads that
- * joint's EEPROM so the table reflects what the hardware actually accepted.
+ * Writes one EEPROM register's raw value to the servo currently selected in
+ * the joint dropdown, after range/confirmation checks, then re-reads that
+ * joint's registers so the table reflects what the hardware actually
+ * accepted. SRAM is never writable from this page (see stsMemoryTable.js).
  */
 async function writeCalibrationRegister(address) {
     const jointNumber = parseInt(document.getElementById('calibrationJointSelect').value, 10);
-    const rawBytes = calibrationRawByJoint[jointNumber];
-    const reg = rawBytes && decodeEepromBlock(rawBytes).find(r => r.address === address);
+    const cached = calibrationRawByJoint[jointNumber];
+    const reg = cached && decodeEepromBlock(cached.eeprom).find(r => r.address === address);
     if (!reg) return;
 
     const input = document.getElementById(`cal-edit-${address}`);
@@ -180,7 +211,7 @@ async function writeCalibrationRegister(address) {
         await readCalibrationForJoint(jointNumber);
         renderCalibrationTable();
 
-        const confirmedReg = decodeEepromBlock(calibrationRawByJoint[jointNumber]).find(r => r.address === address);
+        const confirmedReg = decodeEepromBlock(calibrationRawByJoint[jointNumber].eeprom).find(r => r.address === address);
         if (confirmedReg && confirmedReg.raw === rawValue) {
             setCalibrationStatus(`Confirmed — Joint ${jointNumber} address ${addrHex} now reads ${rawValue} (${confirmedReg.meaningful}).`);
         } else {
@@ -206,7 +237,7 @@ function escapeCalibrationText(text) {
 document.addEventListener('DOMContentLoaded', () => {
     const jointSelect = document.getElementById('calibrationJointSelect');
     // Auto-read on joint change so the table always reflects that joint's
-    // actual current EEPROM rather than stale data left over from whichever
-    // joint was last read (or nothing, before the first read).
+    // actual current registers rather than stale data left over from
+    // whichever joint was last read (or nothing, before the first read).
     if (jointSelect) jointSelect.addEventListener('change', readCalibrationTable);
 });
