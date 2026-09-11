@@ -199,9 +199,14 @@ async function writeCalibrationRegister(address) {
     if (writeButton) writeButton.disabled = true;
     input.disabled = true;
 
+    // A few registers (Position Correction, in particular) use a bit pattern
+    // that isn't standard two's complement — encode the value the user typed
+    // into the actual raw integer the servo expects before sending it.
+    const encodedValue = encodeRegisterValue(reg, rawValue);
+
     try {
         setCalibrationStatus(`Writing Joint ${jointNumber} address ${addrHex}...`);
-        await robotArmClient.writeServoEepromRaw(jointNumber, address, rawValue, password);
+        await robotArmClient.writeServoEepromRaw(jointNumber, address, encodedValue, password);
 
         // The write's own reply already waits for the servo's EEPROM-write
         // settle time server-side, but read it back explicitly rather than
@@ -212,10 +217,10 @@ async function writeCalibrationRegister(address) {
         renderCalibrationTable();
 
         const confirmedReg = decodeEepromBlock(calibrationRawByJoint[jointNumber].eeprom).find(r => r.address === address);
-        if (confirmedReg && confirmedReg.raw === rawValue) {
+        if (confirmedReg && confirmedReg.raw === encodedValue) {
             setCalibrationStatus(`Confirmed — Joint ${jointNumber} address ${addrHex} now reads ${rawValue} (${confirmedReg.meaningful}).`);
         } else {
-            const actual = confirmedReg ? confirmedReg.raw : '(read failed)';
+            const actual = confirmedReg ? confirmedReg.meaningful : '(read failed)';
             setCalibrationStatus(`Wrote ${rawValue} but the read-back shows ${actual} — the write may not have taken effect. Try again or check the servo connection.`);
         }
     } catch (error) {

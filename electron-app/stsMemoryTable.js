@@ -51,6 +51,17 @@ function decodeSignedStep(raw) {
     return (negative ? -magnitude : magnitude) + ' step';
 }
 
+/**
+ * Inverse of decodeSignedStep: turns a signed step count (-2047..2047) into
+ * this register's actual raw bit pattern (bit11 = sign, bits0-10 = magnitude).
+ * NOT standard two's complement — a plain `value & 0xFF` on a negative JS
+ * number produces a completely different (wrong) bit pattern for this field.
+ */
+function encodeSignedStep(value) {
+    const magnitude = Math.abs(value) & 0x7FF;
+    return value < 0 ? (0x800 | magnitude) : magnitude;
+}
+
 function decodeSignedLoad(raw) {
     // Not documented in the datasheet's own text, but confirmed against a real
     // reading: bit 10 is a direction flag, bits 0-9 are magnitude (0-1000 =
@@ -97,6 +108,15 @@ const UNIT_DECODERS = {
     'enum-torque':    (raw) => STS_TORQUE_SWITCH_STATES[raw] !== undefined ? STS_TORQUE_SWITCH_STATES[raw] : `unknown (${raw})`,
     'enum-lock-mark': (raw) => STS_LOCK_MARK_STATES[raw] || `unknown (${raw})`,
     'enum-moving':    (raw) => STS_MOVING_STATES[raw] || `unknown (${raw})`,
+};
+
+// unitType encoders: (value) => the register's actual raw bit pattern to write.
+// Only needed where that differs from the plain integer a user types in (i.e.
+// where UNIT_DECODERS does something other than String(raw)) — every other
+// unitType is its own inverse, so it's fine that they're absent here; look up
+// with `UNIT_ENCODERS[unitType] || ((v) => v)`.
+const UNIT_ENCODERS = {
+    'signed-step': encodeSignedStep,
 };
 
 /**
@@ -222,6 +242,20 @@ const STS_SRAM_REGISTERS = [
 ];
 
 /**
+ * Converts a value the user typed in (matching the register's displayed
+ * min/max, e.g. -100 for Position Correction) into the actual raw integer
+ * to write to the servo. Identity for every register except the handful with
+ * a non-standard bit encoding (see UNIT_ENCODERS).
+ * @param {object} reg - a register definition (from STS_EEPROM_REGISTERS)
+ * @param {number} value
+ * @returns {number} raw register value, ready to split into bytes and write
+ */
+function encodeRegisterValue(reg, value) {
+    const encoder = UNIT_ENCODERS[reg.unitType];
+    return encoder ? encoder(value) : value;
+}
+
+/**
  * Decodes a raw EEPROM byte block (as read from address 0, length 40) into
  * per-register raw values, meaningful values, and default-deviation flags.
  * @param {number[]} bytes - raw bytes for addresses 0x00-0x27 (40 bytes)
@@ -289,5 +323,5 @@ function decodeSramBlock(bytes) {
 }
 
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { STS_EEPROM_REGISTERS, STS_SRAM_REGISTERS, decodeEepromBlock, decodeSramBlock };
+    module.exports = { STS_EEPROM_REGISTERS, STS_SRAM_REGISTERS, decodeEepromBlock, decodeSramBlock, encodeRegisterValue };
 }
