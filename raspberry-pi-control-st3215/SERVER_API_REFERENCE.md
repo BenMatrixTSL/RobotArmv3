@@ -71,10 +71,9 @@ For the wire protocol basics (connection, JSON message envelope, response types)
 | Command | Description | Params | Response | Wrapper | Call sites |
 |---|---|---|---|---|---|
 | `readServoEeprom` | Reads a servo's full commissioning profile — PID gains, overload/stall protection thresholds, hard angle limits, and max torque — directly from its onboard EEPROM. | `joint:number` | `{type:'servoEeprom', joint, profile}` — `profile` = PID gains + overload protection + angle limits + max torque | `readServoEeprom(joint)` | app.js × 1 (3420) |
-| `writeServoEeprom` | Writes one or more EEPROM settings to a servo and persists them to `servo-pid-config.json`, so they're re-applied automatically the next time the server starts or if that servo is swapped for another unit. | `joint:number`, `values:object` — recognized groups: `{p,d,i,minStartupForce}`, `{overloadTorque,protTorque,protTimeMs}`, `{minAngleDeg,maxAngleDeg}` (together), `{maxTorque}` | `{type:'success', message, applied:[...]}` / `{type:'error', message:'No recognized fields in values'}` / `{type:'error', message, applied}` (partial progress) | `writeServoEeprom(joint, values)` | app.js × 1 (3480) |
-| `commissionAllServos` | Applies every joint's saved EEPROM configuration to whichever physical servo currently responds at that joint ID in one pass — the "commission a freshly wired arm" button. | none | `{type:'servoCommission', results:[{joint, applied:[...], errors:[...]}]}` / `{type:'error', message:'No servo-pid-config.json found'}` | `commissionAllServos()` | app.js × 1 (3509) |
+| `writeServoEeprom` | Writes one or more EEPROM settings directly to a servo. Persists only on the servo's own hardware — nothing is auto-reapplied elsewhere. | `joint:number`, `values:object` — recognized groups: `{p,d,i,minStartupForce}`, `{overloadTorque,protTorque,protTimeMs}`, `{minAngleDeg,maxAngleDeg}` (together), `{maxTorque}` | `{type:'success', message, applied:[...]}` / `{type:'error', message:'No recognized fields in values'}` / `{type:'error', message, applied}` (partial progress) | `writeServoEeprom(joint, values)` | app.js × 1 (3480) |
 
-Each write is also persisted to `servo-pid-config.json` so it's re-applied automatically the next time the server starts (see the PID-tuning work earlier in this project).
+**Removed:** `commissionAllServos` and the whole `servo-pid-config.json` auto-apply-at-startup mechanism (`applyPIDConfig()` in `servoWorker.js`) were removed once the project settled on managing every EEPROM value manually via the Commissioning panel and Calibration page — EEPROM already persists on the servo itself, so a separate config file to reapply at every server start was redundant. `servo-tuner.js` still writes its sweep results directly to each servo's EEPROM, just no longer also to a JSON file.
 
 ---
 
@@ -161,7 +160,7 @@ Worth a follow-up: either remove these dead UI paths or wire them to something r
 ## Appendix C — Gaps vs. `API_DOCUMENTATION.md`
 
 **Missing from the doc entirely:**
-- Commissioning: `readServoEeprom`, `writeServoEeprom`, `commissionAllServos`
+- Commissioning: `readServoEeprom`, `writeServoEeprom`
 - The whole control-session family: `takeControl`, `releaseControl`, `lockControl`, `unlockControl`, `getControlStatus` — including which commands require it in the first place
 - `getServerDiagnostics`
 - Network/system: `getPiNetworkInfo`, `getPiEthernetSettings`, `setPiEthernetSettings`, `updatePiServerFromGit`

@@ -21,8 +21,6 @@
 
 const { SerialPort } = require('serialport');
 const RobotArm = require('./robotArmST3215');
-const fs   = require('fs');
-const path = require('path');
 
 // Catch-all safety net: log the error and exit so the parent can restart us.
 // A silent crash (unhandled rejection with no output) is the hardest to debug.
@@ -1190,9 +1188,9 @@ async function handleBusCommand(clientId, data) {
         }
 
         case 'writeServoEeprom': {
-            // Writes only the fields present in data.values, and persists them
-            // into servo-pid-config.json so they're re-applied automatically if
-            // this servo is ever swapped for another unit at the same joint ID.
+            // Writes only the fields present in data.values, directly to the
+            // servo's own EEPROM — persists there on hardware, no separate
+            // config file to keep in sync.
             const idx = data.joint - 1;
             if (idx < 0 || idx >= servos.length) { reply({ type: 'error', message: `Invalid joint number: ${data.joint}` }); return; }
             const sv = servos[idx];
@@ -1208,7 +1206,6 @@ async function handleBusCommand(clientId, data) {
                           i = values.i ?? current.i, minStartupForce = values.minStartupForce ?? current.minStartupForce;
                     await sv.writePIDValues(p, d, i, minStartupForce);
                     applied.push('pid');
-                    saveServoConfigEntry(jointId, { p, d, i, minStartupForce });
                     log(`[COMMISSION] J${jointId} PID written: P=${p} D=${d} I=${i} MinStartup=${minStartupForce}`);
                 }
                 if (values.overloadTorque !== undefined || values.protTorque !== undefined || values.protTimeMs !== undefined) {
@@ -1218,19 +1215,16 @@ async function handleBusCommand(clientId, data) {
                           protTimeMs     = values.protTimeMs ?? current.protTimeMs;
                     await sv.writeOverloadProtection(overloadTorque, protTorque, protTimeMs);
                     applied.push('overloadProtection');
-                    saveServoConfigEntry(jointId, { overloadTorque, protTorque, protTimeMs });
                     log(`[COMMISSION] J${jointId} overload protection written: OverloadTorque=${overloadTorque}% ProtTorque=${protTorque}% ProtTime=${protTimeMs}ms`);
                 }
                 if (values.minAngleDeg !== undefined && values.maxAngleDeg !== undefined) {
                     await sv.writeAngleLimits(values.minAngleDeg, values.maxAngleDeg);
                     applied.push('angleLimits');
-                    saveServoConfigEntry(jointId, { minAngleDeg: values.minAngleDeg, maxAngleDeg: values.maxAngleDeg });
                     log(`[COMMISSION] J${jointId} angle limits written: ${values.minAngleDeg}° to ${values.maxAngleDeg}°`);
                 }
                 if (values.maxTorque !== undefined) {
                     await sv.writeMaxTorque(values.maxTorque);
                     applied.push('maxTorque');
-                    saveServoConfigEntry(jointId, { maxTorque: values.maxTorque });
                     log(`[COMMISSION] J${jointId} max torque written: ${values.maxTorque}%`);
                 }
                 if (applied.length === 0) {
@@ -1240,18 +1234,6 @@ async function handleBusCommand(clientId, data) {
                 reply({ type: 'success', message: `Joint ${data.joint} EEPROM updated (${applied.join(', ')})`, applied });
             } catch (error) {
                 reply({ type: 'error', message: `Failed to write servo ${data.joint} EEPROM: ${error.message}`, applied });
-            }
-            break;
-        }
-
-        case 'commissionAllServos': {
-            try {
-                const result = await commissionAllServos();
-                if (result.error) { reply({ type: 'error', message: result.error }); return; }
-                log(`[COMMISSION] All joints commissioned from servo-pid-config.json`);
-                reply({ type: 'servoCommission', results: result.results });
-            } catch (error) {
-                reply({ type: 'error', message: `Commissioning failed: ${error.message}` });
             }
             break;
         }
@@ -1413,122 +1395,13 @@ process.on('message', (msg) => {
     }
 });
 
-// ===== PID config auto-apply =====
-const PID_CONFIG_PATH = path.join(__dirname, 'servo-pid-config.json');
-
-function loadServoConfig() {
-    if (!fs.existsSync(PID_CONFIG_PATH)) return null;
-    try {
-        return JSON.parse(fs.readFileSync(PID_CONFIG_PATH, 'utf8'));
-    } catch (e) {
-        log('servo-pid-config.json parse error: ' + e.message, true);
-        return null;
-    }
-}
-
-function saveServoConfigEntry(jointId, fields) {
-    const cfg = loadServoConfig() || { joints: {} };
-    if (!cfg.joints) cfg.joints = {};
-    cfg.joints[jointId] = { ...cfg.joints[jointId], ...fields };
-    cfg._tuned = new Date().toISOString();
-    fs.writeFileSync(PID_CONFIG_PATH, JSON.stringify(cfg, null, 2));
-}
-
-// Applies one joint's saved config entry to its physical servo (PID always;
-// overload protection, angle limits, and max torque only if the entry has
-// them, since those are commissioning-only fields with no safe default to
-// assume for a joint nobody has explicitly commissioned yet).
-async function applyServoConfigEntry(servo, jointId, entry) {
-    const applied = [];
-    const errors = [];
-
-    const { p = 32, d = 32, i: integralGain = 0, minStartupForce = 16 } = entry;
-    try {
-        await servo.writePIDValues(p, d, integralGain, minStartupForce);
-        log(`PID applied J${jointId}: P=${p} D=${d} I=${integralGain} MinStartup=${minStartupForce}`);
-        applied.push('pid');
-    } catch (e) {
-        log(`PID apply failed J${jointId}: ${e.message}`, true);
-        errors.push(`PID: ${e.message}`);
-    }
-
-    if (entry.overloadTorque !== undefined) {
-        const { overloadTorque, protTorque = 20, protTimeMs = 200 } = entry;
-        try {
-            await servo.writeOverloadProtection(overloadTorque, protTorque, protTimeMs);
-            log(`Overload protection applied J${jointId}: OverloadTorque=${overloadTorque}% ProtTorque=${protTorque}% ProtTime=${protTimeMs}ms`);
-            applied.push('overloadProtection');
-        } catch (e) {
-            log(`Overload protection apply failed J${jointId}: ${e.message}`, true);
-            errors.push(`Overload protection: ${e.message}`);
-        }
-    }
-
-    if (entry.minAngleDeg !== undefined && entry.maxAngleDeg !== undefined) {
-        try {
-            await servo.writeAngleLimits(entry.minAngleDeg, entry.maxAngleDeg);
-            log(`Angle limits applied J${jointId}: ${entry.minAngleDeg}° to ${entry.maxAngleDeg}°`);
-            applied.push('angleLimits');
-        } catch (e) {
-            log(`Angle limits apply failed J${jointId}: ${e.message}`, true);
-            errors.push(`Angle limits: ${e.message}`);
-        }
-    }
-
-    if (entry.maxTorque !== undefined) {
-        try {
-            await servo.writeMaxTorque(entry.maxTorque);
-            log(`Max torque applied J${jointId}: ${entry.maxTorque}%`);
-            applied.push('maxTorque');
-        } catch (e) {
-            log(`Max torque apply failed J${jointId}: ${e.message}`, true);
-            errors.push(`Max torque: ${e.message}`);
-        }
-    }
-
-    return { joint: Number(jointId), applied, errors };
-}
-
-// Called once at startup — pushes servo-pid-config.json onto whichever
-// physical servo currently answers at each joint ID.
-async function applyPIDConfig() {
-    const cfg = loadServoConfig();
-    if (!cfg) { log('No servo-pid-config.json found — using factory defaults'); return; }
-    const joints = cfg.joints;
-    if (!joints) { log('servo-pid-config.json missing joints key', true); return; }
-
-    for (let i = 0; i < servos.length; i++) {
-        const servo = servos[i];
-        if (!servo) continue;
-        const jointId = String(i + 1);
-        const entry   = joints[jointId];
-        if (!entry)   continue;
-        await applyServoConfigEntry(servo, jointId, entry);
-    }
-}
-
-// Callable on demand (commissioning UI) — same as applyPIDConfig but reports
-// per-joint results instead of just logging them.
-async function commissionAllServos() {
-    const cfg = loadServoConfig();
-    if (!cfg || !cfg.joints) return { error: 'No servo-pid-config.json found' };
-
-    const results = [];
-    for (let i = 0; i < servos.length; i++) {
-        const servo = servos[i];
-        const jointId = String(i + 1);
-        const entry = cfg.joints[jointId];
-        if (!entry) continue;
-        if (!servo) { results.push({ joint: i + 1, applied: [], errors: ['Servo not connected'] }); continue; }
-        results.push(await applyServoConfigEntry(servo, jointId, entry));
-    }
-    return { results };
-}
-
 // ===== Start =====
+// EEPROM values (PID, overload protection, angle limits, max torque) are no
+// longer auto-applied at startup — they're configured manually via the
+// Commissioning panel or Calibration page and persist on the servo's own
+// EEPROM, so there's nothing to reapply here.
 log(`Servo worker starting (pid=${process.pid} VERBOSE_LOG=${VERBOSE_LOG} STATUS_POLL_MS=${STATUS_POLL_INTERVAL_MS} MIN_GAP_MS=${MIN_BUS_TICK_GAP_MS})`);
 initializeServos().then(async () => {
-    await applyPIDConfig();
     await refreshJointStatusCacheFromBus();
     startBusTickLoop();
     process.send({ type: 'ready', jointConfigs: getJointConfigsSnapshot() });

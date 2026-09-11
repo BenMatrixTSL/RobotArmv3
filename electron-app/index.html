@@ -251,15 +251,10 @@
                 <h3>Commissioning</h3>
                 <p class="info-text">
                     Reads and writes settings stored on each servo's own EEPROM chip (PID gains, overload/stall
-                    torque, hard angle limits, max torque). These persist on the physical servo — a replacement
-                    servo at the same joint starts back at factory defaults until commissioned again. Values
-                    written here are also saved to servo-pid-config.json so they're re-applied automatically
-                    every time the server starts.
+                    torque, hard angle limits, max torque) directly on the hardware — a replacement servo at the
+                    same joint starts back at factory defaults until commissioned again. Nothing here is
+                    auto-applied at server startup; every EEPROM value is configured manually, on purpose.
                 </p>
-                <button id="commissionAllButton" class="btn btn-warning" disabled onclick="commissionAllServos()">
-                    Commission All Joints (apply saved config to every connected servo)
-                </button>
-                <pre id="commissionAllResult" class="diagnostics-display" style="display:none;"></pre>
 
                 <h4 class="control-lock-title">Per-joint EEPROM</h4>
                 <div class="connection-form">

@@ -3,8 +3,10 @@
  * servo-tuner.js — Automated PID tuner for ST3215 servo joints.
  *
  * Sweeps P and D gain values for each joint, measures position tracking error
- * on step-response moves, and writes the best combination to EEPROM.
- * Results are saved to servo-pid-config.json for auto-apply at startup.
+ * on step-response moves, and writes the best combination directly to each
+ * servo's own EEPROM — it's persistent there, so no separate config file is
+ * needed to reapply it later (EEPROM values are managed manually; see the
+ * Calibration/Commissioning pages in the Electron app).
  *
  * BEFORE RUNNING:
  *   sudo systemctl stop st3215-server.service
@@ -17,12 +19,9 @@
 
 const { ServoController } = require('./robotArmST3215');
 const { SerialPort }       = require('serialport');
-const fs                   = require('fs');
-const path                 = require('path');
 
 const SERIAL_PORT  = process.env.SERIAL_PORT  || '/dev/serial0';
 const BAUD_RATE    = 1_000_000;
-const CONFIG_PATH  = path.join(__dirname, 'servo-pid-config.json');
 
 // ── EEPROM register addresses ──────────────────────────────────────────────
 const REG_EEPROM_LOCK    = 0x37;  // 0 = unlocked
@@ -387,28 +386,17 @@ async function main() {
     }
 
     // ── Summary ────────────────────────────────────────────────────────────
+    // Every value below is already written to each servo's own EEPROM by the
+    // sweep above — this is just a readout, not a pending action.
     console.log('\n\n' + '═'.repeat(56));
-    console.log('  SUMMARY — recommended servo-pid-config.json values');
+    console.log('  SUMMARY — values written to each servo\'s EEPROM');
     console.log('═'.repeat(56));
     for (const [id, r] of Object.entries(results)) {
         const d = r.diagnostics;
         console.log(`  J${id}: P=${r.p}  D=${r.d}  I=${r.i}${r.i > 0 ? ' ⚡' : ''}  MinStartup=${r.minStartupForce}`);
         console.log(`       MaxTorque=${d.maxTorque}  UnloadingCond=0b${d.unloadingCond.toString(2).padStart(8,'0')}  OverloadTorque=${d.overloadTorquePct}%  ProtTorque=${d.protTorquePct}%  ProtTime=${d.protTimeMs}ms`);
     }
-
-    // ── Write config file — merge with existing so partial runs don't clobber ──
-    let config = { _comment: 'Auto-tuned PID values per joint. Applied by servoWorker.js at startup.', joints: {} };
-    if (fs.existsSync(CONFIG_PATH)) {
-        try { config = JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8')); } catch (_) {}
-        if (!config.joints) config.joints = {};
-    }
-    config._tuned = new Date().toISOString();
-    for (const [id, r] of Object.entries(results)) {
-        config.joints[id] = { p: r.p, d: r.d, i: r.i, minStartupForce: r.minStartupForce };
-    }
-    fs.writeFileSync(CONFIG_PATH, JSON.stringify(config, null, 2));
-    console.log(`\nConfig written → ${CONFIG_PATH}`);
-    console.log('Restart the st3215-server to apply these values automatically at every startup.\n');
+    console.log('');
 
     for (const c of Object.values(controllers)) await c.close().catch(() => {});
     port.close(() => {});

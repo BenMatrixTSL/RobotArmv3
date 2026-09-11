@@ -655,8 +655,7 @@ class RobotArmClient {
     }
 
     /**
-     * Writes the given fields to a joint's servo EEPROM and persists them to
-     * servo-pid-config.json so they survive a servo swap or service restart.
+     * Writes the given fields directly to a joint's servo EEPROM.
      * @param {number} jointNumber
      * @param {object} values - any of: p, d, i, minStartupForce, overloadTorque,
      *   protTorque, protTimeMs, minAngleDeg, maxAngleDeg, maxTorque
@@ -666,14 +665,6 @@ class RobotArmClient {
             joint: jointNumber,
             values
         });
-    }
-
-    /**
-     * Pushes servo-pid-config.json onto every currently-connected servo in one
-     * pass — the "commission a freshly wired arm" button.
-     */
-    commissionAllServos() {
-        return this.sendRequest('commissionAllServos', {});
     }
 
     /**

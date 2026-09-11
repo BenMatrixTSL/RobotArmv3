@@ -56,7 +56,7 @@ const BUS_WRITE_COMMANDS = {
     moveJoint: true, stopJoint: true, stopAll: true, stopAllJoints: true,
     setServo: true, setServoAngle: true, setSpeed: true, setSpeedAll: true,
     setTorqueAll: true, setAcceleration: true, rescanServos: true,
-    readServoEeprom: true, readServoEepromRaw: true, writeServoEeprom: true, writeServoEepromRaw: true, commissionAllServos: true,
+    readServoEeprom: true, readServoEepromRaw: true, writeServoEeprom: true, writeServoEepromRaw: true,
     toolPing: true, toolSetPwm: true, toolSetServoEnabled: true,
     toolSetServoPosition: true, toolSetServoAngle: true,
     toolSetServoEnabledAndAngle: true,

@@ -2794,7 +2794,7 @@ function updateTakeControlButtonState() {
 
     // Commissioning writes/reads are bus commands like moves — they need this
     // app to hold arm control, same requirement as the buttons above.
-    const commissionButtonIds = ['commissionAllButton', 'commissionReadButton', 'commissionWriteButton', 'calibrationReadButton'];
+    const commissionButtonIds = ['commissionReadButton', 'commissionWriteButton', 'calibrationReadButton'];
     const commissionEnabled = robotArmClient.isConnected && robotArmClient.hasArmControl;
     for (const id of commissionButtonIds) {
         const btn = document.getElementById(id);
@@ -3404,9 +3404,8 @@ async function readServoEeprom() {
 }
 
 /**
- * Writes whichever per-joint EEPROM fields have a value entered to the
- * selected joint's servo, and persists them to servo-pid-config.json.
- * Fields left blank are not touched.
+ * Writes whichever per-joint EEPROM fields have a value entered directly to
+ * the selected joint's servo. Fields left blank are not touched.
  */
 async function writeServoEeprom() {
     if (!robotArmClient.isConnected) {
@@ -3449,39 +3448,6 @@ async function writeServoEeprom() {
         statusEl.textContent = `Joint ${jointNumber} EEPROM updated: ${response.applied.join(', ')}`;
     } catch (error) {
         statusEl.textContent = `Failed to write Joint ${jointNumber} EEPROM: ${error.message}`;
-    }
-}
-
-/**
- * Pushes servo-pid-config.json onto every currently-connected servo in one
- * pass. Intended for commissioning a freshly wired/assembled arm, or after
- * swapping in replacement servos, so they pick up the arm's tuned settings.
- */
-async function commissionAllServos() {
-    if (!robotArmClient.isConnected) {
-        showAppMessage('Not connected to robot arm controller');
-        return;
-    }
-
-    const confirmed = await showConfirm(
-        `Apply the settings saved in servo-pid-config.json to every currently-connected servo?\n\n` +
-        `This writes PID gains, overload protection, and (where saved) angle limits and max torque to ` +
-        `each joint's EEPROM immediately. Use this when commissioning a new arm or after swapping servos.`
-    );
-    if (!confirmed) return;
-
-    const resultEl = document.getElementById('commissionAllResult');
-    resultEl.style.display = 'block';
-    resultEl.textContent = 'Commissioning all joints...';
-    try {
-        const response = await robotArmClient.commissionAllServos();
-        const lines = response.results.map(r => {
-            if (r.errors.length === 0) return `Joint ${r.joint}: OK (${r.applied.join(', ') || 'nothing to apply'})`;
-            return `Joint ${r.joint}: ${r.applied.length ? 'partial (' + r.applied.join(', ') + ')' : 'FAILED'} — ${r.errors.join('; ')}`;
-        });
-        resultEl.textContent = lines.join('\n');
-    } catch (error) {
-        resultEl.textContent = `Commissioning failed: ${error.message}`;
     }
 }
 
