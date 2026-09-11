@@ -1697,54 +1697,60 @@ function registerBlocklyGenerators() {
         const sanitizedId = blockId.replace(/[^a-zA-Z0-9_]/g, '_');
         const positionNumber = block.getFieldValue('POSITION');
         const speedDegreesPerSecond = block.getFieldValue('SPEED') || 40;
-        
-        // Get the position data
-        if (typeof getPosition === 'function') {
-            const position = getPosition(parseInt(positionNumber));
-            if (position && position.angles) {
-                const positionLabel = position.label || `Position ${positionNumber}`;
-                // Move all joints to the stored angles at the specified speed with linear interpolation
-                const targetAnglesArray = position.angles.join(', ');
-                let code = `
-                highlightBlocklyBlock('${blockId}');
-                await checkBlocklyPauseStop();
-                
-                // Get current joint angles
-                const status_pos_${sanitizedId} = await robotArmClient.getStatus();
-                const currentAngles_pos_${sanitizedId} = [];
-                const numJoints_pos_${sanitizedId} = getNumJoints();
-                for (let i = 0; i < numJoints_pos_${sanitizedId}; i++) {
-                    if (status_pos_${sanitizedId}[i] && typeof status_pos_${sanitizedId}[i].angleDegrees === 'number') {
-                        currentAngles_pos_${sanitizedId}.push(status_pos_${sanitizedId}[i].angleDegrees);
-                    } else {
-                        currentAngles_pos_${sanitizedId}.push(0);
-                    }
-                }
-                
-                // Target angles from stored position
-                const targetAngles_pos_${sanitizedId} = [${targetAnglesArray}];
-                
-                // Calculate scaled speeds using linear interpolation
-                const scaledSpeeds_pos_${sanitizedId} = calculateScaledSpeeds(currentAngles_pos_${sanitizedId}, targetAngles_pos_${sanitizedId}, ${speedDegreesPerSecond});
-                
-                // Use Promise.allSettled so waitForMotionComplete is only registered
-                // after the serial-bus drain is fully complete. Status pushes that
-                // fire during the drain (showing isMoving:false before the servo has
-                // started moving) are ignored because the listener isn't attached yet.
-                appendBlocklyOutput('Moving to ${positionLabel} at speed ${speedDegreesPerSecond} degrees/s (scaled speeds for synchronized arrival)');
-                `;
-                const movePromises = [];
-                for (let i = 0; i < position.angles.length; i++) {
-                    movePromises.push(`scaledSpeeds_pos_${sanitizedId}[${i}] > 0 ? robotArmClient.moveJoint(${i + 1}, targetAngles_pos_${sanitizedId}[${i}], degreesPerSecondToStepsPerSecond(scaledSpeeds_pos_${sanitizedId}[${i}])) : Promise.resolve()`);
-                }
-                code += `await Promise.allSettled([${movePromises.join(', ')}]);\n`;
-                code += `await robotArmClient.waitForMotionComplete(30000);\n`;
-                return code;
+        // Best-effort label for the log message only — resolved fresh again at
+        // runtime below via resolveStoredPositionAngles(), so this doesn't need
+        // to be accurate if the position is edited/added after this block was built.
+        const positionLabel = (typeof getPosition === 'function' && getPosition(parseInt(positionNumber)) &&
+            getPosition(parseInt(positionNumber)).label) || `Position ${positionNumber}`;
+
+        // Target angles are resolved at RUN TIME, not baked in here — a stored
+        // position saved as XYZ needs IK against whichever tool is attached when
+        // the program actually runs (which may differ from build time), and this
+        // also means an angles-type position edited after building the blocks
+        // picks up the new values without needing to rebuild.
+        return `
+        highlightBlocklyBlock('${blockId}');
+        await checkBlocklyPauseStop();
+
+        // Get current joint angles
+        const status_pos_${sanitizedId} = await robotArmClient.getStatus();
+        const currentAngles_pos_${sanitizedId} = [];
+        const numJoints_pos_${sanitizedId} = getNumJoints();
+        for (let i = 0; i < numJoints_pos_${sanitizedId}; i++) {
+            if (status_pos_${sanitizedId}[i] && typeof status_pos_${sanitizedId}[i].angleDegrees === 'number') {
+                currentAngles_pos_${sanitizedId}.push(status_pos_${sanitizedId}[i].angleDegrees);
+            } else {
+                currentAngles_pos_${sanitizedId}.push(0);
             }
         }
-        
-        // Fallback if position not found
-        return `highlightBlocklyBlock('${blockId}');\nawait checkBlocklyPauseStop();\n// Position ${positionNumber} not found\n`;
+
+        // Resolve the stored position to joint angles now (works for angles-type
+        // and XYZ-type positions alike).
+        const targetAngles_pos_${sanitizedId} = resolveStoredPositionAngles(${positionNumber});
+        if (!targetAngles_pos_${sanitizedId}) {
+            appendBlocklyOutput('Could not move to Position ${positionNumber} ("${positionLabel}") — it could not be resolved to joint angles (missing, or XYZ target unreachable with the current tool).');
+        } else {
+            // Calculate scaled speeds using linear interpolation
+            const scaledSpeeds_pos_${sanitizedId} = calculateScaledSpeeds(currentAngles_pos_${sanitizedId}, targetAngles_pos_${sanitizedId}, ${speedDegreesPerSecond});
+
+            appendBlocklyOutput('Moving to ${positionLabel} at speed ${speedDegreesPerSecond} degrees/s (scaled speeds for synchronized arrival)');
+
+            const movePromises_pos_${sanitizedId} = [];
+            for (let i = 0; i < numJoints_pos_${sanitizedId}; i++) {
+                movePromises_pos_${sanitizedId}.push(
+                    scaledSpeeds_pos_${sanitizedId}[i] > 0
+                        ? robotArmClient.moveJoint(i + 1, targetAngles_pos_${sanitizedId}[i], degreesPerSecondToStepsPerSecond(scaledSpeeds_pos_${sanitizedId}[i]))
+                        : Promise.resolve()
+                );
+            }
+            // Use Promise.allSettled so waitForMotionComplete is only registered
+            // after the serial-bus drain is fully complete. Status pushes that
+            // fire during the drain (showing isMoving:false before the servo has
+            // started moving) are ignored because the listener isn't attached yet.
+            await Promise.allSettled(movePromises_pos_${sanitizedId});
+            await robotArmClient.waitForMotionComplete(30000);
+        }
+        `;
     };
 
     // Move TCP to absolute XYZ using kinematics

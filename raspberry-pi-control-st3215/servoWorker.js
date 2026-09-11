@@ -58,6 +58,52 @@ const BUS_QUIET_AFTER_MOVE_MS   = 10;
 const BUS_QUIET_JOG_MS          = 4;
 const RESCAN_MIN_INTERVAL_MS    = 10000;
 
+// EEPROM addresses the Calibration page's raw-write path refuses to touch even
+// with the write password — wrong values here can make a servo unreachable on
+// the bus (ID, Baud rate) or violate the datasheet's own "do not modify" note
+// (Phase), rather than just misconfigure a tuning parameter.
+//   5  = ID, 6 = Baud rate, 18 = Phase (special byte)
+const EEPROM_WRITE_BLOCKED_ADDRESSES = new Set([5, 6, 18]);
+
+// address -> {bytes, min, max} for every other writable EEPROM register, used
+// to validate raw writes from the Calibration page. Mirrors the register
+// table in electron-app/stsMemoryTable.js — keep the two in sync if either
+// changes. Read-only fields (firmware/servo version numbers) are absent, so
+// they're rejected as "not writable" the same as the blocked addresses above.
+const EEPROM_WRITE_RANGES = {
+    7:  { bytes: 1, min: 0,     max: 254 },  // Return delay
+    8:  { bytes: 1, min: 0,     max: 1 },    // Response status level
+    9:  { bytes: 2, min: 0,     max: 4094 }, // Min angle limit
+    11: { bytes: 2, min: 1,     max: 4095 }, // Max angle limit
+    13: { bytes: 1, min: 0,     max: 100 },  // Max temperature limit
+    14: { bytes: 1, min: 0,     max: 254 },  // Max input voltage
+    15: { bytes: 1, min: 0,     max: 254 },  // Min input voltage
+    16: { bytes: 2, min: 0,     max: 1000 }, // Max torque
+    19: { bytes: 1, min: 0,     max: 254 },  // Unloading condition
+    20: { bytes: 1, min: 0,     max: 254 },  // LED alarm condition
+    21: { bytes: 1, min: 0,     max: 254 },  // P coefficient
+    22: { bytes: 1, min: 0,     max: 254 },  // D coefficient
+    23: { bytes: 1, min: 0,     max: 254 },  // I coefficient
+    24: { bytes: 2, min: 0,     max: 1000 }, // Min startup force
+    26: { bytes: 1, min: 0,     max: 32 },   // CW insensitive area
+    27: { bytes: 1, min: 0,     max: 32 },   // CCW insensitive area
+    28: { bytes: 2, min: 0,     max: 511 },  // Protection current
+    30: { bytes: 1, min: 1,     max: 100 },  // Angular resolution
+    31: { bytes: 2, min: 0,     max: 4095 }, // Position correction (raw, sign is bit11)
+    33: { bytes: 1, min: 0,     max: 2 },    // Operation mode
+    34: { bytes: 1, min: 0,     max: 254 },  // Protective torque
+    35: { bytes: 1, min: 0,     max: 254 },  // Protection time
+    36: { bytes: 1, min: 0,     max: 254 },  // Overload torque
+    37: { bytes: 1, min: 0,     max: 254 },  // Speed closed-loop P coefficient
+    38: { bytes: 1, min: 0,     max: 254 },  // Over-current protection time
+    39: { bytes: 1, min: 0,     max: 254 },  // Velocity closed-loop I coefficient
+};
+
+// Angle limits (9, 11) can let a joint travel somewhere mechanically unsafe —
+// the UI asks for an extra confirmation before sending those writes, but the
+// server doesn't re-check that here since it can't tell a hasty click from a
+// deliberate one; it relies on the write password gate in server.js instead.
+
 const SERVO_BACKOFF_FAIL_THRESHOLD   = 3;
 const SERVO_BACKOFF_DURATION_MS      = 2000;
 const SERVO_THERMAL_BACKOFF_DURATION_MS = 30000; // 30 s cool-down after temperature fault
@@ -1108,6 +1154,143 @@ async function handleBusCommand(clientId, data) {
             break;
         }
 
+        // ===== Commissioning (EEPROM) Commands =====
+        case 'readServoEeprom': {
+            const idx = data.joint - 1;
+            if (idx < 0 || idx >= servos.length) { reply({ type: 'error', message: `Invalid joint number: ${data.joint}` }); return; }
+            const sv = servos[idx];
+            if (!sv) { reply({ type: 'error', message: `Servo ${data.joint} is not available` }); return; }
+            try {
+                const profile = await sv.readEepromProfile();
+                reply({ type: 'servoEeprom', joint: data.joint, profile });
+            } catch (error) {
+                reply({ type: 'error', message: `Failed to read servo ${data.joint} EEPROM: ${error.message}` });
+            }
+            break;
+        }
+
+        case 'readServoEepromRaw': {
+            // Full raw EEPROM block for the Calibration page — decoded against
+            // the STS3215 memory table client-side, not the small known-field
+            // subset readServoEeprom() above returns.
+            const idx = data.joint - 1;
+            if (idx < 0 || idx >= servos.length) { reply({ type: 'error', message: `Invalid joint number: ${data.joint}` }); return; }
+            const sv = servos[idx];
+            if (!sv) { reply({ type: 'error', message: `Servo ${data.joint} is not available` }); return; }
+            try {
+                const raw = await sv.readData(0, 40); // addresses 0x00-0x27
+                reply({ type: 'servoEepromRaw', joint: data.joint, bytes: Array.from(raw) });
+            } catch (error) {
+                reply({ type: 'error', message: `Failed to read servo ${data.joint} raw EEPROM: ${error.message}` });
+            }
+            break;
+        }
+
+        case 'writeServoEepromRaw': {
+            // Single-register raw write from the Calibration page. The write
+            // password itself is checked in server.js before this ever reaches
+            // the worker; here we only validate the address/range, since those
+            // are hardware-safety concerns rather than an authorization concern.
+            const idx = data.joint - 1;
+            if (idx < 0 || idx >= servos.length) { reply({ type: 'error', message: `Invalid joint number: ${data.joint}` }); return; }
+            const sv = servos[idx];
+            if (!sv) { reply({ type: 'error', message: `Servo ${data.joint} is not available` }); return; }
+
+            const address = data.address;
+            const range = EEPROM_WRITE_RANGES[address];
+            if (EEPROM_WRITE_BLOCKED_ADDRESSES.has(address) || !range) {
+                reply({ type: 'error', message: `Address 0x${Number(address || 0).toString(16)} is not writable from the Calibration page` });
+                return;
+            }
+            const rawValue = data.rawValue;
+            if (typeof rawValue !== 'number' || !Number.isFinite(rawValue) || rawValue < range.min || rawValue > range.max) {
+                reply({ type: 'error', message: `Value out of range (${range.min}-${range.max})` });
+                return;
+            }
+
+            try {
+                const bytesToWrite = range.bytes === 2
+                    ? [rawValue & 0xFF, (rawValue >> 8) & 0xFF]
+                    : [rawValue & 0xFF];
+                await sv.writeData(0x37, [0]); // unlock EEPROM
+                await new Promise(r => setTimeout(r, 25));
+                await sv.writeData(address, bytesToWrite);
+                await new Promise(r => setTimeout(r, 40));
+                log(`[CALIBRATION] J${data.joint} wrote raw EEPROM address 0x${address.toString(16)} = ${rawValue}`);
+                reply({ type: 'success', message: `Wrote ${rawValue} to address 0x${address.toString(16)} on joint ${data.joint}` });
+            } catch (error) {
+                reply({ type: 'error', message: `Failed to write EEPROM: ${error.message}` });
+            }
+            break;
+        }
+
+        case 'writeServoEeprom': {
+            // Writes only the fields present in data.values, and persists them
+            // into servo-pid-config.json so they're re-applied automatically if
+            // this servo is ever swapped for another unit at the same joint ID.
+            const idx = data.joint - 1;
+            if (idx < 0 || idx >= servos.length) { reply({ type: 'error', message: `Invalid joint number: ${data.joint}` }); return; }
+            const sv = servos[idx];
+            if (!sv) { reply({ type: 'error', message: `Servo ${data.joint} is not available` }); return; }
+            const jointId = String(data.joint);
+            const values = data.values || {};
+            const applied = [];
+            const errors = [];
+            try {
+                if (values.p !== undefined || values.d !== undefined || values.i !== undefined || values.minStartupForce !== undefined) {
+                    const current = await sv.readPIDValues();
+                    const p = values.p ?? current.p, d = values.d ?? current.d,
+                          i = values.i ?? current.i, minStartupForce = values.minStartupForce ?? current.minStartupForce;
+                    await sv.writePIDValues(p, d, i, minStartupForce);
+                    applied.push('pid');
+                    saveServoConfigEntry(jointId, { p, d, i, minStartupForce });
+                    log(`[COMMISSION] J${jointId} PID written: P=${p} D=${d} I=${i} MinStartup=${minStartupForce}`);
+                }
+                if (values.overloadTorque !== undefined || values.protTorque !== undefined || values.protTimeMs !== undefined) {
+                    const current = await sv.readOverloadProtection();
+                    const overloadTorque = values.overloadTorque ?? current.overloadTorque,
+                          protTorque     = values.protTorque ?? current.protTorque,
+                          protTimeMs     = values.protTimeMs ?? current.protTimeMs;
+                    await sv.writeOverloadProtection(overloadTorque, protTorque, protTimeMs);
+                    applied.push('overloadProtection');
+                    saveServoConfigEntry(jointId, { overloadTorque, protTorque, protTimeMs });
+                    log(`[COMMISSION] J${jointId} overload protection written: OverloadTorque=${overloadTorque}% ProtTorque=${protTorque}% ProtTime=${protTimeMs}ms`);
+                }
+                if (values.minAngleDeg !== undefined && values.maxAngleDeg !== undefined) {
+                    await sv.writeAngleLimits(values.minAngleDeg, values.maxAngleDeg);
+                    applied.push('angleLimits');
+                    saveServoConfigEntry(jointId, { minAngleDeg: values.minAngleDeg, maxAngleDeg: values.maxAngleDeg });
+                    log(`[COMMISSION] J${jointId} angle limits written: ${values.minAngleDeg}° to ${values.maxAngleDeg}°`);
+                }
+                if (values.maxTorque !== undefined) {
+                    await sv.writeMaxTorque(values.maxTorque);
+                    applied.push('maxTorque');
+                    saveServoConfigEntry(jointId, { maxTorque: values.maxTorque });
+                    log(`[COMMISSION] J${jointId} max torque written: ${values.maxTorque}%`);
+                }
+                if (applied.length === 0) {
+                    reply({ type: 'error', message: 'No recognized fields in values' });
+                    return;
+                }
+                reply({ type: 'success', message: `Joint ${data.joint} EEPROM updated (${applied.join(', ')})`, applied });
+            } catch (error) {
+                reply({ type: 'error', message: `Failed to write servo ${data.joint} EEPROM: ${error.message}`, applied });
+            }
+            break;
+        }
+
+        case 'commissionAllServos': {
+            try {
+                const result = await commissionAllServos();
+                if (result.error) { reply({ type: 'error', message: result.error }); return; }
+                log(`[COMMISSION] All joints commissioned from servo-pid-config.json`);
+                reply({ type: 'servoCommission', results: result.results });
+            } catch (error) {
+                reply({ type: 'error', message: `Commissioning failed: ${error.message}` });
+            }
+            break;
+        }
+
         // ===== End Tool Commands =====
         case 'toolPing': {
             try { reply({ type: 'toolPing', ok: await requireEndTool().pingTool() }); }
@@ -1268,19 +1451,85 @@ process.on('message', (msg) => {
 // ===== PID config auto-apply =====
 const PID_CONFIG_PATH = path.join(__dirname, 'servo-pid-config.json');
 
-async function applyPIDConfig() {
-    if (!fs.existsSync(PID_CONFIG_PATH)) {
-        log('No servo-pid-config.json found — using factory defaults');
-        return;
-    }
-    let cfg;
+function loadServoConfig() {
+    if (!fs.existsSync(PID_CONFIG_PATH)) return null;
     try {
-        cfg = JSON.parse(fs.readFileSync(PID_CONFIG_PATH, 'utf8'));
+        return JSON.parse(fs.readFileSync(PID_CONFIG_PATH, 'utf8'));
     } catch (e) {
         log('servo-pid-config.json parse error: ' + e.message, true);
-        return;
+        return null;
     }
-    const joints = cfg && cfg.joints;
+}
+
+function saveServoConfigEntry(jointId, fields) {
+    const cfg = loadServoConfig() || { joints: {} };
+    if (!cfg.joints) cfg.joints = {};
+    cfg.joints[jointId] = { ...cfg.joints[jointId], ...fields };
+    cfg._tuned = new Date().toISOString();
+    fs.writeFileSync(PID_CONFIG_PATH, JSON.stringify(cfg, null, 2));
+}
+
+// Applies one joint's saved config entry to its physical servo (PID always;
+// overload protection, angle limits, and max torque only if the entry has
+// them, since those are commissioning-only fields with no safe default to
+// assume for a joint nobody has explicitly commissioned yet).
+async function applyServoConfigEntry(servo, jointId, entry) {
+    const applied = [];
+    const errors = [];
+
+    const { p = 32, d = 32, i: integralGain = 0, minStartupForce = 16 } = entry;
+    try {
+        await servo.writePIDValues(p, d, integralGain, minStartupForce);
+        log(`PID applied J${jointId}: P=${p} D=${d} I=${integralGain} MinStartup=${minStartupForce}`);
+        applied.push('pid');
+    } catch (e) {
+        log(`PID apply failed J${jointId}: ${e.message}`, true);
+        errors.push(`PID: ${e.message}`);
+    }
+
+    if (entry.overloadTorque !== undefined) {
+        const { overloadTorque, protTorque = 20, protTimeMs = 200 } = entry;
+        try {
+            await servo.writeOverloadProtection(overloadTorque, protTorque, protTimeMs);
+            log(`Overload protection applied J${jointId}: OverloadTorque=${overloadTorque}% ProtTorque=${protTorque}% ProtTime=${protTimeMs}ms`);
+            applied.push('overloadProtection');
+        } catch (e) {
+            log(`Overload protection apply failed J${jointId}: ${e.message}`, true);
+            errors.push(`Overload protection: ${e.message}`);
+        }
+    }
+
+    if (entry.minAngleDeg !== undefined && entry.maxAngleDeg !== undefined) {
+        try {
+            await servo.writeAngleLimits(entry.minAngleDeg, entry.maxAngleDeg);
+            log(`Angle limits applied J${jointId}: ${entry.minAngleDeg}° to ${entry.maxAngleDeg}°`);
+            applied.push('angleLimits');
+        } catch (e) {
+            log(`Angle limits apply failed J${jointId}: ${e.message}`, true);
+            errors.push(`Angle limits: ${e.message}`);
+        }
+    }
+
+    if (entry.maxTorque !== undefined) {
+        try {
+            await servo.writeMaxTorque(entry.maxTorque);
+            log(`Max torque applied J${jointId}: ${entry.maxTorque}%`);
+            applied.push('maxTorque');
+        } catch (e) {
+            log(`Max torque apply failed J${jointId}: ${e.message}`, true);
+            errors.push(`Max torque: ${e.message}`);
+        }
+    }
+
+    return { joint: Number(jointId), applied, errors };
+}
+
+// Called once at startup — pushes servo-pid-config.json onto whichever
+// physical servo currently answers at each joint ID.
+async function applyPIDConfig() {
+    const cfg = loadServoConfig();
+    if (!cfg) { log('No servo-pid-config.json found — using factory defaults'); return; }
+    const joints = cfg.joints;
     if (!joints) { log('servo-pid-config.json missing joints key', true); return; }
 
     for (let i = 0; i < servos.length; i++) {
@@ -1289,15 +1538,26 @@ async function applyPIDConfig() {
         const jointId = String(i + 1);
         const entry   = joints[jointId];
         if (!entry)   continue;
-
-        const { p = 32, d = 32, i: integralGain = 0, minStartupForce = 16 } = entry;
-        try {
-            await servo.writePIDValues(p, d, integralGain, minStartupForce);
-            log(`PID applied J${jointId}: P=${p} D=${d} I=${integralGain} MinStartup=${minStartupForce}`);
-        } catch (e) {
-            log(`PID apply failed J${jointId}: ${e.message}`, true);
-        }
+        await applyServoConfigEntry(servo, jointId, entry);
     }
+}
+
+// Callable on demand (commissioning UI) — same as applyPIDConfig but reports
+// per-joint results instead of just logging them.
+async function commissionAllServos() {
+    const cfg = loadServoConfig();
+    if (!cfg || !cfg.joints) return { error: 'No servo-pid-config.json found' };
+
+    const results = [];
+    for (let i = 0; i < servos.length; i++) {
+        const servo = servos[i];
+        const jointId = String(i + 1);
+        const entry = cfg.joints[jointId];
+        if (!entry) continue;
+        if (!servo) { results.push({ joint: i + 1, applied: [], errors: ['Servo not connected'] }); continue; }
+        results.push(await applyServoConfigEntry(servo, jointId, entry));
+    }
+    return { results };
 }
 
 // ===== Joint center offsets (persisted across restarts) =====

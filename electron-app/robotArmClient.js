@@ -623,6 +623,70 @@ class RobotArmClient {
     }
 
     /**
+     * Reads a joint's full commissioning-relevant EEPROM profile (PID gains,
+     * overload protection, angle limits, max torque) directly from the servo.
+     * @param {number} jointNumber
+     */
+    readServoEeprom(jointNumber) {
+        return this.sendRequest('readServoEeprom', {
+            joint: jointNumber
+        });
+    }
+
+    /**
+     * Reads the full raw EEPROM block (addresses 0x00-0x27) from a joint's
+     * servo, for the Calibration page — decoding against the STS3215 memory
+     * table happens client-side (see stsMemoryTable.js).
+     * @param {number} jointNumber
+     */
+    readServoEepromRaw(jointNumber) {
+        return this.sendRequest('readServoEepromRaw', {
+            joint: jointNumber
+        });
+    }
+
+    /**
+     * Writes a single raw EEPROM register from the Calibration page.
+     * Requires the control-lock password on top of holding the control
+     * session — this can reach registers outside the curated commissioning
+     * set, so the server gates it separately.
+     * @param {number} jointNumber
+     * @param {number} address - decimal EEPROM address
+     * @param {number} rawValue - raw register value (already scaled, not the decoded/meaningful value)
+     * @param {string} password
+     */
+    writeServoEepromRaw(jointNumber, address, rawValue, password) {
+        return this.sendRequest('writeServoEepromRaw', {
+            joint: jointNumber,
+            address,
+            rawValue,
+            password
+        });
+    }
+
+    /**
+     * Writes the given fields to a joint's servo EEPROM and persists them to
+     * servo-pid-config.json so they survive a servo swap or service restart.
+     * @param {number} jointNumber
+     * @param {object} values - any of: p, d, i, minStartupForce, overloadTorque,
+     *   protTorque, protTimeMs, minAngleDeg, maxAngleDeg, maxTorque
+     */
+    writeServoEeprom(jointNumber, values) {
+        return this.sendRequest('writeServoEeprom', {
+            joint: jointNumber,
+            values
+        });
+    }
+
+    /**
+     * Pushes servo-pid-config.json onto every currently-connected servo in one
+     * pass — the "commission a freshly wired arm" button.
+     */
+    commissionAllServos() {
+        return this.sendRequest('commissionAllServos', {});
+    }
+
+    /**
      * Stops motion on a specific joint
      * @param {number} jointNumber - Joint number (1, 2, 3, etc.)
      */

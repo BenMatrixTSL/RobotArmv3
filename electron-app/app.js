@@ -185,7 +185,17 @@ function update3DStoredPositionsIfAvailable() {
         for (let i = 0; i < keys.length; i++) {
             const num = keys[i];
             const pos = positions[num];
-            if (!pos || !Array.isArray(pos.angles) || pos.angles.length === 0) {
+            if (!pos) continue;
+
+            // XYZ-type positions already have their tool-tip coordinates —
+            // no FK needed (and no dependence on the currently active tool).
+            if (pos.type === 'xyz') {
+                if (!pos.xyz) continue;
+                points.push({ label: pos.label || `P${num}`, x: pos.xyz.x, y: pos.xyz.y, z: pos.xyz.z });
+                continue;
+            }
+
+            if (!Array.isArray(pos.angles) || pos.angles.length === 0) {
                 continue;
             }
             try {
@@ -206,6 +216,93 @@ function update3DStoredPositionsIfAvailable() {
     } catch (error) {
         console.error('update3DStoredPositionsIfAvailable error:', error);
     }
+}
+
+/**
+ * Resolves a stored position object to a joint-angle array, regardless of
+ * whether it was saved as angles or as an XYZ tool-tip target.
+ *
+ * For an XYZ-type position, this runs inverse kinematics AT CALL TIME against
+ * whichever end tool is currently active (robotKinematics.getActiveEndTool()),
+ * so the same stored XYZ point produces different joint angles depending on
+ * which tool is attached — that's the whole point of storing it as XYZ rather
+ * than as angles. Orientation is intentionally NOT part of the stored
+ * position (per design) — it comes from whatever the caller's current
+ * orientation context is (currentToolOrientation, same as manual XYZ jogging).
+ *
+ * @param {object} position - A stored position object from getPosition()/getPositionByName().
+ * @returns {number[]|null} Joint angles in degrees, or null if it can't be resolved
+ *   (missing data, kinematics not configured, or the XYZ target is unreachable).
+ */
+function resolvePositionToAngles(position) {
+    if (!position) return null;
+    const numJoints = getNumJoints();
+
+    if (position.type === 'xyz') {
+        if (!position.xyz || typeof robotKinematics === 'undefined' || !robotKinematics.isConfigured()) {
+            return null;
+        }
+        // Seed IK from the arm's actual current pose when known (best convergence),
+        // falling back to this position's last-computed preview angles.
+        let seed;
+        if (Array.isArray(lastGoodJointStatus) && lastGoodJointStatus.length > 0) {
+            seed = lastGoodJointStatus.map(j => (j && typeof j.angleDegrees === 'number' && !isNaN(j.angleDegrees)) ? j.angleDegrees : 0);
+        } else if (Array.isArray(position.angles)) {
+            seed = position.angles.slice();
+        } else {
+            seed = new Array(numJoints).fill(0);
+        }
+        const target = currentToolOrientation
+            ? { x: position.xyz.x, y: position.xyz.y, z: position.xyz.z, orientation: currentToolOrientation }
+            : { x: position.xyz.x, y: position.xyz.y, z: position.xyz.z };
+        try {
+            return robotKinematics.inverseKinematics(target, seed) || null;
+        } catch (e) {
+            console.warn('IK failed resolving XYZ stored position:', e);
+            return null;
+        }
+    }
+
+    // Angles type (also the default for legacy positions saved before this field existed).
+    if (!Array.isArray(position.angles) || position.angles.length === 0) return null;
+    const targetAngles = [];
+    for (let i = 0; i < numJoints; i++) {
+        targetAngles.push(typeof position.angles[i] === 'number' ? position.angles[i] : 0);
+    }
+    return targetAngles;
+}
+
+/**
+ * Looks up a stored position by number and resolves it to joint angles.
+ * Convenience wrapper around resolvePositionToAngles() for callers (Blockly
+ * generated code, in particular) that only have the position number at hand.
+ * @param {number} positionNumber
+ * @returns {number[]|null}
+ */
+function resolveStoredPositionAngles(positionNumber) {
+    if (typeof getPosition !== 'function') return null;
+    return resolvePositionToAngles(getPosition(positionNumber));
+}
+
+/**
+ * Moves the arm to a stored position object, dead-zone aware. Works for both
+ * angles-type and XYZ-type positions (see resolvePositionToAngles).
+ * @param {object} position
+ * @param {number} [speedDegreesPerSecond=40]
+ * @returns {Promise<boolean>} true if the move was dispatched, false if the position couldn't be resolved
+ */
+async function moveToStoredPositionEntry(position, speedDegreesPerSecond = 40) {
+    const targetAngles = resolvePositionToAngles(position);
+    if (!targetAngles) {
+        const label = position && position.label ? `"${position.label}"` : 'position';
+        const reason = position && position.type === 'xyz'
+            ? 'its XYZ target is unreachable with the current tool'
+            : 'it has no joint angles saved';
+        showAppMessage(`Could not move to ${label} — ${reason}.`);
+        return false;
+    }
+    await moveJointsToAnglesWithDeadZones(targetAngles, speedDegreesPerSecond);
+    return true;
 }
 
 /**
@@ -2691,16 +2788,22 @@ function updateArmControlDisplay(controlInfo) {
  */
 function updateTakeControlButtonState() {
     const takeButton = document.getElementById('takeControlButton');
-    if (!takeButton) {
-        return;
+    if (takeButton) {
+        if (!robotArmClient.isConnected) {
+            takeButton.disabled = true;
+        } else {
+            takeButton.disabled = robotArmClient.hasArmControl;
+        }
     }
 
-    if (!robotArmClient.isConnected) {
-        takeButton.disabled = true;
-        return;
+    // Commissioning writes/reads are bus commands like moves — they need this
+    // app to hold arm control, same requirement as the buttons above.
+    const commissionButtonIds = ['commissionAllButton', 'commissionReadButton', 'commissionWriteButton', 'calibrationReadButton', 'calibrationReadAllButton'];
+    const commissionEnabled = robotArmClient.isConnected && robotArmClient.hasArmControl;
+    for (const id of commissionButtonIds) {
+        const btn = document.getElementById(id);
+        if (btn) btn.disabled = !commissionEnabled;
     }
-
-    takeButton.disabled = robotArmClient.hasArmControl;
 }
 
 /**
@@ -3301,6 +3404,120 @@ async function centerJoint(jointNumber) {
 }
 
 /**
+ * Reads the selected joint's commissioning-relevant EEPROM profile from its
+ * servo (PID gains, overload protection, angle limits, max torque) and fills
+ * the per-joint EEPROM fields with the live values.
+ */
+async function readServoEeprom() {
+    if (!robotArmClient.isConnected) {
+        showAppMessage('Not connected to robot arm controller');
+        return;
+    }
+    const jointNumber = parseInt(document.getElementById('commissionJointSelect').value, 10);
+    const statusEl = document.getElementById('commissionStatus');
+    try {
+        statusEl.textContent = `Reading Joint ${jointNumber} EEPROM...`;
+        const response = await robotArmClient.readServoEeprom(jointNumber);
+        const p = response.profile;
+        document.getElementById('commissionP').value = p.p;
+        document.getElementById('commissionD').value = p.d;
+        document.getElementById('commissionI').value = p.i;
+        document.getElementById('commissionMinStartup').value = p.minStartupForce;
+        document.getElementById('commissionOverloadTorque').value = p.overloadTorque;
+        document.getElementById('commissionProtTorque').value = p.protTorque;
+        document.getElementById('commissionProtTime').value = p.protTimeMs;
+        document.getElementById('commissionMinAngle').value = p.minAngleDeg.toFixed(1);
+        document.getElementById('commissionMaxAngle').value = p.maxAngleDeg.toFixed(1);
+        document.getElementById('commissionMaxTorque').value = p.maxTorque;
+        statusEl.textContent = `Joint ${jointNumber} EEPROM read at ${new Date().toLocaleTimeString()}`;
+    } catch (error) {
+        statusEl.textContent = `Failed to read Joint ${jointNumber} EEPROM: ${error.message}`;
+    }
+}
+
+/**
+ * Writes whichever per-joint EEPROM fields have a value entered to the
+ * selected joint's servo, and persists them to servo-pid-config.json.
+ * Fields left blank are not touched.
+ */
+async function writeServoEeprom() {
+    if (!robotArmClient.isConnected) {
+        showAppMessage('Not connected to robot arm controller');
+        return;
+    }
+    const jointNumber = parseInt(document.getElementById('commissionJointSelect').value, 10);
+
+    const fieldMap = {
+        p: 'commissionP', d: 'commissionD', i: 'commissionI', minStartupForce: 'commissionMinStartup',
+        overloadTorque: 'commissionOverloadTorque', protTorque: 'commissionProtTorque', protTimeMs: 'commissionProtTime',
+        minAngleDeg: 'commissionMinAngle', maxAngleDeg: 'commissionMaxAngle', maxTorque: 'commissionMaxTorque',
+    };
+    const values = {};
+    for (const [field, elementId] of Object.entries(fieldMap)) {
+        const raw = document.getElementById(elementId).value;
+        if (raw !== '') values[field] = parseFloat(raw);
+    }
+    if ((values.minAngleDeg !== undefined) !== (values.maxAngleDeg !== undefined)) {
+        showAppMessage('Angle limits must be set as a pair — fill in both min and max, or neither');
+        return;
+    }
+    if (Object.keys(values).length === 0) {
+        showAppMessage('No fields to write — read from the servo first or enter values');
+        return;
+    }
+
+    const confirmed = await showConfirm(
+        `Write these values to Joint ${jointNumber}'s servo EEPROM?\n\n` +
+        `${JSON.stringify(values, null, 2)}\n\n` +
+        `This changes physical behavior (fault thresholds and/or hard travel limits) immediately, ` +
+        `without a power cycle. Only do this as part of commissioning.`
+    );
+    if (!confirmed) return;
+
+    const statusEl = document.getElementById('commissionStatus');
+    try {
+        statusEl.textContent = `Writing Joint ${jointNumber} EEPROM...`;
+        const response = await robotArmClient.writeServoEeprom(jointNumber, values);
+        statusEl.textContent = `Joint ${jointNumber} EEPROM updated: ${response.applied.join(', ')}`;
+    } catch (error) {
+        statusEl.textContent = `Failed to write Joint ${jointNumber} EEPROM: ${error.message}`;
+    }
+}
+
+/**
+ * Pushes servo-pid-config.json onto every currently-connected servo in one
+ * pass. Intended for commissioning a freshly wired/assembled arm, or after
+ * swapping in replacement servos, so they pick up the arm's tuned settings.
+ */
+async function commissionAllServos() {
+    if (!robotArmClient.isConnected) {
+        showAppMessage('Not connected to robot arm controller');
+        return;
+    }
+
+    const confirmed = await showConfirm(
+        `Apply the settings saved in servo-pid-config.json to every currently-connected servo?\n\n` +
+        `This writes PID gains, overload protection, and (where saved) angle limits and max torque to ` +
+        `each joint's EEPROM immediately. Use this when commissioning a new arm or after swapping servos.`
+    );
+    if (!confirmed) return;
+
+    const resultEl = document.getElementById('commissionAllResult');
+    resultEl.style.display = 'block';
+    resultEl.textContent = 'Commissioning all joints...';
+    try {
+        const response = await robotArmClient.commissionAllServos();
+        const lines = response.results.map(r => {
+            if (r.errors.length === 0) return `Joint ${r.joint}: OK (${r.applied.join(', ') || 'nothing to apply'})`;
+            return `Joint ${r.joint}: ${r.applied.length ? 'partial (' + r.applied.join(', ') + ')' : 'FAILED'} — ${r.errors.join('; ')}`;
+        });
+        resultEl.textContent = lines.join('\n');
+    } catch (error) {
+        resultEl.textContent = `Commissioning failed: ${error.message}`;
+    }
+}
+
+/**
  * Stops all joints immediately
  */
 function stopAllJoints() {
@@ -3608,26 +3825,13 @@ async function moveToStoredPositionFromPendant() {
     }
 
     const position = getPosition(positionNumber);
-    if (!position || !Array.isArray(position.angles) || position.angles.length === 0) {
-        showAppMessage(`Stored position ${positionNumber} has no joint angles.`);
+    if (!position) {
+        showAppMessage(`Stored position ${positionNumber} not found.`);
         return;
     }
 
-    const numJoints = getNumJoints();
-    const speedDegreesPerSecond = 40;
     showAppMessage(`Moving to stored position ${positionNumber}...`);
-
-    // Use dead-zone-aware joint movement
-    const targetAngles = [];
-    for (let i = 0; i < numJoints; i++) {
-        if (position.angles[i] !== undefined && typeof position.angles[i] === 'number') {
-            targetAngles.push(position.angles[i]);
-        } else {
-            targetAngles.push(0);
-        }
-    }
-
-    await moveJointsToAnglesWithDeadZones(targetAngles, speedDegreesPerSecond);
+    await moveToStoredPositionEntry(position, 40);
 }
 
 /**
@@ -5174,21 +5378,28 @@ async function executeGCodeCommand(command) {
                 
                 // Get the stored position
                 position = getPosition(positionNumber);
-                if (!position || !Array.isArray(position.angles) || position.angles.length === 0) {
-                    gcodeProcessor.log(`Error: Stored position ${positionNumber} not found or has no joint angles.`);
+                if (!position) {
+                    gcodeProcessor.log(`Error: Stored position ${positionNumber} not found.`);
                     return;
                 }
-                
+
                 positionLabel = position.label || `Position ${positionNumber}`;
             }
-            
+
             // Get speed from F parameter (feed rate) - F parameter is in degrees/s
             const speedDegreesPerSecond = command.params.F || 40; // Default speed in degrees/s
-            
+
+            // Resolve to joint angles — works whether the position was saved as
+            // angles or as an XYZ tool-tip target (resolved via IK for the
+            // currently active tool in the latter case).
+            const targetAngles = resolvePositionToAngles(position);
+            if (!targetAngles) {
+                gcodeProcessor.log(`Error: Stored position ${positionNumber} (${positionLabel}) could not be resolved to joint angles` +
+                    (position.type === 'xyz' ? ' — XYZ target may be unreachable with the current tool.' : ' — no joint angles saved.'));
+                return;
+            }
+
             gcodeProcessor.log(`Moving to stored position ${positionNumber} (${positionLabel}) at speed ${speedDegreesPerSecond} degrees/s`);
-            
-            // Use the stored position's joint angles
-            const targetAngles = position.angles.slice(); // Copy the array
             
             // Use the existing moveJointsToAnglesWithDeadZones function for dead-zone aware movement
             if (typeof moveJointsToAnglesWithDeadZones === 'function') {

@@ -184,6 +184,7 @@
                 <button class="tab-button" data-tab="visualization">3D Visualisation</button>
                 <button class="tab-button" data-tab="kinematics">Kinematics</button>
                 <button class="tab-button" data-tab="positions">Stored Positions</button>
+                <button class="tab-button" data-tab="calibration">Calibration</button>
                 <button class="tab-button" data-tab="deadzones">Dead Zones</button>
                 <button class="tab-button" data-tab="camera">Camera</button>
                 <button class="tab-button" data-tab="settings" style="display:none;">Settings</button>
@@ -244,6 +245,51 @@
                     <button class="btn btn-secondary" data-touch-mode="off" onclick="setTouchModePreference('off')">Off</button>
                 </div>
                 <p class="info-text" id="touchModeStatus"></p>
+            </div>
+
+            <div class="connection-panel">
+                <h3>Commissioning</h3>
+                <p class="info-text">
+                    Reads and writes settings stored on each servo's own EEPROM chip (PID gains, overload/stall
+                    torque, hard angle limits, max torque). These persist on the physical servo — a replacement
+                    servo at the same joint starts back at factory defaults until commissioned again. Values
+                    written here are also saved to servo-pid-config.json so they're re-applied automatically
+                    every time the server starts.
+                </p>
+                <button id="commissionAllButton" class="btn btn-warning" disabled onclick="commissionAllServos()">
+                    Commission All Joints (apply saved config to every connected servo)
+                </button>
+                <pre id="commissionAllResult" class="diagnostics-display" style="display:none;"></pre>
+
+                <h4 class="control-lock-title">Per-joint EEPROM</h4>
+                <div class="connection-form">
+                    <label>
+                        Joint:
+                        <select id="commissionJointSelect">
+                            <option value="1">Joint 1</option>
+                            <option value="2">Joint 2</option>
+                            <option value="3">Joint 3</option>
+                            <option value="4">Joint 4</option>
+                            <option value="5">Joint 5</option>
+                            <option value="6">Joint 6</option>
+                        </select>
+                    </label>
+                    <button id="commissionReadButton" class="btn btn-secondary" disabled onclick="readServoEeprom()">Read from servo</button>
+                    <button id="commissionWriteButton" class="btn btn-warning" disabled onclick="writeServoEeprom()">Write to servo (EEPROM)</button>
+                </div>
+                <div class="commission-fields-grid">
+                    <label>P gain <input type="number" id="commissionP" min="0" max="254" step="1"></label>
+                    <label>D gain <input type="number" id="commissionD" min="0" max="254" step="1"></label>
+                    <label>I gain <input type="number" id="commissionI" min="0" max="254" step="1"></label>
+                    <label>Min startup force <input type="number" id="commissionMinStartup" min="0" max="1000" step="1"></label>
+                    <label>Overload torque % (stall trigger) <input type="number" id="commissionOverloadTorque" min="0" max="100" step="1"></label>
+                    <label>Protection torque % (post-trip) <input type="number" id="commissionProtTorque" min="0" max="100" step="1"></label>
+                    <label>Protection time (ms) <input type="number" id="commissionProtTime" min="0" max="65535" step="1"></label>
+                    <label>Min angle limit (°) <input type="number" id="commissionMinAngle" step="0.1"></label>
+                    <label>Max angle limit (°) <input type="number" id="commissionMaxAngle" step="0.1"></label>
+                    <label>Max torque % <input type="number" id="commissionMaxTorque" min="0" max="100" step="1"></label>
+                </div>
+                <p class="info-text" id="commissionStatus"></p>
             </div>
 
             <div class="connection-panel" id="serverDiagnosticsPanel" style="display: none;">
@@ -958,7 +1004,17 @@
                     <button class="btn btn-danger" onclick="deletePosition()">Delete Position</button>
                     <button class="btn btn-warning btn-major torque-toggle-button" onclick="toggleTorqueAll()">Torque: On</button>
                 </div>
-                
+
+                <div class="positions-type-toggle">
+                    <label><input type="radio" name="positionType" value="angles" checked onchange="updatePositionTypeUI()"> Save as Angles</label>
+                    <label><input type="radio" name="positionType" value="xyz" onchange="updatePositionTypeUI()"> Save as XYZ</label>
+                    <p class="info-text">
+                        An XYZ position is resolved to joint angles at move time using whichever tool is
+                        currently attached, so the same point can drive different angles for different tool heads.
+                        An Angles position always moves to the exact same joint angles regardless of tool.
+                    </p>
+                </div>
+
                 <div class="positions-joints">
                     <h3>Joint Angles (degrees)</h3>
                     <div id="positionJointsGrid" class="positions-joints-grid">
@@ -985,35 +1041,10 @@
                             <span>mm</span>
                         </div>
                     </div>
-                    <div class="positions-xyz-orientation">
-                        <label class="positions-orientation-toggle">
-                            <input type="checkbox" id="positionOrientationEnabled" onchange="updatePositionOrientationEnabled()">
-                            Constrain tool orientation
-                        </label>
-                        <div id="positionOrientationFields" class="positions-orientation-fields" hidden>
-                            <div class="xyz-item">
-                                <label>X:</label>
-                                <input type="number" id="positionOrientX" value="0" step="0.1" style="width: 70px;">
-                            </div>
-                            <div class="xyz-item">
-                                <label>Y:</label>
-                                <input type="number" id="positionOrientY" value="0" step="0.1" style="width: 70px;">
-                            </div>
-                            <div class="xyz-item">
-                                <label>Z:</label>
-                                <input type="number" id="positionOrientZ" value="-1" step="0.1" style="width: 70px;">
-                            </div>
-                            <button type="button" class="btn btn-small" onclick="setPositionOrientationPreset('down')">Down</button>
-                            <button type="button" class="btn btn-small" onclick="setPositionOrientationPreset('up')">Up</button>
-                        </div>
-                    </div>
-                    <div class="positions-xyz-buttons">
-                        <button class="btn btn-small" onclick="updateXYZFromAngles()" title="Compute XYZ from current joint angles using forward kinematics">Update XYZ from Angles (FK)</button>
-                        <button class="btn btn-small btn-primary" onclick="applyIKFromXYZ()" title="Compute joint angles from XYZ using inverse kinematics">Apply Angles from XYZ (IK)</button>
-                    </div>
+                    <p class="info-text" id="positionPreviewNote"></p>
                     <div id="positionsXYZStatus" class="positions-xyz-status"></div>
                 </div>
-                
+
                 <div class="positions-list">
                     <h3>Saved Positions</h3>
                     <div class="positions-list-controls">
@@ -1029,6 +1060,69 @@
                 <div class="positions-status">
                     <div>Status: <span id="positionsStatus">Ready</span></div>
                 </div>
+            </div>
+        </div>
+
+        <!-- Calibration Tab -->
+        <div id="calibration-tab" class="tab-content">
+            <h2>Calibration</h2>
+            <p class="info-text">
+                Every EEPROM setting on a servo, read directly from the hardware and decoded against the ST3215
+                datasheet's memory table &mdash; raw byte value alongside its real-world meaning, with the factory
+                default shown so anything that's been changed stands out.
+            </p>
+
+            <div class="calibration-controls">
+                <label>
+                    Joint:
+                    <select id="calibrationJointSelect">
+                        <option value="1">Joint 1</option>
+                        <option value="2">Joint 2</option>
+                        <option value="3">Joint 3</option>
+                        <option value="4">Joint 4</option>
+                        <option value="5">Joint 5</option>
+                        <option value="6">Joint 6</option>
+                    </select>
+                </label>
+                <button id="calibrationReadButton" class="btn btn-primary" disabled onclick="readCalibrationTable()">Read EEPROM</button>
+                <button id="calibrationReadAllButton" class="btn btn-secondary" disabled onclick="readCalibrationTableAllJoints()">Read All Joints</button>
+                <label class="calibration-diff-toggle">
+                    <input type="checkbox" id="calibrationDiffOnly" onchange="renderCalibrationTable()">
+                    Show only values that differ from factory default
+                </label>
+            </div>
+
+            <div class="calibration-write-controls">
+                <input type="password" id="calibrationWritePassword" placeholder="Write password" autocomplete="off">
+                <button id="calibrationUnlockWritesButton" class="btn btn-warning" onclick="toggleCalibrationWriteMode()">Enable Editing</button>
+                <p class="info-text calibration-write-note">
+                    Editing writes directly to servo EEPROM and requires the control-lock password. ID, Baud rate, and
+                    Phase are never editable here (wrong values can make a servo unreachable on the bus); angle limits
+                    ask for an extra confirmation. Everything else in the Commissioning panel on the Connection tab
+                    remains the safer route for routine PID/overload/torque changes.
+                </p>
+            </div>
+            <p class="info-text" id="calibrationStatus"></p>
+
+            <div class="table-wrap">
+                <table class="calibration-table" id="calibrationTable">
+                    <thead>
+                        <tr>
+                            <th>Addr</th>
+                            <th>Register</th>
+                            <th>Bytes</th>
+                            <th>Raw</th>
+                            <th>Value</th>
+                            <th>Factory default</th>
+                            <th>Range</th>
+                            <th>Access</th>
+                            <th id="calibrationEditHeader" hidden>Edit</th>
+                        </tr>
+                    </thead>
+                    <tbody id="calibrationTableBody">
+                        <tr><td colspan="9" class="calibration-empty">Select a joint and click "Read EEPROM".</td></tr>
+                    </tbody>
+                </table>
             </div>
         </div>
 
@@ -1544,6 +1638,10 @@
     <script src="blocklyRobotArm.js"></script>
     <!-- Positions Manager: Manages stored preset positions (0-99) -->
     <script src="positionsManager.js"></script>
+    <!-- STS3215 EEPROM Memory Table: register definitions for the Calibration tab -->
+    <script src="stsMemoryTable.js"></script>
+    <!-- Calibration Page: reads and displays a servo's full EEPROM against the memory table -->
+    <script src="calibrationPage.js"></script>
     <script src="cameraView.js?v=20260616"></script>
     <!-- Main Application: UI logic and event handlers -->
     <script src="app.js?v=20260603f"></script>

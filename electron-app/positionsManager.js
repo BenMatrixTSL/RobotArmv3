@@ -12,14 +12,101 @@ const POSITIONS_STORAGE_KEY = 'robotArmPositions';
 function initializePositions() {
     // Generate joint angle inputs based on number of joints
     updatePositionJointsGrid();
-    
+
     // Refresh the positions list
     refreshPositionsList();
-    
+
     // Update joints grid when number of joints changes
     const numJointsInput = document.getElementById('numJoints');
     if (numJointsInput) {
         numJointsInput.addEventListener('change', updatePositionJointsGrid);
+    }
+
+    // XYZ inputs are authoritative when position type is 'xyz' — recompute the
+    // angle preview whenever they change.
+    ['positionX', 'positionY', 'positionZ'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('input', updatePositionEditorPreview);
+    });
+
+    updatePositionTypeUI();
+}
+
+/**
+ * Which type the position editor is currently set to save as.
+ * @returns {'angles'|'xyz'}
+ */
+function getSelectedPositionType() {
+    const checked = document.querySelector('input[name="positionType"]:checked');
+    return (checked && checked.value === 'xyz') ? 'xyz' : 'angles';
+}
+
+/**
+ * Sets the editor's angles/XYZ radio selection and updates the UI to match.
+ * @param {'angles'|'xyz'} type
+ */
+function setPositionType(type) {
+    const radio = document.querySelector(`input[name="positionType"][value="${type === 'xyz' ? 'xyz' : 'angles'}"]`);
+    if (radio) radio.checked = true;
+    updatePositionTypeUI();
+}
+
+/**
+ * Enables the authoritative field group for the selected type (angles or XYZ)
+ * and turns the other group into a read-only, tool-aware preview, then
+ * recomputes that preview.
+ */
+function updatePositionTypeUI() {
+    const type = getSelectedPositionType();
+    const numJoints = getNumJoints();
+    const anglesAuthoritative = type === 'angles';
+
+    for (let i = 1; i <= numJoints; i++) {
+        const input = document.getElementById(`positionJoint${i}`);
+        if (input) input.disabled = !anglesAuthoritative;
+    }
+    ['positionX', 'positionY', 'positionZ'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.disabled = anglesAuthoritative;
+    });
+
+    const previewNote = document.getElementById('positionPreviewNote');
+    if (previewNote) {
+        previewNote.textContent = anglesAuthoritative
+            ? 'XYZ shown below is a live preview (forward kinematics) — not saved.'
+            : 'Joint angles shown below are a live preview (inverse kinematics for the CURRENT tool) — not saved. A different tool will resolve this XYZ to different angles at move time.';
+    }
+
+    updatePositionEditorPreview();
+}
+
+/**
+ * Recomputes whichever field group is currently a read-only preview
+ * (XYZ via FK when angles are authoritative, or angles via IK when XYZ is
+ * authoritative) from the other, authoritative group.
+ */
+function updatePositionEditorPreview() {
+    if (typeof robotKinematics === 'undefined' || !robotKinematics.isConfigured()) return;
+
+    if (getSelectedPositionType() === 'angles') {
+        updateXYZFromAngles();
+    } else {
+        const x = parseFloat(document.getElementById('positionX').value);
+        const y = parseFloat(document.getElementById('positionY').value);
+        const z = parseFloat(document.getElementById('positionZ').value);
+        if (isNaN(x) || isNaN(y) || isNaN(z)) return;
+        try {
+            const seed = getPositionAngles();
+            const angles = robotKinematics.inverseKinematics({ x, y, z }, seed);
+            if (angles) {
+                setPositionAngles(angles);
+                updatePositionsXYZStatus(`Preview OK`, 'success');
+            } else {
+                updatePositionsXYZStatus(`Position (${x}, ${y}, ${z}) mm is unreachable with the current tool`, 'error');
+            }
+        } catch (e) {
+            updatePositionsXYZStatus('IK preview error: ' + e.message, 'error');
+        }
     }
 }
 
@@ -38,17 +125,21 @@ function updatePositionJointsGrid() {
         jointDiv.className = 'position-joint-item';
         jointDiv.innerHTML = `
             <label>Joint ${i}:</label>
-            <input type="number" id="positionJoint${i}" value="0" step="0.1" style="width: 100px;">
+            <input type="number" id="positionJoint${i}" value="0" step="0.1" style="width: 100px;" oninput="updatePositionEditorPreview()">
             <span>°</span>
         `;
         grid.appendChild(jointDiv);
     }
 
     // These inputs are rebuilt whenever the joint count changes, so the
-    // steppers have to be re-applied to the new ones.
+    // steppers have to be re-applied to the new ones, and the disabled state
+    // has to be reapplied since fresh elements default to enabled.
     if (document.body.classList.contains('touch-mode') &&
         typeof enhanceNumberInputs === 'function') {
         enhanceNumberInputs();
+    }
+    if (typeof updatePositionTypeUI === 'function') {
+        updatePositionTypeUI();
     }
 }
 
@@ -112,88 +203,6 @@ function updateXYZFromAngles() {
         }
     } catch (e) {
         updatePositionsXYZStatus('FK error: ' + e.message, 'error');
-    }
-}
-
-/**
- * Shows/hides the orientation vector fields when the constraint checkbox is toggled.
- */
-function updatePositionOrientationEnabled() {
-    const checkbox = document.getElementById('positionOrientationEnabled');
-    const fields = document.getElementById('positionOrientationFields');
-    if (fields) fields.hidden = !(checkbox && checkbox.checked);
-}
-
-/**
- * Fills the orientation vector fields with a preset direction and enables the constraint.
- * @param {'down'|'up'} mode
- */
-function setPositionOrientationPreset(mode) {
-    const xInput = document.getElementById('positionOrientX');
-    const yInput = document.getElementById('positionOrientY');
-    const zInput = document.getElementById('positionOrientZ');
-    if (xInput) xInput.value = 0;
-    if (yInput) yInput.value = 0;
-    if (zInput) zInput.value = mode === 'up' ? 1 : -1;
-
-    const checkbox = document.getElementById('positionOrientationEnabled');
-    if (checkbox) checkbox.checked = true;
-    updatePositionOrientationEnabled();
-}
-
-/**
- * Reads the orientation constraint fields, if enabled.
- * @returns {{x:number,y:number,z:number}|null} Desired tool Z-axis direction, or null if the constraint is off/invalid.
- */
-function getPositionOrientationInput() {
-    const checkbox = document.getElementById('positionOrientationEnabled');
-    if (!checkbox || !checkbox.checked) return null;
-
-    const ox = parseFloat(document.getElementById('positionOrientX').value);
-    const oy = parseFloat(document.getElementById('positionOrientY').value);
-    const oz = parseFloat(document.getElementById('positionOrientZ').value);
-    if (isNaN(ox) || isNaN(oy) || isNaN(oz) || (ox === 0 && oy === 0 && oz === 0)) {
-        return undefined; // signals "enabled but invalid" to the caller
-    }
-    return { x: ox, y: oy, z: oz };
-}
-
-/**
- * Runs IK from the XYZ inputs and populates the joint angle fields.
- * When the orientation constraint is enabled, also solves for tool direction.
- */
-function applyIKFromXYZ() {
-    if (typeof robotKinematics === 'undefined' || !robotKinematics.isConfigured()) {
-        updatePositionsXYZStatus('Kinematics not configured', 'error');
-        return;
-    }
-    const x = parseFloat(document.getElementById('positionX').value);
-    const y = parseFloat(document.getElementById('positionY').value);
-    const z = parseFloat(document.getElementById('positionZ').value);
-    if (isNaN(x) || isNaN(y) || isNaN(z)) {
-        updatePositionsXYZStatus('Enter X, Y, Z values first', 'error');
-        return;
-    }
-
-    const orientation = getPositionOrientationInput();
-    if (orientation === undefined) {
-        updatePositionsXYZStatus('Enter a valid (non-zero) orientation vector, or uncheck the constraint', 'error');
-        return;
-    }
-
-    updatePositionsXYZStatus('Computing IK…', 'info');
-    try {
-        const currentAngles = getPositionAngles();
-        const target = orientation ? { x, y, z, orientation } : { x, y, z };
-        const angles = robotKinematics.inverseKinematics(target, currentAngles);
-        if (!angles) {
-            updatePositionsXYZStatus(`Position (${x}, ${y}, ${z}) mm is unreachable`, 'error');
-            return;
-        }
-        setPositionAngles(angles);
-        updatePositionsXYZStatus(`IK solved — angles set`, 'success');
-    } catch (e) {
-        updatePositionsXYZStatus('IK error: ' + e.message, 'error');
     }
 }
 
@@ -284,15 +293,26 @@ function getPositionByName(name) {
 function savePosition() {
     const positionNumber = parseInt(document.getElementById('positionNumber').value);
     const label = document.getElementById('positionLabel').value.trim();
+    const type = getSelectedPositionType();
+    // Both field groups are read at save time: the authoritative one is what
+    // gets saved as the position's real data, the other is just the live
+    // preview (cached alongside for the list/3D view — not used to move).
     const angles = getPositionAngles();
+    const xInput = parseFloat(document.getElementById('positionX').value);
+    const yInput = parseFloat(document.getElementById('positionY').value);
+    const zInput = parseFloat(document.getElementById('positionZ').value);
 
     if (isNaN(positionNumber) || positionNumber < 0 || positionNumber > 99) {
         updatePositionsStatus('Error: Position number must be between 0 and 99', 'error');
         return;
     }
+    if (type === 'xyz' && (isNaN(xInput) || isNaN(yInput) || isNaN(zInput))) {
+        updatePositionsStatus('Error: Enter valid X, Y, Z values', 'error');
+        return;
+    }
 
-    let xyz = null;
-    if (typeof robotKinematics !== 'undefined' && robotKinematics.isConfigured()) {
+    let xyz = (!isNaN(xInput) && !isNaN(yInput) && !isNaN(zInput)) ? { x: xInput, y: yInput, z: zInput } : null;
+    if (type === 'angles' && typeof robotKinematics !== 'undefined' && robotKinematics.isConfigured()) {
         try {
             const fk = robotKinematics.forwardKinematics(angles);
             if (fk && fk.position) {
@@ -304,11 +324,12 @@ function savePosition() {
     const positions = getAllPositions();
     positions[positionNumber] = {
         label: label || `Position ${positionNumber}`,
-        angles: angles,
-        xyz: xyz,
+        type: type,
+        angles: angles,   // authoritative for 'angles', a cached IK preview for 'xyz'
+        xyz: xyz,          // authoritative for 'xyz', a cached FK preview for 'angles'
         timestamp: new Date().toISOString()
     };
-    
+
     if (saveAllPositions(positions)) {
         updatePositionsStatus(`Position ${positionNumber} saved: "${positions[positionNumber].label}"`, 'success');
         refreshPositionsList();
@@ -372,16 +393,13 @@ function loadPosition() {
         return;
     }
     
-    // Load into editor
+    // Load into editor. Missing type = legacy position saved before this field
+    // existed — treat as 'angles', matching its actual data shape.
     document.getElementById('positionLabel').value = position.label || '';
+    setPositionType(position.type === 'xyz' ? 'xyz' : 'angles');
     setPositionAngles(position.angles || []);
-
-    // Populate XYZ: use stored value if present, otherwise compute via FK
-    if (position.xyz) {
-        setPositionXYZ(position.xyz);
-    } else {
-        updateXYZFromAngles();
-    }
+    if (position.xyz) setPositionXYZ(position.xyz);
+    updatePositionTypeUI(); // (re)computes whichever field group is the read-only preview
 
     updatePositionsStatus(`Position ${positionNumber} loaded: "${position.label}"`, 'success');
 }
@@ -467,10 +485,18 @@ function refreshPositionsList() {
     let html = '<div class="positions-list-items">';
     positionNumbers.forEach(num => {
         const pos = positions[num];
+        const type = pos.type === 'xyz' ? 'xyz' : 'angles';
         const anglesStr = pos.angles ? pos.angles.map((a, i) => `J${i+1}:${a.toFixed(1)}°`).join(', ') : 'No angles';
         const xyzStr = pos.xyz
             ? `X:${pos.xyz.x.toFixed(1)} Y:${pos.xyz.y.toFixed(1)} Z:${pos.xyz.z.toFixed(1)} mm`
             : '';
+        // Whichever field isn't authoritative for this position's type is shown
+        // as a "(preview)" hint — it's a cached snapshot, not what's actually used to move.
+        const primaryStr = type === 'xyz' ? xyzStr : anglesStr;
+        const previewStr = type === 'xyz'
+            ? (anglesStr ? `${anglesStr} (preview)` : '')
+            : (xyzStr ? `${xyzStr} (preview)` : '');
+        const typeBadge = type === 'xyz' ? 'XYZ' : 'Angles';
         const safeLabel = escapePositionText(pos.label || `Position ${num}`);
         html += `
             <div class="positions-list-item">
@@ -478,9 +504,9 @@ function refreshPositionsList() {
                         aria-label="Select position ${num}">
                     <span class="position-item-number">${num}</span>
                     <span class="position-item-info">
-                        <span class="position-item-label">${safeLabel}</span>
-                        <span class="position-item-angles">${anglesStr}</span>
-                        ${xyzStr ? `<span class="position-item-xyz">${xyzStr}</span>` : ''}
+                        <span class="position-item-label">${safeLabel} <span class="position-item-type-badge">${typeBadge}</span></span>
+                        <span class="position-item-angles">${primaryStr}</span>
+                        ${previewStr ? `<span class="position-item-xyz">${previewStr}</span>` : ''}
                     </span>
                 </button>
                 <div class="position-item-actions">
@@ -692,8 +718,10 @@ async function loadCurrentRobotAngles() {
             }
         }
         
-        // Set angles in editor
+        // Set angles in editor — capturing live angles implies saving as angles-type.
+        setPositionType('angles');
         setPositionAngles(angles);
+        updatePositionTypeUI();
         updatePositionsStatus('Current robot angles loaded', 'success');
     } catch (error) {
         console.error('Error loading robot angles:', error);

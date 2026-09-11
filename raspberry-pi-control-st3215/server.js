@@ -56,6 +56,7 @@ const BUS_WRITE_COMMANDS = {
     moveJoint: true, stopJoint: true, stopAll: true, stopAllJoints: true,
     setServo: true, setServoAngle: true, setSpeed: true, setSpeedAll: true,
     setTorqueAll: true, setAcceleration: true, setJointCenter: true, rescanServos: true,
+    readServoEeprom: true, readServoEepromRaw: true, writeServoEeprom: true, writeServoEepromRaw: true, commissionAllServos: true,
     toolPing: true, toolSetPwm: true, toolSetServoEnabled: true,
     toolSetServoPosition: true, toolSetServoAngle: true,
     toolSetServoEnabledAndAngle: true,
@@ -1004,6 +1005,17 @@ function startServer() {
                     if (data.command === 'moveJoint' || data.command === 'setServo' || data.command === 'setServoAngle' || data.command === 'setAcceleration') {
                         touchControlMoveActivity(ws);
                     }
+                }
+
+                // Raw EEPROM writes from the Calibration page additionally require
+                // the control-lock password, on top of holding the control session —
+                // this page can reach registers well outside the curated commissioning
+                // set, so it gets its own explicit gate against casual misuse.
+                if (data.command === 'writeServoEepromRaw' && data.password !== CONTROL_LOCK_PASSWORD) {
+                    const errPayload = { type: 'error', message: 'Incorrect password' };
+                    if (data.requestId !== undefined) errPayload.requestId = data.requestId;
+                    ws.send(JSON.stringify(errPayload));
+                    return;
                 }
 
                 if (!servoWorker) {

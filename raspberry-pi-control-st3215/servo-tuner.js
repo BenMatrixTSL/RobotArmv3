@@ -52,7 +52,11 @@ const REG_P_COEF         = 0x15;  // position P gain  (byte, default 32)
 const REG_D_COEF         = 0x16;  // position D gain  (byte, default 32)
 const REG_I_COEF         = 0x17;  // position I gain  (byte, default  0)
 const REG_MIN_STARTUP    = 0x18;  // min startup force(byte, default 16)
-const REG_PROT_TORQUE    = 0x21;  // protection torque% after overload
+// NOTE: 0x21 is the servo's operating-mode register (0=position/1=velocity/2=PWM/3=step),
+// not protection torque — an earlier version of this script read the wrong address here.
+const REG_PROT_TORQUE    = 0x22;  // torque% applied after an overload trip (byte, default 20)
+const REG_PROT_TIME      = 0x23;  // ms overload must persist before tripping (byte, default 200)
+const REG_OVERLOAD_TORQUE = 0x24; // load% threshold that counts as a stall/overload (byte, default 80)
 
 // ── Tuning parameters ──────────────────────────────────────────────────────
 const P_CANDIDATES  = [24, 32, 40, 48, 64, 80];
@@ -203,8 +207,9 @@ async function tuneJoint(ctrl, jointId) {
     const maxTorqueRaw  = await ctrl.readData(REG_MAX_TORQUE_L, 2);
     const maxTorque     = maxTorqueRaw[0] | (maxTorqueRaw[1] << 8);
     const unloading     = (await ctrl.readData(REG_UNLOADING_COND, 1))[0];
-    const protTorque    = (await ctrl.readData(REG_PROT_TORQUE, 1))[0];
-    console.log(`  Diagnostics: MaxTorque=${maxTorque}/1000  UnloadingCond=0b${unloading.toString(2).padStart(8,'0')}  ProtTorque=${protTorque}%`);
+    const overloadRegs  = await ctrl.readData(REG_PROT_TORQUE, 3);
+    const [protTorque, protTime, overloadTorque] = overloadRegs;
+    console.log(`  Diagnostics: MaxTorque=${maxTorque}/1000  UnloadingCond=0b${unloading.toString(2).padStart(8,'0')}  OverloadTorque=${overloadTorque}%  ProtTorque=${protTorque}%  ProtTime=${protTime}ms`);
     if (unloading & 0x08) console.log('  ⚠  Stall-detection bit set in UnloadingCond — servo may cut torque when stalled');
 
     // ── Read current PID ──
@@ -294,7 +299,7 @@ async function tuneJoint(ctrl, jointId) {
 
     return {
         p: bestP, d: bestD, i: bestI, minStartupForce: origStartup,
-        diagnostics: { maxTorque, unloadingCond: unloading, protTorquePct: protTorque },
+        diagnostics: { maxTorque, unloadingCond: unloading, protTorquePct: protTorque, protTimeMs: protTime, overloadTorquePct: overloadTorque },
     };
 }
 
@@ -421,7 +426,7 @@ async function main() {
     for (const [id, r] of Object.entries(results)) {
         const d = r.diagnostics;
         console.log(`  J${id}: P=${r.p}  D=${r.d}  I=${r.i}${r.i > 0 ? ' ⚡' : ''}  MinStartup=${r.minStartupForce}`);
-        console.log(`       MaxTorque=${d.maxTorque}  UnloadingCond=0b${d.unloadingCond.toString(2).padStart(8,'0')}  ProtTorque=${d.protTorquePct}%`);
+        console.log(`       MaxTorque=${d.maxTorque}  UnloadingCond=0b${d.unloadingCond.toString(2).padStart(8,'0')}  OverloadTorque=${d.overloadTorquePct}%  ProtTorque=${d.protTorquePct}%  ProtTime=${d.protTimeMs}ms`);
     }
 
     // ── Write config file — merge with existing so partial runs don't clobber ──

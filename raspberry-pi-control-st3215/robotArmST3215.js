@@ -65,6 +65,12 @@ const STS_P_COEF            = 0x15;  // Position proportional gain  (byte, defau
 const STS_D_COEF            = 0x16;  // Position derivative gain    (byte, default 32)
 const STS_I_COEF            = 0x17;  // Position integral gain      (byte, default  0)
 const STS_MIN_STARTUP_FORCE = 0x18;  // Minimum startup force       (byte, default 16)
+const STS_PROT_TORQUE       = 0x22;  // Torque applied after an overload trip (%, byte, default 20)
+const STS_PROT_TIME         = 0x23;  // Time overload must persist before tripping (ms, byte, default 200)
+const STS_OVERLOAD_TORQUE   = 0x24;  // Load% threshold that counts as a stall/overload (byte, default 80)
+const STS_MIN_ANGLE_LIMIT   = 0x09;  // Min position limit, raw steps (word, default 0)
+const STS_MAX_ANGLE_LIMIT   = 0x0B;  // Max position limit, raw steps (word, default 4095)
+const STS_MAX_TORQUE_LIMIT  = 0x10;  // Max torque output, 0-1000 = 0-100% (word, default 1000)
 
 // Position limits
 const MIN_POSITION = 0;
@@ -1448,6 +1454,103 @@ class ServoController {
         await new Promise(r => setTimeout(r, 25));
         await this.writeData(STS_P_COEF, [p, d, i, minStartupForce]); // write 4 bytes in one packet
         await new Promise(r => setTimeout(r, 40));
+    }
+
+    /**
+     * Read the overload-protection registers from EEPROM.
+     * @returns {{ protTorque, protTimeMs, overloadTorque }} — all 0-100(%) except protTimeMs
+     */
+    async readOverloadProtection() {
+        const data = await this.readData(STS_PROT_TORQUE, 3);
+        return {
+            protTorque:     data[0],
+            protTimeMs:     data[1],
+            overloadTorque: data[2],
+        };
+    }
+
+    /**
+     * Write the overload-protection thresholds to EEPROM.
+     * Unlocks EEPROM first; takes effect immediately without power-cycle.
+     * @param {number} overloadTorque - Load% that counts as a stall and starts the trip countdown (0-100, default 80)
+     * @param {number} protTorque     - Torque% the servo falls back to once tripped (0-100, default 20)
+     * @param {number} protTimeMs     - How long the overload must persist before tripping (ms, default 200)
+     */
+    async writeOverloadProtection(overloadTorque, protTorque = 20, protTimeMs = 200) {
+        await this.writeData(STS_EEPROM_LOCK, [0]);                                        // unlock EEPROM
+        await new Promise(r => setTimeout(r, 25));
+        await this.writeData(STS_PROT_TORQUE, [protTorque, protTimeMs, overloadTorque]);   // write 3 bytes in one packet
+        await new Promise(r => setTimeout(r, 40));
+    }
+
+    /**
+     * Read the servo's hard travel limits from EEPROM, in this joint's own degree frame
+     * (via stepsToAngle(), so it accounts for any saved center override).
+     * @returns {{ minAngleDeg, maxAngleDeg }}
+     */
+    async readAngleLimits() {
+        const data = await this.readData(STS_MIN_ANGLE_LIMIT, 4);
+        const minSteps = this.makeWord(data[0], data[1]);
+        const maxSteps = this.makeWord(data[2], data[3]);
+        return {
+            minAngleDeg: this.stepsToAngle(minSteps),
+            maxAngleDeg: this.stepsToAngle(maxSteps),
+        };
+    }
+
+    /**
+     * Write the servo's hard travel limits to EEPROM. The servo refuses to move
+     * (or clamps) outside this raw step range regardless of what any client requests.
+     * Unlocks EEPROM first; takes effect immediately without power-cycle.
+     * @param {number} minAngleDeg
+     * @param {number} maxAngleDeg
+     */
+    async writeAngleLimits(minAngleDeg, maxAngleDeg) {
+        const minSteps = Math.max(MIN_POSITION, Math.min(MAX_POSITION, Math.round(this.angleToSteps(minAngleDeg))));
+        const maxSteps = Math.max(MIN_POSITION, Math.min(MAX_POSITION, Math.round(this.angleToSteps(maxAngleDeg))));
+        await this.writeData(STS_EEPROM_LOCK, [0]); // unlock EEPROM
+        await new Promise(r => setTimeout(r, 25));
+        await this.writeData(STS_MIN_ANGLE_LIMIT, [
+            this.stsLobyte(minSteps), this.stsHibyte(minSteps),
+            this.stsLobyte(maxSteps), this.stsHibyte(maxSteps),
+        ]); // write 4 bytes in one packet
+        await new Promise(r => setTimeout(r, 40));
+    }
+
+    /**
+     * Read the servo's overall torque output ceiling from EEPROM.
+     * @returns {number} 0-100 (%)
+     */
+    async readMaxTorque() {
+        const data = await this.readData(STS_MAX_TORQUE_LIMIT, 2);
+        return this.makeWord(data[0], data[1]) / 10;
+    }
+
+    /**
+     * Write the servo's overall torque output ceiling to EEPROM.
+     * Unlocks EEPROM first; takes effect immediately without power-cycle.
+     * @param {number} maxTorquePct - 0-100 (%)
+     */
+    async writeMaxTorque(maxTorquePct) {
+        const raw = Math.max(0, Math.min(1000, Math.round(maxTorquePct * 10)));
+        await this.writeData(STS_EEPROM_LOCK, [0]); // unlock EEPROM
+        await new Promise(r => setTimeout(r, 25));
+        await this.writeData(STS_MAX_TORQUE_LIMIT, [this.stsLobyte(raw), this.stsHibyte(raw)]);
+        await new Promise(r => setTimeout(r, 40));
+    }
+
+    /**
+     * Read the full commissioning-relevant EEPROM profile for this servo in one call:
+     * PID gains, overload protection, angle limits, and max torque.
+     */
+    async readEepromProfile() {
+        const [pid, overload, angleLimits, maxTorque] = await Promise.all([
+            this.readPIDValues(),
+            this.readOverloadProtection(),
+            this.readAngleLimits(),
+            this.readMaxTorque(),
+        ]);
+        return { ...pid, ...overload, ...angleLimits, maxTorque };
     }
 }
 

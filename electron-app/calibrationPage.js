@@ -1,0 +1,189 @@
+/**
+ * Calibration tab — reads a servo's full EEPROM block and renders it against
+ * the STS3215 memory table (stsMemoryTable.js), highlighting anything that
+ * differs from the factory default so a change made at some point in the
+ * past (e.g. during PID/overload tuning) is easy to spot later.
+ *
+ * Editing is off by default. "Enable Editing" switches writable rows into an
+ * editable state; each write still requires the control-lock password (typed
+ * once into calibrationWritePassword and sent with every write — the server
+ * is the actual authority, this page doesn't validate the password itself).
+ */
+
+// Cache of the last-read raw bytes per joint, so the "show only changed"
+// toggle can re-render without a fresh bus read.
+const calibrationRawByJoint = {};
+
+let calibrationWriteModeEnabled = false;
+
+function setCalibrationStatus(message) {
+    const el = document.getElementById('calibrationStatus');
+    if (el) el.textContent = message;
+}
+
+async function readCalibrationTable() {
+    const jointNumber = parseInt(document.getElementById('calibrationJointSelect').value, 10);
+    await readCalibrationForJoint(jointNumber);
+    renderCalibrationTable();
+}
+
+async function readCalibrationTableAllJoints() {
+    setCalibrationStatus('Reading EEPROM from all joints...');
+    for (let j = 1; j <= getNumJoints(); j++) {
+        await readCalibrationForJoint(j);
+    }
+    renderCalibrationTable();
+}
+
+async function readCalibrationForJoint(jointNumber) {
+    try {
+        setCalibrationStatus(`Reading Joint ${jointNumber} EEPROM...`);
+        const response = await robotArmClient.readServoEepromRaw(jointNumber);
+        calibrationRawByJoint[jointNumber] = response.bytes;
+        setCalibrationStatus(`Joint ${jointNumber} EEPROM read at ${new Date().toLocaleTimeString()}`);
+    } catch (error) {
+        setCalibrationStatus(`Failed to read Joint ${jointNumber} EEPROM: ${error.message}`);
+    }
+}
+
+/**
+ * Toggles the page between read-only and edit mode. Requires a non-empty
+ * password to enter edit mode (the server rejects the write itself if the
+ * password is wrong — this is just gating the UI, not authenticating).
+ */
+function toggleCalibrationWriteMode() {
+    const passwordInput = document.getElementById('calibrationWritePassword');
+    const button = document.getElementById('calibrationUnlockWritesButton');
+    const editHeader = document.getElementById('calibrationEditHeader');
+
+    if (calibrationWriteModeEnabled) {
+        calibrationWriteModeEnabled = false;
+        button.textContent = 'Enable Editing';
+        button.classList.remove('btn-danger');
+        button.classList.add('btn-warning');
+        if (editHeader) editHeader.hidden = true;
+        renderCalibrationTable();
+        return;
+    }
+
+    if (!passwordInput.value) {
+        showAppMessage('Enter the control-lock password to enable editing.');
+        return;
+    }
+
+    calibrationWriteModeEnabled = true;
+    button.textContent = 'Disable Editing';
+    button.classList.remove('btn-warning');
+    button.classList.add('btn-danger');
+    if (editHeader) editHeader.hidden = false;
+    renderCalibrationTable();
+}
+
+function renderCalibrationTable() {
+    const jointNumber = parseInt(document.getElementById('calibrationJointSelect').value, 10);
+    const tbody = document.getElementById('calibrationTableBody');
+    if (!tbody) return;
+
+    const colSpan = calibrationWriteModeEnabled ? 9 : 8;
+    const rawBytes = calibrationRawByJoint[jointNumber];
+    if (!rawBytes) {
+        tbody.innerHTML = `<tr><td colspan="${colSpan}" class="calibration-empty">Select a joint and click &quot;Read EEPROM&quot;.</td></tr>`;
+        return;
+    }
+
+    const decoded = decodeEepromBlock(rawBytes);
+    const diffOnly = document.getElementById('calibrationDiffOnly').checked;
+    const rows = diffOnly ? decoded.filter(r => !r.isDefault) : decoded;
+
+    if (rows.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="${colSpan}" class="calibration-empty">Every value matches its factory default.</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = rows.map(r => {
+        const addrHex = '0x' + r.address.toString(16).toUpperCase().padStart(2, '0');
+        const readOnly = r.access === 'read';
+        const rangeStr = r.min === -1 && r.max === -1 ? '—' : `${r.min}..${r.max} ${r.unit === '—' ? '' : r.unit}`.trim();
+
+        let editCell = '';
+        if (calibrationWriteModeEnabled) {
+            if (r.writable) {
+                editCell = `
+                    <td>
+                        <input type="number" class="cal-edit-input" id="cal-edit-${r.address}" value="${r.raw}" min="${r.min}" max="${r.max}">
+                        <button class="btn btn-small btn-primary" onclick="writeCalibrationRegister(${r.address})">Write</button>
+                    </td>
+                `;
+            } else {
+                const reason = r.access === 'read' ? 'Read-only hardware field' : 'Not editable from this page';
+                editCell = `<td><span class="cal-locked" title="${escapeCalibrationText(reason)}">&#128274;</span></td>`;
+            }
+        }
+
+        return `
+            <tr class="${r.isDefault ? '' : 'cal-changed'}${readOnly ? ' cal-readonly' : ''}">
+                <td>${addrHex} <span style="color:#999;">(${r.address})</span></td>
+                <td class="cal-name" title="${escapeCalibrationText(r.description)}">${escapeCalibrationText(r.name)}</td>
+                <td>${r.bytes}</td>
+                <td class="cal-value">${r.raw}</td>
+                <td class="cal-value">${escapeCalibrationText(r.meaningful)}</td>
+                <td class="cal-default">${escapeCalibrationText(r.defaultMeaningful)}</td>
+                <td>${escapeCalibrationText(rangeStr)}</td>
+                <td>${readOnly ? 'read' : 'r/w'}</td>
+                ${editCell}
+            </tr>
+        `;
+    }).join('');
+}
+
+/**
+ * Writes one register's raw value to the servo currently selected in the
+ * joint dropdown, after range/confirmation checks, then re-reads that
+ * joint's EEPROM so the table reflects what the hardware actually accepted.
+ */
+async function writeCalibrationRegister(address) {
+    const jointNumber = parseInt(document.getElementById('calibrationJointSelect').value, 10);
+    const rawBytes = calibrationRawByJoint[jointNumber];
+    const reg = rawBytes && decodeEepromBlock(rawBytes).find(r => r.address === address);
+    if (!reg) return;
+
+    const input = document.getElementById(`cal-edit-${address}`);
+    const rawValue = parseInt(input.value, 10);
+    if (isNaN(rawValue) || rawValue < reg.min || rawValue > reg.max) {
+        showAppMessage(`Value must be between ${reg.min} and ${reg.max}.`);
+        return;
+    }
+
+    if (reg.extraConfirm) {
+        const confirmed = await showConfirm(
+            `Write ${rawValue} to "${reg.name}" (address 0x${address.toString(16)}) on Joint ${jointNumber}?\n\n` +
+            `This can let the joint travel to a position that's mechanically unsafe if set incorrectly. Double-check the value before continuing.`
+        );
+        if (!confirmed) return;
+    }
+
+    const password = document.getElementById('calibrationWritePassword').value;
+    try {
+        setCalibrationStatus(`Writing Joint ${jointNumber} address 0x${address.toString(16)}...`);
+        await robotArmClient.writeServoEepromRaw(jointNumber, address, rawValue, password);
+        await readCalibrationForJoint(jointNumber);
+        renderCalibrationTable();
+    } catch (error) {
+        setCalibrationStatus(`Failed to write Joint ${jointNumber} address 0x${address.toString(16)}: ${error.message}`);
+    }
+}
+
+function escapeCalibrationText(text) {
+    if (typeof escapeHtml === 'function') return escapeHtml(text);
+    return String(text === null || text === undefined ? '' : text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const jointSelect = document.getElementById('calibrationJointSelect');
+    if (jointSelect) jointSelect.addEventListener('change', renderCalibrationTable);
+});
