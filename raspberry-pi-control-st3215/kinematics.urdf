@@ -120,7 +120,7 @@
   <joint name="tool_vacuum" type="fixed">
     <parent link="tool_link"/>
     <child link="tcp_vacuum"/>
-    <origin xyz="0.00202 0 -0.11462" rpy="0 0 0"/>
+    <origin xyz="0.00202 0 -0.119" rpy="0 0 0"/>
     <end_tool id="1" label="Pneumatic vacuum and valve" controls="pump,solenoid"/>
   </joint>
 
