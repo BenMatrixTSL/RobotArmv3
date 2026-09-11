@@ -72,14 +72,6 @@ function decodeSignedLoad(raw) {
     return `${negative ? '-' : ''}${(magnitude / 10).toFixed(1)} %`;
 }
 
-function decodeSigned16(raw) {
-    // Plain two's-complement 16-bit value, used by the SRAM motion-target/
-    // feedback registers (as opposed to the EEPROM Position Correction
-    // register's bit11-sign-plus-11-bit-magnitude scheme above).
-    const signed = raw > 0x7FFF ? raw - 0x10000 : raw;
-    return `${signed} step`;
-}
-
 const STS_TORQUE_SWITCH_STATES = { 0: 'Off', 1: 'On', 128: '(write-only) reset current position to center' };
 const STS_LOCK_MARK_STATES = ['Unlocked — EEPROM writes persist across power-off', 'Locked — EEPROM writes are lost on power-off'];
 const STS_MOVING_STATES = ['Stopped', 'Moving'];
@@ -93,7 +85,6 @@ const UNIT_DECODERS = {
     'enum-mode':      (raw) => STS_OPERATION_MODES[raw] || `unknown (${raw})`,
     step:             (raw) => `${raw} step (${(raw * 0.087890625).toFixed(1)}°)`,
     'signed-step':    decodeSignedStep,
-    'signed16-step':  decodeSigned16,
     'signed-load-pct': decodeSignedLoad,
     '°C':             (raw) => `${raw} °C`,
     '0.1V':           (raw) => `${(raw / 10).toFixed(1)} V`,
@@ -211,8 +202,8 @@ const STS_SRAM_REGISTERS = [
       description: 'Whether the servo is actively holding/driving torque right now. Write 128 (not readable back as such) recenters the current position to 2048.' },
     { address: 41, bytes: 1, name: 'Acceleration', access: 'read&write', default: 0, min: 0, max: 254, unit: '100 step/s²', unitType: '100steps2',
       description: 'Current move\'s acceleration/deceleration rate.' },
-    { address: 42, bytes: 2, name: 'Target location', access: 'read&write', default: 0, min: -32766, max: 32766, unit: '±step', unitType: 'signed16-step',
-      description: 'The goal position of the current or most recent move, in position-servo mode.' },
+    { address: 42, bytes: 2, name: 'Target location', access: 'read&write', default: 0, min: -2047, max: 2047, unit: '±step', unitType: 'signed-step',
+      description: 'The goal position of the current or most recent move, in position-servo mode — same bit11-sign/11-bit-magnitude encoding as Position Correction, corrected to a ±2047 offset from center rather than shown as a raw two\'s-complement word.' },
     { address: 44, bytes: 2, name: 'Running time', access: 'read&write', default: 0, min: 0, max: 1000, unit: '0-100%', unitType: 'permille-pct',
       description: 'Run-time parameter for PWM open-loop mode (operation mode 2).' },
     { address: 46, bytes: 2, name: 'Running speed', access: 'read&write', default: 0, min: 0, max: 254, unit: 'step/s', unitType: 'steps-per-sec',
@@ -221,8 +212,8 @@ const STS_SRAM_REGISTERS = [
       description: 'Live torque ceiling — initialized from EEPROM Max Torque (address 0x10) at power-on, but can be changed at runtime without touching EEPROM.' },
     { address: 55, bytes: 1, name: 'Lock mark', access: 'read&write', default: 0, min: 0, max: 1, unit: 'enum', unitType: 'enum-lock-mark',
       description: 'EEPROM write-protect state. The commissioning/calibration write paths unlock this (write 0) immediately before every EEPROM write and leave it unlocked.' },
-    { address: 56, bytes: 2, name: 'Current location', access: 'read', default: -1, min: -1, max: -1, unit: 'step', unitType: 'signed16-step',
-      description: 'The servo\'s present position feedback (same value getStatus() reports as position/angleDegrees).' },
+    { address: 56, bytes: 2, name: 'Current location', access: 'read', default: -1, min: -1, max: -1, unit: '±step', unitType: 'signed-step',
+      description: 'The servo\'s present position feedback, corrected to a ±2047 offset from center (same bit11-sign/11-bit-magnitude encoding as Position Correction) rather than shown as a raw two\'s-complement word.' },
     { address: 58, bytes: 2, name: 'Current speed', access: 'read', default: -1, min: -1, max: -1, unit: 'step/s', unitType: 'steps-per-sec',
       description: 'The servo\'s present rotational speed feedback.' },
     { address: 60, bytes: 2, name: 'Current load', access: 'read', default: -1, min: -1, max: -1, unit: '±0-100%', unitType: 'signed-load-pct',
