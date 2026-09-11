@@ -60,10 +60,9 @@ For the wire protocol basics (connection, JSON message envelope, response types)
 | `setSpeedAll` | Sets the default speed for every joint at once. | Bus-write | `speed` | `{type:'success'}` / `{type:'error'}` | `setSpeedAll(speed)` | **Dead** — 0 call sites |
 | `setAcceleration` | Sets a joint's acceleration profile (ramp-up/down rate), independent of its target speed. | Bus-write | `joint`, `acceleration` (0–254, clamped client-side, default 5) | `{type:'success'}` / `{type:'error'}` | `setAcceleration(joint, accel)` | app.js × 4 (3349, 3370, 5806, 5817), blocklyRobotArm.js × 2 (templates) |
 | `setTorqueAll` | Enables or disables torque (holding power) on every joint simultaneously — used for the global "Torque On/Off" toggle. | Bus-write | `enabled?:bool` (default `true`) | `{type:'success'}` / `{type:'error'}` | `setTorqueAll(enabled)` | app.js × 1 (3781) |
-| `setJointCenter` | Redefines a joint's current physical position as its new 0° — a software offset only (no EEPROM write, no movement), used after a servo swap/reseat when the mechanical zero no longer lines up. | Bus-write | `joint:number` | `{type:'success', message, centerPosition}` (or `type:'error'` with the *same successful centering* if the disk write failed — see note below) / `{type:'error'}` on read failure | `setJointCenter(joint)` | app.js × 1 (3399) |
 | `rescanServos` | Re-probes every servo ID on the bus to detect newly connected or disconnected hardware, without restarting the server. | Bus-write (queued, NOT immediate) | none, rate-limited to 1 per 10s | `{type:'servoRescan', joints:[{joint, servoId, available, action}]}` — `action` ∈ `kept_existing \| rediscovered \| not_found` | `rescanServos()` | **Dead** — 0 call sites, not even in `index.html` |
 
-**`setJointCenter` UX quirk:** if centering succeeds on the servo but the save-to-disk fails, the response still comes back as `type:'error'` (with a message noting the centering itself worked) — worth knowing when handling this response, since it isn't purely a failure.
+**Removed:** `setJointCenter` (and the whole software joint-centering override — `servo-joint-centers.json`, `ServoController.setCenterPosition()`) was removed once EEPROM-based commissioning (Calibration tab, `writeServoEepromRaw` to the Position Correction register) made a software-only zero-point override redundant.
 
 ---
 
@@ -164,7 +163,7 @@ Worth a follow-up: either remove these dead UI paths or wire them to something r
 **Missing from the doc entirely:**
 - Commissioning: `readServoEeprom`, `writeServoEeprom`, `commissionAllServos`
 - The whole control-session family: `takeControl`, `releaseControl`, `lockControl`, `unlockControl`, `getControlStatus` — including which commands require it in the first place
-- `setJointCenter`, `getServerDiagnostics`
+- `getServerDiagnostics`
 - Network/system: `getPiNetworkInfo`, `getPiEthernetSettings`, `setPiEthernetSettings`, `updatePiServerFromGit`
 - All `kinematics*` commands
 - `executeLinearMove`, `abortLinearPath`

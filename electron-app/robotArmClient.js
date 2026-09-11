@@ -612,17 +612,6 @@ class RobotArmClient {
     }
 
     /**
-     * Redefines a joint's current physical position as 0° (2048 steps).
-     * Software offset only — does not move the servo or write its EEPROM.
-     * @param {number} jointNumber - Joint number (1, 2, 3, etc.)
-     */
-    setJointCenter(jointNumber) {
-        return this.sendRequest('setJointCenter', {
-            joint: jointNumber
-        });
-    }
-
-    /**
      * Reads a joint's full commissioning-relevant EEPROM profile (PID gains,
      * overload protection, angle limits, max torque) directly from the servo.
      * @param {number} jointNumber

@@ -139,11 +139,6 @@ let allServoControllers  = [];
 const jointStatusCache   = [];
 const jointSettingsCache = [];
 let cachedTorqueEnabled  = null;
-// Per-joint center offset (raw steps) that should be reapplied any time a
-// servo is (re)created — e.g. after a comms dropout — so a recovered servo
-// doesn't silently fall back to the factory center. Populated from
-// servo-joint-centers.json at startup and updated live by setJointCenter.
-const jointCenterOverrides = new Array(JOINT_COUNT).fill(null);
 let busTickTimer         = null;
 let busTickLoopActive    = false;
 let busTickInProgress    = false;
@@ -807,13 +802,6 @@ async function createAndInitializeServo(jointIndex) {
         throw new Error(`Servo ${jointIndex + 1} (ID: ${servoId}) did not respond`);
     }
 
-    // Reapply this joint's saved center offset — a freshly created controller
-    // otherwise defaults back to the factory 2048 center, silently undoing
-    // any recentering the user did before this servo dropped out.
-    if (jointCenterOverrides[jointIndex] !== null) {
-        servo.setCenterPosition(jointCenterOverrides[jointIndex]);
-    }
-
     // Match whatever torque state is currently in effect rather than always
     // forcing it on — a servo that drops out while the user has torque
     // deliberately switched off should come back off, not on.
@@ -1121,35 +1109,6 @@ async function handleBusCommand(clientId, data) {
                 reply({ type: 'success', message: changed ? `Servo ${data.joint} acceleration set to ${data.acceleration}` : `Servo ${data.joint} acceleration already ${data.acceleration}` });
             } catch (error) {
                 reply({ type: 'error', message: `Failed to set acceleration: ${error.message}` });
-            }
-            break;
-        }
-
-        case 'setJointCenter': {
-            // Re-zeroes a joint so its CURRENT physical position reads as 0°
-            // (2048 steps) — software offset only, no servo EEPROM write, no
-            // movement. Used after a servo swap/reseat where the mechanical
-            // zero no longer lines up with the servo's factory center.
-            const idx = data.joint - 1;
-            if (idx < 0 || idx >= servos.length) { reply({ type: 'error', message: `Invalid joint number: ${data.joint}` }); return; }
-            const sv = servos[idx];
-            if (!sv) { reply({ type: 'error', message: `Servo ${data.joint} is not available` }); return; }
-            try {
-                const currentRawPosition = await sv.getPosition();
-                if (currentRawPosition < 0) {
-                    reply({ type: 'error', message: `Failed to read current position for servo ${data.joint}` });
-                    return;
-                }
-                sv.setCenterPosition(currentRawPosition);
-                const saved = saveJointCenter(data.joint, currentRawPosition);
-                log(`[CENTER] Joint ${data.joint}: centered at raw position ${currentRawPosition} (now reads 0°)${saved ? '' : ' — WARNING: not persisted to disk'}`);
-                if (saved) {
-                    reply({ type: 'success', message: `Joint ${data.joint} centered — current position is now 0°`, centerPosition: currentRawPosition });
-                } else {
-                    reply({ type: 'error', message: `Joint ${data.joint} centered for this session, but failed to save — it will revert if the joint reconnects or the service restarts. Check server logs.`, centerPosition: currentRawPosition });
-                }
-            } catch (error) {
-                reply({ type: 'error', message: `Failed to center joint: ${error.message}` });
             }
             break;
         }
@@ -1566,74 +1525,10 @@ async function commissionAllServos() {
     return { results };
 }
 
-// ===== Joint center offsets (persisted across restarts) =====
-// Deliberately NOT under __dirname (the git working tree): this service
-// typically runs as a capability-restricted root (see install docs) while
-// the repo is owned by the deploying user for `git pull` to work, so a
-// service-written file living inside the repo silently fails to save with
-// EACCES. /var/lib is the standard location for this kind of persistent,
-// host-specific runtime state — separate from source control either way.
-const JOINT_CENTER_CONFIG_DIR  = process.env.ROBOT_ARM_STATE_DIR || '/var/lib/robot-arm-st3215';
-const JOINT_CENTER_CONFIG_PATH = path.join(JOINT_CENTER_CONFIG_DIR, 'servo-joint-centers.json');
-
-function loadJointCenterConfig() {
-    if (!fs.existsSync(JOINT_CENTER_CONFIG_PATH)) return;
-    let cfg;
-    try {
-        cfg = JSON.parse(fs.readFileSync(JOINT_CENTER_CONFIG_PATH, 'utf8'));
-    } catch (e) {
-        log('servo-joint-centers.json parse error: ' + e.message, true);
-        return;
-    }
-    const joints = cfg && cfg.joints;
-    if (!joints) return;
-
-    for (let i = 0; i < JOINT_COUNT; i++) {
-        const jointId = String(i + 1);
-        const centerPosition = joints[jointId];
-        if (!Number.isFinite(centerPosition)) continue;
-        // Recorded regardless of whether the servo is currently connected, so
-        // it's ready to reapply the moment a dropped-out servo reconnects
-        // (see createAndInitializeServo) — not just at this one-time load.
-        jointCenterOverrides[i] = centerPosition;
-        if (servos[i]) servos[i].setCenterPosition(centerPosition);
-        log(`Joint ${jointId} center loaded from config: ${centerPosition}`);
-    }
-}
-
-// Returns true if the offset was actually persisted to disk — callers should
-// surface a false result to the user rather than silently claiming success,
-// since it means the center won't survive a service restart or the servo
-// reconnecting after a comms dropout.
-function saveJointCenter(jointNum, centerPosition) {
-    jointCenterOverrides[jointNum - 1] = centerPosition;
-
-    let cfg = { joints: {} };
-    if (fs.existsSync(JOINT_CENTER_CONFIG_PATH)) {
-        try {
-            cfg = JSON.parse(fs.readFileSync(JOINT_CENTER_CONFIG_PATH, 'utf8'));
-            if (!cfg.joints) cfg.joints = {};
-        } catch (e) {
-            log('servo-joint-centers.json parse error on save, overwriting: ' + e.message, true);
-            cfg = { joints: {} };
-        }
-    }
-    cfg.joints[String(jointNum)] = centerPosition;
-    try {
-        fs.mkdirSync(JOINT_CENTER_CONFIG_DIR, { recursive: true });
-        fs.writeFileSync(JOINT_CENTER_CONFIG_PATH, JSON.stringify(cfg, null, 2));
-        return true;
-    } catch (e) {
-        log('Failed to save servo-joint-centers.json: ' + e.message, true);
-        return false;
-    }
-}
-
 // ===== Start =====
 log(`Servo worker starting (pid=${process.pid} VERBOSE_LOG=${VERBOSE_LOG} STATUS_POLL_MS=${STATUS_POLL_INTERVAL_MS} MIN_GAP_MS=${MIN_BUS_TICK_GAP_MS})`);
 initializeServos().then(async () => {
     await applyPIDConfig();
-    loadJointCenterConfig();
     await refreshJointStatusCacheFromBus();
     startBusTickLoop();
     process.send({ type: 'ready', jointConfigs: getJointConfigsSnapshot() });
