@@ -1101,6 +1101,23 @@
                 </table>
             </div>
 
+            <div class="connection-panel" id="calibrationPositionCorrectionSection" hidden>
+                <h3>Position Correction (Zero-Point Nudge)</h3>
+                <p class="info-text">
+                    Nudges the selected joint's zero-point offset (EEPROM 0x1F, Position Correction) up or down
+                    by the step size below, then commands the servo to its mechanical center (SRAM address 0x2A,
+                    Target Location, set to 2048) so the change is visible immediately, without a power cycle.
+                    <strong>This physically moves the joint</strong> — make sure it's clear to travel before
+                    pressing Up or Down.
+                </p>
+                <div class="connection-form">
+                    <label>Step (steps) <input type="number" id="posCorrectionStep" min="1" max="2047" step="1" value="1"></label>
+                    <button id="posCorrectionDownButton" class="btn btn-secondary" disabled onclick="adjustPositionCorrection(-1)">&minus; Down</button>
+                    <span id="posCorrectionValue">Position Correction: —</span>
+                    <button id="posCorrectionUpButton" class="btn btn-secondary" disabled onclick="adjustPositionCorrection(1)">+ Up</button>
+                </div>
+            </div>
+
             <div class="connection-panel" id="calibrationCommissioningSection" hidden>
                 <h3>Commissioning</h3>
                 <p class="info-text">

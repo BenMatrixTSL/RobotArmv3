@@ -2794,7 +2794,7 @@ function updateTakeControlButtonState() {
 
     // Commissioning writes/reads are bus commands like moves — they need this
     // app to hold arm control, same requirement as the buttons above.
-    const commissionButtonIds = ['commissionAllButton', 'calibrationReadButton'];
+    const commissionButtonIds = ['commissionAllButton', 'calibrationReadButton', 'posCorrectionUpButton', 'posCorrectionDownButton'];
     const commissionEnabled = robotArmClient.isConnected && robotArmClient.hasArmControl;
     for (const id of commissionButtonIds) {
         const btn = document.getElementById(id);

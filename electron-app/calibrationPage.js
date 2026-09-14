@@ -11,9 +11,9 @@
  * writable EEPROM rows into an editable state; each write still requires the
  * control-lock password (typed once into calibrationWritePassword and sent
  * with every write — the server is the actual authority, this page doesn't
- * validate the password itself). The Commissioning panel (per-joint PID/
- * overload/torque profile) lives at the bottom of this page and is only
- * revealed once that same password has been entered via "Enable Editing".
+ * validate the password itself). The Position Correction and Commissioning
+ * panels lower on the page are only revealed once that same password has
+ * been entered via "Enable Editing".
  */
 
 // Cache of the last-read {eeprom, sram} byte arrays per joint, so the "show
@@ -54,6 +54,7 @@ function toggleCalibrationWriteMode() {
     const button = document.getElementById('calibrationUnlockWritesButton');
     const editHeader = document.getElementById('calibrationEditHeader');
     const commissioningSection = document.getElementById('calibrationCommissioningSection');
+    const positionCorrectionSection = document.getElementById('calibrationPositionCorrectionSection');
 
     if (calibrationWriteModeEnabled) {
         calibrationWriteModeEnabled = false;
@@ -62,6 +63,7 @@ function toggleCalibrationWriteMode() {
         button.classList.add('btn-warning');
         if (editHeader) editHeader.hidden = true;
         if (commissioningSection) commissioningSection.hidden = true;
+        if (positionCorrectionSection) positionCorrectionSection.hidden = true;
         renderCalibrationTable();
         return;
     }
@@ -77,12 +79,32 @@ function toggleCalibrationWriteMode() {
     button.classList.add('btn-danger');
     if (editHeader) editHeader.hidden = false;
     if (commissioningSection) commissioningSection.hidden = false;
+    if (positionCorrectionSection) positionCorrectionSection.hidden = false;
     renderCalibrationTable();
 }
 
 function renderCalibrationTable() {
     renderEepromTable();
     renderSramTable();
+    renderPositionCorrectionDisplay();
+}
+
+/**
+ * Shows the currently selected joint's Position Correction value (decoded
+ * from the cached EEPROM block, same as the main table) next to the
+ * up/down nudge buttons — "—" until that joint has actually been read.
+ */
+function renderPositionCorrectionDisplay() {
+    const valueEl = document.getElementById('posCorrectionValue');
+    if (!valueEl) return;
+    const jointNumber = parseInt(document.getElementById('calibrationJointSelect').value, 10);
+    const cached = calibrationRawByJoint[jointNumber];
+    if (!cached) {
+        valueEl.textContent = 'Position Correction: —';
+        return;
+    }
+    const raw = rawValueAtAddress(cached.eeprom, STS_POSITION_CORRECTION_ADDRESS, 2);
+    valueEl.textContent = `Position Correction: ${decodeSignedStepNumeric(raw)} step`;
 }
 
 function renderEepromTable() {
@@ -231,6 +253,71 @@ async function writeCalibrationRegister(address) {
     } catch (error) {
         setCalibrationStatus(`Failed to write Joint ${jointNumber} address ${addrHex}: ${error.message}`);
         renderCalibrationTable(); // re-enable the row's controls even on failure
+    }
+}
+
+// EEPROM address of Position Correction (2 bytes, signed-step encoding —
+// see encodeSignedStep/decodeSignedStepNumeric in stsMemoryTable.js).
+const STS_POSITION_CORRECTION_ADDRESS = 0x1F;
+// SRAM Target Location (goal position) address and the absolute step value
+// that commands the servo to the mechanical center — same plain 0-4095
+// encoding robotArmST3215.js's moveToPosition() uses, NOT the signed-step
+// encoding stsMemoryTable.js decodes this register as for display. Driving
+// the servo there is what makes a Position Correction change visible
+// immediately instead of only after the servo's next power-up.
+const STS_TARGET_LOCATION_ADDRESS = 0x2A;
+const STS_TARGET_LOCATION_RECENTER_VALUE = 2048;
+
+/**
+ * Nudges the selected joint's Position Correction by `direction` (-1 or +1)
+ * times the step size field, writes it, then commands the servo to the
+ * mechanical center (Target Location = 2048) so the change is reflected in
+ * the servo's live position right away — this physically moves the joint.
+ * Re-reads the joint afterward so the on-page value and the main EEPROM
+ * table both reflect what's actually on the hardware.
+ */
+async function adjustPositionCorrection(direction) {
+    const jointNumber = parseInt(document.getElementById('calibrationJointSelect').value, 10);
+    const password = document.getElementById('calibrationWritePassword').value;
+    if (!password) {
+        showAppMessage('Enter the control-lock password to enable editing.');
+        return;
+    }
+
+    if (!calibrationRawByJoint[jointNumber]) {
+        await readCalibrationForJoint(jointNumber);
+    }
+    const cached = calibrationRawByJoint[jointNumber];
+    if (!cached) {
+        setCalibrationStatus(`Couldn't read Joint ${jointNumber}'s current Position Correction.`);
+        return;
+    }
+
+    const stepInput = document.getElementById('posCorrectionStep');
+    const step = Math.max(1, parseInt(stepInput.value, 10) || 1);
+    const currentValue = decodeSignedStepNumeric(rawValueAtAddress(cached.eeprom, STS_POSITION_CORRECTION_ADDRESS, 2));
+    const newValue = Math.max(-2047, Math.min(2047, currentValue + direction * step));
+    const newRaw = encodeSignedStep(newValue);
+
+    const upButton = document.getElementById('posCorrectionUpButton');
+    const downButton = document.getElementById('posCorrectionDownButton');
+    if (upButton) upButton.disabled = true;
+    if (downButton) downButton.disabled = true;
+    try {
+        setCalibrationStatus(`Joint ${jointNumber}: writing Position Correction = ${newValue} step...`);
+        await robotArmClient.writeServoEepromRaw(jointNumber, STS_POSITION_CORRECTION_ADDRESS, newRaw, password);
+
+        setCalibrationStatus(`Joint ${jointNumber}: moving to center (Target Location = 2048)...`);
+        await robotArmClient.writeServoEepromRaw(jointNumber, STS_TARGET_LOCATION_ADDRESS, STS_TARGET_LOCATION_RECENTER_VALUE, password);
+
+        await readCalibrationForJoint(jointNumber);
+        renderCalibrationTable();
+        setCalibrationStatus(`Joint ${jointNumber}: Position Correction is now ${newValue} step, moved to center (2048).`);
+    } catch (error) {
+        setCalibrationStatus(`Failed to adjust Joint ${jointNumber}'s Position Correction: ${error.message}`);
+    } finally {
+        if (upButton) upButton.disabled = false;
+        if (downButton) downButton.disabled = false;
     }
 }
 

@@ -95,6 +95,14 @@ const EEPROM_WRITE_RANGES = {
     37: { bytes: 1, min: 0,     max: 254 },  // Speed closed-loop P coefficient
     38: { bytes: 1, min: 0,     max: 254 },  // Over-current protection time
     39: { bytes: 1, min: 0,     max: 254 },  // Velocity closed-loop I coefficient
+    // 42 (Target location / goal position) is SRAM, not EEPROM — a deliberate
+    // exception so the Calibration page's Position Correction control can
+    // write 2048 (absolute step, same encoding moveToPosition() uses), which
+    // commands the servo to the mechanical center so the effect of a Position
+    // Correction change is visible immediately. The unconditional EEPROM-
+    // unlock write writeServoEepromRaw does before every write is a harmless
+    // no-op for this address.
+    42: { bytes: 2, min: 0,     max: 4095 }, // Target location (absolute step)
 };
 
 // Angle limits (9, 11) can let a joint travel somewhere mechanically unsafe —
