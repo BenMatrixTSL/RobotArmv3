@@ -11,7 +11,9 @@
  * writable EEPROM rows into an editable state; each write still requires the
  * control-lock password (typed once into calibrationWritePassword and sent
  * with every write — the server is the actual authority, this page doesn't
- * validate the password itself).
+ * validate the password itself). The Commissioning panel (per-joint PID/
+ * overload/torque profile) lives at the bottom of this page and is only
+ * revealed once that same password has been entered via "Enable Editing".
  */
 
 // Cache of the last-read {eeprom, sram} byte arrays per joint, so the "show
@@ -51,6 +53,7 @@ function toggleCalibrationWriteMode() {
     const passwordInput = document.getElementById('calibrationWritePassword');
     const button = document.getElementById('calibrationUnlockWritesButton');
     const editHeader = document.getElementById('calibrationEditHeader');
+    const commissioningSection = document.getElementById('calibrationCommissioningSection');
 
     if (calibrationWriteModeEnabled) {
         calibrationWriteModeEnabled = false;
@@ -58,6 +61,7 @@ function toggleCalibrationWriteMode() {
         button.classList.remove('btn-danger');
         button.classList.add('btn-warning');
         if (editHeader) editHeader.hidden = true;
+        if (commissioningSection) commissioningSection.hidden = true;
         renderCalibrationTable();
         return;
     }
@@ -72,6 +76,7 @@ function toggleCalibrationWriteMode() {
     button.classList.remove('btn-warning');
     button.classList.add('btn-danger');
     if (editHeader) editHeader.hidden = false;
+    if (commissioningSection) commissioningSection.hidden = false;
     renderCalibrationTable();
 }
 
