@@ -25,4 +25,9 @@ yarn-error.log*
 
 # === Build outputs (general) ===
 **/build/
+**/bin/
+**/obj/
+
+# === Local machine-specific files ===
+Username Setup.txt
 
