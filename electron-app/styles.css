@@ -3157,9 +3157,17 @@ body.kiosk-mode .camera-toolbar .btn {
    Target screen: 800×480 touchscreen
    ================================================================ */
 
-/* Base font override — undo small-display 12px, use readable 14px */
+/* Base font override — undo small-display 12px, use readable 14px.
+   height + overflow:hidden pins the page to exactly the viewport, so the
+   only scrollbars are the ones deliberately added below (.tabs and
+   .tab-content-container) — without this, the outer page (sized by
+   min-height:100vh in the base body rule) could still grow taller than the
+   screen and pick up its own native scrollbar alongside the inner one,
+   showing two side-by-side on the touchscreen. */
 body.kiosk-mode {
     font-size: 14px;
+    height: 100vh;
+    overflow: hidden;
 }
 
 body.kiosk-mode .app-footer {
