@@ -234,21 +234,50 @@ async function writeCalibrationRegister(address) {
     }
 }
 
-// Fixed defaults written to every servo by the Commissioning button — for
-// bringing a freshly replaced or factory-reset servo back to the arm's
-// known-good configuration in one pass.
-const COMMISSIONING_DEFAULTS = [
-    { address: 0x0E, value: 140, label: 'Max input voltage' },
-    { address: 0x17, value: 10, label: 'I coefficient' },
-    { address: 0x1C, value: 100, label: 'Protection current' },
-];
+// Custom values that override the factory default for these three registers.
+// Every other writable register from COMMISSIONING_MIN_ADDRESS through
+// COMMISSIONING_MAX_ADDRESS is instead reset to its factory default — see
+// COMMISSIONING_REGISTER_WRITES below.
+const COMMISSIONING_OVERRIDES = {
+    0x0E: { value: 140, label: 'Max input voltage' },
+    0x17: { value: 10, label: 'I coefficient' },
+    0x1C: { value: 100, label: 'Protection current' },
+};
+const COMMISSIONING_MIN_ADDRESS = 0x07;
+const COMMISSIONING_MAX_ADDRESS = 0x27;
 const COMMISSIONING_JOINT_COUNT = 6;
 
+// Position correction (0x1F) is per-servo zero-point calibration, not a
+// generic default — commissioning must never stomp it, so it's handled
+// separately from this button entirely.
+const COMMISSIONING_SKIP_ADDRESSES = new Set([0x1F]);
+
+// Every EEPROM register the Commissioning button writes, in address order:
+// COMMISSIONING_OVERRIDES's three custom values, and every other writable
+// register in the 0x07-0x27 range reset to its factory default — skipping
+// addresses the Calibration page itself refuses to write (ID, Baud rate,
+// Phase — STS_WRITE_BLOCKED_ADDRESSES, from stsMemoryTable.js) and
+// COMMISSIONING_SKIP_ADDRESSES.
+const COMMISSIONING_REGISTER_WRITES = STS_EEPROM_REGISTERS
+    .filter(reg => reg.address >= COMMISSIONING_MIN_ADDRESS && reg.address <= COMMISSIONING_MAX_ADDRESS)
+    .filter(reg => !STS_WRITE_BLOCKED_ADDRESSES.has(reg.address))
+    .filter(reg => !COMMISSIONING_SKIP_ADDRESSES.has(reg.address))
+    .map(reg => {
+        const override = COMMISSIONING_OVERRIDES[reg.address];
+        return {
+            address: reg.address,
+            value: override ? override.value : reg.default,
+            label: override ? override.label : reg.name,
+            isOverride: !!override,
+        };
+    });
+
 /**
- * Writes the fixed COMMISSIONING_DEFAULTS registers to every joint's servo,
+ * Writes every COMMISSIONING_REGISTER_WRITES entry to every joint's servo,
  * one register at a time (reusing the raw EEPROM write used by the table
  * above), so a replacement or factory-reset servo can be brought back to the
- * arm's known-good configuration with a single button press.
+ * arm's known-good configuration with a single button press: the three
+ * custom values plus every other 0x07-0x27 register reset to factory default.
  */
 async function commissionAllServos() {
     const password = document.getElementById('calibrationWritePassword').value;
@@ -257,11 +286,16 @@ async function commissionAllServos() {
         return;
     }
 
-    const summary = COMMISSIONING_DEFAULTS
-        .map(d => `0x${d.address.toString(16).toUpperCase()} (${d.label}) = ${d.value}`)
+    const overridesSummary = COMMISSIONING_REGISTER_WRITES
+        .filter(r => r.isOverride)
+        .map(r => `0x${r.address.toString(16).toUpperCase()} (${r.label}) = ${r.value}`)
         .join('\n');
+    const defaultCount = COMMISSIONING_REGISTER_WRITES.filter(r => !r.isOverride).length;
     const confirmed = await showConfirm(
-        `Write default values to all ${COMMISSIONING_JOINT_COUNT} servos?\n\n${summary}\n\n` +
+        `Write default values to all ${COMMISSIONING_JOINT_COUNT} servos?\n\n${overridesSummary}\n` +
+        `...plus ${defaultCount} other registers (addresses 0x${COMMISSIONING_MIN_ADDRESS.toString(16).toUpperCase()}-` +
+        `0x${COMMISSIONING_MAX_ADDRESS.toString(16).toUpperCase()}) reset to their factory default — including the ` +
+        `min/max angle limits, back to the servo's full un-restricted travel range.\n\n` +
         `This writes directly to EEPROM on every joint, immediately.`
     );
     if (!confirmed) return;
@@ -270,7 +304,7 @@ async function commissionAllServos() {
     if (button) button.disabled = true;
     try {
         for (let joint = 1; joint <= COMMISSIONING_JOINT_COUNT; joint++) {
-            for (const { address, value, label } of COMMISSIONING_DEFAULTS) {
+            for (const { address, value, label } of COMMISSIONING_REGISTER_WRITES) {
                 const addrHex = '0x' + address.toString(16).toUpperCase();
                 setCalibrationStatus(`Joint ${joint}: writing ${label} (${addrHex}) = ${value}...`);
                 await robotArmClient.writeServoEepromRaw(joint, address, value, password);
