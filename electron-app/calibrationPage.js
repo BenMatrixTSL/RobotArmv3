@@ -234,7 +234,7 @@ async function writeCalibrationRegister(address) {
     }
 }
 
-// Custom values that override the factory default for these three registers,
+// Custom values that override the factory default for these registers,
 // applied to every joint identically. Every other writable register from
 // COMMISSIONING_MIN_ADDRESS through COMMISSIONING_MAX_ADDRESS is instead
 // reset to its factory default — see commissioningWritesForJoint() below.
@@ -242,6 +242,9 @@ const COMMISSIONING_OVERRIDES = {
     0x0E: { value: 140, label: 'Max input voltage' },
     0x17: { value: 10, label: 'I coefficient' },
     0x1C: { value: 100, label: 'Protection current' },
+    0x22: { value: 10, label: 'Protective torque' },
+    0x23: { value: 50, label: 'Protection time' },
+    0x24: { value: 40, label: 'Overload torque' },
 };
 const COMMISSIONING_MIN_ANGLE_ADDRESS = 0x09;
 const COMMISSIONING_MAX_ANGLE_ADDRESS = 0x0B;
@@ -254,43 +257,55 @@ const COMMISSIONING_JOINT_COUNT = 6;
 // separately from this button entirely.
 const COMMISSIONING_SKIP_ADDRESSES = new Set([0x1F]);
 
-// Per-joint min/max angle limit, as raw steps (0-4095, center 2048 = 0°),
-// converted from this arm's actual joint limits in
-// raspberry-pi-control-st3215/kinematics.urdf (radians, lower/upper on each
-// <joint><limit>) via raw = round(2048 + radians * 2048/Math.PI) — the same
-// radians<->step mapping the ST3215 servos use (see robotArmST3215.js
-// CENTER_POSITION/STEPS_PER_DEGREE). Recompute these if the URDF's joint
-// limits ever change.
-const COMMISSIONING_ANGLE_LIMITS = {
-    1: { min: 0,    max: 4095, sourceRad: '±3.14159' },          // joint1_base_yaw
-    2: { min: 1024, max: 2503, sourceRad: '-1.5708..0.698132' }, // joint2_shoulder_pitch
-    3: { min: 1024, max: 3072, sourceRad: '±1.5708' },           // joint3_elbow_pitch
-    4: { min: 1024, max: 3072, sourceRad: '±1.5708' },           // joint4_wrist_roll
-    5: { min: 1991, max: 3072, sourceRad: '-0.0872665..1.5708' },// joint5_wrist_pitch
-    6: { min: 1024, max: 3072, sourceRad: '±1.5708' },           // joint6_wrist_roll_2
-};
+// Raw-step <-> radian conversion the ST3215 servos use: 0 rad = 2048 (center),
+// full circle = 4096 steps. Same mapping as robotArmST3215.js's
+// CENTER_POSITION/STEPS_PER_DEGREE, expressed per-radian instead of per-degree.
+const COMMISSIONING_STEPS_PER_RADIAN = 2048 / Math.PI;
+const COMMISSIONING_CENTER_STEP = 2048;
+
+/**
+ * This joint's min/max angle limit, as raw steps (0-4095, center 2048 = 0°),
+ * read live from the loaded kinematics.urdf via the global robotKinematics
+ * instance (kinematics.js) — not a hardcoded copy of the URDF's numbers,
+ * which would silently go stale the next time someone tunes a joint limit
+ * there. Throws if the URDF hasn't loaded (or doesn't describe this joint),
+ * rather than writing a limit computed from missing data.
+ */
+function commissioningAngleLimitsForJoint(jointNumber) {
+    const joint = robotKinematics.joints && robotKinematics.joints[jointNumber - 1];
+    const limits = joint && joint.limits;
+    if (!limits || typeof limits.lowerRadians !== 'number' || typeof limits.upperRadians !== 'number') {
+        throw new Error(`No joint limits available for Joint ${jointNumber} — kinematics.urdf may not have loaded yet`);
+    }
+    const min = Math.round(COMMISSIONING_CENTER_STEP + limits.lowerRadians * COMMISSIONING_STEPS_PER_RADIAN);
+    const max = Math.round(COMMISSIONING_CENTER_STEP + limits.upperRadians * COMMISSIONING_STEPS_PER_RADIAN);
+    return {
+        min: Math.max(0, Math.min(4094, min)),
+        max: Math.max(1, Math.min(4095, max)),
+    };
+}
 
 /**
  * Every EEPROM register one joint's servo gets written to by the
- * Commissioning button, in address order: COMMISSIONING_OVERRIDES's three
- * custom values, this joint's angle limits from COMMISSIONING_ANGLE_LIMITS,
+ * Commissioning button, in address order: COMMISSIONING_OVERRIDES's custom
+ * values, this joint's angle limits from commissioningAngleLimitsForJoint(),
  * and every other writable register in the 0x07-0x27 range reset to its
  * factory default — skipping addresses the Calibration page itself refuses
  * to write (ID, Baud rate, Phase — STS_WRITE_BLOCKED_ADDRESSES, from
  * stsMemoryTable.js) and COMMISSIONING_SKIP_ADDRESSES.
  */
 function commissioningWritesForJoint(jointNumber) {
-    const angleLimits = COMMISSIONING_ANGLE_LIMITS[jointNumber];
+    const angleLimits = commissioningAngleLimitsForJoint(jointNumber);
     return STS_EEPROM_REGISTERS
         .filter(reg => reg.address >= COMMISSIONING_MIN_ADDRESS && reg.address <= COMMISSIONING_MAX_ADDRESS)
         .filter(reg => !STS_WRITE_BLOCKED_ADDRESSES.has(reg.address))
         .filter(reg => !COMMISSIONING_SKIP_ADDRESSES.has(reg.address))
         .map(reg => {
             if (reg.address === COMMISSIONING_MIN_ANGLE_ADDRESS) {
-                return { address: reg.address, value: angleLimits.min, label: 'Min angle limit', isOverride: true };
+                return { address: reg.address, bytes: reg.bytes, value: angleLimits.min, label: 'Min angle limit', isOverride: true };
             }
             if (reg.address === COMMISSIONING_MAX_ANGLE_ADDRESS) {
-                return { address: reg.address, value: angleLimits.max, label: 'Max angle limit', isOverride: true };
+                return { address: reg.address, bytes: reg.bytes, value: angleLimits.max, label: 'Max angle limit', isOverride: true };
             }
             const override = COMMISSIONING_OVERRIDES[reg.address];
             return {
@@ -327,6 +342,10 @@ async function commissionAllServos() {
     const password = document.getElementById('calibrationWritePassword').value;
     if (!password) {
         showAppMessage('Enter the control-lock password to enable editing.');
+        return;
+    }
+    if (!robotKinematics.joints || robotKinematics.joints.length < COMMISSIONING_JOINT_COUNT) {
+        showAppMessage("Joint limits aren't loaded yet (kinematics.urdf) — wait for the app to finish starting up and try again.");
         return;
     }
 

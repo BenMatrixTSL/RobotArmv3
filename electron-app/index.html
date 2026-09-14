@@ -1108,11 +1108,12 @@
                     that isn't already at its target value — for bringing a freshly replaced or factory-reset
                     servo back to the arm's known-good configuration, and doing so quickly on a re-run since only
                     what's actually changed gets written. Most registers get their factory default, except: 0x0E
-                    (Max input voltage) &rarr; 140, 0x17 (I coefficient) &rarr; 10, and 0x1C (Protection current)
-                    &rarr; 100 on every joint, plus 0x09/0x0B (Min/Max angle limit) &rarr; that joint's own travel
-                    range, taken from kinematics.urdf. ID, Baud rate, Phase, and Position Correction (0x1F —
-                    handled separately, as it's per-servo zero-point calibration, not a generic default) are never
-                    touched.
+                    (Max input voltage) &rarr; 140, 0x17 (I coefficient) &rarr; 10, 0x1C (Protection current)
+                    &rarr; 100, 0x22 (Protective torque) &rarr; 10, 0x23 (Protection time) &rarr; 50, and 0x24
+                    (Overload torque) &rarr; 40 on every joint, plus 0x09/0x0B (Min/Max angle limit) &rarr; that
+                    joint's own travel range, read live from the currently loaded kinematics.urdf. ID, Baud rate,
+                    Phase, and Position Correction (0x1F — handled separately, as it's per-servo zero-point
+                    calibration, not a generic default) are never touched.
                 </p>
                 <button id="commissionAllButton" class="btn btn-warning" disabled onclick="commissionAllServos()">Write Default Values to All Servos</button>
                 <p class="info-text" id="commissionStatus"></p>
