@@ -273,8 +273,9 @@ const STS_TARGET_LOCATION_RECENTER_VALUE = 2048;
  * times the step size field, writes it, then commands the servo to the
  * mechanical center (Target Location = 2048) so the change is reflected in
  * the servo's live position right away — this physically moves the joint.
- * Re-reads the joint afterward so the on-page value and the main EEPROM
- * table both reflect what's actually on the hardware.
+ * Re-reads the joint afterward and checks the read-back actually matches
+ * what was written before reporting success, so the on-page value and the
+ * main EEPROM table only ever show what's genuinely on the hardware.
  */
 async function adjustPositionCorrection(direction) {
     const jointNumber = parseInt(document.getElementById('calibrationJointSelect').value, 10);
@@ -310,9 +311,27 @@ async function adjustPositionCorrection(direction) {
         setCalibrationStatus(`Joint ${jointNumber}: moving to center (Target Location = 2048)...`);
         await robotArmClient.writeServoEepromRaw(jointNumber, STS_TARGET_LOCATION_ADDRESS, STS_TARGET_LOCATION_RECENTER_VALUE, password);
 
+        // Both writes' own replies already wait for their bus-write settle
+        // time, but that move is still ongoing SRAM/bus traffic — give it a
+        // moment before reading back, rather than racing it, and then
+        // actually check the read-back matches what was written instead of
+        // just assuming it did (readCalibrationForJoint swallows its own
+        // read errors, so a failed read would otherwise look identical to
+        // a successful one here).
+        await new Promise(resolve => setTimeout(resolve, 200));
+
+        setCalibrationStatus(`Joint ${jointNumber}: verifying Position Correction...`);
         await readCalibrationForJoint(jointNumber);
         renderCalibrationTable();
-        setCalibrationStatus(`Joint ${jointNumber}: Position Correction is now ${newValue} step, moved to center (2048).`);
+
+        const confirmedCache = calibrationRawByJoint[jointNumber];
+        const confirmedRaw = confirmedCache ? rawValueAtAddress(confirmedCache.eeprom, STS_POSITION_CORRECTION_ADDRESS, 2) : null;
+        if (confirmedCache && confirmedRaw === newRaw) {
+            setCalibrationStatus(`Joint ${jointNumber}: Position Correction confirmed at ${newValue} step, moved to center (2048).`);
+        } else {
+            const actual = confirmedCache ? `${decodeSignedStepNumeric(confirmedRaw)} step` : '(read failed)';
+            setCalibrationStatus(`Wrote Position Correction ${newValue} step but the read-back shows ${actual} — the write may not have taken effect. Try again or check the servo connection.`);
+        }
     } catch (error) {
         setCalibrationStatus(`Failed to adjust Joint ${jointNumber}'s Position Correction: ${error.message}`);
     } finally {
