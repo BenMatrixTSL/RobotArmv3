@@ -340,6 +340,15 @@ async function commissionAllServos() {
                 await robotArmClient.writeServoEepromRaw(joint, address, value, password);
             }
         }
+
+        // Every joint's registers just changed — drop the whole cache rather
+        // than leave other joints' tables showing stale pre-commissioning
+        // bytes, then re-read the one currently on screen.
+        for (const key of Object.keys(calibrationRawByJoint)) delete calibrationRawByJoint[key];
+        const selectedJoint = parseInt(document.getElementById('calibrationJointSelect').value, 10);
+        await readCalibrationForJoint(selectedJoint);
+        renderCalibrationTable();
+
         setCalibrationStatus(`Commissioned all ${COMMISSIONING_JOINT_COUNT} servos with default values at ${new Date().toLocaleTimeString()}.`);
     } catch (error) {
         setCalibrationStatus(`Commissioning failed: ${error.message}`);
