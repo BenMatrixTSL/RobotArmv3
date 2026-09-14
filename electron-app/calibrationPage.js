@@ -295,6 +295,7 @@ function commissioningWritesForJoint(jointNumber) {
             const override = COMMISSIONING_OVERRIDES[reg.address];
             return {
                 address: reg.address,
+                bytes: reg.bytes,
                 value: override ? override.value : reg.default,
                 label: override ? override.label : reg.name,
                 isOverride: !!override,
@@ -303,12 +304,24 @@ function commissioningWritesForJoint(jointNumber) {
 }
 
 /**
- * Writes commissioningWritesForJoint()'s registers to every joint's servo,
- * one register at a time (reusing the raw EEPROM write used by the table
- * above), so a replacement or factory-reset servo can be brought back to the
- * arm's known-good configuration with a single button press: the global
- * custom values, this arm's per-joint angle limits, and every other
- * 0x07-0x27 register reset to factory default.
+ * Reads a register's current raw value out of a raw EEPROM byte block (as
+ * returned by readServoEepromRaw), for comparing against the value
+ * commissioning wants to write there. Same little-endian layout as
+ * decodeEepromBlock() in stsMemoryTable.js.
+ */
+function rawValueAtAddress(bytes, address, byteCount) {
+    return byteCount === 2 ? (bytes[address] || 0) | ((bytes[address + 1] || 0) << 8) : (bytes[address] || 0);
+}
+
+/**
+ * Writes commissioningWritesForJoint()'s registers to every joint's servo —
+ * but reads each joint's current EEPROM first and skips any register that's
+ * already at its target value, so re-running commissioning on an
+ * already-commissioned arm only touches what's actually changed (a fresh or
+ * factory-reset servo still gets every register written, since none of them
+ * will match yet). This is a lot fewer bus round-trips than blindly writing
+ * all ~150 registers every time, so a re-run is quicker and puts far less
+ * traffic on a bus that's also running the 20ms status poll concurrently.
  */
 async function commissionAllServos() {
     const password = document.getElementById('calibrationWritePassword').value;
@@ -326,6 +339,7 @@ async function commissionAllServos() {
         `Min/Max angle limit = this arm's own travel range per joint (from kinematics.urdf)\n\n` +
         `...plus ${defaultCount} other registers (addresses 0x${COMMISSIONING_MIN_ADDRESS.toString(16).toUpperCase()}-` +
         `0x${COMMISSIONING_MAX_ADDRESS.toString(16).toUpperCase()}) reset to their factory default.\n\n` +
+        `Each joint is read first, and any register already at its target value is left alone.\n\n` +
         `This writes directly to EEPROM on every joint, immediately.`
     );
     if (!confirmed) return;
@@ -334,10 +348,26 @@ async function commissionAllServos() {
     if (button) button.disabled = true;
     const failures = [];
     let successCount = 0;
+    let skippedCount = 0;
     try {
         for (let joint = 1; joint <= COMMISSIONING_JOINT_COUNT; joint++) {
-            for (const { address, value, label } of commissioningWritesForJoint(joint)) {
+            setCalibrationStatus(`Joint ${joint}: reading current EEPROM...`);
+            let currentBytes = null;
+            try {
+                const response = await robotArmClient.readServoEepromRaw(joint);
+                currentBytes = response.eepromBytes;
+            } catch (error) {
+                // Can't tell what's already correct — fall back to writing
+                // every register for this joint, same as before this change.
+                failures.push(`Joint ${joint}: couldn't read current EEPROM (${error.message}) — writing every register unconditionally`);
+            }
+
+            for (const { address, value, label, bytes } of commissioningWritesForJoint(joint)) {
                 const addrHex = '0x' + address.toString(16).toUpperCase();
+                if (currentBytes && rawValueAtAddress(currentBytes, address, bytes) === value) {
+                    skippedCount++;
+                    continue;
+                }
                 setCalibrationStatus(`Joint ${joint}: writing ${label} (${addrHex}) = ${value}...`);
                 try {
                     await writeCommissioningRegisterWithRetry(joint, address, value, password);
@@ -360,11 +390,14 @@ async function commissionAllServos() {
         renderCalibrationTable();
 
         if (failures.length === 0) {
-            setCalibrationStatus(`Commissioned all ${COMMISSIONING_JOINT_COUNT} servos with default values at ${new Date().toLocaleTimeString()}.`);
+            setCalibrationStatus(
+                `Commissioned all ${COMMISSIONING_JOINT_COUNT} servos at ${new Date().toLocaleTimeString()}: ` +
+                `${successCount} register(s) written, ${skippedCount} already correct.`
+            );
         } else {
             setCalibrationStatus(
-                `Commissioned ${successCount} register write(s); ${failures.length} failed after retrying ` +
-                `(likely a transient bus error — re-run to retry just those): ${failures.join('; ')}`
+                `Commissioned ${successCount} register write(s), ${skippedCount} already correct; ` +
+                `${failures.length} failed (likely a transient bus error — re-run to retry just those): ${failures.join('; ')}`
             );
         }
     } catch (error) {
