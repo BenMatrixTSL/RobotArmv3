@@ -1106,11 +1106,11 @@
                 <p class="info-text">
                     Writes every EEPROM register from 0x07 to 0x27 to every servo on the bus (joints 1-6) in a
                     single pass — for bringing a freshly replaced or factory-reset servo back to the arm's
-                    known-good configuration. Three registers get a custom value instead of their factory default:
-                    0x0E (Max input voltage) &rarr; 140, 0x17 (I coefficient) &rarr; 10, 0x1C (Protection current)
-                    &rarr; 100. Everything else in that range (including the min/max angle limits) is reset to its
-                    factory default; ID, Baud rate, Phase, and Position Correction (0x1F — handled separately, as
-                    it's per-servo zero-point calibration, not a generic default) are never touched.
+                    known-good configuration. Most registers get their factory default, except: 0x0E (Max input
+                    voltage) &rarr; 140, 0x17 (I coefficient) &rarr; 10, and 0x1C (Protection current) &rarr; 100
+                    on every joint, plus 0x09/0x0B (Min/Max angle limit) &rarr; that joint's own travel range,
+                    taken from kinematics.urdf. ID, Baud rate, Phase, and Position Correction (0x1F — handled
+                    separately, as it's per-servo zero-point calibration, not a generic default) are never touched.
                 </p>
                 <button id="commissionAllButton" class="btn btn-warning" disabled onclick="commissionAllServos()">Write Default Values to All Servos</button>
                 <p class="info-text" id="commissionStatus"></p>

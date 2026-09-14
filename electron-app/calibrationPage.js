@@ -234,15 +234,17 @@ async function writeCalibrationRegister(address) {
     }
 }
 
-// Custom values that override the factory default for these three registers.
-// Every other writable register from COMMISSIONING_MIN_ADDRESS through
-// COMMISSIONING_MAX_ADDRESS is instead reset to its factory default — see
-// COMMISSIONING_REGISTER_WRITES below.
+// Custom values that override the factory default for these three registers,
+// applied to every joint identically. Every other writable register from
+// COMMISSIONING_MIN_ADDRESS through COMMISSIONING_MAX_ADDRESS is instead
+// reset to its factory default — see commissioningWritesForJoint() below.
 const COMMISSIONING_OVERRIDES = {
     0x0E: { value: 140, label: 'Max input voltage' },
     0x17: { value: 10, label: 'I coefficient' },
     0x1C: { value: 100, label: 'Protection current' },
 };
+const COMMISSIONING_MIN_ANGLE_ADDRESS = 0x09;
+const COMMISSIONING_MAX_ANGLE_ADDRESS = 0x0B;
 const COMMISSIONING_MIN_ADDRESS = 0x07;
 const COMMISSIONING_MAX_ADDRESS = 0x27;
 const COMMISSIONING_JOINT_COUNT = 6;
@@ -252,32 +254,61 @@ const COMMISSIONING_JOINT_COUNT = 6;
 // separately from this button entirely.
 const COMMISSIONING_SKIP_ADDRESSES = new Set([0x1F]);
 
-// Every EEPROM register the Commissioning button writes, in address order:
-// COMMISSIONING_OVERRIDES's three custom values, and every other writable
-// register in the 0x07-0x27 range reset to its factory default — skipping
-// addresses the Calibration page itself refuses to write (ID, Baud rate,
-// Phase — STS_WRITE_BLOCKED_ADDRESSES, from stsMemoryTable.js) and
-// COMMISSIONING_SKIP_ADDRESSES.
-const COMMISSIONING_REGISTER_WRITES = STS_EEPROM_REGISTERS
-    .filter(reg => reg.address >= COMMISSIONING_MIN_ADDRESS && reg.address <= COMMISSIONING_MAX_ADDRESS)
-    .filter(reg => !STS_WRITE_BLOCKED_ADDRESSES.has(reg.address))
-    .filter(reg => !COMMISSIONING_SKIP_ADDRESSES.has(reg.address))
-    .map(reg => {
-        const override = COMMISSIONING_OVERRIDES[reg.address];
-        return {
-            address: reg.address,
-            value: override ? override.value : reg.default,
-            label: override ? override.label : reg.name,
-            isOverride: !!override,
-        };
-    });
+// Per-joint min/max angle limit, as raw steps (0-4095, center 2048 = 0°),
+// converted from this arm's actual joint limits in
+// raspberry-pi-control-st3215/kinematics.urdf (radians, lower/upper on each
+// <joint><limit>) via raw = round(2048 + radians * 2048/Math.PI) — the same
+// radians<->step mapping the ST3215 servos use (see robotArmST3215.js
+// CENTER_POSITION/STEPS_PER_DEGREE). Recompute these if the URDF's joint
+// limits ever change.
+const COMMISSIONING_ANGLE_LIMITS = {
+    1: { min: 0,    max: 4095, sourceRad: '±3.14159' },          // joint1_base_yaw
+    2: { min: 1024, max: 2503, sourceRad: '-1.5708..0.698132' }, // joint2_shoulder_pitch
+    3: { min: 1024, max: 3072, sourceRad: '±1.5708' },           // joint3_elbow_pitch
+    4: { min: 1024, max: 3072, sourceRad: '±1.5708' },           // joint4_wrist_roll
+    5: { min: 1991, max: 3072, sourceRad: '-0.0872665..1.5708' },// joint5_wrist_pitch
+    6: { min: 1024, max: 3072, sourceRad: '±1.5708' },           // joint6_wrist_roll_2
+};
 
 /**
- * Writes every COMMISSIONING_REGISTER_WRITES entry to every joint's servo,
+ * Every EEPROM register one joint's servo gets written to by the
+ * Commissioning button, in address order: COMMISSIONING_OVERRIDES's three
+ * custom values, this joint's angle limits from COMMISSIONING_ANGLE_LIMITS,
+ * and every other writable register in the 0x07-0x27 range reset to its
+ * factory default — skipping addresses the Calibration page itself refuses
+ * to write (ID, Baud rate, Phase — STS_WRITE_BLOCKED_ADDRESSES, from
+ * stsMemoryTable.js) and COMMISSIONING_SKIP_ADDRESSES.
+ */
+function commissioningWritesForJoint(jointNumber) {
+    const angleLimits = COMMISSIONING_ANGLE_LIMITS[jointNumber];
+    return STS_EEPROM_REGISTERS
+        .filter(reg => reg.address >= COMMISSIONING_MIN_ADDRESS && reg.address <= COMMISSIONING_MAX_ADDRESS)
+        .filter(reg => !STS_WRITE_BLOCKED_ADDRESSES.has(reg.address))
+        .filter(reg => !COMMISSIONING_SKIP_ADDRESSES.has(reg.address))
+        .map(reg => {
+            if (reg.address === COMMISSIONING_MIN_ANGLE_ADDRESS) {
+                return { address: reg.address, value: angleLimits.min, label: 'Min angle limit', isOverride: true };
+            }
+            if (reg.address === COMMISSIONING_MAX_ANGLE_ADDRESS) {
+                return { address: reg.address, value: angleLimits.max, label: 'Max angle limit', isOverride: true };
+            }
+            const override = COMMISSIONING_OVERRIDES[reg.address];
+            return {
+                address: reg.address,
+                value: override ? override.value : reg.default,
+                label: override ? override.label : reg.name,
+                isOverride: !!override,
+            };
+        });
+}
+
+/**
+ * Writes commissioningWritesForJoint()'s registers to every joint's servo,
  * one register at a time (reusing the raw EEPROM write used by the table
  * above), so a replacement or factory-reset servo can be brought back to the
- * arm's known-good configuration with a single button press: the three
- * custom values plus every other 0x07-0x27 register reset to factory default.
+ * arm's known-good configuration with a single button press: the global
+ * custom values, this arm's per-joint angle limits, and every other
+ * 0x07-0x27 register reset to factory default.
  */
 async function commissionAllServos() {
     const password = document.getElementById('calibrationWritePassword').value;
@@ -286,16 +317,15 @@ async function commissionAllServos() {
         return;
     }
 
-    const overridesSummary = COMMISSIONING_REGISTER_WRITES
-        .filter(r => r.isOverride)
-        .map(r => `0x${r.address.toString(16).toUpperCase()} (${r.label}) = ${r.value}`)
+    const globalOverridesSummary = Object.entries(COMMISSIONING_OVERRIDES)
+        .map(([address, o]) => `0x${Number(address).toString(16).toUpperCase()} (${o.label}) = ${o.value}`)
         .join('\n');
-    const defaultCount = COMMISSIONING_REGISTER_WRITES.filter(r => !r.isOverride).length;
+    const defaultCount = commissioningWritesForJoint(1).filter(r => !r.isOverride).length;
     const confirmed = await showConfirm(
-        `Write default values to all ${COMMISSIONING_JOINT_COUNT} servos?\n\n${overridesSummary}\n` +
+        `Write default values to all ${COMMISSIONING_JOINT_COUNT} servos?\n\n${globalOverridesSummary}\n` +
+        `Min/Max angle limit = this arm's own travel range per joint (from kinematics.urdf)\n\n` +
         `...plus ${defaultCount} other registers (addresses 0x${COMMISSIONING_MIN_ADDRESS.toString(16).toUpperCase()}-` +
-        `0x${COMMISSIONING_MAX_ADDRESS.toString(16).toUpperCase()}) reset to their factory default — including the ` +
-        `min/max angle limits, back to the servo's full un-restricted travel range.\n\n` +
+        `0x${COMMISSIONING_MAX_ADDRESS.toString(16).toUpperCase()}) reset to their factory default.\n\n` +
         `This writes directly to EEPROM on every joint, immediately.`
     );
     if (!confirmed) return;
@@ -304,7 +334,7 @@ async function commissionAllServos() {
     if (button) button.disabled = true;
     try {
         for (let joint = 1; joint <= COMMISSIONING_JOINT_COUNT; joint++) {
-            for (const { address, value, label } of COMMISSIONING_REGISTER_WRITES) {
+            for (const { address, value, label } of commissioningWritesForJoint(joint)) {
                 const addrHex = '0x' + address.toString(16).toUpperCase();
                 setCalibrationStatus(`Joint ${joint}: writing ${label} (${addrHex}) = ${value}...`);
                 await robotArmClient.writeServoEepromRaw(joint, address, value, password);
