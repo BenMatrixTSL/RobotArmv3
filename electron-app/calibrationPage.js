@@ -332,12 +332,22 @@ async function commissionAllServos() {
 
     const button = document.getElementById('commissionAllButton');
     if (button) button.disabled = true;
+    const failures = [];
+    let successCount = 0;
     try {
         for (let joint = 1; joint <= COMMISSIONING_JOINT_COUNT; joint++) {
             for (const { address, value, label } of commissioningWritesForJoint(joint)) {
                 const addrHex = '0x' + address.toString(16).toUpperCase();
                 setCalibrationStatus(`Joint ${joint}: writing ${label} (${addrHex}) = ${value}...`);
-                await robotArmClient.writeServoEepromRaw(joint, address, value, password);
+                try {
+                    await writeCommissioningRegisterWithRetry(joint, address, value, password);
+                    successCount++;
+                } catch (error) {
+                    // A bulk run touches ~150 registers across 6 servos — one
+                    // transient bus hiccup must not silently abort every
+                    // write after it, so record the failure and keep going.
+                    failures.push(`Joint ${joint} ${addrHex} (${label}): ${error.message}`);
+                }
             }
         }
 
@@ -349,11 +359,34 @@ async function commissionAllServos() {
         await readCalibrationForJoint(selectedJoint);
         renderCalibrationTable();
 
-        setCalibrationStatus(`Commissioned all ${COMMISSIONING_JOINT_COUNT} servos with default values at ${new Date().toLocaleTimeString()}.`);
+        if (failures.length === 0) {
+            setCalibrationStatus(`Commissioned all ${COMMISSIONING_JOINT_COUNT} servos with default values at ${new Date().toLocaleTimeString()}.`);
+        } else {
+            setCalibrationStatus(
+                `Commissioned ${successCount} register write(s); ${failures.length} failed after retrying ` +
+                `(likely a transient bus error — re-run to retry just those): ${failures.join('; ')}`
+            );
+        }
     } catch (error) {
         setCalibrationStatus(`Commissioning failed: ${error.message}`);
     } finally {
         if (button) button.disabled = false;
+    }
+}
+
+/**
+ * A single commissioning register write, with its own retry on top of
+ * writeServoEepromRaw's own low-level bus retry — bulk commissioning touches
+ * ~150 registers in one run, so one transient bus hiccup among all of them
+ * shouldn't need a whole extra pass over every joint to recover from.
+ */
+async function writeCommissioningRegisterWithRetry(joint, address, value, password, attemptsLeft = 2) {
+    try {
+        await robotArmClient.writeServoEepromRaw(joint, address, value, password);
+    } catch (error) {
+        if (attemptsLeft <= 1) throw error;
+        await new Promise(resolve => setTimeout(resolve, 150));
+        await writeCommissioningRegisterWithRetry(joint, address, value, password, attemptsLeft - 1);
     }
 }
 
