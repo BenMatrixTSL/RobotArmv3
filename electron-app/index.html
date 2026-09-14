@@ -1110,6 +1110,10 @@
                     <strong>This physically moves the joint</strong> — make sure it's clear to travel before
                     pressing Up or Down.
                 </p>
+                <p class="info-text">
+                    Steps are 1/4096th of a full turn (0.088&deg; each) — roughly:
+                    0.5&deg; &asymp; 6 steps, 1&deg; &asymp; 11 steps, 5&deg; &asymp; 57 steps, 10&deg; &asymp; 114 steps.
+                </p>
                 <div class="connection-form">
                     <label>Step (steps) <input type="number" id="posCorrectionStep" min="1" max="2047" step="1" value="1"></label>
                     <button id="posCorrectionDownButton" class="btn btn-secondary" disabled onclick="adjustPositionCorrection(-1)">&minus; Down</button>
