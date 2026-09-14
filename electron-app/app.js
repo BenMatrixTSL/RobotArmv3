@@ -2794,7 +2794,7 @@ function updateTakeControlButtonState() {
 
     // Commissioning writes/reads are bus commands like moves — they need this
     // app to hold arm control, same requirement as the buttons above.
-    const commissionButtonIds = ['commissionReadButton', 'commissionWriteButton', 'calibrationReadButton'];
+    const commissionButtonIds = ['commissionAllButton', 'calibrationReadButton'];
     const commissionEnabled = robotArmClient.isConnected && robotArmClient.hasArmControl;
     for (const id of commissionButtonIds) {
         const btn = document.getElementById(id);
@@ -3368,86 +3368,6 @@ async function syncJointAccelerationDefaults() {
             console.warn(`syncJointAccelerationDefaults: failed to set joint ${i} acceleration:`, error.message);
         }
         await new Promise(resolve => setTimeout(resolve, 50));
-    }
-}
-
-/**
- * Reads the selected joint's commissioning-relevant EEPROM profile from its
- * servo (PID gains, overload protection, angle limits, max torque) and fills
- * the per-joint EEPROM fields with the live values.
- */
-async function readServoEeprom() {
-    if (!robotArmClient.isConnected) {
-        showAppMessage('Not connected to robot arm controller');
-        return;
-    }
-    const jointNumber = parseInt(document.getElementById('commissionJointSelect').value, 10);
-    const statusEl = document.getElementById('commissionStatus');
-    try {
-        statusEl.textContent = `Reading Joint ${jointNumber} EEPROM...`;
-        const response = await robotArmClient.readServoEeprom(jointNumber);
-        const p = response.profile;
-        document.getElementById('commissionP').value = p.p;
-        document.getElementById('commissionD').value = p.d;
-        document.getElementById('commissionI').value = p.i;
-        document.getElementById('commissionMinStartup').value = p.minStartupForce;
-        document.getElementById('commissionOverloadTorque').value = p.overloadTorque;
-        document.getElementById('commissionProtTorque').value = p.protTorque;
-        document.getElementById('commissionProtTime').value = p.protTimeMs;
-        document.getElementById('commissionMinAngle').value = p.minAngleDeg.toFixed(1);
-        document.getElementById('commissionMaxAngle').value = p.maxAngleDeg.toFixed(1);
-        document.getElementById('commissionMaxTorque').value = p.maxTorque;
-        statusEl.textContent = `Joint ${jointNumber} EEPROM read at ${new Date().toLocaleTimeString()}`;
-    } catch (error) {
-        statusEl.textContent = `Failed to read Joint ${jointNumber} EEPROM: ${error.message}`;
-    }
-}
-
-/**
- * Writes whichever per-joint EEPROM fields have a value entered directly to
- * the selected joint's servo. Fields left blank are not touched.
- */
-async function writeServoEeprom() {
-    if (!robotArmClient.isConnected) {
-        showAppMessage('Not connected to robot arm controller');
-        return;
-    }
-    const jointNumber = parseInt(document.getElementById('commissionJointSelect').value, 10);
-
-    const fieldMap = {
-        p: 'commissionP', d: 'commissionD', i: 'commissionI', minStartupForce: 'commissionMinStartup',
-        overloadTorque: 'commissionOverloadTorque', protTorque: 'commissionProtTorque', protTimeMs: 'commissionProtTime',
-        minAngleDeg: 'commissionMinAngle', maxAngleDeg: 'commissionMaxAngle', maxTorque: 'commissionMaxTorque',
-    };
-    const values = {};
-    for (const [field, elementId] of Object.entries(fieldMap)) {
-        const raw = document.getElementById(elementId).value;
-        if (raw !== '') values[field] = parseFloat(raw);
-    }
-    if ((values.minAngleDeg !== undefined) !== (values.maxAngleDeg !== undefined)) {
-        showAppMessage('Angle limits must be set as a pair — fill in both min and max, or neither');
-        return;
-    }
-    if (Object.keys(values).length === 0) {
-        showAppMessage('No fields to write — read from the servo first or enter values');
-        return;
-    }
-
-    const confirmed = await showConfirm(
-        `Write these values to Joint ${jointNumber}'s servo EEPROM?\n\n` +
-        `${JSON.stringify(values, null, 2)}\n\n` +
-        `This changes physical behavior (fault thresholds and/or hard travel limits) immediately, ` +
-        `without a power cycle. Only do this as part of commissioning.`
-    );
-    if (!confirmed) return;
-
-    const statusEl = document.getElementById('commissionStatus');
-    try {
-        statusEl.textContent = `Writing Joint ${jointNumber} EEPROM...`;
-        const response = await robotArmClient.writeServoEeprom(jointNumber, values);
-        statusEl.textContent = `Joint ${jointNumber} EEPROM updated: ${response.applied.join(', ')}`;
-    } catch (error) {
-        statusEl.textContent = `Failed to write Joint ${jointNumber} EEPROM: ${error.message}`;
     }
 }
 

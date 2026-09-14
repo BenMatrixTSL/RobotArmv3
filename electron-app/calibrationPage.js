@@ -234,6 +234,56 @@ async function writeCalibrationRegister(address) {
     }
 }
 
+// Fixed defaults written to every servo by the Commissioning button — for
+// bringing a freshly replaced or factory-reset servo back to the arm's
+// known-good configuration in one pass.
+const COMMISSIONING_DEFAULTS = [
+    { address: 0x0E, value: 140, label: 'Max input voltage' },
+    { address: 0x17, value: 10, label: 'I coefficient' },
+    { address: 0x1C, value: 100, label: 'Protection current' },
+];
+const COMMISSIONING_JOINT_COUNT = 6;
+
+/**
+ * Writes the fixed COMMISSIONING_DEFAULTS registers to every joint's servo,
+ * one register at a time (reusing the raw EEPROM write used by the table
+ * above), so a replacement or factory-reset servo can be brought back to the
+ * arm's known-good configuration with a single button press.
+ */
+async function commissionAllServos() {
+    const password = document.getElementById('calibrationWritePassword').value;
+    if (!password) {
+        showAppMessage('Enter the control-lock password to enable editing.');
+        return;
+    }
+
+    const summary = COMMISSIONING_DEFAULTS
+        .map(d => `0x${d.address.toString(16).toUpperCase()} (${d.label}) = ${d.value}`)
+        .join('\n');
+    const confirmed = await showConfirm(
+        `Write default values to all ${COMMISSIONING_JOINT_COUNT} servos?\n\n${summary}\n\n` +
+        `This writes directly to EEPROM on every joint, immediately.`
+    );
+    if (!confirmed) return;
+
+    const button = document.getElementById('commissionAllButton');
+    if (button) button.disabled = true;
+    try {
+        for (let joint = 1; joint <= COMMISSIONING_JOINT_COUNT; joint++) {
+            for (const { address, value, label } of COMMISSIONING_DEFAULTS) {
+                const addrHex = '0x' + address.toString(16).toUpperCase();
+                setCalibrationStatus(`Joint ${joint}: writing ${label} (${addrHex}) = ${value}...`);
+                await robotArmClient.writeServoEepromRaw(joint, address, value, password);
+            }
+        }
+        setCalibrationStatus(`Commissioned all ${COMMISSIONING_JOINT_COUNT} servos with default values at ${new Date().toLocaleTimeString()}.`);
+    } catch (error) {
+        setCalibrationStatus(`Commissioning failed: ${error.message}`);
+    } finally {
+        if (button) button.disabled = false;
+    }
+}
+
 function escapeCalibrationText(text) {
     if (typeof escapeHtml === 'function') return escapeHtml(text);
     return String(text === null || text === undefined ? '' : text)

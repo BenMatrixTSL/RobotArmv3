@@ -1104,40 +1104,12 @@
             <div class="connection-panel" id="calibrationCommissioningSection" hidden>
                 <h3>Commissioning</h3>
                 <p class="info-text">
-                    Reads and writes settings stored on each servo's own EEPROM chip (PID gains, overload/stall
-                    torque, hard angle limits, max torque) directly on the hardware — a replacement servo at the
-                    same joint starts back at factory defaults until commissioned again. Nothing here is
-                    auto-applied at server startup; every EEPROM value is configured manually, on purpose.
+                    Writes a fixed set of default EEPROM values to every servo on the bus (joints 1-6) in a single
+                    pass — for bringing a freshly replaced or factory-reset servo back to the arm's known-good
+                    configuration: address 0x0E (Max input voltage) &rarr; 140, 0x17 (I coefficient) &rarr; 10,
+                    0x1C (Protection current) &rarr; 100.
                 </p>
-
-                <h4 class="control-lock-title">Per-joint EEPROM</h4>
-                <div class="connection-form">
-                    <label>
-                        Joint:
-                        <select id="commissionJointSelect">
-                            <option value="1">Joint 1</option>
-                            <option value="2">Joint 2</option>
-                            <option value="3">Joint 3</option>
-                            <option value="4">Joint 4</option>
-                            <option value="5">Joint 5</option>
-                            <option value="6">Joint 6</option>
-                        </select>
-                    </label>
-                    <button id="commissionReadButton" class="btn btn-secondary" disabled onclick="readServoEeprom()">Read from servo</button>
-                    <button id="commissionWriteButton" class="btn btn-warning" disabled onclick="writeServoEeprom()">Write to servo (EEPROM)</button>
-                </div>
-                <div class="commission-fields-grid">
-                    <label>P gain <input type="number" id="commissionP" min="0" max="254" step="1"></label>
-                    <label>D gain <input type="number" id="commissionD" min="0" max="254" step="1"></label>
-                    <label>I gain <input type="number" id="commissionI" min="0" max="254" step="1"></label>
-                    <label>Min startup force <input type="number" id="commissionMinStartup" min="0" max="1000" step="1"></label>
-                    <label>Overload torque % (stall trigger) <input type="number" id="commissionOverloadTorque" min="0" max="100" step="1"></label>
-                    <label>Protection torque % (post-trip) <input type="number" id="commissionProtTorque" min="0" max="100" step="1"></label>
-                    <label>Protection time (ms) <input type="number" id="commissionProtTime" min="0" max="65535" step="1"></label>
-                    <label>Min angle limit (°) <input type="number" id="commissionMinAngle" step="0.1"></label>
-                    <label>Max angle limit (°) <input type="number" id="commissionMaxAngle" step="0.1"></label>
-                    <label>Max torque % <input type="number" id="commissionMaxTorque" min="0" max="100" step="1"></label>
-                </div>
+                <button id="commissionAllButton" class="btn btn-warning" disabled onclick="commissionAllServos()">Write Default Values to All Servos</button>
                 <p class="info-text" id="commissionStatus"></p>
             </div>
         </div>
