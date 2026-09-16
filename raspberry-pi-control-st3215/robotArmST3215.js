@@ -608,7 +608,13 @@ class ServoController {
             // We have data bytes to extract
             const endIndex = PKT_PARAMETER0 + parameterLength;
             if (endIndex <= buffer.length) {
-                parameters = buffer.slice(PKT_PARAMETER0, endIndex);
+                // Buffer.from() copies rather than viewing buffer's backing
+                // store — this result is returned all the way up through
+                // every servo read (readQuickStatus() runs on every poll,
+                // for every joint) and ends up held in jointStatusCache, so
+                // a pool-pinning slice() here was a much bigger contributor
+                // to the Buffer pool leak than the pendingResponse slices.
+                parameters = Buffer.from(buffer.subarray(PKT_PARAMETER0, endIndex));
             } else {
                 // Not enough data in buffer - this shouldn't happen if packet is complete
                 if (DEBUG) console.log(`[DEBUG Servo ${this.servoId}] Buffer too short: need ${endIndex} bytes but have ${buffer.length}, length=${length}, parameterLength=${parameterLength}`);
