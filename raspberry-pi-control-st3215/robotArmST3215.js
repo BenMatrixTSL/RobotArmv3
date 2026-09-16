@@ -439,6 +439,27 @@ class ServoController {
     }
 
     /**
+     * Advances pendingResponse past a just-parsed packet, copying the
+     * leftover tail into a fresh small Buffer rather than slicing it.
+     *
+     * Buffer.concat() below allocates its result from Node's shared 8KB
+     * buffer pool whenever the combined size is small (every packet here
+     * is, well under MAX_BUFFER_SIZE) — Buffer.prototype.slice() does NOT
+     * copy, it returns a view into that SAME pool slab. With 6 joints
+     * polling at high frequency, holding onto even a few leftover bytes
+     * via slice() after every parsed packet pins the entire 8KB slab per
+     * reference, which measurably leaked tens of MB/hour in practice.
+     * Buffer.from(buffer) copies, dropping the pool reference immediately.
+     * @private
+     */
+    consumeParsedPacket(packetLen) {
+        const remaining = this.pendingResponse.length - packetLen;
+        this.pendingResponse = remaining > 0
+            ? Buffer.from(this.pendingResponse.subarray(packetLen))
+            : null;
+    }
+
+    /**
      * Handle incoming serial data
      * @private
      */
@@ -499,17 +520,17 @@ class ServoController {
                     }
 
                     const deliver = this.responseResolve;
-                    this.pendingResponse = this.pendingResponse.slice(packetLen);
+                    this.consumeParsedPacket(packetLen);
                     deliver(result);
                 } else if (DEBUG) {
                     console.log(`[DEBUG Servo ${this.servoId}] Late reply ignored (no pending command)`);
-                    this.pendingResponse = this.pendingResponse.slice(packetLen);
+                    this.consumeParsedPacket(packetLen);
                 }
                 return;
             }
 
             // Another device on the bus — remove its packet and keep waiting for ours
-            this.pendingResponse = this.pendingResponse.slice(packetLen);
+            this.consumeParsedPacket(packetLen);
         }
     }
 
