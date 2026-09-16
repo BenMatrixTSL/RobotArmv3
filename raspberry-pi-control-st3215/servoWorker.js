@@ -593,7 +593,15 @@ function startBusTickLoop() {
 
     if (BUS_DIAGNOSTICS_LOG_INTERVAL_MS > 0) {
         setInterval(() => {
-            log('BUS diag: ticks=' + diag.busTicks + ' skipped=' + diag.busTicksSkipped + ' writeQ=' + busWriteQueue.length + ' cacheAgeMs=' + diag.cacheAgeMs + ' lastTickMs=' + diag.lastBusTickDurationMs);
+            // TEMPORARY: mem=... breaks down where RSS growth is coming from
+            // (heapUsed = plain JS objects, external/arrayBuffers = Buffers,
+            // typed arrays, and native addon allocations e.g. serialport) —
+            // added to chase a ~15MB/hour leak in this process. Remove once
+            // the leak is found and fixed.
+            const mem = process.memoryUsage();
+            const mb = (n) => (n / 1024 / 1024).toFixed(1);
+            log('BUS diag: ticks=' + diag.busTicks + ' skipped=' + diag.busTicksSkipped + ' writeQ=' + busWriteQueue.length + ' cacheAgeMs=' + diag.cacheAgeMs + ' lastTickMs=' + diag.lastBusTickDurationMs +
+                ' mem: rss=' + mb(mem.rss) + 'MB heapUsed=' + mb(mem.heapUsed) + 'MB heapTotal=' + mb(mem.heapTotal) + 'MB external=' + mb(mem.external) + 'MB arrayBuffers=' + mb(mem.arrayBuffers) + 'MB');
         }, BUS_DIAGNOSTICS_LOG_INTERVAL_MS);
     }
 }
