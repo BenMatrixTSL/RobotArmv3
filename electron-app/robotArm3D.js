@@ -40,7 +40,8 @@ class RobotArm3D {
         this.storedPositionsGroup = null; // Group for stored position markers
         this.movementTraceEndEffectorGroup = null; // Group for end effector movement trace
         this.movementTraceJointsGroup = null;      // Group for joint movement traces
-        
+        this.lastWorkspaceMaxReachMm = null; // Last radius the workspace envelope was built for
+
         this._initRetries = 0; // Retry counter for init()
 
         // Initialize Three.js
@@ -331,9 +332,7 @@ class RobotArm3D {
         }
 
         // Clear existing arm
-        while (this.robotArm.children.length > 0) {
-            this.robotArm.remove(this.robotArm.children[0]);
-        }
+        this.clearGroup(this.robotArm);
 
         // Create a simple base to show something is working
         const baseGeometry = new THREE.CylinderGeometry(30, 30, 20, 32);
@@ -368,6 +367,32 @@ class RobotArm3D {
     }
 
     /**
+     * Removes every child from a Three.js group, disposing each one's
+     * geometry and material first. Several groups here (joint spheres/links,
+     * tool mount markers, the workspace envelope, ...) get fully rebuilt on
+     * every live status update — as often as 10x/second — so failing to
+     * dispose leaks GPU buffer memory every single call: removing a mesh
+     * from the scene graph only drops the JS-side reference, it does not
+     * free the WebGL buffers/textures the renderer allocated for it.
+     * @param {THREE.Group} group
+     */
+    clearGroup(group) {
+        if (!group) return;
+        while (group.children.length > 0) {
+            const child = group.children[0];
+            group.remove(child);
+            if (child.geometry) child.geometry.dispose();
+            if (child.material) {
+                if (Array.isArray(child.material)) {
+                    child.material.forEach((m) => m.dispose());
+                } else {
+                    child.material.dispose();
+                }
+            }
+        }
+    }
+
+    /**
      * Draws coordinate 7: tool mounting flange (orange) and tool tip (red), with a stub link between.
      * Uses forward kinematics so it works for both URDF-loader and custom-mesh paths.
      */
@@ -376,10 +401,7 @@ class RobotArm3D {
             return;
         }
 
-        while (this.toolMountGroup.children.length > 0) {
-            const child = this.toolMountGroup.children[0];
-            this.toolMountGroup.remove(child);
-        }
+        this.clearGroup(this.toolMountGroup);
 
         if (typeof robotKinematics === 'undefined' ||
             !robotKinematics ||
@@ -536,11 +558,19 @@ class RobotArm3D {
             return;
         }
 
-        // Clear previous envelope
-        while (this.workspaceGroup.children.length > 0) {
-            const child = this.workspaceGroup.children[0];
-            this.workspaceGroup.remove(child);
+        // This gets called on every live status update (10x/second) but
+        // maxReachMm only actually changes when the URDF/kinematics config
+        // does — rebuilding an identical 32x24-segment sphere every single
+        // call was the single biggest contributor to a GPU memory leak that
+        // could exhaust a Pi's RAM+swap within a few hours. Skip the rebuild
+        // (and the leak) when nothing has actually changed.
+        if (maxReachMm === this.lastWorkspaceMaxReachMm) {
+            return;
         }
+        this.lastWorkspaceMaxReachMm = maxReachMm;
+
+        // Clear previous envelope
+        this.clearGroup(this.workspaceGroup);
 
         if (!maxReachMm || maxReachMm <= 0) {
             return;
@@ -599,9 +629,7 @@ class RobotArm3D {
         }
 
         // Clear existing arm
-        while (this.robotArm.children.length > 0) {
-            this.robotArm.remove(this.robotArm.children[0]);
-        }
+        this.clearGroup(this.robotArm);
 
         // Build the arm from base to end effector using URDF transformations
         let currentTransform = new THREE.Matrix4();
@@ -884,13 +912,7 @@ class RobotArm3D {
         }
 
         // Clear existing boxes
-        while (this.deadZoneGroup.children.length > 0) {
-            const child = this.deadZoneGroup.children[0];
-            this.deadZoneGroup.remove(child);
-            // Dispose of geometry and material to prevent memory leaks
-            if (child.geometry) child.geometry.dispose();
-            if (child.material) child.material.dispose();
-        }
+        this.clearGroup(this.deadZoneGroup);
 
         if (!zones || zones.length === 0) {
             return;
@@ -998,10 +1020,7 @@ class RobotArm3D {
         if (!this.storedPositionsGroup) return;
 
         // Clear existing markers
-        while (this.storedPositionsGroup.children.length > 0) {
-            const child = this.storedPositionsGroup.children[0];
-            this.storedPositionsGroup.remove(child);
-        }
+        this.clearGroup(this.storedPositionsGroup);
 
         if (!points || points.length === 0) {
             return;
@@ -1048,10 +1067,7 @@ class RobotArm3D {
         }
 
         // Clear existing trace
-        while (this.movementTraceEndEffectorGroup.children.length > 0) {
-            const child = this.movementTraceEndEffectorGroup.children[0];
-            this.movementTraceEndEffectorGroup.remove(child);
-        }
+        this.clearGroup(this.movementTraceEndEffectorGroup);
 
         if (!points || points.length < 2) {
             return;
@@ -1105,10 +1121,7 @@ class RobotArm3D {
         }
 
         // Clear existing traces
-        while (this.movementTraceJointsGroup.children.length > 0) {
-            const child = this.movementTraceJointsGroup.children[0];
-            this.movementTraceJointsGroup.remove(child);
-        }
+        this.clearGroup(this.movementTraceJointsGroup);
 
         if (!jointPoints || !Array.isArray(jointPoints) || jointPoints.length === 0) {
             return;
@@ -1192,18 +1205,8 @@ class RobotArm3D {
      * Clears all stored movement trace geometry (end effector and joint traces).
      */
     clearMovementTraces() {
-        if (this.movementTraceEndEffectorGroup) {
-            while (this.movementTraceEndEffectorGroup.children.length > 0) {
-                const child = this.movementTraceEndEffectorGroup.children[0];
-                this.movementTraceEndEffectorGroup.remove(child);
-            }
-        }
-        if (this.movementTraceJointsGroup) {
-            while (this.movementTraceJointsGroup.children.length > 0) {
-                const child = this.movementTraceJointsGroup.children[0];
-                this.movementTraceJointsGroup.remove(child);
-            }
-        }
+        this.clearGroup(this.movementTraceEndEffectorGroup);
+        this.clearGroup(this.movementTraceJointsGroup);
     }
 
     /**
