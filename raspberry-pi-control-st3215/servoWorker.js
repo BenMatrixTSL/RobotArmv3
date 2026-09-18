@@ -759,7 +759,22 @@ async function initializeServos() {
     });
     log('Shared serial port opened');
 
-    sharedSerialPort.on('data', routeIncomingSerialData);
+    // Deliberately NOT sharedSerialPort.on('data', ...) — attaching a 'data'
+    // listener puts the underlying stream into "flowing" mode, which is
+    // exactly the trigger for a confirmed, still-open upstream memory leak
+    // in serialport's native binding (serialport/node-serialport#2838):
+    // steady RSS growth with negligible V8 heap growth, matching what we
+    // measured here (~15-17MB/hour via a heap snapshot diff, unaffected by
+    // a 13.0.0 upgrade). 'readable' + explicit .read() keeps the stream in
+    // "paused" mode instead — same data, same routeIncomingSerialData()
+    // callback, different pull-vs-push mechanism — which avoids the buggy
+    // code path entirely rather than waiting on an upstream fix.
+    sharedSerialPort.on('readable', () => {
+        let chunk;
+        while ((chunk = sharedSerialPort.read()) !== null) {
+            routeIncomingSerialData(chunk);
+        }
+    });
     sharedSerialPort.on('error', (error) => log('Serial port error: ' + error.message, true));
     sharedSerialPort._writeQueue = queueWrite;
 
