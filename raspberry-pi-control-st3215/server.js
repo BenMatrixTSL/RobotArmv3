@@ -500,10 +500,14 @@ let workerLastStartedAt  = 0;
 function startServoWorker() {
     workerLastStartedAt = Date.now();
     // TEMPORARY: --heapsnapshot-signal lets `kill -USR2 <servoWorker pid>`
-    // write a .heapsnapshot (to this process's cwd) on demand, to chase a
-    // confirmed ~15-17MB/hour leak that two targeted Buffer-copy fixes
-    // didn't resolve. Remove once the leak is found and fixed.
-    servoWorker = fork(path.join(__dirname, 'servoWorker.js'), [], { execArgv: ['--heapsnapshot-signal=SIGUSR2'] });
+    // write a .heapsnapshot on demand, to chase a confirmed ~15-17MB/hour
+    // leak that two targeted Buffer-copy fixes didn't resolve. Written to
+    // /tmp (world-writable) rather than this process's default cwd —
+    // this service runs as root but with a CapabilityBoundingSet stripped
+    // down to just CAP_SYS_RAWIO, which drops root's usual CAP_DAC_OVERRIDE
+    // file-permission bypass, so it can't write into the (mxadmin-owned)
+    // app directory. Remove once the leak is found and fixed.
+    servoWorker = fork(path.join(__dirname, 'servoWorker.js'), [], { execArgv: ['--heapsnapshot-signal=SIGUSR2'], cwd: '/tmp' });
     servoWorker.on('message', handleWorkerMessage);
     servoWorker.on('error', (err) => {
         debugLog('Servo worker error: ' + (err.message || err), true);
