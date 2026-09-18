@@ -499,7 +499,11 @@ let workerLastStartedAt  = 0;
 
 function startServoWorker() {
     workerLastStartedAt = Date.now();
-    servoWorker = fork(path.join(__dirname, 'servoWorker.js'));
+    // TEMPORARY: --heapsnapshot-signal lets `kill -USR2 <servoWorker pid>`
+    // write a .heapsnapshot (to this process's cwd) on demand, to chase a
+    // confirmed ~15-17MB/hour leak that two targeted Buffer-copy fixes
+    // didn't resolve. Remove once the leak is found and fixed.
+    servoWorker = fork(path.join(__dirname, 'servoWorker.js'), [], { execArgv: ['--heapsnapshot-signal=SIGUSR2'] });
     servoWorker.on('message', handleWorkerMessage);
     servoWorker.on('error', (err) => {
         debugLog('Servo worker error: ' + (err.message || err), true);
