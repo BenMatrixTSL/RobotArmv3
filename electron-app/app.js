@@ -4119,7 +4119,7 @@ function pendantSetOrientation(mode) {
     const updateDisplay = () => {
         if (!display) return;
         if (!currentToolOrientation) {
-            display.textContent = 'Free — all 6 joints used for positioning';
+            display.textContent = 'Free — all 6 joints used for positioning; spin drives joint 6 directly';
             display.style.color = '';
             display.style.fontStyle = 'italic';
             display.style.fontWeight = '';
@@ -4155,7 +4155,45 @@ function pendantSetOrientation(mode) {
             currentToolOrientation = { ...currentToolOrientation, rotation: rot };
             updateDisplay();
         }
+        // The value used to sit idle until the next XYZ jog (and was ignored
+        // entirely in Free mode), so typing a spin looked like it did nothing.
+        // Apply it to the arm now. Debounced: the field fires on every
+        // keystroke, and "90" must not send 9 then 90 to a real arm.
+        clearTimeout(pendantSpinApplyTimer);
+        pendantSpinApplyTimer = setTimeout(() => applyPendantSpinRotation(rot), 400);
     }
+}
+
+let pendantSpinApplyTimer = null;
+
+/**
+ * Drives the arm to the pendant's spin rotation.
+ *  - Orientation locked (Tool Down/Up): re-solve IK at the current XYZ with
+ *    the new spin, so the wrist turns the tool in place around its own axis.
+ *  - Free: no orientation constraint exists to solve against, so the spin is
+ *    sent straight to the last revolute joint (joint 6) as its target angle.
+ * @param {number} rotationDeg
+ */
+async function applyPendantSpinRotation(rotationDeg) {
+    if (!robotArmClient.isConnected) {
+        return; // nothing to drive; the value is kept for the next move
+    }
+    if (currentToolOrientation) {
+        const pose = jogCommandedPose || getCurrentDisplayXYZ();
+        if (!isFinite(pose.x) || !isFinite(pose.y) || !isFinite(pose.z)) {
+            showAppMessage('Current position not available. Please wait for status update.');
+            return;
+        }
+        await moveToXYZ(pose.x, pose.y, pose.z, currentToolOrientation, false);
+        return;
+    }
+    const spinJoint = getRevoluteJointCount();
+    const targetInput = document.getElementById(`joint${spinJoint}Target`);
+    if (!targetInput) {
+        return;
+    }
+    targetInput.value = rotationDeg;
+    moveJoint(spinJoint); // reuses limit clamping, speed and control-session checks
 }
 
 function setPendantStep(value, btn) {
