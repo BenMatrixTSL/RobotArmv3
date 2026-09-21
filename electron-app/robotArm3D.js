@@ -35,8 +35,7 @@ class RobotArm3D {
         this.toolMountGroup = null;  // Overlay: flange mount + tool tip (coordinate 7)
         this.jointAngles = [];
         this.targetAngles = []; // Target angles for animation
-        this.urdfAnimating = false;
-        this.currentAnimatedAngles = []; // Current animated angles (for smooth transitions)
+        this.animating = false;
         this.jointConfigs = [];
         this.animationId = null;
         this.controls = null; // Camera controls
@@ -559,20 +558,25 @@ class RobotArm3D {
             return;
         }
 
-        // Store latest angles
+        // Store latest target angles. this.jointAngles holds the *displayed* angles,
+        // which either snap to the target or ease towards it (see animate()).
         this.targetAngles = (jointAngles || []).slice(); // Copy the array
+
+        if (animate && this.jointAngles.length === this.targetAngles.length &&
+            !this.anglesAreEqual(this.jointAngles, this.targetAngles)) {
+            if (jointConfigs && jointConfigs.length > 0) {
+                this.jointConfigs = jointConfigs;
+            }
+            this.animating = true;
+            return;
+        }
+
+        this.animating = false;
         this.jointAngles = this.targetAngles.slice();
 
         // If a URDF robot is loaded, drive its joints directly using URDFLoader
         if (this.urdfRobot && this.urdfRobot.setJointValue) {
-            if (animate && this.currentAnimatedAngles.length === this.targetAngles.length) {
-                // Ease towards the new target in animate()
-                this.urdfAnimating = true;
-            } else {
-                this.urdfAnimating = false;
-                this.currentAnimatedAngles = this.targetAngles.slice();
-                this.applyUrdfAngles(this.currentAnimatedAngles);
-            }
+            this.applyUrdfAngles(this.jointAngles);
 
             this.updateToolMountVisual();
             return;
@@ -626,25 +630,30 @@ class RobotArm3D {
     }
 
     /**
-     * Advances the eased transition towards targetAngles for the URDF robot.
+     * Advances the eased transition of the displayed angles towards targetAngles
+     * and redraws whichever arm representation is active.
      * @param {number} dtSeconds - Time since the previous frame
      */
-    stepUrdfAnimation(dtSeconds) {
+    stepAnimation(dtSeconds) {
         const factor = 1 - Math.exp(-dtSeconds * 8);
         let done = true;
         for (let i = 0; i < this.targetAngles.length; i++) {
-            const diff = this.targetAngles[i] - this.currentAnimatedAngles[i];
+            const diff = this.targetAngles[i] - this.jointAngles[i];
             if (Math.abs(diff) < 0.05) {
-                this.currentAnimatedAngles[i] = this.targetAngles[i];
+                this.jointAngles[i] = this.targetAngles[i];
             } else {
-                this.currentAnimatedAngles[i] += diff * factor;
+                this.jointAngles[i] += diff * factor;
                 done = false;
             }
         }
-        this.applyUrdfAngles(this.currentAnimatedAngles);
+        if (this.urdfRobot && this.urdfRobot.setJointValue) {
+            this.applyUrdfAngles(this.jointAngles);
+        } else if (this.jointConfigs && this.jointConfigs.length > 0) {
+            this.updateArmGeometry();
+        }
         this.updateToolMountVisual();
         if (done) {
-            this.urdfAnimating = false;
+            this.animating = false;
         }
     }
 
@@ -989,13 +998,13 @@ class RobotArm3D {
     animate() {
         this.animationId = requestAnimationFrame(() => this.animate());
         
-        // URDF robot: ease joints towards the target when update() requested animation.
+        // Ease displayed joint angles towards the target when update() requested animation.
         // (Real-robot updates snap directly in update().)
         const now = performance.now();
         const dt = Math.min((now - (this.lastAnimateTime || now)) / 1000, 0.1);
         this.lastAnimateTime = now;
-        if (this.urdfAnimating && this.urdfRobot && this.urdfRobot.setJointValue) {
-            this.stepUrdfAnimation(dt);
+        if (this.animating) {
+            this.stepAnimation(dt);
         }
 
         this.renderer.render(this.scene, this.camera);
