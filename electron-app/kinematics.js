@@ -724,7 +724,7 @@ class RobotKinematics {
                 // Combined convergence: both position AND orientation (and rotation if set) within tolerance
                 const posConverged = positionErrorLength < positionToleranceMm;
                 const oriConverged = !hasOrientationTarget || orientationErrorLength < 0.05;
-                const rotConverged = !hasRotationTarget || rotationErrorLength < 0.1;
+                const rotConverged = !hasRotationTarget || rotationErrorLength < 0.02; // chord ~1.1 deg (0.1 stopped ~6 deg short)
                 if (posConverged && oriConverged && rotConverged) break;
 
                 // Build numeric Jacobian for position (3 x numJoints): how XYZ changes per degree
@@ -787,6 +787,15 @@ class RobotKinematics {
                 let dq_null = null;
                 if (hasOrientationTarget && Jori) {
                     // Orientation is locked — drive tool Z (and optionally X) toward target.
+                    // Jori/Jori_x are "unit-vector change per degree" (about pi/180 per
+                    // degree), so the raw gradient J^T e is ~0.01 for a 45 deg error and
+                    // the joints crept ~0.002 deg per iteration: the spin never arrived
+                    // (joint 6 moved 1.5 deg for a 45 deg request). Scale by (180/pi)^2
+                    // so the step is in degrees, like the posture gradient below. The
+                    // per-iteration cap still bounds it. The 0.3 keeps each step small
+                    // enough that the position task fully re-converges between steps
+                    // (measured: <=0.05 mm error, ~10 ms solve; 1.0 left 0.2 mm).
+                    const oriGradientScale = 0.3 * (180 / Math.PI) * (180 / Math.PI);
                     const g_ori = [];
                     for (let j = 0; j < numJoints; j++) {
                         let g = Jori[0][j]*oriErrX + Jori[1][j]*oriErrY + Jori[2][j]*oriErrZ;
@@ -794,7 +803,7 @@ class RobotKinematics {
                         if (hasRotationTarget && Jori_x) {
                             g += 0.5 * (Jori_x[0][j]*rotErrX + Jori_x[1][j]*rotErrY + Jori_x[2][j]*rotErrZ);
                         }
-                        g_ori.push(g);
+                        g_ori.push(g * oriGradientScale);
                     }
                     dq_null = nullSpaceProject(Jpos, Jpos_pinv, g_ori, numJoints);
                 } else {
