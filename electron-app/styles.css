@@ -2692,6 +2692,7 @@ header h1 {
     display: flex;
     gap: 30px;
     margin-top: 15px;
+    margin-bottom: 12px;
     font-size: 14px;
 }
 
