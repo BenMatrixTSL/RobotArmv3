@@ -393,8 +393,14 @@ class RobotArm3D {
     }
 
     /**
-     * Draws coordinate 7: tool mounting flange (orange) and tool tip (red), with a stub link between.
-     * Uses forward kinematics so it works for both URDF-loader and custom-mesh paths.
+     * Draws the one continuous segment updateArmGeometry() deliberately
+     * leaves out: joint 6 -> tool mounting flange (orange, "coordinate 7")
+     * -> tool tip (red), with connecting links between each. This is the
+     * single source of truth for anything past the last revolute joint —
+     * updateArmGeometry() only draws the 6 revolute joints (+ base) so
+     * there is exactly one line from the arm's end to the tool's tip,
+     * not two overlapping ones. Uses forward kinematics so it works for
+     * both URDF-loader and custom-mesh paths.
      */
     updateToolMountVisual() {
         if (!this.toolMountGroup) {
@@ -420,22 +426,25 @@ class RobotArm3D {
             angles.push(this.jointAngles[i] || 0);
         }
 
+        let joint6PosMm = null;
         let flangePosMm = null;
         let toolTipPosMm = null;
 
         try {
             const fkSteps = robotKinematics.getForwardKinematicsSteps(angles);
-            if (fkSteps.steps && fkSteps.steps.length >= revCount) {
-                const flangeStep = fkSteps.steps[revCount - 1];
-                if (flangeStep && flangeStep.transform && typeof positionFromMatrix === 'function') {
-                    const pMeters = positionFromMatrix(flangeStep.transform);
-                    flangePosMm = {
-                        x: pMeters.x * 1000,
-                        y: pMeters.y * 1000,
-                        z: pMeters.z * 1000
-                    };
-                }
-            }
+            // steps[0..revCount-1] are the revolute joints, so steps[revCount-1]
+            // is joint 6 itself; the fixed tool_mount joint is applied as the
+            // NEXT step, steps[revCount] — using steps[revCount-1] for the
+            // flange (as this used to) put the flange marker on top of joint 6
+            // instead of at the actual mount point.
+            const stepAt = (idx) => {
+                const step = fkSteps.steps && fkSteps.steps[idx];
+                if (!step || !step.transform || typeof positionFromMatrix !== 'function') return null;
+                const pMeters = positionFromMatrix(step.transform);
+                return { x: pMeters.x * 1000, y: pMeters.y * 1000, z: pMeters.z * 1000 };
+            };
+            joint6PosMm = stepAt(revCount - 1);
+            flangePosMm = stepAt(revCount);
             const fk = robotKinematics.forwardKinematics(angles);
             toolTipPosMm = fk.position;
         } catch (error) {
@@ -443,12 +452,30 @@ class RobotArm3D {
             return;
         }
 
-        if (!flangePosMm || !toolTipPosMm) {
+        if (!joint6PosMm || !flangePosMm || !toolTipPosMm) {
             return;
         }
 
+        const joint6Three = this.urdfMmToThreePos(joint6PosMm);
         const flangeThree = this.urdfMmToThreePos(flangePosMm);
         const tipThree = this.urdfMmToThreePos(toolTipPosMm);
+
+        const addLink = (fromV, toV) => {
+            const direction = new THREE.Vector3().subVectors(toV, fromV);
+            const length = direction.length();
+            if (length <= 0.5) return;
+            const geometry = new THREE.CylinderGeometry(8, 8, length, 16);
+            const material = new THREE.MeshStandardMaterial({ color: 0x95a5a6 });
+            const mesh = new THREE.Mesh(geometry, material);
+            mesh.position.copy(fromV).add(direction.clone().multiplyScalar(0.5));
+            const up = new THREE.Vector3(0, 1, 0);
+            mesh.quaternion.setFromUnitVectors(up, direction.clone().normalize());
+            this.toolMountGroup.add(mesh);
+        };
+
+        // Joint 6 -> tool mount: same style/thickness as the rest of the arm's
+        // links (updateArmGeometry()), so this reads as one continuous chain.
+        addLink(joint6Three, flangeThree);
 
         // Mounting flange (coordinate 7) — where the tool attaches to link 6
         const mountGeometry = new THREE.SphereGeometry(11, 16, 16);
@@ -462,21 +489,10 @@ class RobotArm3D {
         mountAxes.position.copy(flangeThree);
         this.toolMountGroup.add(mountAxes);
 
-        // Stub from flange to tool tip (fixed tool offset from URDF)
-        const stubDirection = new THREE.Vector3().subVectors(tipThree, flangeThree);
-        const stubLength = stubDirection.length();
-        if (stubLength > 0.5) {
-            const stubGeometry = new THREE.CylinderGeometry(5, 5, stubLength, 10);
-            const stubMaterial = new THREE.MeshStandardMaterial({ color: 0xffaa44 });
-            const stubMesh = new THREE.Mesh(stubGeometry, stubMaterial);
-            stubMesh.position.copy(flangeThree).add(stubDirection.clone().multiplyScalar(0.5));
-            const up = new THREE.Vector3(0, 1, 0);
-            const dir = stubDirection.clone().normalize();
-            stubMesh.quaternion.setFromUnitVectors(up, dir);
-            this.toolMountGroup.add(stubMesh);
-        }
+        // Tool mount -> tool tip (the fitted tool's own physical length)
+        addLink(flangeThree, tipThree);
 
-        // Tool tip (end of tool mount offset)
+        // Tool tip (the working point IK/the position readout actually use)
         const tipGeometry = new THREE.SphereGeometry(7, 14, 14);
         const tipMaterial = new THREE.MeshStandardMaterial({ color: 0xe74c3c });
         const tipMesh = new THREE.Mesh(tipGeometry, tipMaterial);
@@ -776,17 +792,27 @@ class RobotArm3D {
             const jointPosition = new THREE.Vector3();
             jointPosition.setFromMatrixPosition(currentTransform);
             
-            // Store this position
+            // Store this position — kept unconditionally (even for fixed
+            // joints we don't draw below) since later joints' positions are
+            // computed relative to this chain of transforms.
             positions.push(jointPosition.clone());
 
             // Get the previous position
             const prevPosition = positions[i];
             const currentPosition = positions[i + 1];
 
+            // Fixed joints (tool_mount, the active end tool) aren't drawn
+            // here — updateToolMountVisual() draws the joint-6 -> mount ->
+            // tip chain on its own, so there's exactly one line from the
+            // arm's end to the tool's tip instead of two overlapping ones.
+            if (joint.type === 'fixed') {
+                continue;
+            }
+
             // Create joint (sphere) at current position
             const jointGeometry = new THREE.SphereGeometry(15, 16, 16);
-            const jointMaterial = new THREE.MeshStandardMaterial({ 
-                color: i === 0 ? 0x3498db : (joint.type === 'fixed' ? 0xe74c3c : 0x2ecc71)
+            const jointMaterial = new THREE.MeshStandardMaterial({
+                color: i === 0 ? 0x3498db : 0x2ecc71
             });
             const jointMesh = new THREE.Mesh(jointGeometry, jointMaterial);
             jointMesh.position.copy(currentPosition);
@@ -797,20 +823,20 @@ class RobotArm3D {
             // a small stub so all joints are visible.
             const linkDirection = new THREE.Vector3().subVectors(currentPosition, prevPosition);
             let linkLength = linkDirection.length();
-            
+
             let linkGeometry;
             const linkMaterial = new THREE.MeshStandardMaterial({ color: 0x95a5a6 });
             const link = new THREE.Mesh(undefined, linkMaterial);
-            
+
             if (linkLength > 1.0) {
                 // Normal link between two different points
                 linkGeometry = new THREE.CylinderGeometry(8, 8, linkLength, 16);
                 link.geometry = linkGeometry;
-                
+
                 // Position link at the midpoint between previous and current position
                 link.position.copy(prevPosition);
                 link.position.add(linkDirection.clone().multiplyScalar(0.5));
-                
+
                 // Rotate link to point from previous to current position
                 link.lookAt(currentPosition);
                 link.rotateX(Math.PI / 2);
@@ -819,11 +845,11 @@ class RobotArm3D {
                 const stubLength = 20;
                 linkGeometry = new THREE.CylinderGeometry(8, 8, stubLength, 16);
                 link.geometry = linkGeometry;
-                
+
                 link.position.copy(currentPosition);
                 // Default cylinder is along Y axis, so no extra rotation needed
             }
-            
+
             this.robotArm.add(link);
         }
 
