@@ -652,6 +652,9 @@ class RobotArm3D {
             this.updateArmGeometry();
         }
         this.updateToolMountVisual();
+        if (typeof this.onAnimationStep === 'function') {
+            this.onAnimationStep(this.jointAngles.slice());
+        }
         if (done) {
             this.animating = false;
         }

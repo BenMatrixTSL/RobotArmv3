@@ -3823,7 +3823,8 @@ async function updateXYZPosition(jointAngles) {
 
         // ===== Movement trace data (end effector and per-joint) =====
         // End effector trace: store last MOVEMENT_TRACE_MAX_POINTS XYZ samples
-        if (endEffectorTraceEnabled) {
+        // In simulation mode traces are recorded per animation frame (see recordSimulatedTraceSample)
+        if (endEffectorTraceEnabled && !useSimulatedAngles) {
             const newPoint = {
                 x: pos.x,
                 y: pos.y,
@@ -3842,7 +3843,7 @@ async function updateXYZPosition(jointAngles) {
         }
 
         // Joint traces: use step-by-step forward kinematics to get each joint position
-        if (jointTracesEnabled) {
+        if (jointTracesEnabled && !useSimulatedAngles) {
             try {
                 let fkSteps = null;
                 if (canUseLocalFk) {
@@ -7498,6 +7499,7 @@ function initialize3DVisualization() {
 
         try {
             robotArm3D = new RobotArm3D('robotArm3DContainer');
+            robotArm3D.onAnimationStep = recordSimulatedTraceSample;
             document.getElementById('visualizationStatus').textContent = 'Initialized';
             console.log('3D visualization initialized');
             
@@ -7589,6 +7591,52 @@ function getVisualizationJointConfigs() {
         return robotKinematics.filterChainJoints(robotKinematics.urdfData.joints);
     }
     return (robotKinematics && robotKinematics.getJointConfigs()) || [];
+}
+
+/**
+ * Records movement-trace points from the eased (animated) simulated angles so the
+ * traces follow the curved sweep rather than a straight line to the target.
+ * Called by RobotArm3D on every animation frame while easing.
+ * @param {Array} angles - Displayed joint angles in degrees
+ */
+function recordSimulatedTraceSample(angles) {
+    if (!useSimulatedAngles || !robotKinematics.isConfigured()) {
+        return;
+    }
+    if (!endEffectorTraceEnabled && !jointTracesEnabled) {
+        return;
+    }
+    try {
+        const anglesForFk = getJointAnglesForKinematics(angles);
+        if (endEffectorTraceEnabled) {
+            const pos = robotKinematics.forwardKinematics(anglesForFk).position;
+            endEffectorTracePoints.push({ x: pos.x, y: pos.y, z: pos.z });
+            if (endEffectorTracePoints.length > MOVEMENT_TRACE_MAX_POINTS) {
+                endEffectorTracePoints.shift();
+            }
+            robotArm3D.updateEndEffectorTrace(endEffectorTracePoints);
+        }
+        if (jointTracesEnabled) {
+            const steps = robotKinematics.getForwardKinematicsSteps(anglesForFk).steps || [];
+            while (jointTracesPoints.length < steps.length) {
+                jointTracesPoints.push([]);
+            }
+            for (let i = 0; i < steps.length; i++) {
+                const T = steps[i].transform || [];
+                jointTracesPoints[i].push({
+                    x: ((T[0] && T[0][3]) || 0) * 1000,
+                    y: ((T[1] && T[1][3]) || 0) * 1000,
+                    z: ((T[2] && T[2][3]) || 0) * 1000
+                });
+                if (jointTracesPoints[i].length > MOVEMENT_TRACE_MAX_POINTS) {
+                    jointTracesPoints[i].shift();
+                }
+            }
+            robotArm3D.updateJointTraces(jointTracesPoints);
+        }
+    } catch (e) {
+        console.warn('Error recording simulated trace sample:', e);
+    }
 }
 
 /**
