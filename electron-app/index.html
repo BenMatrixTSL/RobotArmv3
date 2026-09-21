@@ -761,7 +761,24 @@
         <div id="visualization-tab" class="tab-content">
             <h2>3D Robot Arm Visualisation</h2>
             
-                <div class="visualization-panel">
+            <div class="visualization-panel">
+
+                <div class="visualization-info">
+                    <p class="info-text">
+                        The 3D visualization shows the robot arm based on kinematics parameters and current joint angles.
+                    </p>
+                </div>
+
+                <div id="robotArm3DContainer" class="robot-arm-3d-container">
+                    <!-- Three.js canvas will be inserted here -->
+                </div>
+                
+                <div class="visualization-status">
+                    <div>Status: <span id="visualizationStatus">Ready</span></div>
+                    <div>End Effector Position (tool tip): <span id="endEffectorPos">-</span></div>
+                    <div>Mode: <span id="visualizationMode">Real Robot</span></div>
+                </div>
+
                 <div class="visualization-controls">
                     <button class="btn btn-primary" onclick="update3DVisualization()">Update Visualisation</button>
                     <button class="btn btn-secondary" onclick="reset3DCamera()">Reset Camera</button>
@@ -797,13 +814,6 @@
                     </div>
                 </div>
                 
-                <div class="visualization-info">
-                    <p class="info-text">
-                        The 3D visualization shows the robot arm based on kinematics parameters and current joint angles.
-                        Make sure to load joint configurations from the Settings tab first.
-                    </p>
-                </div>
-                
                 <!-- Simulation Mode Controls -->
                 <div class="simulation-panel">
                     <h3>Joint Angle Control</h3>
@@ -828,16 +838,6 @@
                     <button class="btn btn-small" onclick="updateSimulatedVisualization()">Update Visualisation</button>
                         </div>
                     </div>
-                </div>
-                
-                <div id="robotArm3DContainer" class="robot-arm-3d-container">
-                    <!-- Three.js canvas will be inserted here -->
-                </div>
-                
-                <div class="visualization-status">
-                    <div>Status: <span id="visualizationStatus">Ready</span></div>
-                    <div>End Effector Position (tool tip): <span id="endEffectorPos">-</span></div>
-                    <div>Mode: <span id="visualizationMode">Real Robot</span></div>
                 </div>
             </div>
         </div>
