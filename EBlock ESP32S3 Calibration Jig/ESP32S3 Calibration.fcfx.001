@@ -117,8 +117,8 @@ Connected boards:
 					</def>
 				</variable>
 				<variable public='0' >
-					<def class_type='variable' name='IDs' type='u8' description='' isconst='0' isHidden='0' isinit='1' usrinit='&quot; 1,2,3,4,5,6 &quot;' setinit='{1,2,3,4,5,6}' >
-						<array size='6' />
+					<def class_type='variable' name='IDs' type='u8' description='' isconst='0' isHidden='0' isinit='1' usrinit='&quot; 1,2,3,4,5,6,64 &quot;' setinit='{1,2,3,4,5,6,64}' >
+						<array size='7' />
 					</def>
 				</variable>
 				<variable public='0' >
@@ -381,7 +381,7 @@ Connected boards:
 						<command class_type='call' title='Component Macro' component='ST3215' macro='ListServos' >
 							<return exp='ServoCount' />
 							<argument exp='IDs' />
-							<argument exp='6' />
+							<argument exp='7' />
 						</command>
 						<command class_type='calculation' title='Calculation' >
 							<exp exp='Str = ToString$(ServoCount) + &quot; Servo Found -&quot;' />
@@ -424,6 +424,9 @@ Connected boards:
 						<local name='Str' type='T8' description='' isconst='0' isHidden='0' isinit='1' usrinit='&quot;&quot;' setinit='&quot;&quot;' >
 							<array size='20' />
 						</local>
+						<command class_type='call' title='User Macro' component='DisplayManager1' macro='DrawScene' >
+							<argument exp='0' />
+						</command>
 						<command class_type='call' title='Component Macro' component='InfoText' macro='SetTextLabel' >
 							<argument exp='&quot;Change ID&quot;' />
 						</command>
@@ -686,8 +689,56 @@ Connected boards:
 							</flowline>
 							<flowline />
 						</command>
-						<command class_type='decision' title='Decision' exp='.Handle = ButtonSetCenter' swap='0' >
+						<command class_type='decision' title='Decision' exp='.Handle = ButtonAssign7' swap='0' >
 							<flowline >
+								<command class_type='call' title='User Macro' component='DisplayManager1' macro='DrawScene' >
+									<argument exp='0' />
+								</command>
+								<command class_type='call' title='Component Macro' component='InfoText' macro='SetTextLabel' >
+									<argument exp='&quot;Tool Vacuum&quot;' />
+								</command>
+								<command class_type='call' title='Component Macro' component='ST3215' macro='SetToolMode' >
+									<argument exp='64' />
+									<argument exp='1' />
+								</command>
+							</flowline>
+							<flowline />
+						</command>
+						<command class_type='decision' title='Decision' exp='.Handle = ButtonAssign8' swap='0' >
+							<flowline >
+								<command class_type='call' title='User Macro' component='DisplayManager1' macro='DrawScene' >
+									<argument exp='0' />
+								</command>
+								<command class_type='call' title='Component Macro' component='InfoText' macro='SetTextLabel' >
+									<argument exp='&quot;Tool Gripper&quot;' />
+								</command>
+								<command class_type='call' title='Component Macro' component='ST3215' macro='SetToolMode' >
+									<argument exp='64' />
+									<argument exp='2' />
+								</command>
+							</flowline>
+							<flowline />
+						</command>
+						<command class_type='decision' title='Decision' exp='.Handle = ButtonAssign9' swap='0' >
+							<flowline >
+								<command class_type='call' title='User Macro' component='DisplayManager1' macro='DrawScene' >
+									<argument exp='0' />
+								</command>
+								<command class_type='call' title='Component Macro' component='InfoText' macro='SetTextLabel' >
+									<argument exp='&quot;Tool Pen&quot;' />
+								</command>
+								<command class_type='call' title='Component Macro' component='ST3215' macro='SetToolMode' >
+									<argument exp='64' />
+									<argument exp='3' />
+								</command>
+							</flowline>
+							<flowline />
+						</command>
+						<command class_type='decision' title='Decision' exp='.Handle = ButtonAssignCenter' swap='0' >
+							<flowline >
+								<command class_type='call' title='User Macro' component='DisplayManager1' macro='DrawScene' >
+									<argument exp='0' />
+								</command>
 								<command class_type='call' title='User Macro' macro='SetCenterPoint' />
 							</flowline>
 							<flowline />
@@ -742,6 +793,38 @@ Connected boards:
 							<flowline >
 								<command class_type='call' title='User Macro' macro='AssignActiveServo' >
 									<argument exp='6' />
+								</command>
+							</flowline>
+							<flowline />
+						</command>
+						<command class_type='decision' title='Decision' exp='.Handle = ButtonSetID' swap='0' >
+							<flowline >
+								<command class_type='call' title='User Macro' component='DisplayManager1' macro='DrawScene' >
+									<argument exp='2' />
+								</command>
+							</flowline>
+							<flowline />
+						</command>
+						<command class_type='decision' title='Decision' exp='.Handle = ButtonSetCenter' swap='0' >
+							<flowline >
+								<command class_type='call' title='User Macro' component='DisplayManager1' macro='DrawScene' >
+									<argument exp='1' />
+								</command>
+							</flowline>
+							<flowline />
+						</command>
+						<command class_type='decision' title='Decision' exp='.Handle = ButtonHome1' swap='0' >
+							<flowline >
+								<command class_type='call' title='User Macro' component='DisplayManager1' macro='DrawScene' >
+									<argument exp='0' />
+								</command>
+							</flowline>
+							<flowline />
+						</command>
+						<command class_type='decision' title='Decision' exp='.Handle = ButtonHome2' swap='0' >
+							<flowline >
+								<command class_type='call' title='User Macro' component='DisplayManager1' macro='DrawScene' >
+									<argument exp='0' />
 								</command>
 							</flowline>
 							<flowline />
@@ -892,12 +975,12 @@ Connected boards:
 				<resources />
 				<properties />
 				<values >
-					<value target='GLCDComponent' data='13' />
+					<value target='GLCDComponent' data='4559' />
 					<value target='LibraryComponent1::OutputIcon::LinkTo' data='1' />
 					<value target='LibraryComponent1::InputIcon::LinkTo' data='000' />
 					<value target='RamUsage' data='700' />
 					<value target='TextAlignOffset' data='4' />
-					<value target='BackgroundColour' data='8388626' />
+					<value target='BackgroundColour' data='9868950' />
 					<value target='DisplayType' data='0' />
 					<value target='LibraryType' data='0' />
 					<value target='IsSim' data='0' />
@@ -960,7 +1043,7 @@ Connected boards:
 					<value target='DC_Enabled' data='1' />
 					<value target='EnableCallbacks' data='1' />
 					<value target='Orientation' data='001' />
-					<value target='SceneCount' data='1' />
+					<value target='SceneCount' data='3' />
 					<value target='Scene0' data='1' />
 					<value target='Layout0' data='67,210,210,210,79,1,10,0,4,0,204,1,35,0,0,0,0,0,255,87,87,0,0,0,83,1,1,1,83,84,51,50,49,53,32,83,101,114,118,111,32,67,97,108,105,98,114,97,116,105,111,110,0,87,1,10,0,50,0,138,0,48,0,0,0,0,0,160,255,255,0,0,0,90,90,90,1,171,13,83,0,1,1,68,101,116,101,99,116,32,83,101,114,118,111,0,79,1,10,0,29,1,204,1,30,0,0,0,0,0,210,210,210,0,0,0,87,1,90,0,170,0,58,0,48,0,0,0,0,0,160,160,255,0,0,0,90,90,90,1,199,13,83,0,1,1,43,50,0,87,1,10,0,230,0,58,0,48,0,0,0,0,0,255,255,160,0,0,0,90,90,90,1,213,13,83,0,1,1,73,68,32,49,0,87,1,90,0,230,0,58,0,48,0,0,0,0,0,255,255,160,0,0,0,90,90,90,1,227,13,83,0,1,1,73,68,32,50,0,87,1,170,0,230,0,58,0,48,0,0,0,0,0,255,255,160,0,0,0,90,90,90,1,241,13,83,0,1,1,73,68,32,51,0,87,1,250,0,230,0,58,0,48,0,0,0,0,0,255,255,160,0,0,0,90,90,90,1,255,13,83,0,1,1,73,68,32,52,0,87,1,74,1,230,0,58,0,48,0,0,0,0,0,255,255,160,0,0,0,90,90,90,1,13,14,83,0,1,1,73,68,32,53,0,87,1,154,1,230,0,58,0,48,0,0,0,0,0,255,255,160,0,0,0,90,90,90,1,27,14,83,0,1,1,73,68,32,54,0,87,1,74,1,170,0,58,0,48,0,0,0,0,0,160,160,255,0,0,0,90,90,90,1,117,16,83,0,1,1,45,50,0,87,1,170,0,50,0,138,0,48,0,0,0,0,0,192,255,160,0,0,0,90,90,90,1,131,16,83,0,1,1,65,115,115,105,103,110,32,67,101,110,116,101,114,0,87,1,170,0,170,0,58,0,48,0,0,0,0,0,160,160,255,0,0,0,90,90,90,1,145,16,83,0,1,1,43,48,46,50,0,87,1,250,0,170,0,59,0,48,0,0,0,0,0,160,160,255,0,0,0,90,90,90,1,159,16,83,0,1,1,45,48,46,50,0,87,1,10,0,170,0,58,0,48,0,0,0,0,0,160,160,255,0,0,0,90,90,90,1,173,16,83,0,1,1,43,49,48,0,87,1,154,1,170,0,58,0,48,0,0,0,0,0,160,160,255,0,0,0,90,90,90,1,187,16,83,0,1,1,45,49,48,0,87,1,10,0,110,0,58,0,48,0,0,255,0,0,255,192,87,0,0,0,192,0,0,1,201,16,83,0,1,1,83,49,0,87,1,90,0,110,0,58,0,48,0,0,0,0,0,255,192,87,0,0,0,90,90,90,1,215,16,83,0,1,1,83,50,0,87,1,170,0,110,0,58,0,48,0,0,0,0,0,255,192,87,0,0,0,90,90,90,1,229,16,83,0,1,1,83,51,0,87,1,250,0,110,0,58,0,48,0,0,0,0,0,255,192,87,0,0,0,90,90,90,1,243,16,83,0,1,1,83,52,0,87,1,74,1,110,0,58,0,48,0,0,0,0,0,255,192,87,0,0,0,90,90,90,1,1,17,83,0,1,1,83,53,0,87,1,154,1,110,0,58,0,48,0,0,0,0,0,255,192,87,0,0,0,90,90,90,1,15,17,83,0,1,1,83,54,0,87,1,74,1,49,0,138,0,48,0,0,0,0,0,87,128,255,0,0,0,90,90,90,1,29,17,83,0,1,1,90,101,114,111,32,65,108,108,0,' />
 					<value target='Count0' data='811' />
@@ -1124,7 +1207,7 @@ Connected boards:
 				<properties />
 				<values >
 					<value target='ID' data='1' />
-					<value target='DisplayManager' data='2083' />
+					<value target='DisplayManager' data='6629' />
 					<value target='ShapeType' data='1' />
 					<value target='Type' data='79' />
 					<value target='UseThemes' data='0' />
@@ -1150,12 +1233,12 @@ Connected boards:
 				<variables />
 				<macros />
 			</component>
-			<component class_type='ref' guid='81f24c15-ab7c-49ba-b55f-62d3cbfee92a' vmin='0' vmaj='1' codename='ButtonDetect' panelId='1' x='100.172' y='-115' z='1' xsz='87.7155' ysz='31.25' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
+			<component class_type='ref' guid='81f24c15-ab7c-49ba-b55f-62d3cbfee92a' vmin='0' vmaj='1' codename='ButtonDetect' panelId='1' x='158.354' y='-130.455' z='1' xsz='87.7155' ysz='31.25' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
 				<resources />
 				<properties />
 				<values >
 					<value target='ID' data='26' />
-					<value target='DisplayManager' data='2083' />
+					<value target='DisplayManager' data='6629' />
 					<value target='ShapeType' data='1' />
 					<value target='Type' data='87' />
 					<value target='UseThemes' data='0' />
@@ -1169,7 +1252,7 @@ Connected boards:
 					<value target='DrawHighlight' data='1' />
 					<value target='UseCallback' data='1' />
 					<value target='TouchCallback' data='DC_Touched' />
-					<value target='Text' data='Detect Servo' />
+					<value target='Text' data='Detect Servos' />
 					<value target='Font' data='000' />
 					<value target='HAlignment' data='001' />
 					<value target='VAlignment' data='001' />
@@ -1186,7 +1269,7 @@ Connected boards:
 				<properties />
 				<values >
 					<value target='ID' data='2' />
-					<value target='DisplayManager' data='2083' />
+					<value target='DisplayManager' data='6629' />
 					<value target='ShapeType' data='1' />
 					<value target='Type' data='79' />
 					<value target='UseThemes' data='0' />
@@ -1201,223 +1284,6 @@ Connected boards:
 					<value target='UseCallback' data='0' />
 					<value target='TouchCallback' data='' />
 					<value target='Text' data='' />
-					<value target='Font' data='000' />
-					<value target='HAlignment' data='001' />
-					<value target='VAlignment' data='001' />
-					<value target='TextTheme' data='000' />
-					<value target='TextColour' data='0' />
-				</values>
-				<events />
-				<apis />
-				<variables />
-				<macros />
-			</component>
-			<component class_type='ref' guid='81f24c15-ab7c-49ba-b55f-62d3cbfee92a' vmin='0' vmaj='1' codename='ButtonPlus10' panelId='1' x='140' y='-235' z='3' xsz='37.5' ysz='31.25' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
-				<resources />
-				<properties />
-				<values >
-					<value target='ID' data='27' />
-					<value target='DisplayManager' data='2083' />
-					<value target='ShapeType' data='1' />
-					<value target='Type' data='87' />
-					<value target='UseThemes' data='0' />
-					<value target='ObjectTheme' data='000' />
-					<value target='WidgetTheme' data='000' />
-					<value target='LineWidth' data='0' />
-					<value target='FgColour' data='0' />
-					<value target='BgColour' data='16752800' />
-					<value target='HlColour' data='5921370' />
-					<value target='Touchable' data='1' />
-					<value target='DrawHighlight' data='1' />
-					<value target='UseCallback' data='1' />
-					<value target='TouchCallback' data='DC_Touched' />
-					<value target='Text' data='+2' />
-					<value target='Font' data='000' />
-					<value target='HAlignment' data='001' />
-					<value target='VAlignment' data='001' />
-					<value target='TextTheme' data='000' />
-					<value target='TextColour' data='0' />
-				</values>
-				<events />
-				<apis />
-				<variables />
-				<macros />
-			</component>
-			<component class_type='ref' guid='81f24c15-ab7c-49ba-b55f-62d3cbfee92a' vmin='0' vmaj='1' codename='ButtonAssign1' panelId='1' x='60' y='-295' z='4' xsz='37.5' ysz='31.25' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
-				<resources />
-				<properties />
-				<values >
-					<value target='ID' data='28' />
-					<value target='DisplayManager' data='2083' />
-					<value target='ShapeType' data='1' />
-					<value target='Type' data='87' />
-					<value target='UseThemes' data='0' />
-					<value target='ObjectTheme' data='000' />
-					<value target='WidgetTheme' data='000' />
-					<value target='LineWidth' data='0' />
-					<value target='FgColour' data='0' />
-					<value target='BgColour' data='10551295' />
-					<value target='HlColour' data='5921370' />
-					<value target='Touchable' data='1' />
-					<value target='DrawHighlight' data='1' />
-					<value target='UseCallback' data='1' />
-					<value target='TouchCallback' data='DC_Touched' />
-					<value target='Text' data='ID 1' />
-					<value target='Font' data='000' />
-					<value target='HAlignment' data='001' />
-					<value target='VAlignment' data='001' />
-					<value target='TextTheme' data='000' />
-					<value target='TextColour' data='0' />
-				</values>
-				<events />
-				<apis />
-				<variables />
-				<macros />
-			</component>
-			<component class_type='ref' guid='81f24c15-ab7c-49ba-b55f-62d3cbfee92a' vmin='0' vmaj='1' codename='ButtonAssign2' panelId='1' x='140' y='-295' z='5' xsz='37.5' ysz='31.25' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
-				<resources />
-				<properties />
-				<values >
-					<value target='ID' data='29' />
-					<value target='DisplayManager' data='2083' />
-					<value target='ShapeType' data='1' />
-					<value target='Type' data='87' />
-					<value target='UseThemes' data='0' />
-					<value target='ObjectTheme' data='000' />
-					<value target='WidgetTheme' data='000' />
-					<value target='LineWidth' data='0' />
-					<value target='FgColour' data='0' />
-					<value target='BgColour' data='10551295' />
-					<value target='HlColour' data='5921370' />
-					<value target='Touchable' data='1' />
-					<value target='DrawHighlight' data='1' />
-					<value target='UseCallback' data='1' />
-					<value target='TouchCallback' data='DC_Touched' />
-					<value target='Text' data='ID 2' />
-					<value target='Font' data='000' />
-					<value target='HAlignment' data='001' />
-					<value target='VAlignment' data='001' />
-					<value target='TextTheme' data='000' />
-					<value target='TextColour' data='0' />
-				</values>
-				<events />
-				<apis />
-				<variables />
-				<macros />
-			</component>
-			<component class_type='ref' guid='81f24c15-ab7c-49ba-b55f-62d3cbfee92a' vmin='0' vmaj='1' codename='ButtonAssign3' panelId='1' x='220' y='-295' z='6' xsz='37.5' ysz='31.25' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
-				<resources />
-				<properties />
-				<values >
-					<value target='ID' data='30' />
-					<value target='DisplayManager' data='2083' />
-					<value target='ShapeType' data='1' />
-					<value target='Type' data='87' />
-					<value target='UseThemes' data='0' />
-					<value target='ObjectTheme' data='000' />
-					<value target='WidgetTheme' data='000' />
-					<value target='LineWidth' data='0' />
-					<value target='FgColour' data='0' />
-					<value target='BgColour' data='10551295' />
-					<value target='HlColour' data='5921370' />
-					<value target='Touchable' data='1' />
-					<value target='DrawHighlight' data='1' />
-					<value target='UseCallback' data='1' />
-					<value target='TouchCallback' data='DC_Touched' />
-					<value target='Text' data='ID 3' />
-					<value target='Font' data='000' />
-					<value target='HAlignment' data='001' />
-					<value target='VAlignment' data='001' />
-					<value target='TextTheme' data='000' />
-					<value target='TextColour' data='0' />
-				</values>
-				<events />
-				<apis />
-				<variables />
-				<macros />
-			</component>
-			<component class_type='ref' guid='81f24c15-ab7c-49ba-b55f-62d3cbfee92a' vmin='0' vmaj='1' codename='ButtonAssign4' panelId='1' x='300' y='-295' z='7' xsz='37.5' ysz='31.25' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
-				<resources />
-				<properties />
-				<values >
-					<value target='ID' data='31' />
-					<value target='DisplayManager' data='2083' />
-					<value target='ShapeType' data='1' />
-					<value target='Type' data='87' />
-					<value target='UseThemes' data='0' />
-					<value target='ObjectTheme' data='000' />
-					<value target='WidgetTheme' data='000' />
-					<value target='LineWidth' data='0' />
-					<value target='FgColour' data='0' />
-					<value target='BgColour' data='10551295' />
-					<value target='HlColour' data='5921370' />
-					<value target='Touchable' data='1' />
-					<value target='DrawHighlight' data='1' />
-					<value target='UseCallback' data='1' />
-					<value target='TouchCallback' data='DC_Touched' />
-					<value target='Text' data='ID 4' />
-					<value target='Font' data='000' />
-					<value target='HAlignment' data='001' />
-					<value target='VAlignment' data='001' />
-					<value target='TextTheme' data='000' />
-					<value target='TextColour' data='0' />
-				</values>
-				<events />
-				<apis />
-				<variables />
-				<macros />
-			</component>
-			<component class_type='ref' guid='81f24c15-ab7c-49ba-b55f-62d3cbfee92a' vmin='0' vmaj='1' codename='ButtonAssign5' panelId='1' x='380' y='-295' z='8' xsz='37.5' ysz='31.25' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
-				<resources />
-				<properties />
-				<values >
-					<value target='ID' data='32' />
-					<value target='DisplayManager' data='2083' />
-					<value target='ShapeType' data='1' />
-					<value target='Type' data='87' />
-					<value target='UseThemes' data='0' />
-					<value target='ObjectTheme' data='000' />
-					<value target='WidgetTheme' data='000' />
-					<value target='LineWidth' data='0' />
-					<value target='FgColour' data='0' />
-					<value target='BgColour' data='10551295' />
-					<value target='HlColour' data='5921370' />
-					<value target='Touchable' data='1' />
-					<value target='DrawHighlight' data='1' />
-					<value target='UseCallback' data='1' />
-					<value target='TouchCallback' data='DC_Touched' />
-					<value target='Text' data='ID 5' />
-					<value target='Font' data='000' />
-					<value target='HAlignment' data='001' />
-					<value target='VAlignment' data='001' />
-					<value target='TextTheme' data='000' />
-					<value target='TextColour' data='0' />
-				</values>
-				<events />
-				<apis />
-				<variables />
-				<macros />
-			</component>
-			<component class_type='ref' guid='81f24c15-ab7c-49ba-b55f-62d3cbfee92a' vmin='0' vmaj='1' codename='ButtonAssign6' panelId='1' x='460' y='-295' z='9' xsz='37.5' ysz='31.25' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
-				<resources />
-				<properties />
-				<values >
-					<value target='ID' data='33' />
-					<value target='DisplayManager' data='2083' />
-					<value target='ShapeType' data='1' />
-					<value target='Type' data='87' />
-					<value target='UseThemes' data='0' />
-					<value target='ObjectTheme' data='000' />
-					<value target='WidgetTheme' data='000' />
-					<value target='LineWidth' data='0' />
-					<value target='FgColour' data='0' />
-					<value target='BgColour' data='10551295' />
-					<value target='HlColour' data='5921370' />
-					<value target='Touchable' data='1' />
-					<value target='DrawHighlight' data='1' />
-					<value target='UseCallback' data='1' />
-					<value target='TouchCallback' data='DC_Touched' />
-					<value target='Text' data='ID 6' />
 					<value target='Font' data='000' />
 					<value target='HAlignment' data='001' />
 					<value target='VAlignment' data='001' />
@@ -1459,198 +1325,12 @@ Connected boards:
 				<variables />
 				<macros />
 			</component>
-			<component class_type='ref' guid='81f24c15-ab7c-49ba-b55f-62d3cbfee92a' vmin='0' vmaj='1' codename='ButtonMinus10' panelId='1' x='380' y='-235' z='10' xsz='37.5' ysz='31.25' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
-				<resources />
-				<properties />
-				<values >
-					<value target='ID' data='34' />
-					<value target='DisplayManager' data='2083' />
-					<value target='ShapeType' data='1' />
-					<value target='Type' data='87' />
-					<value target='UseThemes' data='0' />
-					<value target='ObjectTheme' data='000' />
-					<value target='WidgetTheme' data='000' />
-					<value target='LineWidth' data='0' />
-					<value target='FgColour' data='0' />
-					<value target='BgColour' data='16752800' />
-					<value target='HlColour' data='5921370' />
-					<value target='Touchable' data='1' />
-					<value target='DrawHighlight' data='1' />
-					<value target='UseCallback' data='1' />
-					<value target='TouchCallback' data='DC_Touched' />
-					<value target='Text' data='-2' />
-					<value target='Font' data='000' />
-					<value target='HAlignment' data='001' />
-					<value target='VAlignment' data='001' />
-					<value target='TextTheme' data='000' />
-					<value target='TextColour' data='0' />
-				</values>
-				<events />
-				<apis />
-				<variables />
-				<macros />
-			</component>
-			<component class_type='ref' guid='81f24c15-ab7c-49ba-b55f-62d3cbfee92a' vmin='0' vmaj='1' codename='ButtonSetCenter' panelId='1' x='260.172' y='-114.828' z='11' xsz='87.2845' ysz='31.4655' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
-				<resources />
-				<properties />
-				<values >
-					<value target='ID' data='35' />
-					<value target='DisplayManager' data='2083' />
-					<value target='ShapeType' data='1' />
-					<value target='Type' data='87' />
-					<value target='UseThemes' data='0' />
-					<value target='ObjectTheme' data='000' />
-					<value target='WidgetTheme' data='000' />
-					<value target='LineWidth' data='0' />
-					<value target='FgColour' data='0' />
-					<value target='BgColour' data='10551232' />
-					<value target='HlColour' data='5921370' />
-					<value target='Touchable' data='1' />
-					<value target='DrawHighlight' data='1' />
-					<value target='UseCallback' data='1' />
-					<value target='TouchCallback' data='DC_Touched' />
-					<value target='Text' data='Assign Center' />
-					<value target='Font' data='000' />
-					<value target='HAlignment' data='001' />
-					<value target='VAlignment' data='001' />
-					<value target='TextTheme' data='000' />
-					<value target='TextColour' data='0' />
-				</values>
-				<events />
-				<apis />
-				<variables />
-				<macros />
-			</component>
-			<component class_type='ref' guid='81f24c15-ab7c-49ba-b55f-62d3cbfee92a' vmin='0' vmaj='1' codename='ButtonPlus1' panelId='1' x='220' y='-235' z='12' xsz='37.5' ysz='31.25' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
-				<resources />
-				<properties />
-				<values >
-					<value target='ID' data='36' />
-					<value target='DisplayManager' data='2083' />
-					<value target='ShapeType' data='1' />
-					<value target='Type' data='87' />
-					<value target='UseThemes' data='0' />
-					<value target='ObjectTheme' data='000' />
-					<value target='WidgetTheme' data='000' />
-					<value target='LineWidth' data='0' />
-					<value target='FgColour' data='0' />
-					<value target='BgColour' data='16752800' />
-					<value target='HlColour' data='5921370' />
-					<value target='Touchable' data='1' />
-					<value target='DrawHighlight' data='1' />
-					<value target='UseCallback' data='1' />
-					<value target='TouchCallback' data='DC_Touched' />
-					<value target='Text' data='+0.2' />
-					<value target='Font' data='000' />
-					<value target='HAlignment' data='001' />
-					<value target='VAlignment' data='001' />
-					<value target='TextTheme' data='000' />
-					<value target='TextColour' data='0' />
-				</values>
-				<events />
-				<apis />
-				<variables />
-				<macros />
-			</component>
-			<component class_type='ref' guid='81f24c15-ab7c-49ba-b55f-62d3cbfee92a' vmin='0' vmaj='1' codename='ButtonMinus1' panelId='1' x='300.5' y='-235' z='13' xsz='38.125' ysz='31.25' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
-				<resources />
-				<properties />
-				<values >
-					<value target='ID' data='37' />
-					<value target='DisplayManager' data='2083' />
-					<value target='ShapeType' data='1' />
-					<value target='Type' data='87' />
-					<value target='UseThemes' data='0' />
-					<value target='ObjectTheme' data='000' />
-					<value target='WidgetTheme' data='000' />
-					<value target='LineWidth' data='0' />
-					<value target='FgColour' data='0' />
-					<value target='BgColour' data='16752800' />
-					<value target='HlColour' data='5921370' />
-					<value target='Touchable' data='1' />
-					<value target='DrawHighlight' data='1' />
-					<value target='UseCallback' data='1' />
-					<value target='TouchCallback' data='DC_Touched' />
-					<value target='Text' data='-0.2' />
-					<value target='Font' data='000' />
-					<value target='HAlignment' data='001' />
-					<value target='VAlignment' data='001' />
-					<value target='TextTheme' data='000' />
-					<value target='TextColour' data='0' />
-				</values>
-				<events />
-				<apis />
-				<variables />
-				<macros />
-			</component>
-			<component class_type='ref' guid='81f24c15-ab7c-49ba-b55f-62d3cbfee92a' vmin='0' vmaj='1' codename='ButtonPlus50' panelId='1' x='60' y='-235' z='14' xsz='37.5' ysz='31.25' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
-				<resources />
-				<properties />
-				<values >
-					<value target='ID' data='38' />
-					<value target='DisplayManager' data='2083' />
-					<value target='ShapeType' data='1' />
-					<value target='Type' data='87' />
-					<value target='UseThemes' data='0' />
-					<value target='ObjectTheme' data='000' />
-					<value target='WidgetTheme' data='000' />
-					<value target='LineWidth' data='0' />
-					<value target='FgColour' data='0' />
-					<value target='BgColour' data='16752800' />
-					<value target='HlColour' data='5921370' />
-					<value target='Touchable' data='1' />
-					<value target='DrawHighlight' data='1' />
-					<value target='UseCallback' data='1' />
-					<value target='TouchCallback' data='DC_Touched' />
-					<value target='Text' data='+10' />
-					<value target='Font' data='000' />
-					<value target='HAlignment' data='001' />
-					<value target='VAlignment' data='001' />
-					<value target='TextTheme' data='000' />
-					<value target='TextColour' data='0' />
-				</values>
-				<events />
-				<apis />
-				<variables />
-				<macros />
-			</component>
-			<component class_type='ref' guid='81f24c15-ab7c-49ba-b55f-62d3cbfee92a' vmin='0' vmaj='1' codename='ButtonMinus50' panelId='1' x='460' y='-235' z='15' xsz='37.5' ysz='31.25' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
-				<resources />
-				<properties />
-				<values >
-					<value target='ID' data='39' />
-					<value target='DisplayManager' data='2083' />
-					<value target='ShapeType' data='1' />
-					<value target='Type' data='87' />
-					<value target='UseThemes' data='0' />
-					<value target='ObjectTheme' data='000' />
-					<value target='WidgetTheme' data='000' />
-					<value target='LineWidth' data='0' />
-					<value target='FgColour' data='0' />
-					<value target='BgColour' data='16752800' />
-					<value target='HlColour' data='5921370' />
-					<value target='Touchable' data='1' />
-					<value target='DrawHighlight' data='1' />
-					<value target='UseCallback' data='1' />
-					<value target='TouchCallback' data='DC_Touched' />
-					<value target='Text' data='-10' />
-					<value target='Font' data='000' />
-					<value target='HAlignment' data='001' />
-					<value target='VAlignment' data='001' />
-					<value target='TextTheme' data='000' />
-					<value target='TextColour' data='0' />
-				</values>
-				<events />
-				<apis />
-				<variables />
-				<macros />
-			</component>
-			<component class_type='ref' guid='81f24c15-ab7c-49ba-b55f-62d3cbfee92a' vmin='0' vmaj='1' codename='ButtonID1' panelId='1' x='60' y='-175' z='16' xsz='37.5' ysz='31.25' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
+			<component class_type='ref' guid='81f24c15-ab7c-49ba-b55f-62d3cbfee92a' vmin='0' vmaj='1' codename='ButtonID1' panelId='1' x='59.0909' y='-203.182' z='3' xsz='37.5' ysz='31.25' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
 				<resources />
 				<properties />
 				<values >
 					<value target='ID' data='40' />
-					<value target='DisplayManager' data='2083' />
+					<value target='DisplayManager' data='6629' />
 					<value target='ShapeType' data='1' />
 					<value target='Type' data='87' />
 					<value target='UseThemes' data='0' />
@@ -1676,12 +1356,12 @@ Connected boards:
 				<variables />
 				<macros />
 			</component>
-			<component class_type='ref' guid='81f24c15-ab7c-49ba-b55f-62d3cbfee92a' vmin='0' vmaj='1' codename='ButtonID2' panelId='1' x='140' y='-175' z='17' xsz='37.5' ysz='31.25' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
+			<component class_type='ref' guid='81f24c15-ab7c-49ba-b55f-62d3cbfee92a' vmin='0' vmaj='1' codename='ButtonID2' panelId='1' x='139.091' y='-203.182' z='4' xsz='37.5' ysz='31.25' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
 				<resources />
 				<properties />
 				<values >
 					<value target='ID' data='41' />
-					<value target='DisplayManager' data='2083' />
+					<value target='DisplayManager' data='6629' />
 					<value target='ShapeType' data='1' />
 					<value target='Type' data='87' />
 					<value target='UseThemes' data='0' />
@@ -1707,12 +1387,12 @@ Connected boards:
 				<variables />
 				<macros />
 			</component>
-			<component class_type='ref' guid='81f24c15-ab7c-49ba-b55f-62d3cbfee92a' vmin='0' vmaj='1' codename='ButtonID3' panelId='1' x='220' y='-175' z='18' xsz='37.5' ysz='31.25' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
+			<component class_type='ref' guid='81f24c15-ab7c-49ba-b55f-62d3cbfee92a' vmin='0' vmaj='1' codename='ButtonID3' panelId='1' x='219.091' y='-203.182' z='5' xsz='37.5' ysz='31.25' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
 				<resources />
 				<properties />
 				<values >
 					<value target='ID' data='42' />
-					<value target='DisplayManager' data='2083' />
+					<value target='DisplayManager' data='6629' />
 					<value target='ShapeType' data='1' />
 					<value target='Type' data='87' />
 					<value target='UseThemes' data='0' />
@@ -1738,12 +1418,12 @@ Connected boards:
 				<variables />
 				<macros />
 			</component>
-			<component class_type='ref' guid='81f24c15-ab7c-49ba-b55f-62d3cbfee92a' vmin='0' vmaj='1' codename='ButtonID4' panelId='1' x='300' y='-175' z='19' xsz='37.5' ysz='31.25' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
+			<component class_type='ref' guid='81f24c15-ab7c-49ba-b55f-62d3cbfee92a' vmin='0' vmaj='1' codename='ButtonID4' panelId='1' x='299.091' y='-203.182' z='6' xsz='37.5' ysz='31.25' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
 				<resources />
 				<properties />
 				<values >
 					<value target='ID' data='43' />
-					<value target='DisplayManager' data='2083' />
+					<value target='DisplayManager' data='6629' />
 					<value target='ShapeType' data='1' />
 					<value target='Type' data='87' />
 					<value target='UseThemes' data='0' />
@@ -1769,12 +1449,12 @@ Connected boards:
 				<variables />
 				<macros />
 			</component>
-			<component class_type='ref' guid='81f24c15-ab7c-49ba-b55f-62d3cbfee92a' vmin='0' vmaj='1' codename='ButtonID5' panelId='1' x='380' y='-175' z='20' xsz='37.5' ysz='31.25' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
+			<component class_type='ref' guid='81f24c15-ab7c-49ba-b55f-62d3cbfee92a' vmin='0' vmaj='1' codename='ButtonID5' panelId='1' x='379.091' y='-203.182' z='7' xsz='37.5' ysz='31.25' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
 				<resources />
 				<properties />
 				<values >
 					<value target='ID' data='44' />
-					<value target='DisplayManager' data='2083' />
+					<value target='DisplayManager' data='6629' />
 					<value target='ShapeType' data='1' />
 					<value target='Type' data='87' />
 					<value target='UseThemes' data='0' />
@@ -1800,12 +1480,12 @@ Connected boards:
 				<variables />
 				<macros />
 			</component>
-			<component class_type='ref' guid='81f24c15-ab7c-49ba-b55f-62d3cbfee92a' vmin='0' vmaj='1' codename='ButtonID6' panelId='1' x='460' y='-175' z='21' xsz='37.5' ysz='31.25' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
+			<component class_type='ref' guid='81f24c15-ab7c-49ba-b55f-62d3cbfee92a' vmin='0' vmaj='1' codename='ButtonID6' panelId='1' x='459.091' y='-203.182' z='8' xsz='37.5' ysz='31.25' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
 				<resources />
 				<properties />
 				<values >
 					<value target='ID' data='45' />
-					<value target='DisplayManager' data='2083' />
+					<value target='DisplayManager' data='6629' />
 					<value target='ShapeType' data='1' />
 					<value target='Type' data='87' />
 					<value target='UseThemes' data='0' />
@@ -1831,12 +1511,12 @@ Connected boards:
 				<variables />
 				<macros />
 			</component>
-			<component class_type='ref' guid='81f24c15-ab7c-49ba-b55f-62d3cbfee92a' vmin='0' vmaj='1' codename='ButtonZeroAll' panelId='1' x='419.552' y='-114.597' z='22' xsz='87.2845' ysz='31.4655' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
+			<component class_type='ref' guid='81f24c15-ab7c-49ba-b55f-62d3cbfee92a' vmin='0' vmaj='1' codename='ButtonZeroAll' panelId='1' x='360.461' y='-129.142' z='9' xsz='87.2845' ysz='31.4655' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
 				<resources />
 				<properties />
 				<values >
 					<value target='ID' data='46' />
-					<value target='DisplayManager' data='2083' />
+					<value target='DisplayManager' data='6629' />
 					<value target='ShapeType' data='1' />
 					<value target='Type' data='87' />
 					<value target='UseThemes' data='0' />
@@ -1850,7 +1530,627 @@ Connected boards:
 					<value target='DrawHighlight' data='1' />
 					<value target='UseCallback' data='1' />
 					<value target='TouchCallback' data='DC_Touched' />
-					<value target='Text' data='Zero All' />
+					<value target='Text' data='Home All' />
+					<value target='Font' data='000' />
+					<value target='HAlignment' data='001' />
+					<value target='VAlignment' data='001' />
+					<value target='TextTheme' data='000' />
+					<value target='TextColour' data='0' />
+				</values>
+				<events />
+				<apis />
+				<variables />
+				<macros />
+			</component>
+			<component class_type='ref' guid='81f24c15-ab7c-49ba-b55f-62d3cbfee92a' vmin='0' vmaj='1' codename='ButtonAssign1' panelId='3' x='61' y='-187' z='0' xsz='37.5' ysz='31.25' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
+				<resources />
+				<properties />
+				<values >
+					<value target='ID' data='28' />
+					<value target='DisplayManager' data='6629' />
+					<value target='ShapeType' data='1' />
+					<value target='Type' data='87' />
+					<value target='UseThemes' data='0' />
+					<value target='ObjectTheme' data='000' />
+					<value target='WidgetTheme' data='000' />
+					<value target='LineWidth' data='0' />
+					<value target='FgColour' data='0' />
+					<value target='BgColour' data='10551295' />
+					<value target='HlColour' data='5921370' />
+					<value target='Touchable' data='1' />
+					<value target='DrawHighlight' data='1' />
+					<value target='UseCallback' data='1' />
+					<value target='TouchCallback' data='DC_Touched' />
+					<value target='Text' data='ID 1' />
+					<value target='Font' data='000' />
+					<value target='HAlignment' data='001' />
+					<value target='VAlignment' data='001' />
+					<value target='TextTheme' data='000' />
+					<value target='TextColour' data='0' />
+				</values>
+				<events />
+				<apis />
+				<variables />
+				<macros />
+			</component>
+			<component class_type='ref' guid='81f24c15-ab7c-49ba-b55f-62d3cbfee92a' vmin='0' vmaj='1' codename='ButtonAssign2' panelId='3' x='141' y='-187' z='1' xsz='37.5' ysz='31.25' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
+				<resources />
+				<properties />
+				<values >
+					<value target='ID' data='29' />
+					<value target='DisplayManager' data='6629' />
+					<value target='ShapeType' data='1' />
+					<value target='Type' data='87' />
+					<value target='UseThemes' data='0' />
+					<value target='ObjectTheme' data='000' />
+					<value target='WidgetTheme' data='000' />
+					<value target='LineWidth' data='0' />
+					<value target='FgColour' data='0' />
+					<value target='BgColour' data='10551295' />
+					<value target='HlColour' data='5921370' />
+					<value target='Touchable' data='1' />
+					<value target='DrawHighlight' data='1' />
+					<value target='UseCallback' data='1' />
+					<value target='TouchCallback' data='DC_Touched' />
+					<value target='Text' data='ID 2' />
+					<value target='Font' data='000' />
+					<value target='HAlignment' data='001' />
+					<value target='VAlignment' data='001' />
+					<value target='TextTheme' data='000' />
+					<value target='TextColour' data='0' />
+				</values>
+				<events />
+				<apis />
+				<variables />
+				<macros />
+			</component>
+			<component class_type='ref' guid='81f24c15-ab7c-49ba-b55f-62d3cbfee92a' vmin='0' vmaj='1' codename='ButtonAssign3' panelId='3' x='221' y='-187' z='2' xsz='37.5' ysz='31.25' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
+				<resources />
+				<properties />
+				<values >
+					<value target='ID' data='30' />
+					<value target='DisplayManager' data='6629' />
+					<value target='ShapeType' data='1' />
+					<value target='Type' data='87' />
+					<value target='UseThemes' data='0' />
+					<value target='ObjectTheme' data='000' />
+					<value target='WidgetTheme' data='000' />
+					<value target='LineWidth' data='0' />
+					<value target='FgColour' data='0' />
+					<value target='BgColour' data='10551295' />
+					<value target='HlColour' data='5921370' />
+					<value target='Touchable' data='1' />
+					<value target='DrawHighlight' data='1' />
+					<value target='UseCallback' data='1' />
+					<value target='TouchCallback' data='DC_Touched' />
+					<value target='Text' data='ID 3' />
+					<value target='Font' data='000' />
+					<value target='HAlignment' data='001' />
+					<value target='VAlignment' data='001' />
+					<value target='TextTheme' data='000' />
+					<value target='TextColour' data='0' />
+				</values>
+				<events />
+				<apis />
+				<variables />
+				<macros />
+			</component>
+			<component class_type='ref' guid='81f24c15-ab7c-49ba-b55f-62d3cbfee92a' vmin='0' vmaj='1' codename='ButtonAssign4' panelId='3' x='301' y='-187' z='3' xsz='37.5' ysz='31.25' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
+				<resources />
+				<properties />
+				<values >
+					<value target='ID' data='31' />
+					<value target='DisplayManager' data='6629' />
+					<value target='ShapeType' data='1' />
+					<value target='Type' data='87' />
+					<value target='UseThemes' data='0' />
+					<value target='ObjectTheme' data='000' />
+					<value target='WidgetTheme' data='000' />
+					<value target='LineWidth' data='0' />
+					<value target='FgColour' data='0' />
+					<value target='BgColour' data='10551295' />
+					<value target='HlColour' data='5921370' />
+					<value target='Touchable' data='1' />
+					<value target='DrawHighlight' data='1' />
+					<value target='UseCallback' data='1' />
+					<value target='TouchCallback' data='DC_Touched' />
+					<value target='Text' data='ID 4' />
+					<value target='Font' data='000' />
+					<value target='HAlignment' data='001' />
+					<value target='VAlignment' data='001' />
+					<value target='TextTheme' data='000' />
+					<value target='TextColour' data='0' />
+				</values>
+				<events />
+				<apis />
+				<variables />
+				<macros />
+			</component>
+			<component class_type='ref' guid='81f24c15-ab7c-49ba-b55f-62d3cbfee92a' vmin='0' vmaj='1' codename='ButtonAssign5' panelId='3' x='381' y='-187' z='4' xsz='37.5' ysz='31.25' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
+				<resources />
+				<properties />
+				<values >
+					<value target='ID' data='32' />
+					<value target='DisplayManager' data='6629' />
+					<value target='ShapeType' data='1' />
+					<value target='Type' data='87' />
+					<value target='UseThemes' data='0' />
+					<value target='ObjectTheme' data='000' />
+					<value target='WidgetTheme' data='000' />
+					<value target='LineWidth' data='0' />
+					<value target='FgColour' data='0' />
+					<value target='BgColour' data='10551295' />
+					<value target='HlColour' data='5921370' />
+					<value target='Touchable' data='1' />
+					<value target='DrawHighlight' data='1' />
+					<value target='UseCallback' data='1' />
+					<value target='TouchCallback' data='DC_Touched' />
+					<value target='Text' data='ID 5' />
+					<value target='Font' data='000' />
+					<value target='HAlignment' data='001' />
+					<value target='VAlignment' data='001' />
+					<value target='TextTheme' data='000' />
+					<value target='TextColour' data='0' />
+				</values>
+				<events />
+				<apis />
+				<variables />
+				<macros />
+			</component>
+			<component class_type='ref' guid='81f24c15-ab7c-49ba-b55f-62d3cbfee92a' vmin='0' vmaj='1' codename='ButtonAssign6' panelId='3' x='461' y='-187' z='5' xsz='37.5' ysz='31.25' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
+				<resources />
+				<properties />
+				<values >
+					<value target='ID' data='33' />
+					<value target='DisplayManager' data='6629' />
+					<value target='ShapeType' data='1' />
+					<value target='Type' data='87' />
+					<value target='UseThemes' data='0' />
+					<value target='ObjectTheme' data='000' />
+					<value target='WidgetTheme' data='000' />
+					<value target='LineWidth' data='0' />
+					<value target='FgColour' data='0' />
+					<value target='BgColour' data='10551295' />
+					<value target='HlColour' data='5921370' />
+					<value target='Touchable' data='1' />
+					<value target='DrawHighlight' data='1' />
+					<value target='UseCallback' data='1' />
+					<value target='TouchCallback' data='DC_Touched' />
+					<value target='Text' data='ID 6' />
+					<value target='Font' data='000' />
+					<value target='HAlignment' data='001' />
+					<value target='VAlignment' data='001' />
+					<value target='TextTheme' data='000' />
+					<value target='TextColour' data='0' />
+				</values>
+				<events />
+				<apis />
+				<variables />
+				<macros />
+			</component>
+			<component class_type='ref' guid='81f24c15-ab7c-49ba-b55f-62d3cbfee92a' vmin='0' vmaj='1' codename='ButtonHome1' panelId='3' x='260' y='-83' z='6' xsz='87.2845' ysz='31.4655' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
+				<resources />
+				<properties />
+				<values >
+					<value target='ID' data='46' />
+					<value target='DisplayManager' data='6629' />
+					<value target='ShapeType' data='1' />
+					<value target='Type' data='87' />
+					<value target='UseThemes' data='0' />
+					<value target='ObjectTheme' data='000' />
+					<value target='WidgetTheme' data='000' />
+					<value target='LineWidth' data='0' />
+					<value target='FgColour' data='0' />
+					<value target='BgColour' data='16744535' />
+					<value target='HlColour' data='5921370' />
+					<value target='Touchable' data='1' />
+					<value target='DrawHighlight' data='1' />
+					<value target='UseCallback' data='1' />
+					<value target='TouchCallback' data='DC_Touched' />
+					<value target='Text' data='Return' />
+					<value target='Font' data='000' />
+					<value target='HAlignment' data='001' />
+					<value target='VAlignment' data='001' />
+					<value target='TextTheme' data='000' />
+					<value target='TextColour' data='0' />
+				</values>
+				<events />
+				<apis />
+				<variables />
+				<macros />
+			</component>
+			<component class_type='ref' guid='81f24c15-ab7c-49ba-b55f-62d3cbfee92a' vmin='0' vmaj='1' codename='ButtonSetID' panelId='1' x='158.009' y='-279.545' z='10' xsz='87.2845' ysz='31.4655' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
+				<resources />
+				<properties />
+				<values >
+					<value target='ID' data='46' />
+					<value target='DisplayManager' data='6629' />
+					<value target='ShapeType' data='1' />
+					<value target='Type' data='87' />
+					<value target='UseThemes' data='0' />
+					<value target='ObjectTheme' data='000' />
+					<value target='WidgetTheme' data='000' />
+					<value target='LineWidth' data='0' />
+					<value target='FgColour' data='0' />
+					<value target='BgColour' data='16744535' />
+					<value target='HlColour' data='5921370' />
+					<value target='Touchable' data='1' />
+					<value target='DrawHighlight' data='1' />
+					<value target='UseCallback' data='1' />
+					<value target='TouchCallback' data='DC_Touched' />
+					<value target='Text' data='Change ID' />
+					<value target='Font' data='000' />
+					<value target='HAlignment' data='001' />
+					<value target='VAlignment' data='001' />
+					<value target='TextTheme' data='000' />
+					<value target='TextColour' data='0' />
+				</values>
+				<events />
+				<apis />
+				<variables />
+				<macros />
+			</component>
+			<component class_type='ref' guid='81f24c15-ab7c-49ba-b55f-62d3cbfee92a' vmin='0' vmaj='1' codename='ButtonAssign7' panelId='3' x='99' y='-277' z='7' xsz='85' ysz='31.25' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
+				<resources />
+				<properties />
+				<values >
+					<value target='ID' data='28' />
+					<value target='DisplayManager' data='6629' />
+					<value target='ShapeType' data='1' />
+					<value target='Type' data='87' />
+					<value target='UseThemes' data='0' />
+					<value target='ObjectTheme' data='000' />
+					<value target='WidgetTheme' data='000' />
+					<value target='LineWidth' data='0' />
+					<value target='FgColour' data='0' />
+					<value target='BgColour' data='10551295' />
+					<value target='HlColour' data='5921370' />
+					<value target='Touchable' data='1' />
+					<value target='DrawHighlight' data='1' />
+					<value target='UseCallback' data='1' />
+					<value target='TouchCallback' data='DC_Touched' />
+					<value target='Text' data='Tool Vacuum' />
+					<value target='Font' data='000' />
+					<value target='HAlignment' data='001' />
+					<value target='VAlignment' data='001' />
+					<value target='TextTheme' data='000' />
+					<value target='TextColour' data='0' />
+				</values>
+				<events />
+				<apis />
+				<variables />
+				<macros />
+			</component>
+			<component class_type='ref' guid='81f24c15-ab7c-49ba-b55f-62d3cbfee92a' vmin='0' vmaj='1' codename='ButtonAssign8' panelId='3' x='258.5' y='-277' z='8' xsz='85' ysz='31.25' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
+				<resources />
+				<properties />
+				<values >
+					<value target='ID' data='28' />
+					<value target='DisplayManager' data='6629' />
+					<value target='ShapeType' data='1' />
+					<value target='Type' data='87' />
+					<value target='UseThemes' data='0' />
+					<value target='ObjectTheme' data='000' />
+					<value target='WidgetTheme' data='000' />
+					<value target='LineWidth' data='0' />
+					<value target='FgColour' data='0' />
+					<value target='BgColour' data='10551295' />
+					<value target='HlColour' data='5921370' />
+					<value target='Touchable' data='1' />
+					<value target='DrawHighlight' data='1' />
+					<value target='UseCallback' data='1' />
+					<value target='TouchCallback' data='DC_Touched' />
+					<value target='Text' data='Tool Gripper' />
+					<value target='Font' data='000' />
+					<value target='HAlignment' data='001' />
+					<value target='VAlignment' data='001' />
+					<value target='TextTheme' data='000' />
+					<value target='TextColour' data='0' />
+				</values>
+				<events />
+				<apis />
+				<variables />
+				<macros />
+			</component>
+			<component class_type='ref' guid='81f24c15-ab7c-49ba-b55f-62d3cbfee92a' vmin='0' vmaj='1' codename='ButtonAssign9' panelId='3' x='418' y='-277' z='9' xsz='85' ysz='31.25' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
+				<resources />
+				<properties />
+				<values >
+					<value target='ID' data='28' />
+					<value target='DisplayManager' data='6629' />
+					<value target='ShapeType' data='1' />
+					<value target='Type' data='87' />
+					<value target='UseThemes' data='0' />
+					<value target='ObjectTheme' data='000' />
+					<value target='WidgetTheme' data='000' />
+					<value target='LineWidth' data='0' />
+					<value target='FgColour' data='0' />
+					<value target='BgColour' data='10551295' />
+					<value target='HlColour' data='5921370' />
+					<value target='Touchable' data='1' />
+					<value target='DrawHighlight' data='1' />
+					<value target='UseCallback' data='1' />
+					<value target='TouchCallback' data='DC_Touched' />
+					<value target='Text' data='Tool Pen' />
+					<value target='Font' data='000' />
+					<value target='HAlignment' data='001' />
+					<value target='VAlignment' data='001' />
+					<value target='TextTheme' data='000' />
+					<value target='TextColour' data='0' />
+				</values>
+				<events />
+				<apis />
+				<variables />
+				<macros />
+			</component>
+			<component class_type='ref' guid='81f24c15-ab7c-49ba-b55f-62d3cbfee92a' vmin='0' vmaj='1' codename='ButtonHome2' panelId='2' x='129' y='-175' z='0' xsz='87.2845' ysz='31.4655' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
+				<resources />
+				<properties />
+				<values >
+					<value target='ID' data='46' />
+					<value target='DisplayManager' data='6629' />
+					<value target='ShapeType' data='1' />
+					<value target='Type' data='87' />
+					<value target='UseThemes' data='0' />
+					<value target='ObjectTheme' data='000' />
+					<value target='WidgetTheme' data='000' />
+					<value target='LineWidth' data='0' />
+					<value target='FgColour' data='0' />
+					<value target='BgColour' data='16744535' />
+					<value target='HlColour' data='5921370' />
+					<value target='Touchable' data='1' />
+					<value target='DrawHighlight' data='1' />
+					<value target='UseCallback' data='1' />
+					<value target='TouchCallback' data='DC_Touched' />
+					<value target='Text' data='Return' />
+					<value target='Font' data='000' />
+					<value target='HAlignment' data='001' />
+					<value target='VAlignment' data='001' />
+					<value target='TextTheme' data='000' />
+					<value target='TextColour' data='0' />
+				</values>
+				<events />
+				<apis />
+				<variables />
+				<macros />
+			</component>
+			<component class_type='ref' guid='81f24c15-ab7c-49ba-b55f-62d3cbfee92a' vmin='0' vmaj='1' codename='ButtonPlus10' panelId='2' x='141' y='-264' z='1' xsz='37.5' ysz='31.25' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
+				<resources />
+				<properties />
+				<values >
+					<value target='ID' data='27' />
+					<value target='DisplayManager' data='6629' />
+					<value target='ShapeType' data='1' />
+					<value target='Type' data='87' />
+					<value target='UseThemes' data='0' />
+					<value target='ObjectTheme' data='000' />
+					<value target='WidgetTheme' data='000' />
+					<value target='LineWidth' data='0' />
+					<value target='FgColour' data='0' />
+					<value target='BgColour' data='16752800' />
+					<value target='HlColour' data='5921370' />
+					<value target='Touchable' data='1' />
+					<value target='DrawHighlight' data='1' />
+					<value target='UseCallback' data='1' />
+					<value target='TouchCallback' data='DC_Touched' />
+					<value target='Text' data='+2' />
+					<value target='Font' data='000' />
+					<value target='HAlignment' data='001' />
+					<value target='VAlignment' data='001' />
+					<value target='TextTheme' data='000' />
+					<value target='TextColour' data='0' />
+				</values>
+				<events />
+				<apis />
+				<variables />
+				<macros />
+			</component>
+			<component class_type='ref' guid='81f24c15-ab7c-49ba-b55f-62d3cbfee92a' vmin='0' vmaj='1' codename='ButtonMinus10' panelId='2' x='381' y='-264' z='2' xsz='37.5' ysz='31.25' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
+				<resources />
+				<properties />
+				<values >
+					<value target='ID' data='34' />
+					<value target='DisplayManager' data='6629' />
+					<value target='ShapeType' data='1' />
+					<value target='Type' data='87' />
+					<value target='UseThemes' data='0' />
+					<value target='ObjectTheme' data='000' />
+					<value target='WidgetTheme' data='000' />
+					<value target='LineWidth' data='0' />
+					<value target='FgColour' data='0' />
+					<value target='BgColour' data='16752800' />
+					<value target='HlColour' data='5921370' />
+					<value target='Touchable' data='1' />
+					<value target='DrawHighlight' data='1' />
+					<value target='UseCallback' data='1' />
+					<value target='TouchCallback' data='DC_Touched' />
+					<value target='Text' data='-2' />
+					<value target='Font' data='000' />
+					<value target='HAlignment' data='001' />
+					<value target='VAlignment' data='001' />
+					<value target='TextTheme' data='000' />
+					<value target='TextColour' data='0' />
+				</values>
+				<events />
+				<apis />
+				<variables />
+				<macros />
+			</component>
+			<component class_type='ref' guid='81f24c15-ab7c-49ba-b55f-62d3cbfee92a' vmin='0' vmaj='1' codename='ButtonPlus1' panelId='2' x='221' y='-264' z='3' xsz='37.5' ysz='31.25' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
+				<resources />
+				<properties />
+				<values >
+					<value target='ID' data='36' />
+					<value target='DisplayManager' data='6629' />
+					<value target='ShapeType' data='1' />
+					<value target='Type' data='87' />
+					<value target='UseThemes' data='0' />
+					<value target='ObjectTheme' data='000' />
+					<value target='WidgetTheme' data='000' />
+					<value target='LineWidth' data='0' />
+					<value target='FgColour' data='0' />
+					<value target='BgColour' data='16752800' />
+					<value target='HlColour' data='5921370' />
+					<value target='Touchable' data='1' />
+					<value target='DrawHighlight' data='1' />
+					<value target='UseCallback' data='1' />
+					<value target='TouchCallback' data='DC_Touched' />
+					<value target='Text' data='+0.2' />
+					<value target='Font' data='000' />
+					<value target='HAlignment' data='001' />
+					<value target='VAlignment' data='001' />
+					<value target='TextTheme' data='000' />
+					<value target='TextColour' data='0' />
+				</values>
+				<events />
+				<apis />
+				<variables />
+				<macros />
+			</component>
+			<component class_type='ref' guid='81f24c15-ab7c-49ba-b55f-62d3cbfee92a' vmin='0' vmaj='1' codename='ButtonMinus1' panelId='2' x='301' y='-264' z='4' xsz='38.125' ysz='31.25' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
+				<resources />
+				<properties />
+				<values >
+					<value target='ID' data='37' />
+					<value target='DisplayManager' data='6629' />
+					<value target='ShapeType' data='1' />
+					<value target='Type' data='87' />
+					<value target='UseThemes' data='0' />
+					<value target='ObjectTheme' data='000' />
+					<value target='WidgetTheme' data='000' />
+					<value target='LineWidth' data='0' />
+					<value target='FgColour' data='0' />
+					<value target='BgColour' data='16752800' />
+					<value target='HlColour' data='5921370' />
+					<value target='Touchable' data='1' />
+					<value target='DrawHighlight' data='1' />
+					<value target='UseCallback' data='1' />
+					<value target='TouchCallback' data='DC_Touched' />
+					<value target='Text' data='-0.2' />
+					<value target='Font' data='000' />
+					<value target='HAlignment' data='001' />
+					<value target='VAlignment' data='001' />
+					<value target='TextTheme' data='000' />
+					<value target='TextColour' data='0' />
+				</values>
+				<events />
+				<apis />
+				<variables />
+				<macros />
+			</component>
+			<component class_type='ref' guid='81f24c15-ab7c-49ba-b55f-62d3cbfee92a' vmin='0' vmaj='1' codename='ButtonPlus50' panelId='2' x='61' y='-264' z='5' xsz='37.5' ysz='31.25' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
+				<resources />
+				<properties />
+				<values >
+					<value target='ID' data='38' />
+					<value target='DisplayManager' data='6629' />
+					<value target='ShapeType' data='1' />
+					<value target='Type' data='87' />
+					<value target='UseThemes' data='0' />
+					<value target='ObjectTheme' data='000' />
+					<value target='WidgetTheme' data='000' />
+					<value target='LineWidth' data='0' />
+					<value target='FgColour' data='0' />
+					<value target='BgColour' data='16752800' />
+					<value target='HlColour' data='5921370' />
+					<value target='Touchable' data='1' />
+					<value target='DrawHighlight' data='1' />
+					<value target='UseCallback' data='1' />
+					<value target='TouchCallback' data='DC_Touched' />
+					<value target='Text' data='+10' />
+					<value target='Font' data='000' />
+					<value target='HAlignment' data='001' />
+					<value target='VAlignment' data='001' />
+					<value target='TextTheme' data='000' />
+					<value target='TextColour' data='0' />
+				</values>
+				<events />
+				<apis />
+				<variables />
+				<macros />
+			</component>
+			<component class_type='ref' guid='81f24c15-ab7c-49ba-b55f-62d3cbfee92a' vmin='0' vmaj='1' codename='ButtonMinus50' panelId='2' x='461' y='-264' z='6' xsz='37.5' ysz='31.25' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
+				<resources />
+				<properties />
+				<values >
+					<value target='ID' data='39' />
+					<value target='DisplayManager' data='6629' />
+					<value target='ShapeType' data='1' />
+					<value target='Type' data='87' />
+					<value target='UseThemes' data='0' />
+					<value target='ObjectTheme' data='000' />
+					<value target='WidgetTheme' data='000' />
+					<value target='LineWidth' data='0' />
+					<value target='FgColour' data='0' />
+					<value target='BgColour' data='16752800' />
+					<value target='HlColour' data='5921370' />
+					<value target='Touchable' data='1' />
+					<value target='DrawHighlight' data='1' />
+					<value target='UseCallback' data='1' />
+					<value target='TouchCallback' data='DC_Touched' />
+					<value target='Text' data='-10' />
+					<value target='Font' data='000' />
+					<value target='HAlignment' data='001' />
+					<value target='VAlignment' data='001' />
+					<value target='TextTheme' data='000' />
+					<value target='TextColour' data='0' />
+				</values>
+				<events />
+				<apis />
+				<variables />
+				<macros />
+			</component>
+			<component class_type='ref' guid='81f24c15-ab7c-49ba-b55f-62d3cbfee92a' vmin='0' vmaj='1' codename='ButtonAssignCenter' panelId='2' x='372' y='-176' z='7' xsz='87.2845' ysz='31.4655' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
+				<resources />
+				<properties />
+				<values >
+					<value target='ID' data='35' />
+					<value target='DisplayManager' data='6629' />
+					<value target='ShapeType' data='1' />
+					<value target='Type' data='87' />
+					<value target='UseThemes' data='0' />
+					<value target='ObjectTheme' data='000' />
+					<value target='WidgetTheme' data='000' />
+					<value target='LineWidth' data='0' />
+					<value target='FgColour' data='0' />
+					<value target='BgColour' data='10551232' />
+					<value target='HlColour' data='5921370' />
+					<value target='Touchable' data='1' />
+					<value target='DrawHighlight' data='1' />
+					<value target='UseCallback' data='1' />
+					<value target='TouchCallback' data='DC_Touched' />
+					<value target='Text' data='Assign Center' />
+					<value target='Font' data='000' />
+					<value target='HAlignment' data='001' />
+					<value target='VAlignment' data='001' />
+					<value target='TextTheme' data='000' />
+					<value target='TextColour' data='0' />
+				</values>
+				<events />
+				<apis />
+				<variables />
+				<macros />
+			</component>
+			<component class_type='ref' guid='81f24c15-ab7c-49ba-b55f-62d3cbfee92a' vmin='0' vmaj='1' codename='ButtonSetCenter' panelId='1' x='360.461' y='-279.545' z='11' xsz='87.2845' ysz='31.4655' zsz='25' xang='0' yang='0' zang='0' xquat='0' yquat='0' zquat='0' wquat='1' visible='1' scadavisible='1' interactive='1' solid='1' layer='2' poslock='0' ancTop='0' ancBottom='0' ancLeft='0' ancRight='0' ancMinX='0' ancMinY='0' comp2dType='0' >
+				<resources />
+				<properties />
+				<values >
+					<value target='ID' data='46' />
+					<value target='DisplayManager' data='6629' />
+					<value target='ShapeType' data='1' />
+					<value target='Type' data='87' />
+					<value target='UseThemes' data='0' />
+					<value target='ObjectTheme' data='000' />
+					<value target='WidgetTheme' data='000' />
+					<value target='LineWidth' data='0' />
+					<value target='FgColour' data='0' />
+					<value target='BgColour' data='16744535' />
+					<value target='HlColour' data='5921370' />
+					<value target='Touchable' data='1' />
+					<value target='DrawHighlight' data='1' />
+					<value target='UseCallback' data='1' />
+					<value target='TouchCallback' data='DC_Touched' />
+					<value target='Text' data='Set Center' />
 					<value target='Font' data='000' />
 					<value target='HAlignment' data='001' />
 					<value target='VAlignment' data='001' />
@@ -1869,9 +2169,9 @@ Connected boards:
 	<panel2d shadows='0' lighting='2' brightness='0' >
 		<background rgb='7292207' img='' style='0' />
 		<camera xe='0' ye='0' ze='1281.65' xt='0' yt='0' zt='0' xquat='0' yquat='0' zquat='0' wquat='1' />
-		<viewport dx='298' dy='820' zoom='28.1341' fix_topleft='0' />
+		<viewport dx='298' dy='849' zoom='28.1341' fix_topleft='0' />
 		<page x='1000' y='1000' show='0' rgb='7360576' />
-		<winpos ID='7005' RectRecentFloat='0,458,644,873' RectRecentDocked='0,0,298,843' RecentFrameAlignment='16384' RecentRowIndex='0' IsFloating='0' MRUWidth='32767' PinState='0' IsMaximized='0' IsVisible='0' />
+		<winpos ID='7005' RectRecentFloat='0,458,644,873' RectRecentDocked='0,0,298,872' RecentFrameAlignment='16384' RecentRowIndex='0' IsFloating='0' MRUWidth='32767' PinState='0' IsMaximized='0' IsVisible='0' />
 	</panel2d>
 	<panel3d shadows='0' lighting='2' brightness='0' perspective='1' >
 		<background rgb='8409120' img='' style='0' />
@@ -1884,28 +2184,36 @@ Connected boards:
 		<camerakey4 xe='-300' ye='-6.66134e-14' ze='6.66134e-14' xt='0' yt='0' zt='0' xquat='-0.5' yquat='0.5' zquat='0.5' wquat='0.5' />
 		<camerakey5 xe='300' ye='-6.66134e-14' ze='6.66134e-14' xt='0' yt='0' zt='0' xquat='-0.5' yquat='-0.5' zquat='-0.5' wquat='0.5' />
 		<camerakey6 xe='-173.205' ye='-173.205' ze='173.205' xt='0' yt='0' zt='0' xquat='-0.424708' yquat='0.17592' zquat='0.339851' wquat='0.820473' />
-		<winpos ID='7004' RectRecentFloat='764,124,1087,942' RectRecentDocked='0,0,495,920' RecentFrameAlignment='16384' RecentRowIndex='0' IsFloating='0' MRUWidth='32767' PinState='0' IsMaximized='0' IsVisible='0' />
+		<winpos ID='7004' RectRecentFloat='764,124,1087,942' RectRecentDocked='0,0,366,920' RecentFrameAlignment='16384' RecentRowIndex='0' IsFloating='0' MRUWidth='32767' PinState='0' IsMaximized='0' IsVisible='0' />
 	</panel3d>
-	<panels2d count='2' >
+	<panels2d count='4' >
 		<panel2d_0 id='0' name='2D Panel' type='0' >
-			<winpos ID='1171' RectRecentFloat='-721,89,-71,539' RectRecentDocked='994,141,1489,1013' RecentFrameAlignment='16384' RecentRowIndex='0' IsFloating='1' MRUWidth='32767' PinState='0' IsMaximized='0' IsVisible='1' />
+			<winpos ID='1171' RectRecentFloat='-1043,64,-393,514' RectRecentDocked='971,141,1489,1013' RecentFrameAlignment='16384' RecentRowIndex='0' IsFloating='1' MRUWidth='32767' PinState='0' IsMaximized='0' IsVisible='1' />
 			<background fill='288230376151053813' showgrid='1' gridstyle='0' gridsize='5' gridbrush='71776119075691740' snaptogrid='1' fitcomp='0' disp_x='300' disp_y='400' scale='100' disp_col='16777215' />
 		</panel2d_0>
 		<panel2d_1 id='1' name='Scene0' type='1' >
-			<winpos ID='1172' RectRecentFloat='958,-607,1560,-108' RectRecentDocked='994,141,1489,1013' RecentFrameAlignment='16384' RecentRowIndex='0' IsFloating='1' MRUWidth='32767' PinState='0' IsMaximized='0' IsVisible='1' />
-			<background fill='288230376151053813' showgrid='1' gridstyle='0' gridsize='5' gridbrush='71776119075691740' snaptogrid='0' fitcomp='0' disp_x='480' disp_y='320' scale='110' disp_col='13816530' />
+			<winpos ID='1172' RectRecentFloat='-1743,482,-1141,981' RectRecentDocked='971,141,1489,1013' RecentFrameAlignment='16384' RecentRowIndex='0' IsFloating='1' MRUWidth='32767' PinState='0' IsMaximized='0' IsVisible='1' />
+			<background fill='288230376151053813' showgrid='1' gridstyle='0' gridsize='5' gridbrush='71776119075691740' snaptogrid='0' fitcomp='0' disp_x='480' disp_y='320' scale='110' disp_col='11842740' />
 		</panel2d_1>
+		<panel2d_2 id='2' name='Scene1' type='1' >
+			<winpos ID='1173' RectRecentFloat='-1783,2,-1133,452' RectRecentDocked='0,0,650,450' RecentFrameAlignment='16384' RecentRowIndex='0' IsFloating='1' MRUWidth='32767' PinState='0' IsMaximized='0' IsVisible='1' />
+			<background fill='288230376151053813' showgrid='1' gridstyle='0' gridsize='5' gridbrush='71776119075691740' snaptogrid='0' fitcomp='0' disp_x='480' disp_y='320' scale='100' disp_col='9868950' />
+		</panel2d_2>
+		<panel2d_3 id='3' name='Scene2' type='1' >
+			<winpos ID='1174' RectRecentFloat='-1011,535,-361,985' RectRecentDocked='0,0,650,450' RecentFrameAlignment='16384' RecentRowIndex='0' IsFloating='1' MRUWidth='32767' PinState='0' IsMaximized='0' IsVisible='1' />
+			<background fill='288230376151053813' showgrid='1' gridstyle='0' gridsize='5' gridbrush='71776119075691740' snaptogrid='0' fitcomp='0' disp_x='480' disp_y='320' scale='100' disp_col='9868950' />
+		</panel2d_3>
 	</panels2d>
 	<layout >
-		<view type='0' name='Main' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA2QMAAGMDAAA' zoom='100' scrollx='0' scrolly='135' flags='0' />
-		<view type='0' name='DC_Touched' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA2QMAAGMDAAA' zoom='85' scrollx='0' scrolly='2508' flags='0' />
-		<view type='0' name='SwitchInterrupt' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA2QMAAGMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
-		<view type='0' name='DetectServos' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA2QMAAGMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
-		<view type='0' name='MoveServoBy' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA2QMAAGMDAAA' zoom='100' scrollx='0' scrolly='507' flags='0' />
-		<view type='0' name='AssignID' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA2QMAAGMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
-		<view type='0' name='SetCenterPoint' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA2QMAAGMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
-		<view type='0' name='AssignActiveServo' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA2QMAAGMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
-		<view type='0' name='ZeroAllServos' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAA2QMAAGMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
+		<view type='0' name='Main' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAABwQAAGMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
+		<view type='0' name='DC_Touched' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAABwQAAGMDAAA' zoom='85' scrollx='0' scrolly='4674' flags='0' />
+		<view type='0' name='SwitchInterrupt' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAABwQAAGMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
+		<view type='0' name='DetectServos' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAABwQAAGMDAAA' zoom='100' scrollx='0' scrolly='231' flags='0' />
+		<view type='0' name='MoveServoBy' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAABwQAAGMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
+		<view type='0' name='AssignID' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAABwQAAGMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
+		<view type='0' name='SetCenterPoint' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAABwQAAGMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
+		<view type='0' name='AssignActiveServo' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAABwQAAGMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
+		<view type='0' name='ZeroAllServos' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAABwQAAGMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
 	</layout>
 </document>
 </root>

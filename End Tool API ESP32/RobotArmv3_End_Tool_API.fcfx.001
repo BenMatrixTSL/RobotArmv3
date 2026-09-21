@@ -1419,9 +1419,9 @@
 					<value target='timer' data='000' />
 					<value target='period' data='65535' />
 					<value target='prescale' data='0' />
-					<value target='period_calc' data='936.228577' />
-					<value target='frequency_calc2' data='1068.115234' />
-					<value target='frequency_calc' data='1.068115' />
+					<value target='period_calc' data='499.999969' />
+					<value target='frequency_calc2' data='2000.0' />
+					<value target='frequency_calc' data='2.000000' />
 					<value target='pwm_prescale' data='1' />
 					<value target='ReqFreq' data='100.000000' />
 					<value target='OldReqFreq' data='100.000000' />
@@ -1451,9 +1451,9 @@
 					<value target='timer' data='000' />
 					<value target='period' data='65535' />
 					<value target='prescale' data='0' />
-					<value target='period_calc' data='936.228577' />
-					<value target='frequency_calc2' data='1068.115234' />
-					<value target='frequency_calc' data='1.068115' />
+					<value target='period_calc' data='499.999969' />
+					<value target='frequency_calc2' data='2000.0' />
+					<value target='frequency_calc' data='2.000000' />
 					<value target='pwm_prescale' data='1' />
 					<value target='ReqFreq' data='100.000000' />
 					<value target='OldReqFreq' data='100.000000' />
@@ -1766,10 +1766,10 @@
 	<keymap />
 	<panel2d shadows='0' lighting='2' brightness='0' >
 		<background rgb='7292207' img='' style='0' />
-		<camera xe='0' ye='0' ze='1200.83' xt='0' yt='0' zt='0' xquat='0' yquat='0' zquat='0' wquat='1' />
-		<viewport dx='298' dy='849' zoom='30.0276' fix_topleft='0' />
+		<camera xe='0' ye='0' ze='2087.35' xt='0' yt='0' zt='0' xquat='0' yquat='0' zquat='0' wquat='1' />
+		<viewport dx='518' dy='728' zoom='30.0276' fix_topleft='0' />
 		<page x='1000' y='1000' show='0' rgb='7360576' />
-		<winpos ID='7005' RectRecentFloat='1134,71,1725,945' RectRecentDocked='0,0,298,872' RecentFrameAlignment='16384' RecentRowIndex='0' IsFloating='0' MRUWidth='32767' PinState='0' IsMaximized='0' IsVisible='0' />
+		<winpos ID='7005' RectRecentFloat='1134,71,1725,945' RectRecentDocked='0,0,518,751' RecentFrameAlignment='16384' RecentRowIndex='0' IsFloating='0' MRUWidth='32767' PinState='0' IsMaximized='0' IsVisible='0' />
 	</panel2d>
 	<panel3d shadows='1' lighting='2' brightness='128' perspective='1' >
 		<background rgb='16777120' img='' style='0' />
@@ -1782,7 +1782,7 @@
 		<camerakey4 xe='-300' ye='-6.66134e-14' ze='6.66134e-14' xt='0' yt='0' zt='0' xquat='-0.5' yquat='0.5' zquat='0.5' wquat='0.5' />
 		<camerakey5 xe='300' ye='-6.66134e-14' ze='6.66134e-14' xt='0' yt='0' zt='0' xquat='-0.5' yquat='-0.5' zquat='-0.5' wquat='0.5' />
 		<camerakey6 xe='-173.205' ye='-173.205' ze='173.205' xt='0' yt='0' zt='0' xquat='-0.424708' yquat='0.17592' zquat='0.339851' wquat='0.820473' />
-		<winpos ID='7004' RectRecentFloat='575,270,1225,720' RectRecentDocked='0,0,492,920' RecentFrameAlignment='16384' RecentRowIndex='0' IsFloating='0' MRUWidth='32767' PinState='0' IsMaximized='0' IsVisible='0' />
+		<winpos ID='7004' RectRecentFloat='575,270,1225,720' RectRecentDocked='0,0,366,920' RecentFrameAlignment='16384' RecentRowIndex='0' IsFloating='0' MRUWidth='32767' PinState='0' IsMaximized='0' IsVisible='0' />
 	</panel3d>
 	<panels2d count='1' >
 		<panel2d_0 id='0' name='2D Panel' type='0' >
@@ -1791,17 +1791,17 @@
 		</panel2d_0>
 	</panels2d>
 	<layout >
-		<view type='0' name='Main' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAAtwMAAJMDAAA' zoom='100' scrollx='0' scrolly='270' flags='0' />
-		<view type='0' name='ServoBus_RX' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAAtwMAAJMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
-		<view type='0' name='UpdateCurrentMeasurements' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAAtwMAAJMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
-		<view type='0' name='ReadRegisterIntoReadValue' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAAtwMAAJMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
-		<view type='0' name='SendStatusPacketNoData' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAAtwMAAJMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
-		<view type='0' name='SendStatusPacketWithData' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAAtwMAAJMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
-		<view type='0' name='UpdateAdcTelemetry' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAAtwMAAJMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
-		<view type='0' name='RefreshRegisterArrayFromVariables' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAAtwMAAJMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
-		<view type='0' name='ProcessCommsByte' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAAtwMAAJMDAAA' zoom='100' scrollx='2979' scrolly='2106' flags='0' />
-		<view type='0' name='ApplyWritableRegistersToVariablesAndHardware' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAAtwMAAJMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
-		<view type='0' name='ApplyPendingHobbyServo' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAAtwMAAJMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
+		<view type='0' name='Main' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAABwQAAGMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
+		<view type='0' name='ServoBus_RX' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAABwQAAGMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
+		<view type='0' name='UpdateCurrentMeasurements' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAABwQAAGMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
+		<view type='0' name='ReadRegisterIntoReadValue' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAABwQAAGMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
+		<view type='0' name='SendStatusPacketNoData' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAABwQAAGMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
+		<view type='0' name='SendStatusPacketWithData' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAABwQAAGMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
+		<view type='0' name='UpdateAdcTelemetry' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAABwQAAGMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
+		<view type='0' name='RefreshRegisterArrayFromVariables' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAABwQAAGMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
+		<view type='0' name='ProcessCommsByte' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAABwQAAGMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
+		<view type='0' name='ApplyWritableRegistersToVariablesAndHardware' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAABwQAAGMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
+		<view type='0' name='ApplyPendingHobbyServo' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAABwQAAGMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
 	</layout>
 </document>
 </root>
