@@ -148,6 +148,14 @@ process.on('exit', (code) => { debugLog('Process exit, code=' + code); });
 // is fitted. Register 3 is the only source of truth: nothing here guesses.
 const END_TOOL_PROBE_CLIENT_ID = '__server_end_tool__';
 const END_TOOL_PROBE_INTERVAL_MS = 15000;
+// A single bus read timeout used to drop a fitted tool straight to "bare
+// mount" until the next probe 15 s later. In that window the TCP is the mount
+// face, ~120 mm above the real tip, so a move could drive the tool into the
+// table. Before believing a tool has gone, re-check it a few times quickly;
+// only an unbroken run of failures counts as removed.
+const END_TOOL_LOST_RETRIES = 3;
+const END_TOOL_RETRY_DELAY_MS = 250;
+let endToolLostRetryCount = 0;
 
 let endToolState = {
     present: false,          // did the tool answer the last probe?
@@ -453,8 +461,18 @@ function handleWorkerMessage(msg) {
     if (msg.type === 'commandResponse' && msg.clientId === END_TOOL_PROBE_CLIENT_ID) {
         const payload = msg.payload || {};
         if (payload.type === 'toolIdentity' && Number.isFinite(payload.toolTypeId)) {
+            endToolLostRetryCount = 0;
             applyEndToolTypeId(payload.toolTypeId, null);
+        } else if (endToolState.present && endToolLostRetryCount < END_TOOL_LOST_RETRIES) {
+            // Sanity check: a tool was there a moment ago. Re-probe before
+            // dropping it, so one lost frame cannot shorten the kinematics.
+            endToolLostRetryCount++;
+            debugLog('End tool: probe failed (' + (payload.message || 'no response') + ') — ' +
+                     're-checking ' + endToolLostRetryCount + '/' + END_TOOL_LOST_RETRIES +
+                     ' before declaring it removed');
+            setTimeout(probeEndTool, END_TOOL_RETRY_DELAY_MS);
         } else {
+            endToolLostRetryCount = 0;
             applyEndToolTypeId(null, payload.message || 'end tool did not respond');
         }
         return;
