@@ -14,6 +14,12 @@ class RobotArm3D {
         this.scene = null;
         this.camera = null;
         this.renderer = null;
+        // 'perspective' or 'orthographic' — see setCameraProjection()
+        this.cameraMode = 'perspective';
+        // Orthographic camera's half-height (world units), kept so
+        // onWindowResize() can recompute left/right on an aspect change
+        // without altering how "zoomed in" the view looks
+        this.orthoHalfHeight = 200;
         // Point in space the camera looks at (used for rotate and pan)
         this.cameraTarget = new THREE.Vector3(0, 0, 0);
         this.robotArm = null;
@@ -54,6 +60,17 @@ class RobotArm3D {
     // urdfMmToThreePos) or it lands this far below the joints it belongs to.
     static BASE_TOP_Y_MM = 20;
 
+    // Vertical field of view (degrees) used by the perspective camera, and
+    // to size the orthographic camera's frustum when switching between the
+    // two so the framing stays roughly the same at the moment of the switch.
+    static CAMERA_FOV_DEG = 75;
+
+    // Radius (mm) of every joint sphere drawn in updateArmGeometry(), also
+    // used for the tool mount/tip spheres in updateToolMountVisual() so the
+    // whole chain looks like one consistent style rather than two different
+    // ones stitched together.
+    static JOINT_SPHERE_RADIUS = 15;
+
     /**
      * Initializes the Three.js scene, camera, and renderer
      */
@@ -91,7 +108,7 @@ class RobotArm3D {
         // Create camera
         // Parameters: field of view, aspect ratio, near clipping plane, far clipping plane
         // Increased far plane from 1000 to 5000 to allow viewing from further away
-        this.camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 5000);
+        this.camera = new THREE.PerspectiveCamera(RobotArm3D.CAMERA_FOV_DEG, width / height, 0.1, 5000);
         this.camera.position.set(300, 300, 300);
         this.camera.lookAt(this.cameraTarget);
 
@@ -284,15 +301,25 @@ class RobotArm3D {
         };
         
         const onMouseWheel = (event) => {
-            // Zoom in/out
-            const distance = this.camera.position.length();
-            const newDistance = distance + event.deltaY * 0.1;
-            
-            // Increased max zoom distance from 2000 to 5000 to match increased far clipping plane
-            if (newDistance > 50 && newDistance < 5000) {
-                this.camera.position.normalize().multiplyScalar(newDistance);
+            if (this.camera.isOrthographicCamera) {
+                // Moving the camera has no visual effect on an orthographic
+                // projection (objects don't get bigger/smaller with distance
+                // — that's the point of it), so "zoom" is done via the
+                // camera's own zoom factor instead.
+                const zoomFactor = Math.exp(-event.deltaY * 0.001);
+                this.camera.zoom = Math.max(0.1, Math.min(20, this.camera.zoom * zoomFactor));
+                this.camera.updateProjectionMatrix();
+            } else {
+                // Zoom in/out
+                const distance = this.camera.position.length();
+                const newDistance = distance + event.deltaY * 0.1;
+
+                // Increased max zoom distance from 2000 to 5000 to match increased far clipping plane
+                if (newDistance > 50 && newDistance < 5000) {
+                    this.camera.position.normalize().multiplyScalar(newDistance);
+                }
             }
-            
+
             event.preventDefault();
         };
         
@@ -493,8 +520,10 @@ class RobotArm3D {
         // links (updateArmGeometry()), so this reads as one continuous chain.
         addLink(joint6Three, flangeThree);
 
-        // Mounting flange (coordinate 7) — where the tool attaches to link 6
-        const mountGeometry = new THREE.SphereGeometry(11, 16, 16);
+        // Mounting flange (coordinate 7) — where the tool attaches to link 6.
+        // Same radius as the joint spheres in updateArmGeometry() so the
+        // whole chain (joints, mount, tip) reads as one consistent style.
+        const mountGeometry = new THREE.SphereGeometry(RobotArm3D.JOINT_SPHERE_RADIUS, 16, 16);
         const mountMaterial = new THREE.MeshStandardMaterial({ color: 0xff8800 });
         const mountMesh = new THREE.Mesh(mountGeometry, mountMaterial);
         mountMesh.position.copy(flangeThree);
@@ -508,8 +537,9 @@ class RobotArm3D {
         // Tool mount -> tool tip (the fitted tool's own physical length)
         addLink(flangeThree, tipThree);
 
-        // Tool tip (the working point IK/the position readout actually use)
-        const tipGeometry = new THREE.SphereGeometry(7, 14, 14);
+        // Tool tip (the working point IK/the position readout actually use) —
+        // same radius as the joint spheres, for the same reason as the mount.
+        const tipGeometry = new THREE.SphereGeometry(RobotArm3D.JOINT_SPHERE_RADIUS, 16, 16);
         const tipMaterial = new THREE.MeshStandardMaterial({ color: 0xe74c3c });
         const tipMesh = new THREE.Mesh(tipGeometry, tipMaterial);
         tipMesh.position.copy(tipThree);
@@ -826,7 +856,7 @@ class RobotArm3D {
             }
 
             // Create joint (sphere) at current position
-            const jointGeometry = new THREE.SphereGeometry(15, 16, 16);
+            const jointGeometry = new THREE.SphereGeometry(RobotArm3D.JOINT_SPHERE_RADIUS, 16, 16);
             const jointMaterial = new THREE.MeshStandardMaterial({
                 color: i === 0 ? 0x3498db : 0x2ecc71
             });
@@ -899,8 +929,17 @@ class RobotArm3D {
 
         const width = this.container.clientWidth;
         const height = this.container.clientHeight;
+        const aspect = width / height;
 
-        this.camera.aspect = width / height;
+        if (this.camera.isOrthographicCamera) {
+            const halfWidth = this.orthoHalfHeight * aspect;
+            this.camera.left = -halfWidth;
+            this.camera.right = halfWidth;
+            this.camera.top = this.orthoHalfHeight;
+            this.camera.bottom = -this.orthoHalfHeight;
+        } else {
+            this.camera.aspect = aspect;
+        }
         this.camera.updateProjectionMatrix();
         this.renderer.setSize(width, height);
     }
@@ -1244,6 +1283,57 @@ class RobotArm3D {
      */
     resetCamera() {
         this.setCameraPosition(300, 300, 300, 150);
+    }
+
+    /**
+     * Switches between perspective and orthographic projection, keeping the
+     * current viewing position/angle so the switch doesn't reset the view.
+     * @param {'perspective'|'orthographic'} mode
+     */
+    setCameraProjection(mode) {
+        if (!this.camera || !this.renderer || !this.container) return;
+        if (mode !== 'perspective' && mode !== 'orthographic') return;
+        if (mode === this.cameraMode) return;
+
+        const width = this.container.clientWidth;
+        const height = this.container.clientHeight;
+        if (width === 0 || height === 0) return;
+        const aspect = width / height;
+
+        const oldPosition = this.camera.position.clone();
+        // How far the camera currently is from what it's looking at — used
+        // to size the orthographic frustum so the scene appears roughly the
+        // same size at the moment of switching, rather than jumping to some
+        // arbitrary default zoom level.
+        const distance = oldPosition.distanceTo(this.cameraTarget) || 1;
+
+        let newCamera;
+        if (mode === 'orthographic') {
+            const fovRad = (RobotArm3D.CAMERA_FOV_DEG * Math.PI) / 180;
+            this.orthoHalfHeight = distance * Math.tan(fovRad / 2);
+            const halfWidth = this.orthoHalfHeight * aspect;
+            newCamera = new THREE.OrthographicCamera(
+                -halfWidth, halfWidth, this.orthoHalfHeight, -this.orthoHalfHeight, 0.1, 5000
+            );
+        } else {
+            newCamera = new THREE.PerspectiveCamera(RobotArm3D.CAMERA_FOV_DEG, aspect, 0.1, 5000);
+        }
+
+        newCamera.position.copy(oldPosition);
+        newCamera.up.copy(this.camera.up);
+        newCamera.lookAt(this.cameraTarget);
+
+        this.camera = newCamera;
+        this.cameraMode = mode;
+    }
+
+    /**
+     * Toggles between perspective and orthographic projection.
+     * @returns {'perspective'|'orthographic'} the mode now in effect
+     */
+    toggleCameraProjection() {
+        this.setCameraProjection(this.cameraMode === 'perspective' ? 'orthographic' : 'perspective');
+        return this.cameraMode;
     }
 
     /**

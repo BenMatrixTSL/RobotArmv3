@@ -7754,6 +7754,22 @@ function set3DView(view) {
 }
 
 /**
+ * Toggles the 3D view between perspective and orthographic projection,
+ * keeping the current camera angle/position.
+ */
+function toggleCameraProjection() {
+    if (!robotArm3D) {
+        return;
+    }
+    const mode = robotArm3D.toggleCameraProjection();
+    const button = document.getElementById('cameraProjectionToggle');
+    if (button) {
+        // Label is always the mode a click would switch TO.
+        button.textContent = mode === 'perspective' ? 'Orthographic' : 'Perspective';
+    }
+}
+
+/**
  * Debug function to check 3D visualization status
  */
 function debug3DVisualization() {

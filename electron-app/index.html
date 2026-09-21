@@ -765,13 +765,13 @@
                 <div class="visualization-controls">
                     <button class="btn btn-primary" onclick="update3DVisualization()">Update Visualisation</button>
                     <button class="btn btn-secondary" onclick="reset3DCamera()">Reset Camera</button>
-                    <button class="btn btn-small" onclick="debug3DVisualization()">Debug Info</button>
-                    <button class="btn btn-small" onclick="openVisualisationPopup()">Open 3D in Separate Window</button>
+                    <button class="btn btn-secondary" onclick="openVisualisationPopup()">Open 3D in Separate Window</button>
                     <div class="view-buttons">
-                        <button class="btn btn-small" onclick="set3DView('front')">Front</button>
-                        <button class="btn btn-small" onclick="set3DView('side')">Side</button>
-                        <button class="btn btn-small" onclick="set3DView('top')">Top</button>
-                        <button class="btn btn-small" onclick="set3DView('iso')">Isometric</button>
+                        <button class="btn btn-secondary" onclick="set3DView('front')">Front</button>
+                        <button class="btn btn-secondary" onclick="set3DView('side')">Side</button>
+                        <button class="btn btn-secondary" onclick="set3DView('top')">Top</button>
+                        <button class="btn btn-secondary" onclick="set3DView('iso')">Isometric</button>
+                        <button class="btn btn-secondary" id="cameraProjectionToggle" onclick="toggleCameraProjection()">Orthographic</button>
                     </div>
                     <div class="visualization-toggles">
                         <label>
@@ -955,7 +955,7 @@
                     </div>
                     <button class="btn btn-primary btn-major" onclick="savePosition()">Save Position</button>
                     <button class="btn btn-secondary btn-major" onclick="loadPosition()">Load Position</button>
-                    <button class="btn btn-small" onclick="loadCurrentRobotAngles()">Load from Robot</button>
+                    <button class="btn btn-secondary" onclick="loadCurrentRobotAngles()">Load from Robot</button>
                     <button class="btn btn-danger" onclick="deletePosition()">Delete Position</button>
                     <button class="btn btn-warning btn-major torque-toggle-button" onclick="toggleTorqueAll()">Torque: On</button>
                 </div>
