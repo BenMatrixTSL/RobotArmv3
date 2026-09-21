@@ -1731,7 +1731,7 @@ function initializeTabs() {
                         initialize3DVisualization();
                     } else {
                         // Tab is now visible, update visualization if configs are loaded
-                        const configs = robotKinematics.jointConfigs || [];
+                        const configs = getVisualizationJointConfigs();
                         if (configs.length > 0) {
                             const numJoints = getNumJoints();
                             const angles = useSimulatedAngles && simulatedAngles.length === numJoints 
@@ -7502,7 +7502,7 @@ function initialize3DVisualization() {
             console.log('3D visualization initialized');
             
             // Try to update with demo config if available
-            const configs = robotKinematics.jointConfigs || [];
+            const configs = getVisualizationJointConfigs();
             if (configs.length > 0) {
                 const numJoints = getNumJoints();
                 const angles = simulatedAngles.length === numJoints ? simulatedAngles : Array(numJoints).fill(0);
@@ -7580,6 +7580,18 @@ function initialize3DVisualization() {
 }
 
 /**
+ * Joint list used by the 3D visualisation: the URDF chain (including the fixed
+ * tool joint) when loaded, otherwise the revolute-only configs.
+ * @returns {Array}
+ */
+function getVisualizationJointConfigs() {
+    if (robotKinematics && robotKinematics.urdfData && Array.isArray(robotKinematics.urdfData.joints)) {
+        return robotKinematics.filterChainJoints(robotKinematics.urdfData.joints);
+    }
+    return (robotKinematics && robotKinematics.getJointConfigs()) || [];
+}
+
+/**
  * Updates the 3D visualization with current joint angles
  * @param {Array} jointAngles - Array of joint angles in degrees
  */
@@ -7588,15 +7600,7 @@ function update3DVisualizationWithAngles(jointAngles) {
         return;
     }
 
-    // Get joint configurations from kinematics module.
-    // Prefer full URDF joint list (including fixed tool joint) for visualisation,
-    // fall back to revolute-only configs if needed.
-    let configs = [];
-    if (robotKinematics && robotKinematics.urdfData && Array.isArray(robotKinematics.urdfData.joints)) {
-        configs = robotKinematics.filterChainJoints(robotKinematics.urdfData.joints);
-    } else {
-        configs = robotKinematics.getJointConfigs() || [];
-    }
+    const configs = getVisualizationJointConfigs();
     
     if (!configs || configs.length === 0) {
         return; // No configurations loaded yet
@@ -7784,7 +7788,7 @@ function debug3DVisualization() {
             width: document.getElementById('robotArm3DContainer')?.clientWidth || 0,
             height: document.getElementById('robotArm3DContainer')?.clientHeight || 0
         },
-        jointConfigs: robotKinematics.jointConfigs?.length || 0,
+        jointConfigs: getVisualizationJointConfigs().length,
         threeJSLoaded: typeof THREE !== 'undefined',
         jointAngles: robotArm3D ? robotArm3D.jointAngles : [],
         useSimulated: useSimulatedAngles
@@ -7810,7 +7814,7 @@ function debug3DVisualization() {
     // Try to force update if everything looks good
     if (info.robotArm3D && info.jointConfigs > 0) {
         console.log('Attempting to force update...');
-        const configs = robotKinematics.jointConfigs || [];
+        const configs = getVisualizationJointConfigs();
         const numJoints = getNumJoints();
         const angles = useSimulatedAngles && simulatedAngles.length === numJoints 
             ? simulatedAngles 
@@ -7877,8 +7881,7 @@ function updateSimulatedVisualization() {
         return;
     }
 
-    // Get joint configurations
-    const configs = robotKinematics.jointConfigs || [];
+    const configs = getVisualizationJointConfigs();
     
     if (configs.length === 0) {
         showAppMessage('No joint configurations loaded. Please load configurations from the Settings tab first.');
