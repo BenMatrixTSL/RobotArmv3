@@ -432,19 +432,25 @@ class RobotArm3D {
 
         try {
             const fkSteps = robotKinematics.getForwardKinematicsSteps(angles);
-            // steps[0..revCount-1] are the revolute joints, so steps[revCount-1]
-            // is joint 6 itself; the fixed tool_mount joint is applied as the
-            // NEXT step, steps[revCount] — using steps[revCount-1] for the
-            // flange (as this used to) put the flange marker on top of joint 6
-            // instead of at the actual mount point.
-            const stepAt = (idx) => {
-                const step = fkSteps.steps && fkSteps.steps[idx];
-                if (!step || !step.transform || typeof positionFromMatrix !== 'function') return null;
-                const pMeters = positionFromMatrix(step.transform);
-                return { x: pMeters.x * 1000, y: pMeters.y * 1000, z: pMeters.z * 1000 };
-            };
-            joint6PosMm = stepAt(revCount - 1);
-            flangePosMm = stepAt(revCount);
+            const j6Step = fkSteps.steps && fkSteps.steps[revCount - 1];
+            if (!j6Step || !j6Step.transform || typeof positionFromMatrix !== 'function') {
+                return;
+            }
+            const j6PMeters = positionFromMatrix(j6Step.transform);
+            joint6PosMm = { x: j6PMeters.x * 1000, y: j6PMeters.y * 1000, z: j6PMeters.z * 1000 };
+
+            // Flange = joint 6's own transform with tool_mount's own origin
+            // applied directly, rather than reading further into the shared
+            // steps array (whose later entries also include whichever end
+            // tool is currently active, which isn't what "the mount point"
+            // means here, and shifts around as tools are swapped).
+            if (typeof originToMatrix === 'function' && typeof multiplyMatrices === 'function') {
+                const mountJoint = robotKinematics.fixedToolJoints[0];
+                const flangeTransform = multiplyMatrices(j6Step.transform, originToMatrix(mountJoint.origin));
+                const flangePMeters = positionFromMatrix(flangeTransform);
+                flangePosMm = { x: flangePMeters.x * 1000, y: flangePMeters.y * 1000, z: flangePMeters.z * 1000 };
+            }
+
             const fk = robotKinematics.forwardKinematics(angles);
             toolTipPosMm = fk.position;
         } catch (error) {
