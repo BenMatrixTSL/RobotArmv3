@@ -404,6 +404,16 @@ class RobotArm3D {
     }
 
     /**
+     * Maps a URDF direction vector into this scene's axes (same mapping as
+     * urdfMmToThreePos, without the base-height offset).
+     * @param {{x:number,y:number,z:number}} d
+     * @returns {THREE.Vector3}
+     */
+    urdfDirToThree(d) {
+        return new THREE.Vector3(-d.y, d.z, d.x);
+    }
+
+    /**
      * Removes every child from a Three.js group, disposing each one's
      * geometry and material first. Several groups here (joint spheres/links,
      * tool mount markers, the workspace envelope, ...) get fully rebuilt on
@@ -466,6 +476,7 @@ class RobotArm3D {
         let joint6PosMm = null;
         let flangePosMm = null;
         let toolTipPosMm = null;
+        let toolRotation = null; // 4x4 FK matrix at the tool tip (rotation part used for the axes)
 
         try {
             const fkSteps = robotKinematics.getForwardKinematicsSteps(angles);
@@ -490,6 +501,7 @@ class RobotArm3D {
 
             const fk = robotKinematics.forwardKinematics(angles);
             toolTipPosMm = fk.position;
+            toolRotation = fk.rotation || null;
         } catch (error) {
             console.warn('updateToolMountVisual: could not compute tool pose', error);
             return;
@@ -529,11 +541,6 @@ class RobotArm3D {
         mountMesh.position.copy(flangeThree);
         this.toolMountGroup.add(mountMesh);
 
-        // Small axes at the mount frame
-        const mountAxes = new THREE.AxesHelper(28);
-        mountAxes.position.copy(flangeThree);
-        this.toolMountGroup.add(mountAxes);
-
         // Tool mount -> tool tip (the fitted tool's own physical length)
         addLink(flangeThree, tipThree);
 
@@ -544,6 +551,32 @@ class RobotArm3D {
         const tipMesh = new THREE.Mesh(tipGeometry, tipMaterial);
         tipMesh.position.copy(tipThree);
         this.toolMountGroup.add(tipMesh);
+
+        // Tool-frame axes at the tool tip (which is the mount face when no tool
+        // is fitted). Drawn from the FK rotation so they turn with the wrist:
+        // joint 6's roll spins the red X / green Y arrows around the blue Z
+        // (tool) axis. A plain AxesHelper would stay world-aligned. Lines are
+        // used rather than rotating a helper because urdfMmToThreePos() is a
+        // mirrored mapping (det -1), which a quaternion cannot represent.
+        if (toolRotation) {
+            const AXIS_LEN = 28;
+            const axisDir = (col) => this.urdfDirToThree({
+                x: toolRotation[0][col], y: toolRotation[1][col], z: toolRotation[2][col]
+            }).normalize().multiplyScalar(AXIS_LEN);
+            const verts = [];
+            const cols = [];
+            const axisColours = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]; // X red, Y green, Z blue
+            for (let i = 0; i < 3; i++) {
+                const end = tipThree.clone().add(axisDir(i));
+                verts.push(tipThree.x, tipThree.y, tipThree.z, end.x, end.y, end.z);
+                cols.push(...axisColours[i], ...axisColours[i]);
+            }
+            const axesGeometry = new THREE.BufferGeometry();
+            axesGeometry.setAttribute('position', new THREE.Float32BufferAttribute(verts, 3));
+            axesGeometry.setAttribute('color', new THREE.Float32BufferAttribute(cols, 3));
+            const axesMaterial = new THREE.LineBasicMaterial({ vertexColors: true });
+            this.toolMountGroup.add(new THREE.LineSegments(axesGeometry, axesMaterial));
+        }
     }
 
     /**
