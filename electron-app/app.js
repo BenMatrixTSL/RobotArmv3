@@ -465,26 +465,6 @@ function hasToolMountCoordinate() {
 }
 
 /**
- * Tool-mount offset from the last link, in millimetres (read-only coordinate 7).
- * @returns {{ name: string, x: number, y: number, z: number }|null}
- */
-function getToolMountOffsetMm() {
-    if (!hasToolMountCoordinate()) {
-        return null;
-    }
-    const toolJoint = robotKinematics.fixedToolJoints[0];
-    if (!toolJoint || !toolJoint.origin) {
-        return null;
-    }
-    return {
-        name: toolJoint.name || 'tool_mount',
-        x: (toolJoint.origin.x || 0) * 1000,
-        y: (toolJoint.origin.y || 0) * 1000,
-        z: (toolJoint.origin.z || 0) * 1000
-    };
-}
-
-/**
  * Total kinematic coordinates: revolute joints plus optional fixed tool mount.
  * @returns {number}
  */
@@ -520,26 +500,6 @@ function commandHasJointAngleParams(params) {
         }
     }
     return false;
-}
-
-/**
- * HTML for read-only tool-mount coordinate (coordinate 7).
- * @returns {string}
- */
-function buildToolMountCoordinateHtml() {
-    const offset = getToolMountOffsetMm();
-    if (!offset) {
-        return '';
-    }
-    const coordNum = getRevoluteJointCount() + 1;
-    return (
-        '<div class="simulated-angle-control tool-mount-coordinate">' +
-        '<label>Coordinate ' + coordNum + ' - Tool mount (fixed, no servo):</label>' +
-        '<span class="tool-mount-offset">' +
-        offset.name + ': X ' + offset.x.toFixed(1) + ' mm, Y ' + offset.y.toFixed(1) +
-        ' mm, Z ' + offset.z.toFixed(1) + ' mm' +
-        '</span></div>'
-    );
 }
 
 /**
@@ -723,7 +683,6 @@ function generateSimulatedAngleControls() {
         `;
     }
     
-    html += buildToolMountCoordinateHtml();
     container.innerHTML = html;
 }
 
@@ -2021,7 +1980,6 @@ function generateKinematicsAngleControls() {
         `;
     }
 
-    html += buildToolMountCoordinateHtml();
     container.innerHTML = html;
 }
 
