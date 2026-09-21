@@ -35,6 +35,7 @@ class RobotArm3D {
         this.toolMountGroup = null;  // Overlay: flange mount + tool tip (coordinate 7)
         this.jointAngles = [];
         this.targetAngles = []; // Target angles for animation
+        this.urdfAnimating = false;
         this.currentAnimatedAngles = []; // Current animated angles (for smooth transitions)
         this.jointConfigs = [];
         this.animationId = null;
@@ -564,28 +565,13 @@ class RobotArm3D {
 
         // If a URDF robot is loaded, drive its joints directly using URDFLoader
         if (this.urdfRobot && this.urdfRobot.setJointValue) {
-            const kinematicsJointsForUrdf = (typeof robotKinematics !== 'undefined' && robotKinematics.isConfigured())
-                ? robotKinematics.getJointConfigs() : null;
-
-            if (kinematicsJointsForUrdf && kinematicsJointsForUrdf.length > 0) {
-                this.urdfJointNames = kinematicsJointsForUrdf.map(function (joint) {
-                    return joint.name;
-                });
-            }
-
-            const jointCount = Math.min(this.urdfJointNames.length, this.jointAngles.length);
-            for (let i = 0; i < jointCount; i++) {
-                const jointName = this.urdfJointNames[i];
-                let angleDeg = this.jointAngles[i] || 0;
-                const kinJoint = kinematicsJointsForUrdf && kinematicsJointsForUrdf[i];
-                const offset = (kinJoint && typeof kinJoint.zeroOffsetDegrees === 'number') ? kinJoint.zeroOffsetDegrees : 0;
-                angleDeg = angleDeg + offset;
-                const angleRad = (angleDeg * Math.PI) / 180;
-                try {
-                    this.urdfRobot.setJointValue(jointName, angleRad);
-                } catch (error) {
-                    // If a joint name is missing, just skip it
-                }
+            if (animate && this.currentAnimatedAngles.length === this.targetAngles.length) {
+                // Ease towards the new target in animate()
+                this.urdfAnimating = true;
+            } else {
+                this.urdfAnimating = false;
+                this.currentAnimatedAngles = this.targetAngles.slice();
+                this.applyUrdfAngles(this.currentAnimatedAngles);
             }
 
             this.updateToolMountVisual();
@@ -607,6 +593,59 @@ class RobotArm3D {
         this.jointConfigs = jointConfigs;
         this.updateArmGeometry();
         this.updateToolMountVisual();
+    }
+
+    /**
+     * Drives the loaded URDF robot's joints to the given angles.
+     * @param {Array} angles - Joint angles in degrees (revolute joints only)
+     */
+    applyUrdfAngles(angles) {
+        const kinematicsJointsForUrdf = (typeof robotKinematics !== 'undefined' && robotKinematics.isConfigured())
+            ? robotKinematics.getJointConfigs() : null;
+
+        if (kinematicsJointsForUrdf && kinematicsJointsForUrdf.length > 0) {
+            this.urdfJointNames = kinematicsJointsForUrdf.map(function (joint) {
+                return joint.name;
+            });
+        }
+
+        const jointCount = Math.min(this.urdfJointNames.length, angles.length);
+        for (let i = 0; i < jointCount; i++) {
+            const jointName = this.urdfJointNames[i];
+            let angleDeg = angles[i] || 0;
+            const kinJoint = kinematicsJointsForUrdf && kinematicsJointsForUrdf[i];
+            const offset = (kinJoint && typeof kinJoint.zeroOffsetDegrees === 'number') ? kinJoint.zeroOffsetDegrees : 0;
+            angleDeg = angleDeg + offset;
+            const angleRad = (angleDeg * Math.PI) / 180;
+            try {
+                this.urdfRobot.setJointValue(jointName, angleRad);
+            } catch (error) {
+                // If a joint name is missing, just skip it
+            }
+        }
+    }
+
+    /**
+     * Advances the eased transition towards targetAngles for the URDF robot.
+     * @param {number} dtSeconds - Time since the previous frame
+     */
+    stepUrdfAnimation(dtSeconds) {
+        const factor = 1 - Math.exp(-dtSeconds * 8);
+        let done = true;
+        for (let i = 0; i < this.targetAngles.length; i++) {
+            const diff = this.targetAngles[i] - this.currentAnimatedAngles[i];
+            if (Math.abs(diff) < 0.05) {
+                this.currentAnimatedAngles[i] = this.targetAngles[i];
+            } else {
+                this.currentAnimatedAngles[i] += diff * factor;
+                done = false;
+            }
+        }
+        this.applyUrdfAngles(this.currentAnimatedAngles);
+        this.updateToolMountVisual();
+        if (done) {
+            this.urdfAnimating = false;
+        }
     }
 
     /**
@@ -950,10 +989,15 @@ class RobotArm3D {
     animate() {
         this.animationId = requestAnimationFrame(() => this.animate());
         
-        // For URDF-based visualization we don't need extra interpolation here;
-        // joints are updated directly in update(). The existing interpolation
-        // logic is kept only for the simple fallback arm.
-        
+        // URDF robot: ease joints towards the target when update() requested animation.
+        // (Real-robot updates snap directly in update().)
+        const now = performance.now();
+        const dt = Math.min((now - (this.lastAnimateTime || now)) / 1000, 0.1);
+        this.lastAnimateTime = now;
+        if (this.urdfAnimating && this.urdfRobot && this.urdfRobot.setJointValue) {
+            this.stepUrdfAnimation(dt);
+        }
+
         this.renderer.render(this.scene, this.camera);
     }
 
