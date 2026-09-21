@@ -7610,7 +7610,8 @@ function update3DVisualizationWithAngles(jointAngles) {
         // Ensure we have the correct number of angles (pad with zeros if needed)
         const expectedJointCount = robotKinematics.isConfigured() ? robotKinematics.getJointCount() : configs.length;
         // When simulation mode is on, use simulated angles so 3D and End Effector Position match the sliders
-        const anglesToUse = (useSimulatedAngles && simulatedAngles.length >= expectedJointCount)
+        const showingSimulated = useSimulatedAngles && simulatedAngles.length >= expectedJointCount;
+        const anglesToUse = showingSimulated
             ? [...simulatedAngles]
             : [...jointAngles];
         const adjustedAngles = anglesToUse;
@@ -7622,7 +7623,7 @@ function update3DVisualizationWithAngles(jointAngles) {
             adjustedAngles.pop();
         }
         
-        robotArm3D.update(configs, adjustedAngles, false); // No animation for real robot updates
+        robotArm3D.update(configs, adjustedAngles, showingSimulated); // Snap for real robot updates; ease simulated ones
         
         // Calculate and display end effector position
         // Only calculate if we have the correct number of angles
