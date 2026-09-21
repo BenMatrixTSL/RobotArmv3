@@ -48,6 +48,12 @@ class RobotArm3D {
         this.init();
     }
 
+    // Height of the drawn base cylinder (mm). Every joint is lifted by this
+    // so the arm sits on top of the base rather than inside it; anything else
+    // drawn from raw kinematics output must be lifted by the same amount (see
+    // urdfMmToThreePos) or it lands this far below the joints it belongs to.
+    static BASE_TOP_Y_MM = 20;
+
     /**
      * Initializes the Three.js scene, camera, and renderer
      */
@@ -358,12 +364,16 @@ class RobotArm3D {
     }
 
     /**
-     * Converts a URDF-frame position (millimetres) to Three.js scene coordinates.
+     * Converts a URDF-frame position (millimetres) to Three.js scene coordinates,
+     * including the lift onto the top of the drawn base cylinder that
+     * updateArmGeometry() applies to every joint — without it, anything drawn
+     * from kinematics output (the tool mount / tip) sits BASE_TOP_Y_MM below the
+     * joints it's supposed to connect to.
      * @param {{ x: number, y: number, z: number }} posMm
      * @returns {THREE.Vector3}
      */
     urdfMmToThreePos(posMm) {
-        return new THREE.Vector3(-posMm.y, posMm.z, posMm.x);
+        return new THREE.Vector3(-posMm.y, posMm.z + RobotArm3D.BASE_TOP_Y_MM, posMm.x);
     }
 
     /**
@@ -658,22 +668,22 @@ class RobotArm3D {
         currentTransform.identity();
 
         // Create base
-        const baseGeometry = new THREE.CylinderGeometry(30, 30, 20, 32);
+        const baseGeometry = new THREE.CylinderGeometry(30, 30, RobotArm3D.BASE_TOP_Y_MM, 32);
         const baseMaterial = new THREE.MeshStandardMaterial({ color: 0x666666 });
         const base = new THREE.Mesh(baseGeometry, baseMaterial);
-        base.position.y = 10;
+        base.position.y = RobotArm3D.BASE_TOP_Y_MM / 2;
         this.robotArm.add(base);
 
         // Track positions for drawing links
-        // Start with base position (top of base cylinder at y=20mm)
-        const baseTopPosition = new THREE.Vector3(0, 20, 0); // Base top in mm
+        // Start with base position (top of base cylinder)
+        const baseTopPosition = new THREE.Vector3(0, RobotArm3D.BASE_TOP_Y_MM, 0); // Base top in mm
         const positions = [baseTopPosition.clone()];
 
         // Start transformation from base_link origin
         // Translate to base top
         // Note: We'll handle coordinate system mapping in the joint transformations
         const baseOffset = new THREE.Matrix4();
-        baseOffset.makeTranslation(0, 20, 0); // Start from base top (20mm up)
+        baseOffset.makeTranslation(0, RobotArm3D.BASE_TOP_Y_MM, 0); // Start from base top
         currentTransform.multiply(baseOffset);
 
         // Process each joint using URDF transformations
@@ -791,7 +801,7 @@ class RobotArm3D {
             
             // Also add base offset
             const baseOffset = new THREE.Matrix4();
-            baseOffset.makeTranslation(0, 20, 0);
+            baseOffset.makeTranslation(0, RobotArm3D.BASE_TOP_Y_MM, 0);
             currentTransform.premultiply(baseOffset);
 
             // Extract position from transformation matrix
@@ -1000,12 +1010,9 @@ class RobotArm3D {
                 return;
             }
 
-            // Map URDF (X,Y,Z) -> Three.js (-Y,Z,X)
-            const threeCenter = new THREE.Vector3(
-                -centerY,   // X (right) = -URDF Y
-                centerZ,    // Y (up)    =  URDF Z
-                centerX     // Z (forward) = URDF X
-            );
+            // Same URDF -> scene mapping (and base lift) as the arm itself,
+            // so a zone sits where the joints/tool actually pass through it.
+            const threeCenter = this.urdfMmToThreePos({ x: centerX, y: centerY, z: centerZ });
 
             const threeSize = {
                 x: sizeY_urdf, // scene X span corresponds to URDF Y
@@ -1065,12 +1072,9 @@ class RobotArm3D {
             const z = point.z;
             if (x == null || y == null || z == null) return;
 
-            // Map URDF (X,Y,Z) -> Three.js (-Y,Z,X)
-            const threePos = new THREE.Vector3(
-                -y, // X
-                z,  // Y
-                x   // Z
-            );
+            // Same URDF -> scene mapping (and base lift) as the arm itself,
+            // so a marker sits exactly where the tool tip was when it was stored.
+            const threePos = this.urdfMmToThreePos({ x: x, y: y, z: z });
 
             const geom = new THREE.SphereGeometry(5, 12, 12);
             const mat = new THREE.MeshStandardMaterial({ color: 0x00ff00 });
@@ -1118,12 +1122,9 @@ class RobotArm3D {
             const y = typeof p.y === 'number' ? p.y : 0;
             const z = typeof p.z === 'number' ? p.z : 0;
 
-            // Map URDF (X,Y,Z) -> Three.js (-Y,Z,X)
-            const threeX = -y;
-            const threeY = z;
-            const threeZ = x;
-
-            positionsArray.push(threeX, threeY, threeZ);
+            // Same URDF -> scene mapping (and base lift) as the arm itself.
+            const threePos = this.urdfMmToThreePos({ x: x, y: y, z: z });
+            positionsArray.push(threePos.x, threePos.y, threePos.z);
         }
 
         if (positionsArray.length < 6) {
@@ -1187,12 +1188,9 @@ class RobotArm3D {
                 const y = typeof p.y === 'number' ? p.y : 0;
                 const z = typeof p.z === 'number' ? p.z : 0;
 
-                // Map URDF (X,Y,Z) -> Three.js (-Y,Z,X)
-                const threeX = -y;
-                const threeY = z;
-                const threeZ = x;
-
-                positionsArray.push(threeX, threeY, threeZ);
+                // Same URDF -> scene mapping (and base lift) as the arm itself.
+                const threePos = this.urdfMmToThreePos({ x: x, y: y, z: z });
+                positionsArray.push(threePos.x, threePos.y, threePos.z);
             }
 
             if (positionsArray.length < 6) {
