@@ -7487,20 +7487,19 @@ function initialize3DVisualization() {
         const container = document.getElementById('robotArm3DContainer');
         if (!container) {
             console.error('3D container element not found');
-            document.getElementById('visualizationStatus').textContent = 'Error: Container not found';
+            showAppMessage('3D visualisation error: container not found.');
             return;
         }
 
         if (typeof THREE === 'undefined') {
             console.error('Three.js library not loaded');
-            document.getElementById('visualizationStatus').textContent = 'Error: Three.js not loaded';
+            showAppMessage('3D visualisation error: Three.js not loaded.');
             return;
         }
 
         try {
             robotArm3D = new RobotArm3D('robotArm3DContainer');
             robotArm3D.onAnimationStep = recordSimulatedTraceSample;
-            document.getElementById('visualizationStatus').textContent = 'Initialized';
             console.log('3D visualization initialized');
             
             // Try to update with demo config if available
@@ -7576,7 +7575,7 @@ function initialize3DVisualization() {
             }
         } catch (error) {
             console.error('Failed to initialize 3D visualization:', error);
-            document.getElementById('visualizationStatus').textContent = 'Error: ' + error.message;
+            showAppMessage('3D visualisation error: ' + error.message);
         }
     }, 1000); // Increased delay to ensure container is visible
 }
@@ -7747,7 +7746,6 @@ function update3DVisualization() {
 
     // Update visualization
     robotArm3D.update(configs, jointAngles);
-    document.getElementById('visualizationStatus').textContent = 'Updated';
     
     // Calculate and display end effector position
     // Only calculate if we have the correct number of angles
@@ -7870,7 +7868,6 @@ function debug3DVisualization() {
             : Array(numJoints).fill(0);
         if (robotArm3D) {
             robotArm3D.update(configs, angles);
-            document.getElementById('visualizationStatus').textContent = 'Force updated';
         }
     }
 }
@@ -7991,7 +7988,6 @@ function updateSimulatedVisualization() {
             }
         }
         
-        document.getElementById('visualizationStatus').textContent = 'Updated (Simulated)';
     } catch (error) {
         console.error('Error updating simulated visualization:', error);
     }
