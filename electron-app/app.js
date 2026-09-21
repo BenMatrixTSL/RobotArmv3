@@ -6821,7 +6821,7 @@ const DEFAULT_URDF = `<?xml version="1.0"?>
   <joint name="joint1_base_yaw" type="revolute">
     <parent link="base_link"/>
     <child link="link1"/>
-    <origin xyz="0 0 0.05" rpy="0 0 0"/>
+    <origin xyz="0 0 0.036" rpy="0 0 0"/>
     <axis xyz="0 0 1"/>
     <limit lower="-3.14159" upper="3.14159" effort="10" velocity="2"/>
   </joint>
@@ -6831,7 +6831,7 @@ const DEFAULT_URDF = `<?xml version="1.0"?>
   <joint name="joint2_shoulder_pitch" type="revolute">
     <parent link="link1"/>
     <child link="link2"/>
-    <origin xyz="0 0 0.058" rpy="0 0 0"/>
+    <origin xyz="0 0 0.086" rpy="0 0 0"/>
     <axis xyz="0 -1 0"/>
     <limit lower="-1.5708" upper="0.698132" effort="10" velocity="2"/>
   </joint>
@@ -6841,7 +6841,7 @@ const DEFAULT_URDF = `<?xml version="1.0"?>
   <joint name="joint3_elbow_pitch" type="revolute">
     <parent link="link2"/>
     <child link="link3"/>
-    <origin xyz="0 0 0.135" rpy="0 0 0"/>
+    <origin xyz="0 0 0.113" rpy="0 0 0"/>
     <axis xyz="0 -1 0"/>
     <limit lower="-1.5708" upper="1.5708" effort="10" velocity="2"/>
   </joint>
@@ -6851,7 +6851,7 @@ const DEFAULT_URDF = `<?xml version="1.0"?>
   <joint name="joint4_wrist_roll" type="revolute">
     <parent link="link3"/>
     <child link="link4"/>
-    <origin xyz="0.03965 0 0.055" rpy="0 0 0"/>
+    <origin xyz="0.02498 0 0.055" rpy="0 0 0"/>
     <axis xyz="1 0 0"/>
     <limit lower="-1.5708" upper="1.5708" effort="5" velocity="3"/>
   </joint>
@@ -6861,7 +6861,7 @@ const DEFAULT_URDF = `<?xml version="1.0"?>
   <joint name="joint5_wrist_pitch" type="revolute">
     <parent link="link4"/>
     <child link="link5"/>
-    <origin xyz="0.06285 0 0" rpy="0 0 0"/>
+    <origin xyz="0.08148 0 0" rpy="0 0 0"/>
     <axis xyz="0 -1 0"/>
     <limit lower="-0.0872665" upper="1.5708" effort="5" velocity="3"/>
   </joint>
@@ -6871,8 +6871,8 @@ const DEFAULT_URDF = `<?xml version="1.0"?>
   <joint name="joint6_wrist_roll_2" type="revolute">
     <parent link="link5"/>
     <child link="link6"/>
-    <origin xyz="0.055 0 -0.03965" rpy="0 0 0"/>
-    <axis xyz="1 0 0"/>
+    <origin xyz="0.055 0 -0.02498" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
     <limit lower="-1.5708" upper="1.5708" effort="5" velocity="3"/>
   </joint>
 
@@ -6880,7 +6880,7 @@ const DEFAULT_URDF = `<?xml version="1.0"?>
   <joint name="tool_mount" type="fixed">
     <parent link="link6"/>
     <child link="tool_link"/>
-    <origin xyz="0 0 -0.035" rpy="0 0 0"/>
+    <origin xyz="0 0 -0.05" rpy="0 0 0"/>
   </joint>
 
   <!-- ================= END TOOLS =================
@@ -6925,7 +6925,7 @@ const DEFAULT_URDF = `<?xml version="1.0"?>
   <joint name="tool_vacuum" type="fixed">
     <parent link="tool_link"/>
     <child link="tcp_vacuum"/>
-    <origin xyz="0 0 -0.14062" rpy="0 0 0"/>
+    <origin xyz="0.00202 0 -0.119" rpy="0 0 0"/>
     <end_tool id="1" label="Pneumatic vacuum and valve" controls="pump,solenoid"/>
   </joint>
 
@@ -6934,7 +6934,7 @@ const DEFAULT_URDF = `<?xml version="1.0"?>
   <joint name="tool_servo" type="fixed">
     <parent link="tool_link"/>
     <child link="tcp_servo"/>
-    <origin xyz="0 0 -0.15219" rpy="0 0 0"/>
+    <origin xyz="0 0 -0.12019" rpy="0 0 0"/>
     <end_tool id="2" label="Servo motor" controls="servo"/>
   </joint>
 
