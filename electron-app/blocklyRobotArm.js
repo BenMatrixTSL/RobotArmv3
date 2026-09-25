@@ -1364,63 +1364,85 @@ if (typeof robotArmClient !== 'undefined' && robotArmClient) {
 }
 
 /**
- * Turns the tool to currentToolOrientation without changing the TCP position:
- * re-solves IK on the server at the current XYZ with the new orientation,
- * moves the joints at the given speed and waits for the motion to finish.
+ * Turns the tool to currentToolOrientation without moving the tool tip.
+ * Works in joint space so nothing is lost to a rounded XYZ round trip:
+ *  - reads the current joint angles and the server's own FK of them;
+ *  - if the requested pointing vector already matches the tool's current
+ *    Z axis, only joint 6 is turned (server applyToolSpin); joints 1-5 are
+ *    not even re-sent;
+ *  - otherwise the pose is re-solved at the server-FK position with the
+ *    current angles as seed and reference, so the wrist re-poses in place.
  * Used by the "Set tool orientation" block so a rotation happens when the
- * block runs (at its own speed) rather than folded into the next move.
+ * block runs, at its own speed, rather than folded into the next move.
  * @param {number} speedStepsPerSecond
  */
 async function blocklyApplyToolOrientationInPlace(speedStepsPerSecond) {
     if (!currentToolOrientation) return;
     if (!robotArmClient || !robotArmClient.isConnected) {
-        appendBlocklyOutput('Not connected — orientation stored for the next move.');
+        appendBlocklyOutput('Not connected \u2014 orientation stored for the next move.');
         return;
     }
     if (typeof robotKinematics === 'undefined' || !robotKinematics.isConfigured()) {
-        appendBlocklyOutput('Kinematics not configured — orientation stored for the next move.');
-        return;
-    }
-    const pose = getCurrentDisplayXYZ();
-    if (!isFinite(pose.x) || !isFinite(pose.y) || !isFinite(pose.z)) {
-        appendBlocklyOutput('Current position unknown — orientation stored for the next move.');
+        appendBlocklyOutput('Kinematics not configured \u2014 orientation stored for the next move.');
         return;
     }
 
-    let currentAngles = null;
+    let currentAngles;
     try {
         const status = await robotArmClient.getStatus();
         const numJoints = getNumJoints();
         currentAngles = [];
         for (let i = 0; i < numJoints; i++) {
-            currentAngles.push(status[i] && typeof status[i].angleDegrees === 'number' ? status[i].angleDegrees : 0);
+            if (!status[i] || typeof status[i].angleDegrees !== 'number') throw new Error('joint ' + (i + 1) + ' angle unknown');
+            currentAngles.push(status[i].angleDegrees);
         }
     } catch (e) {
-        console.warn('Set tool orientation: failed to read status for IK seed:', e);
-        currentAngles = null;
-    }
-
-    const target = { x: pose.x, y: pose.y, z: pose.z };
-    const baseAngles = await robotArmClient.inverseKinematics(
-        { ...target, orientation: currentToolOrientation },
-        currentAngles
-    );
-    if (!baseAngles) {
-        appendBlocklyOutput('Could not reach that orientation at the current position — stored for the next move.');
+        appendBlocklyOutput('Current joint angles unknown (' + e.message + ') \u2014 orientation stored for the next move.');
         return;
     }
-    // Pass the current angles as the reference so the solver prefers staying
-    // in the present configuration and only turns what the orientation needs.
-    const refined = await robotArmClient.refineOrientationWithAccuracy(target, baseAngles, currentToolOrientation, currentAngles);
-    const angles = refined.angles;
-    for (let i = 0; i < angles.length; i++) {
-        await robotArmClient.moveJoint(i + 1, angles[i], speedStepsPerSecond);
+
+    const fk = await robotArmClient.forwardKinematics(currentAngles);
+    const T = fk && fk.rotation;
+    // Tool points along -Z of the last joint frame (see toolZAxisFromMatrix on the server).
+    const toolZ = T ? { x: -T[0][2], y: -T[1][2], z: -T[2][2] } : null;
+    const want = currentToolOrientation;
+    const wantLen = Math.sqrt(want.x * want.x + want.y * want.y + want.z * want.z) || 1;
+    const dot = toolZ ? (want.x * toolZ.x + want.y * toolZ.y + want.z * toolZ.z) / wantLen : -2;
+    const pointingErrorDeg = Math.acos(Math.max(-1, Math.min(1, dot))) * 180 / Math.PI;
+
+    let targetAngles;
+    let spinErrorDeg = null;
+    if (pointingErrorDeg <= 2.0 && currentAngles.length >= 6) {
+        // Pointing direction already right: spin joint 6 only.
+        const spun = await robotArmClient.applyToolSpin(currentAngles, want);
+        targetAngles = spun.angles;
+        spinErrorDeg = spun.spinErrorDeg;
+        const j6 = targetAngles.length - 1;
+        if (Math.abs(targetAngles[j6] - currentAngles[j6]) < 0.2) {
+            appendBlocklyOutput('Tool orientation already set (joint 6 at ' + currentAngles[j6].toFixed(1) + '\u00b0)');
+            return;
+        }
+        await robotArmClient.moveJoint(j6 + 1, targetAngles[j6], speedStepsPerSecond);
+    } else {
+        // Pointing direction changes: re-solve at the server's own FK position
+        // so the tip stays put, seeded and referenced by the current angles.
+        const target = { x: fk.position.x, y: fk.position.y, z: fk.position.z };
+        const baseAngles = await robotArmClient.inverseKinematics({ ...target, orientation: want }, currentAngles);
+        if (!baseAngles) {
+            appendBlocklyOutput('Could not reach that orientation at the current position \u2014 stored for the next move.');
+            return;
+        }
+        const refined = await robotArmClient.refineOrientationWithAccuracy(target, baseAngles, want, currentAngles);
+        targetAngles = refined.angles;
+        spinErrorDeg = typeof refined.spinErrorDeg === 'number' ? refined.spinErrorDeg : null;
+        for (let i = 0; i < targetAngles.length; i++) {
+            await robotArmClient.moveJoint(i + 1, targetAngles[i], speedStepsPerSecond);
+        }
     }
     await robotArmClient.waitForMotionComplete(30000);
 
-    const oriErr = formatFiniteNumber(refined.orientationErrorDeg, 1);
-    const spinErr = typeof refined.spinErrorDeg === 'number' ? ', spin ' + formatFiniteNumber(refined.spinErrorDeg, 1) + '°' : '';
-    appendBlocklyOutput('Tool orientation applied (pointing error ' + oriErr + '°' + spinErr + ')');
+    const spinStr = typeof spinErrorDeg === 'number' ? ', spin error ' + formatFiniteNumber(spinErrorDeg, 1) + '\u00b0' : '';
+    appendBlocklyOutput('Tool orientation applied (joint 6 to ' + targetAngles[targetAngles.length - 1].toFixed(1) + '\u00b0' + spinStr + ')');
 }
 
 function appendBlocklyOutput(text) {

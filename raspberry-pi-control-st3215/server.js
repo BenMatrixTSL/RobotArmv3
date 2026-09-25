@@ -46,6 +46,7 @@ const INSTANT_SERVER_COMMANDS = {
     kinematicsForwardKinematicsBatch: true,
     kinematicsInverseKinematics: true,
     kinematicsRefineOrientationWithAccuracy: true,
+    kinematicsApplyToolSpin: true,
     kinematicsGetInfo: true,
     executeLinearMove: true,
     abortLinearPath: true
@@ -868,6 +869,18 @@ async function handleCommand(ws, data) {
                 sendResponse({ type: 'kinematicsRefineOrientationResult', result: robotKinematics.refineOrientationWithAccuracy(data.targetPose, data.baseAngles, data.desiredOrientation, data.referenceAngles) });
             } catch (error) {
                 sendResponse({ type: 'error', message: `Refine orientation failed: ${error.message}` });
+            }
+            break;
+        }
+
+        case 'kinematicsApplyToolSpin': {
+            // Sets joint 6 on the given angles so the tool X axis matches
+            // orientation.rotation, leaving joints 1-5 untouched. Lets a client
+            // spin the tool in place without a lossy XYZ round trip.
+            try {
+                sendResponse({ type: 'kinematicsApplyToolSpinResult', result: robotKinematics.applyToolSpin(data.angles, data.orientation) });
+            } catch (error) {
+                sendResponse({ type: 'error', message: `Apply tool spin failed: ${error.message}` });
             }
             break;
         }

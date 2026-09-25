@@ -981,6 +981,24 @@ class RobotArmClient {
     }
 
     /**
+     * Sets joint 6 on the given angles so the tool spin matches
+     * orientation.rotation; joints 1-5 are returned unchanged.
+     * @param {Array<number>} angles
+     * @param {{ x, y, z, rotation: number }} orientation
+     * @returns {Promise<{angles:Array<number>, spinErrorDeg:number|null}>}
+     */
+    async applyToolSpin(angles, orientation) {
+        const response = await this.sendRequest('kinematicsApplyToolSpin', {
+            angles: angles,
+            orientation: orientation
+        }, 5000);
+        if (response.type === 'error') {
+            throw new Error(response.message || 'Apply tool spin failed');
+        }
+        return response.result;
+    }
+
+    /**
      * Execute a Cartesian-linear move on the server.
      * The server computes the interpolated path and drives all joints simultaneously.
      * Resolves when the move completes (linearPathComplete event received).
