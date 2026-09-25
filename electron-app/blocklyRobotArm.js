@@ -1831,6 +1831,10 @@ function registerBlocklyGenerators() {
                     for (let i = 0; i < numJoints; i++) {
                         await robotArmClient.moveJoint(i + 1, refinedAngles[i], ${speedStepsPerSecond});
                     }
+                    // The sequential awaits above complete the serial-bus drain, so
+                    // the motion listener sees real status. Without this the next
+                    // block (gripper, next waypoint) ran while the arm was still moving.
+                    await robotArmClient.waitForMotionComplete(30000);
 
                     const posErr = formatFiniteNumber(refined.positionErrorMm, 2);
                     const oriErr = formatFiniteNumber(refined.orientationErrorDeg, 1);
@@ -1928,6 +1932,10 @@ function registerBlocklyGenerators() {
                     for (let i = 0; i < numJoints; i++) {
                         await robotArmClient.moveJoint(i + 1, refinedAngles[i], ${speedStepsPerSecond});
                     }
+                    // The sequential awaits above complete the serial-bus drain, so
+                    // the motion listener sees real status. Without this the next
+                    // block (gripper, next waypoint) ran while the arm was still moving.
+                    await robotArmClient.waitForMotionComplete(30000);
 
                     const posErr = formatFiniteNumber(refined.positionErrorMm, 2);
                     const oriErr = formatFiniteNumber(refined.orientationErrorDeg, 1);
