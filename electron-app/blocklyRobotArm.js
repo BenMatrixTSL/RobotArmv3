@@ -695,7 +695,7 @@ function defineCustomBlocks() {
             this.setPreviousStatement(true, null);
             this.setNextStatement(true, null);
             this.setColour(165);
-            this.setTooltip('Open the gripper (moves end-tool servo to 180°)');
+            this.setTooltip('Open the gripper (moves end-tool servo to the shared open position, 141°)');
         }
     };
 
@@ -1973,7 +1973,7 @@ function registerBlocklyGenerators() {
         highlightBlocklyBlock('${blockId}');
         await checkBlocklyPauseStop();
         appendBlocklyOutput('Opening gripper');
-        moveEndToolServo(180);
+        openGripper();
         await new Promise(resolve => setTimeout(resolve, 500));
         `;
     };
@@ -1984,7 +1984,7 @@ function registerBlocklyGenerators() {
         highlightBlocklyBlock('${blockId}');
         await checkBlocklyPauseStop();
         appendBlocklyOutput('Closing gripper');
-        moveEndToolServo(0);
+        closeGripper();
         await new Promise(resolve => setTimeout(resolve, 500));
         `;
     };
@@ -2174,14 +2174,14 @@ function convertBlocklyToGCode(blocklyCode) {
             continue;
         }
 
-        // Convert gripper_open: moveEndToolServo(180)
-        if (line.includes('moveEndToolServo(180)')) {
+        // Convert gripper_open: openGripper()
+        if (line.includes('openGripper()')) {
             gcode += 'M10\n';
             continue;
         }
 
-        // Convert gripper_close: moveEndToolServo(0)
-        if (line.includes('moveEndToolServo(0)')) {
+        // Convert gripper_close: closeGripper()
+        if (line.includes('closeGripper()')) {
             gcode += 'M11\n';
             continue;
         }
@@ -2328,14 +2328,14 @@ function convertBlocklyToRapid(blocklyCode) {
             continue;
         }
 
-        // Convert gripper_open: moveEndToolServo(180)
-        if (line.includes('moveEndToolServo(180)')) {
+        // Convert gripper_open: openGripper()
+        if (line.includes('openGripper()')) {
             rapid += 'GripperOpen;\n';
             continue;
         }
 
-        // Convert gripper_close: moveEndToolServo(0)
-        if (line.includes('moveEndToolServo(0)')) {
+        // Convert gripper_close: closeGripper()
+        if (line.includes('closeGripper()')) {
             rapid += 'GripperClose;\n';
             continue;
         }

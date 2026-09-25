@@ -158,6 +158,17 @@ let safeZHeight = 300; // Default safe Z height in mm for routing over dead zone
 // {x,y,z,rotation} = locked to that tool vector.
 let currentToolOrientation = null;
 
+// Gripper servo positions shared by every programming paradigm: Blockly
+// Open/Close Gripper, G-code M10/M11 and RAPID GripperOpen/GripperClose.
+// The end tool maps angle -> 8-bit servo position as angle * 255 / 180, so
+// 141° is about 200/255. Fully open (180° = 255) drives the gripper hard
+// against its end stop; 141° opens far enough to clear a block without that.
+const GRIPPER_OPEN_ANGLE = 141;
+const GRIPPER_CLOSED_ANGLE = 0;
+
+function openGripper() { moveEndToolServo(GRIPPER_OPEN_ANGLE); }
+function closeGripper() { moveEndToolServo(GRIPPER_CLOSED_ANGLE); }
+
 // Exact commanded XYZ for jog moves — updated with precise step sizes so errors
 // do not accumulate across sequential jogs. Reset to null after any non-jog move
 // so the next jog sequence re-initialises from the actual arm position.
@@ -5672,17 +5683,17 @@ async function executeGCodeCommand(command) {
             }
             
         } else if (command.code === 'M10') {
-            // M10 = Gripper open (servo to 180° = fully open)
+            // M10 = Gripper open (servo to GRIPPER_OPEN_ANGLE)
             gcodeProcessor.log('M10: Gripper open');
             if (robotArmClient.isConnected) {
-                await robotArmClient.sendRequest('toolSetServoEnabledAndAngle', { angle: 180 });
+                await robotArmClient.sendRequest('toolSetServoEnabledAndAngle', { angle: GRIPPER_OPEN_ANGLE });
                 await new Promise(resolve => setTimeout(resolve, 500));
             }
         } else if (command.code === 'M11') {
-            // M11 = Gripper close (servo to 0° = fully closed)
+            // M11 = Gripper close (servo to GRIPPER_CLOSED_ANGLE)
             gcodeProcessor.log('M11: Gripper close');
             if (robotArmClient.isConnected) {
-                await robotArmClient.sendRequest('toolSetServoEnabledAndAngle', { angle: 0 });
+                await robotArmClient.sendRequest('toolSetServoEnabledAndAngle', { angle: GRIPPER_CLOSED_ANGLE });
                 await new Promise(resolve => setTimeout(resolve, 500));
             }
         } else if (command.code === 'M12') {
@@ -6236,13 +6247,13 @@ async function runRapidProgram() {
         } else if (/^GripperOpen\b/i.test(line)) {
             console.log('RAPID: GripperOpen on line', i + 1);
             if (robotArmClient && robotArmClient.isConnected) {
-                await robotArmClient.sendRequest('toolSetServoEnabledAndAngle', { angle: 180 });
+                await robotArmClient.sendRequest('toolSetServoEnabledAndAngle', { angle: GRIPPER_OPEN_ANGLE });
                 await new Promise(function (resolve) { setTimeout(resolve, 500); });
             }
         } else if (/^GripperClose\b/i.test(line)) {
             console.log('RAPID: GripperClose on line', i + 1);
             if (robotArmClient && robotArmClient.isConnected) {
-                await robotArmClient.sendRequest('toolSetServoEnabledAndAngle', { angle: 0 });
+                await robotArmClient.sendRequest('toolSetServoEnabledAndAngle', { angle: GRIPPER_CLOSED_ANGLE });
                 await new Promise(function (resolve) { setTimeout(resolve, 500); });
             }
         } else if (/^PumpOn\b/i.test(line)) {
