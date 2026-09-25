@@ -17,7 +17,10 @@
     <parent link="base_link"/>
     <child link="link1"/>
     <origin xyz="0 0 0.036" rpy="0 0 0"/>
-    <axis xyz="0 0 1"/>
+    <!-- Servo positive = clockwise viewed from above (verified on the arm, 2026-09-25),
+         i.e. a negative rotation about world +Z. With this the frame is right-handed:
+         +X forward, +Y on the anticlockwise side, +Z up. -->
+    <axis xyz="0 0 -1"/>
     <limit lower="-3.14159" upper="3.14159" effort="10" velocity="2"/>
   </joint>
 
@@ -47,7 +50,9 @@
     <parent link="link3"/>
     <child link="link4"/>
     <origin xyz="0.02498 0 0.055" rpy="0 0 0"/>
-    <axis xyz="1 0 0"/>
+    <!-- Servo positive = anticlockwise viewed from behind the arm looking towards
+         the tool (verified 2026-09-25) = a negative rotation about the link +X axis. -->
+    <axis xyz="-1 0 0"/>
     <limit lower="-1.5708" upper="1.5708" effort="5" velocity="3"/>
   </joint>
 

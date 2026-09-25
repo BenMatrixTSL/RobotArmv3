@@ -6928,7 +6928,7 @@ const DEFAULT_URDF = `<?xml version="1.0"?>
     <parent link="base_link"/>
     <child link="link1"/>
     <origin xyz="0 0 0.036" rpy="0 0 0"/>
-    <axis xyz="0 0 1"/>
+    <axis xyz="0 0 -1"/>
     <limit lower="-3.14159" upper="3.14159" effort="10" velocity="2"/>
   </joint>
 
@@ -6958,7 +6958,7 @@ const DEFAULT_URDF = `<?xml version="1.0"?>
     <parent link="link3"/>
     <child link="link4"/>
     <origin xyz="0.02498 0 0.055" rpy="0 0 0"/>
-    <axis xyz="1 0 0"/>
+    <axis xyz="-1 0 0"/>
     <limit lower="-1.5708" upper="1.5708" effort="5" velocity="3"/>
   </joint>
 
