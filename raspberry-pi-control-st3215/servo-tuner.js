@@ -78,16 +78,61 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 // likely explanation for a servo that's reliable through the live app
 // failing bus writes repeatedly here. Route every move through this instead.
 const QUIET_BEFORE_MOVE_MS = 12; // matches servoWorker.js's BUS_QUIET_BEFORE_MOVE_MS
+
+// ── Fault tolerance ────────────────────────────────────────────────────────
+// A servo can go quiet on the bus for well over a second (joint 2 does this
+// even unloaded at home), and the protocol layer's own 4 quick attempts do
+// not cover that. Every bus operation the tuner makes therefore goes through
+// withRetry(): several attempts with a growing pause and a cleared pending
+// transaction between them, so a quiet spell costs time rather than the run.
+const RETRY_ATTEMPTS        = 8;
+const RETRY_BASE_DELAY_MS   = 400;
+const RETRY_MAX_DELAY_MS    = 3000;
+async function withRetry(ctrl, label, fn, attempts = RETRY_ATTEMPTS) {
+    let lastErr = null;
+    for (let attempt = 1; attempt <= attempts; attempt++) {
+        try {
+            return await fn();
+        } catch (e) {
+            lastErr = e;
+            if (attempt === attempts) break;
+            const delay = Math.min(RETRY_MAX_DELAY_MS, RETRY_BASE_DELAY_MS * attempt);
+            console.log(`      ↻ ${label}: ${e.message} — retry ${attempt}/${attempts - 1} in ${delay} ms`);
+            if (typeof ctrl.clearPendingBusTransaction === 'function') ctrl.clearPendingBusTransaction();
+            await sleep(delay);
+        }
+    }
+    throw new Error(`${label} failed after ${attempts} attempts: ${lastErr ? lastErr.message : 'unknown'}`);
+}
+
 async function moveTo(ctrl, steps) {
-    if (typeof ctrl.clearPendingBusTransaction === 'function') ctrl.clearPendingBusTransaction();
-    await sleep(QUIET_BEFORE_MOVE_MS);
-    await ctrl.moveToPosition(Math.round(steps));
+    await withRetry(ctrl, 'move', async () => {
+        if (typeof ctrl.clearPendingBusTransaction === 'function') ctrl.clearPendingBusTransaction();
+        await sleep(QUIET_BEFORE_MOVE_MS);
+        await ctrl.moveToPosition(Math.round(steps));
+    });
+}
+
+async function setSpeedRetry(ctrl, speed) {
+    await withRetry(ctrl, 'set speed', async () => {
+        if (typeof ctrl.clearPendingBusTransaction === 'function') ctrl.clearPendingBusTransaction();
+        await sleep(QUIET_BEFORE_MOVE_MS);
+        await ctrl.setSpeed(speed);
+    });
+}
+
+async function readDataRetry(ctrl, address, length) {
+    return withRetry(ctrl, `read 0x${address.toString(16)}`, async () => {
+        if (typeof ctrl.clearPendingBusTransaction === 'function') ctrl.clearPendingBusTransaction();
+        await sleep(QUIET_BEFORE_MOVE_MS);
+        return await ctrl.readData(address, length);
+    });
 }
 
 async function avgPosition(ctrl, samples = 3) {
     let sum = 0;
     for (let n = 0; n < samples; n++) {
-        sum += await ctrl.getPosition();
+        sum += await withRetry(ctrl, 'read position', () => ctrl.getPosition(), 5);
         if (n < samples - 1) await sleep(15);
     }
     return sum / samples;
@@ -116,16 +161,24 @@ async function waitSettle(ctrl) {
 
 async function unlockAndWritePID(ctrl, p, d, i, startup) {
     await sleep(200);  // ensure servo is fully settled before touching EEPROM
-    // Same gap as moveTo() (see its comment) — this is a bus write like any
-    // other and was going out with no cleared-transaction/quiet-buffer
-    // protection either.
-    if (typeof ctrl.clearPendingBusTransaction === 'function') ctrl.clearPendingBusTransaction();
-    await sleep(QUIET_BEFORE_MOVE_MS);
-    await ctrl.writeData(REG_EEPROM_LOCK, [0]);
-    await sleep(50);
-    if (typeof ctrl.clearPendingBusTransaction === 'function') ctrl.clearPendingBusTransaction();
-    await ctrl.writeData(REG_P_COEF, [p, d, i, startup]);
-    await sleep(100); // give EEPROM write time to complete
+    // Each attempt: unlock, write the 4 gain bytes, then read them back. A
+    // lost ACK does not tell us whether the servo applied the write, so the
+    // read-back is what decides success; a mismatch or a timeout retries the
+    // whole unlock+write with a growing pause.
+    await withRetry(ctrl, `EEPROM write P=${p} D=${d} I=${i}`, async () => {
+        if (typeof ctrl.clearPendingBusTransaction === 'function') ctrl.clearPendingBusTransaction();
+        await sleep(QUIET_BEFORE_MOVE_MS);
+        await ctrl.writeData(REG_EEPROM_LOCK, [0]);
+        await sleep(50);
+        if (typeof ctrl.clearPendingBusTransaction === 'function') ctrl.clearPendingBusTransaction();
+        await ctrl.writeData(REG_P_COEF, [p, d, i, startup]);
+        await sleep(100); // give EEPROM write time to complete
+        if (typeof ctrl.clearPendingBusTransaction === 'function') ctrl.clearPendingBusTransaction();
+        const back = await ctrl.readData(REG_P_COEF, 3);
+        if (back[0] !== p || back[1] !== d || back[2] !== i) {
+            throw new Error(`read-back P=${back[0]} D=${back[1]} I=${back[2]} does not match`);
+        }
+    });
 }
 
 /**
@@ -135,14 +188,14 @@ async function unlockAndWritePID(ctrl, p, d, i, startup) {
  * Returns absolute error in degrees at the settled position.
  */
 async function settledError(ctrl, homeSteps, targetSteps) {
-    await ctrl.setSpeed(TEST_SPEED);
+    await setSpeedRetry(ctrl, TEST_SPEED);
     await moveTo(ctrl, targetSteps);
     await waitSettle(ctrl);
     await sleep(POST_SETTLE_DWELL_MS);
     const atTarget = await avgPosition(ctrl, 5);
     const fwdErr   = Math.abs(ctrl.stepsToAngle(atTarget) - ctrl.stepsToAngle(targetSteps));
 
-    await ctrl.setSpeed(TEST_SPEED);
+    await setSpeedRetry(ctrl, TEST_SPEED);
     await moveTo(ctrl, homeSteps);
     await waitSettle(ctrl);
     await sleep(POST_SETTLE_DWELL_MS);
@@ -157,14 +210,14 @@ async function settledError(ctrl, homeSteps, targetSteps) {
  * Returns { forwardErr, returnErr, score } all in degrees.
  */
 async function stepResponse(ctrl, homeSteps, targetSteps) {
-    await ctrl.setSpeed(TEST_SPEED);
+    await setSpeedRetry(ctrl, TEST_SPEED);
     await moveTo(ctrl, targetSteps);
     await waitSettle(ctrl);
     await sleep(POST_SETTLE_DWELL_MS);
     const atTarget  = await avgPosition(ctrl);
     const forwardErr = Math.abs(ctrl.stepsToAngle(atTarget) - ctrl.stepsToAngle(targetSteps));
 
-    await ctrl.setSpeed(TEST_SPEED);
+    await setSpeedRetry(ctrl, TEST_SPEED);
     await moveTo(ctrl, homeSteps);
     await waitSettle(ctrl);
     await sleep(POST_SETTLE_DWELL_MS);
@@ -183,16 +236,16 @@ async function tuneJoint(ctrl, jointId) {
     console.log('─'.repeat(56));
 
     // ── Read diagnostics ──
-    const maxTorqueRaw  = await ctrl.readData(REG_MAX_TORQUE_L, 2);
+    const maxTorqueRaw  = await readDataRetry(ctrl, REG_MAX_TORQUE_L, 2);
     const maxTorque     = maxTorqueRaw[0] | (maxTorqueRaw[1] << 8);
-    const unloading     = (await ctrl.readData(REG_UNLOADING_COND, 1))[0];
-    const overloadRegs  = await ctrl.readData(REG_PROT_TORQUE, 3);
+    const unloading     = (await readDataRetry(ctrl, REG_UNLOADING_COND, 1))[0];
+    const overloadRegs  = await readDataRetry(ctrl, REG_PROT_TORQUE, 3);
     const [protTorque, protTime, overloadTorque] = overloadRegs;
     console.log(`  Diagnostics: MaxTorque=${maxTorque}/1000  UnloadingCond=0b${unloading.toString(2).padStart(8,'0')}  OverloadTorque=${overloadTorque}%  ProtTorque=${protTorque}%  ProtTime=${protTime}ms`);
     if (unloading & 0x08) console.log('  ⚠  Stall-detection bit set in UnloadingCond — servo may cut torque when stalled');
 
     // ── Read current PID ──
-    const pidData = await ctrl.readData(REG_P_COEF, 4);
+    const pidData = await readDataRetry(ctrl, REG_P_COEF, 4);
     const [origP, origD, origI, origStartup] = pidData;
     console.log(`  Current PID: P=${origP}  D=${origD}  I=${origI}  MinStartup=${origStartup}`);
 
@@ -204,7 +257,7 @@ async function tuneJoint(ctrl, jointId) {
     console.log(`  Home: ${homeDeg.toFixed(2)}°   Target: ${targetDeg.toFixed(2)}°   (offset ${cfg.testOffsetDeg > 0 ? '+' : ''}${cfg.testOffsetDeg}°)`);
 
     // ── Baseline with current settings ──
-    const baseline = await stepResponse(ctrl, homeSteps, targetSteps);
+    const baseline = await withRetry(ctrl, 'baseline measurement', () => stepResponse(ctrl, homeSteps, targetSteps), 3);
     console.log(`\n  Baseline (P=${origP} D=${origD}): fwd=${baseline.forwardErr.toFixed(3)}°  ret=${baseline.returnErr.toFixed(3)}°  score=${baseline.score.toFixed(3)}`);
 
     let bestP = origP, bestD = origD, bestScore = baseline.score;
@@ -216,8 +269,14 @@ async function tuneJoint(ctrl, jointId) {
             console.log(`    P=${p.toString().padStart(2)}: (baseline — already measured)`);
             continue;
         }
-        await unlockAndWritePID(ctrl, p, origD, origI, origStartup);
-        const r = await stepResponse(ctrl, homeSteps, targetSteps);
+        let r;
+        try {
+            await unlockAndWritePID(ctrl, p, origD, origI, origStartup);
+            r = await stepResponse(ctrl, homeSteps, targetSteps);
+        } catch (e) {
+            console.log(`    P=${p.toString().padStart(2)}: skipped — ${e.message}`);
+            continue;
+        }
         const flag = r.score < bestScore ? ' ←best' : '';
         console.log(`    P=${p.toString().padStart(2)}: fwd=${r.forwardErr.toFixed(3)}°  ret=${r.returnErr.toFixed(3)}°  score=${r.score.toFixed(3)}${flag}`);
         if (r.score < bestScore) { bestScore = r.score; bestP = p; }
@@ -230,8 +289,14 @@ async function tuneJoint(ctrl, jointId) {
             console.log(`    D=${d.toString().padStart(2)}: (baseline — already measured)`);
             continue;
         }
-        await unlockAndWritePID(ctrl, bestP, d, origI, origStartup);
-        const r = await stepResponse(ctrl, homeSteps, targetSteps);
+        let r;
+        try {
+            await unlockAndWritePID(ctrl, bestP, d, origI, origStartup);
+            r = await stepResponse(ctrl, homeSteps, targetSteps);
+        } catch (e) {
+            console.log(`    D=${d.toString().padStart(2)}: skipped — ${e.message}`);
+            continue;
+        }
         const flag = r.score < bestScore ? ' ←best' : '';
         console.log(`    D=${d.toString().padStart(2)}: fwd=${r.forwardErr.toFixed(3)}°  ret=${r.returnErr.toFixed(3)}°  score=${r.score.toFixed(3)}${flag}`);
         if (r.score < bestScore) { bestScore = r.score; bestD = d; }
@@ -249,14 +314,23 @@ async function tuneJoint(ctrl, jointId) {
     // ── Sweep I (best P+D fixed) — measures steady-state settled error ──
     // Baseline for I sweep uses the settled-error metric, not the motion score.
     console.log(`\n  I sweep (P=${bestP} D=${bestD} fixed) — steady-state dwell test:`);
-    const iBase = await settledError(ctrl, homeSteps, targetSteps);
+    // Make sure the servo really holds bestP/bestD before the dwell baseline
+    // (a skipped candidate may have left a different value in EEPROM).
+    await unlockAndWritePID(ctrl, bestP, bestD, 0, origStartup);
+    const iBase = await withRetry(ctrl, 'I baseline measurement', () => settledError(ctrl, homeSteps, targetSteps), 3);
     console.log(`    I= 0: fwd=${iBase.fwdErr.toFixed(3)}°  ret=${iBase.retErr.toFixed(3)}°  score=${iBase.score.toFixed(3)}  (baseline)`);
     let bestI = 0, bestIScore = iBase.score;
 
     for (const iVal of I_CANDIDATES) {
         if (iVal === 0) continue;  // already measured above
-        await unlockAndWritePID(ctrl, bestP, bestD, iVal, origStartup);
-        const r = await settledError(ctrl, homeSteps, targetSteps);
+        let r;
+        try {
+            await unlockAndWritePID(ctrl, bestP, bestD, iVal, origStartup);
+            r = await settledError(ctrl, homeSteps, targetSteps);
+        } catch (e) {
+            console.log(`    I= ${iVal}: skipped — ${e.message}`);
+            continue;
+        }
         const flag = r.score < bestIScore ? ' ←best' : '';
         console.log(`    I= ${iVal}: fwd=${r.fwdErr.toFixed(3)}°  ret=${r.retErr.toFixed(3)}°  score=${r.score.toFixed(3)}${flag}`);
         if (r.score < bestIScore) { bestIScore = r.score; bestI = iVal; }
@@ -269,8 +343,12 @@ async function tuneJoint(ctrl, jointId) {
         bestI = 0;
     }
 
-    // ── Write final best values ──
-    await unlockAndWritePID(ctrl, bestP, bestD, bestI, origStartup);
+    // ── Write final best values (retried and verified by read-back) ──
+    try {
+        await unlockAndWritePID(ctrl, bestP, bestD, bestI, origStartup);
+    } catch (e) {
+        throw new Error(`final EEPROM write of P=${bestP} D=${bestD} I=${bestI} did not stick (${e.message}) — set it manually from the Commissioning panel`);
+    }
     await sleep(50);
 
     const improvement = baseline.score > 0 ? ((baseline.score - bestScore) / baseline.score * 100) : 0;
@@ -322,7 +400,7 @@ async function main() {
         const alive = await ctrl.ping().catch(() => false);
         if (!alive) { console.log(`  J${id}: no response — skipping home`); continue; }
         await ctrl.startServo();
-        await ctrl.setSpeed(HOME_SPEED);
+        await setSpeedRetry(ctrl, HOME_SPEED);
         await moveTo(ctrl, 2048);
         console.log(`  J${id}: moving to 0°`);
     }
@@ -376,7 +454,7 @@ async function main() {
         // joint's results gathered so far even though they'd already been
         // tuned successfully and just hadn't been written to disk yet.
         try {
-            await ctrl.setSpeed(HOME_SPEED);
+            await setSpeedRetry(ctrl, HOME_SPEED);
             await moveTo(ctrl, 2048);
             await waitSettle(ctrl).catch(() => {});
             await sleep(POST_SETTLE_DWELL_MS);
