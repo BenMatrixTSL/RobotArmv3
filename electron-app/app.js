@@ -5675,14 +5675,14 @@ async function executeGCodeCommand(command) {
             // M10 = Gripper open (servo to 180° = fully open)
             gcodeProcessor.log('M10: Gripper open');
             if (robotArmClient.isConnected) {
-                await robotArmClient.sendCommand('toolSetServoEnabledAndAngle', { angle: 180 });
+                await robotArmClient.sendRequest('toolSetServoEnabledAndAngle', { angle: 180 });
                 await new Promise(resolve => setTimeout(resolve, 500));
             }
         } else if (command.code === 'M11') {
             // M11 = Gripper close (servo to 0° = fully closed)
             gcodeProcessor.log('M11: Gripper close');
             if (robotArmClient.isConnected) {
-                await robotArmClient.sendCommand('toolSetServoEnabledAndAngle', { angle: 0 });
+                await robotArmClient.sendRequest('toolSetServoEnabledAndAngle', { angle: 0 });
                 await new Promise(resolve => setTimeout(resolve, 500));
             }
         } else if (command.code === 'M12') {
@@ -5694,7 +5694,7 @@ async function executeGCodeCommand(command) {
                 const a = Math.max(0, Math.min(180, Math.round(angle)));
                 gcodeProcessor.log(`M12: Servo to ${a}°`);
                 if (robotArmClient.isConnected) {
-                    await robotArmClient.sendCommand('toolSetServoEnabledAndAngle', { angle: a });
+                    await robotArmClient.sendRequest('toolSetServoEnabledAndAngle', { angle: a });
                     await new Promise(resolve => setTimeout(resolve, 500));
                 }
             }
@@ -6236,13 +6236,13 @@ async function runRapidProgram() {
         } else if (/^GripperOpen\b/i.test(line)) {
             console.log('RAPID: GripperOpen on line', i + 1);
             if (robotArmClient && robotArmClient.isConnected) {
-                await robotArmClient.sendCommand('toolSetServoEnabledAndAngle', { angle: 180 });
+                await robotArmClient.sendRequest('toolSetServoEnabledAndAngle', { angle: 180 });
                 await new Promise(function (resolve) { setTimeout(resolve, 500); });
             }
         } else if (/^GripperClose\b/i.test(line)) {
             console.log('RAPID: GripperClose on line', i + 1);
             if (robotArmClient && robotArmClient.isConnected) {
-                await robotArmClient.sendCommand('toolSetServoEnabledAndAngle', { angle: 0 });
+                await robotArmClient.sendRequest('toolSetServoEnabledAndAngle', { angle: 0 });
                 await new Promise(function (resolve) { setTimeout(resolve, 500); });
             }
         } else if (/^PumpOn\b/i.test(line)) {
@@ -6289,7 +6289,7 @@ async function runRapidProgram() {
                 const angle = Math.max(0, Math.min(180, Math.round(parseFloat(m[1]))));
                 console.log('RAPID: ServoTo', angle, 'on line', i + 1);
                 if (robotArmClient && robotArmClient.isConnected) {
-                    await robotArmClient.sendCommand('toolSetServoEnabledAndAngle', { angle });
+                    await robotArmClient.sendRequest('toolSetServoEnabledAndAngle', { angle });
                     await new Promise(function (resolve) { setTimeout(resolve, 500); });
                 }
             } else {
@@ -8416,7 +8416,7 @@ function moveEndToolServo(angle) {
     if (!robotArmClient.isConnected) { showAppMessage('Not connected'); return; }
     if (!robotArmClient.hasArmControl) { showAppMessage('Read-only — use Take control on the Connection tab first'); return; }
     const a = Math.round(Number(angle));
-    robotArmClient.sendCommand('toolSetServoEnabledAndAngle', { angle: a })
+    robotArmClient.sendRequest('toolSetServoEnabledAndAngle', { angle: a })
         .then(() => {
             const stateEl = document.getElementById('endToolServoStateText');
             if (stateEl) stateEl.textContent = 'Enabled — ' + a + '°';
@@ -8442,13 +8442,13 @@ function setToolPump(on) {
         return;
     }
     const duty = on ? 80 : 0;
-    robotArmClient.sendCommand('toolSetPwm', { pwm1Duty: duty, enable1: on })
+    robotArmClient.sendRequest('toolSetPwm', { pwm1Duty: duty, enable1: on })
         .catch(err => console.warn('setToolPump failed:', err));
 }
 
 function readEndToolServoState() {
     if (!robotArmClient.isConnected) { showAppMessage('Not connected'); return; }
-    robotArmClient.sendCommand('toolGetServoState', {})
+    robotArmClient.sendRequest('toolGetServoState', {})
         .then(resp => {
             const stateEl = document.getElementById('endToolServoStateText');
             if (stateEl) stateEl.textContent = (resp.enabled ? 'Enabled' : 'Disabled') + ' — ' + (resp.currentAngle || 0) + '°';
