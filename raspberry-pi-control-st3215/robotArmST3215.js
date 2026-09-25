@@ -102,7 +102,10 @@ const BUS_WRITE_RETRY_DELAY_END_TOOL_MS = 150;
 const BUS_READ_TIMEOUT_MS = 50;
 const BUS_READ_TIMEOUT_END_TOOL_MS = 150;
 const BUS_WRITE_RETRY_DELAY_MS = 30;
-const BUS_WRITE_MAX_ATTEMPTS = 2;
+// Three attempts (worst case ~300 ms) so a single lost ACK on an arm servo
+// does not fail the move and abort a running program. Move/speed writes are
+// idempotent, so re-sending after a missed ACK is safe.
+const BUS_WRITE_MAX_ATTEMPTS = 3;
 
 // serialport's write() callback normally fires in well under 1 ms at 1 Mbps
 // for our packet sizes. If the underlying driver ever stalls and that
