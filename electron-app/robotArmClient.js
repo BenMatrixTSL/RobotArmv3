@@ -39,6 +39,9 @@ class RobotArmClient {
         this._linearTimeout = null;
         // Motion completion listeners (functions called on each status push)
         this._motionListeners = [];
+        // Optional hook called with a message each time moveJoint() retries a
+        // bus fault, so program runners can show it in their log.
+        this.onMoveRetry = null;
     }
 
     /**
@@ -479,14 +482,49 @@ class RobotArmClient {
      * @param {number} angle - Target angle in degrees
      * @param {number} speed - Optional speed in step/s (default: 1500)
      */
-    moveJoint(jointNumber, angle, speed = 1500) {
+    async moveJoint(jointNumber, angle, speed = 1500) {
         // Ensure speed is a valid number
         const speedValue = (typeof speed === 'number' && !isNaN(speed) && speed >= 0) ? speed : 1500;
-        return this.sendRequest('moveJoint', {
-            joint: jointNumber,
-            angle: angle,
-            speed: speedValue
-        }, 8000);
+        // The worker already retries a lost ACK a few times back-to-back (a few
+        // hundred ms). A servo that stays silent longer than that — seen on
+        // joint 2 under load at a low, extended pose — needs a longer pause with
+        // the bus released so polling and the torque heartbeat keep running.
+        // Re-sending a move is idempotent, so retrying here is safe.
+        const MAX_TRIES = 3;
+        const RETRY_PAUSE_MS = 400;
+        let lastError = null;
+        for (let attempt = 1; attempt <= MAX_TRIES; attempt++) {
+            try {
+                const response = await this.sendRequest('moveJoint', {
+                    joint: jointNumber,
+                    angle: angle,
+                    speed: speedValue
+                }, 8000);
+                if (response && response.type === 'error') {
+                    throw new Error(response.message || 'Move failed');
+                }
+                return response;
+            } catch (error) {
+                lastError = error;
+                if (attempt >= MAX_TRIES || !this._isRetryableMoveError(error)) break;
+                const msg = 'Joint ' + jointNumber + ' did not respond (' + error.message + '), retrying (' + attempt + '/' + (MAX_TRIES - 1) + ')';
+                console.warn(msg);
+                if (typeof this.onMoveRetry === 'function') { try { this.onMoveRetry(msg); } catch (_) {} }
+                await new Promise(resolve => setTimeout(resolve, RETRY_PAUSE_MS));
+            }
+        }
+        throw lastError;
+    }
+
+    /**
+     * True for transient bus faults worth re-sending a move for; false for
+     * things a retry cannot fix (no control session, bad joint, overload).
+     * @param {Error} error
+     */
+    _isRetryableMoveError(error) {
+        const m = String(error && error.message ? error.message : error).toLowerCase();
+        if (m.includes('control') || m.includes('invalid joint') || m.includes('overload') || m.includes('temperature')) return false;
+        return m.includes('timeout') || m.includes('bus') || m.includes('not available') || m.includes('checksum') || m.includes('no response');
     }
 
     /**

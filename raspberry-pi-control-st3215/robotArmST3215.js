@@ -102,10 +102,14 @@ const BUS_WRITE_RETRY_DELAY_END_TOOL_MS = 150;
 const BUS_READ_TIMEOUT_MS = 50;
 const BUS_READ_TIMEOUT_END_TOOL_MS = 150;
 const BUS_WRITE_RETRY_DELAY_MS = 30;
-// Three attempts (worst case ~300 ms) so a single lost ACK on an arm servo
-// does not fail the move and abort a running program. Move/speed writes are
-// idempotent, so re-sending after a missed ACK is safe.
-const BUS_WRITE_MAX_ATTEMPTS = 3;
+// Four attempts (worst case ~410 ms) so a lost ACK on an arm servo does not
+// fail the move and abort a running program. Move/speed writes are
+// idempotent, so re-sending after a missed ACK is safe. Keep the total well
+// under the ~1 s servo torque watchdog: an immediate command sends one
+// heartbeat then holds the bus for its whole duration (servoWorker.js).
+// Longer outages are covered by the client-side retry in
+// robotArmClient.moveJoint(), which pauses with the bus released.
+const BUS_WRITE_MAX_ATTEMPTS = 4;
 
 // serialport's write() callback normally fires in well under 1 ms at 1 Mbps
 // for our packet sizes. If the underlying driver ever stalls and that

@@ -1355,6 +1355,11 @@ function autoLoadBlocklyProgram() {
 /**
  * Appends text to the output area
  */
+// Surface move retries (bus faults) in the program log so a pause is explained.
+if (typeof robotArmClient !== 'undefined' && robotArmClient) {
+    robotArmClient.onMoveRetry = (msg) => appendBlocklyOutput(msg);
+}
+
 function appendBlocklyOutput(text) {
     const output = document.getElementById('blocklyOutput');
     const timestamp = new Date().toLocaleTimeString();
