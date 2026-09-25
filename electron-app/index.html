@@ -531,7 +531,7 @@
                                 • <strong>Stored position (by number):</strong> <code>G1 P5 F60</code> → move to stored position 5 at 60 deg/s<br>
                                 • <strong>Stored position (by name):</strong> <code>G1 P"Home" F60</code> → move to stored position named "Home"<br>
                                 • <strong>Joint-space moves:</strong> <code>G1 J1=45 J2=20 F60</code> → move joints 1 and 2 to 45° and 20°<br>
-                                • <strong>Cartesian XYZ:</strong> <code>G1 X150 Y0 Z200 F60</code> → move TCP to XYZ position (requires kinematics)<br>
+                                • <strong>Cartesian XYZ:</strong> <code>G1 X150 Y0 Z200 F2400</code> → move TCP to XYZ position (requires kinematics). For XYZ moves <code>F</code> is a feed rate in mm/min (G-code convention): F2400 = 40&nbsp;mm/s tool speed. For P and J moves <code>F</code> stays in deg/s.<br>
                                 The <code>P</code> parameter can be a number (0-99) or a quoted string (position name) from the Stored Positions tab.
                             </td>
                         </tr>
@@ -692,7 +692,8 @@
                             <td><strong>MoveLXYZ</strong></td>
                             <td>
                                 Cartesian move to an absolute XYZ position (in mm). Uses the kinematics solver internally.<br>
-                                <code>MoveLXYZ [[X,Y,Z]];</code><br>
+                                <code>MoveLXYZ [[X,Y,Z]];</code> or <code>MoveLXYZ [[X,Y,Z]], v100;</code><br>
+                                Tool speed is in mm/s: 40 by default, or the <code>v</code> value (v100 = 100&nbsp;mm/s).<br>
                                 Example: <code>MoveLXYZ [[150,0,200]];</code> → move TCP to X=150&nbsp;mm, Y=0&nbsp;mm, Z=200&nbsp;mm.
                             </td>
                         </tr>
@@ -700,7 +701,7 @@
                             <td><strong>MoveLOffs</strong></td>
                             <td>
                                 Cartesian offset move relative to the current XYZ position (in mm).<br>
-                                <code>MoveLOffs [[dX,dY,dZ]];</code><br>
+                                <code>MoveLOffs [[dX,dY,dZ]];</code> or <code>MoveLOffs [[dX,dY,dZ]], v100;</code> (tool speed in mm/s, default 40)<br>
                                 Example: <code>MoveLOffs [[0,0,50]];</code> → move the TCP 50&nbsp;mm upwards from where it is now.
                             </td>
                         </tr>
@@ -1656,7 +1657,7 @@
     <script src="calibrationPage.js"></script>
     <script src="cameraView.js?v=20260616"></script>
     <!-- Main Application: UI logic and event handlers -->
-    <script src="app.js?v=20260603f"></script>
+    <script src="app.js?v=20260925a"></script>
     <!-- On-Screen Keyboard: touch keyboard for kiosk mode (no system OSK in Chromium kiosk) -->
     <script src="keyboard.js?v=20260814"></script>
 

@@ -603,7 +603,7 @@ function defineCustomBlocks() {
             this.appendDummyInput()
                 .appendField('at speed')
                 .appendField(new Blockly.FieldNumber(40, 0, 300, 1), 'SPEED')
-                .appendField('degrees/s');
+                .appendField('mm/s');
             this.setPreviousStatement(true, null);
             this.setNextStatement(true, null);
             this.setColour(200);
@@ -626,7 +626,7 @@ function defineCustomBlocks() {
             this.appendDummyInput()
                 .appendField('at speed')
                 .appendField(new Blockly.FieldNumber(40, 0, 300, 1), 'SPEED')
-                .appendField('degrees/s');
+                .appendField('mm/s');
             this.setPreviousStatement(true, null);
             this.setNextStatement(true, null);
             this.setColour(200);
@@ -1849,8 +1849,7 @@ function registerBlocklyGenerators() {
         const x = Blockly.JavaScript.valueToCode(block, 'X', Blockly.JavaScript.ORDER_ATOMIC) || '0';
         const y = Blockly.JavaScript.valueToCode(block, 'Y', Blockly.JavaScript.ORDER_ATOMIC) || '0';
         const z = Blockly.JavaScript.valueToCode(block, 'Z', Blockly.JavaScript.ORDER_ATOMIC) || '0';
-        const speedDegreesPerSecond = block.getFieldValue('SPEED') || 40;
-        const speedStepsPerSecond = degreesPerSecondToStepsPerSecond(speedDegreesPerSecond);
+        const mmPerSec = block.getFieldValue('SPEED') || 40;
 
         return `
         highlightBlocklyBlock('${blockId}');
@@ -1872,7 +1871,7 @@ function registerBlocklyGenerators() {
             if (!waypoints) {
                 appendBlocklyOutput('Move TCP to XYZ cancelled: target lies inside a dead zone.');
             } else {
-                appendBlocklyOutput('Moving TCP to X=' + targetPose.x + ' Y=' + targetPose.y + ' Z=' + targetPose.z + ' at ' + ${speedDegreesPerSecond} + ' deg/s (dead-zone aware path, orientation-aware)');
+                appendBlocklyOutput('Moving TCP to X=' + targetPose.x + ' Y=' + targetPose.y + ' Z=' + targetPose.z + ' at ' + ${mmPerSec} + ' mm/s (dead-zone aware path, orientation-aware)');
 
                 for (let w = 0; w < waypoints.length; w++) {
                     const wp = waypoints[w];
@@ -1917,13 +1916,19 @@ function registerBlocklyGenerators() {
                     );
                     const refinedAngles = refined.angles;
 
-                    const numJoints = refinedAngles.length;
-                    for (let i = 0; i < numJoints; i++) {
-                        await robotArmClient.moveJoint(i + 1, refinedAngles[i], ${speedStepsPerSecond});
+                    // Each joint gets the speed that makes the tool tip cover this
+                    // segment at the block's mm/s with all joints arriving together.
+                    const segStart = w === 0 ? startPose : waypoints[w - 1];
+                    const segMm = Math.hypot(wp.x - segStart.x, wp.y - segStart.y, wp.z - segStart.z);
+                    const tipSpeeds = computeTipSpeeds(initialAngles, refinedAngles, segMm, ${mmPerSec});
+                    const movePromises = [];
+                    for (let i = 0; i < refinedAngles.length; i++) {
+                        movePromises.push(robotArmClient.moveJoint(i + 1, refinedAngles[i], tipSpeeds[i]));
                     }
-                    // The sequential awaits above complete the serial-bus drain, so
-                    // the motion listener sees real status. Without this the next
-                    // block (gripper, next waypoint) ran while the arm was still moving.
+                    // Wait for the bus drain to finish before listening for motion
+                    // complete, then for the arm to actually stop. Without this the
+                    // next block (gripper, next waypoint) ran while still moving.
+                    await Promise.allSettled(movePromises);
                     await robotArmClient.waitForMotionComplete(30000);
 
                     const posErr = formatFiniteNumber(refined.positionErrorMm, 2);
@@ -1943,8 +1948,7 @@ function registerBlocklyGenerators() {
         const dx = Blockly.JavaScript.valueToCode(block, 'DX', Blockly.JavaScript.ORDER_ATOMIC) || '0';
         const dy = Blockly.JavaScript.valueToCode(block, 'DY', Blockly.JavaScript.ORDER_ATOMIC) || '0';
         const dz = Blockly.JavaScript.valueToCode(block, 'DZ', Blockly.JavaScript.ORDER_ATOMIC) || '0';
-        const speedDegreesPerSecond = block.getFieldValue('SPEED') || 40;
-        const speedStepsPerSecond = degreesPerSecondToStepsPerSecond(speedDegreesPerSecond);
+        const mmPerSec = block.getFieldValue('SPEED') || 40;
 
         return `
         highlightBlocklyBlock('${blockId}');
@@ -1973,7 +1977,7 @@ function registerBlocklyGenerators() {
                 appendBlocklyOutput(
                     'Moving TCP by dX=' + ${dx} + ' dY=' + ${dy} + ' dZ=' + ${dz} +
                     ' to X=' + targetPose.x + ' Y=' + targetPose.y + ' Z=' + targetPose.z +
-                    ' (dead-zone aware path, orientation-aware)'
+                    ' at ' + ${mmPerSec} + ' mm/s (dead-zone aware path, orientation-aware)'
                 );
 
                 for (let w = 0; w < waypoints.length; w++) {
@@ -2018,13 +2022,19 @@ function registerBlocklyGenerators() {
                     );
                     const refinedAngles = refined.angles;
 
-                    const numJoints = refinedAngles.length;
-                    for (let i = 0; i < numJoints; i++) {
-                        await robotArmClient.moveJoint(i + 1, refinedAngles[i], ${speedStepsPerSecond});
+                    // Each joint gets the speed that makes the tool tip cover this
+                    // segment at the block's mm/s with all joints arriving together.
+                    const segStart = w === 0 ? startPose : waypoints[w - 1];
+                    const segMm = Math.hypot(wp.x - segStart.x, wp.y - segStart.y, wp.z - segStart.z);
+                    const tipSpeeds = computeTipSpeeds(initialAngles, refinedAngles, segMm, ${mmPerSec});
+                    const movePromises = [];
+                    for (let i = 0; i < refinedAngles.length; i++) {
+                        movePromises.push(robotArmClient.moveJoint(i + 1, refinedAngles[i], tipSpeeds[i]));
                     }
-                    // The sequential awaits above complete the serial-bus drain, so
-                    // the motion listener sees real status. Without this the next
-                    // block (gripper, next waypoint) ran while the arm was still moving.
+                    // Wait for the bus drain to finish before listening for motion
+                    // complete, then for the arm to actually stop. Without this the
+                    // next block (gripper, next waypoint) ran while still moving.
+                    await Promise.allSettled(movePromises);
                     await robotArmClient.waitForMotionComplete(30000);
 
                     const posErr = formatFiniteNumber(refined.positionErrorMm, 2);

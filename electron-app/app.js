@@ -4720,6 +4720,44 @@ function computeCoordinatedSpeeds(currentAngles, targetAngles, baseStepsPerSecon
 }
 
 /**
+ * Per-joint speeds (steps/s) for a joint-interpolated move whose tool tip
+ * should cover distanceMm at about mmPerSec, with every joint arriving
+ * together. The move duration is distance / speed, capped so no joint has
+ * to exceed MAX_TIP_MOVE_JOINT_DEG_PER_S (e.g. a pure wrist re-pose with
+ * near-zero tip travel). Used by every Cartesian move: Blockly Move TCP,
+ * G-code G1 X/Y/Z and RAPID MoveL.
+ * @param {Array<number>|null} currentAngles - degrees, may be null if unknown
+ * @param {Array<number>} targetAngles - degrees
+ * @param {number} distanceMm - straight-line tip travel for this segment
+ * @param {number} mmPerSec - requested tip speed
+ * @returns {Array<number>} steps/s per joint
+ */
+const MAX_TIP_MOVE_JOINT_DEG_PER_S = 120;
+function computeTipSpeeds(currentAngles, targetAngles, distanceMm, mmPerSec) {
+    if (!Array.isArray(targetAngles) || targetAngles.length === 0) return [];
+    const MIN_STEPS = 50;
+    const MAX_STEPS = Math.round(MAX_TIP_MOVE_JOINT_DEG_PER_S * DEGREES_TO_STEPS_RATIO);
+    const speed = (typeof mmPerSec === 'number' && mmPerSec > 0) ? mmPerSec : 40;
+    if (!Array.isArray(currentAngles) || currentAngles.length === 0) {
+        // Unknown start: no travel information, so fall back to a uniform
+        // moderate joint speed rather than guessing ratios.
+        const uniform = Math.min(MAX_STEPS, Math.max(MIN_STEPS, Math.round(speed * DEGREES_TO_STEPS_RATIO)));
+        return targetAngles.map(() => uniform);
+    }
+    const n = Math.min(currentAngles.length, targetAngles.length);
+    const travels = [];
+    for (let i = 0; i < n; i++) travels.push(Math.abs((targetAngles[i] || 0) - (currentAngles[i] || 0)));
+    const maxTravel = Math.max(...travels);
+    if (maxTravel < 0.01) return travels.map(() => MIN_STEPS);
+    const dist = (typeof distanceMm === 'number' && isFinite(distanceMm)) ? Math.abs(distanceMm) : 0;
+    let durationS = dist / speed;
+    // Never ask the fastest joint to exceed the cap; this also handles
+    // segments with (almost) no tip travel but real joint travel.
+    durationS = Math.max(durationS, maxTravel / MAX_TIP_MOVE_JOINT_DEG_PER_S);
+    return travels.map(t => Math.min(MAX_STEPS, Math.max(MIN_STEPS, Math.round((t / durationS) * DEGREES_TO_STEPS_RATIO))));
+}
+
+/**
  * Moves all joints to the specified target angles, respecting dead zones.
  * If the joint-space path does not intersect any dead zone, this will move
  * directly in joint space. If it does, the move is converted into a
@@ -5332,18 +5370,10 @@ async function executeGCodeCommand(command) {
             return;
         }
 
-        // Get speed from F parameter (feed rate) - F parameter is in degrees/s
-        const speedDegreesPerSecond = command.params.F || 40; // Default speed in degrees/s
-        // Convert degrees/s to steps/s for the API
-        let speedStepsPerSecond;
-        if (typeof degreesPerSecondToStepsPerSecond === 'function') {
-            speedStepsPerSecond = degreesPerSecondToStepsPerSecond(speedDegreesPerSecond);
-        } else if (typeof window !== 'undefined' && typeof window.degreesPerSecondToStepsPerSecond === 'function') {
-            speedStepsPerSecond = window.degreesPerSecondToStepsPerSecond(speedDegreesPerSecond);
-        } else {
-            speedStepsPerSecond = Math.round(speedDegreesPerSecond * 11.37);
-        }
-        const speed = speedStepsPerSecond;
+        // Cartesian move: F is a feed rate in mm/min (G-code convention),
+        // converted to a tool-tip speed in mm/s. Default 2400 mm/min = 40 mm/s.
+        const feedMmPerMin = (typeof command.params.F === 'number' && command.params.F > 0) ? command.params.F : 2400;
+        const tipMmPerSec = feedMmPerMin / 60;
         
         try {
             // Work out the target XYZ in mm.
@@ -5435,15 +5465,19 @@ async function executeGCodeCommand(command) {
 
                 // `jointAngles` now contains the final IK solution
 
-                gcodeProcessor.log(`Moving to waypoint ${w + 1}/${waypoints.length}: X${wp.x} Y${wp.y} Z${wp.z} at speed ${speedDegreesPerSecond} degrees/s`);
+                gcodeProcessor.log(`Moving to waypoint ${w + 1}/${waypoints.length}: X${wp.x} Y${wp.y} Z${wp.z} at ${tipMmPerSec.toFixed(1)} mm/s (F${feedMmPerMin})`);
                 gcodeProcessor.log(`Joint angles: ${jointAngles.map((a, i) => `J${i+1}:${a.toFixed(2)}°`).join(', ')}`);
 
-                // Dispatch all joints simultaneously with speeds scaled for coordinated arrival.
+                // Dispatch all joints simultaneously, each at the speed that makes
+                // the tool tip cover this segment at tipMmPerSec with all joints
+                // arriving together.
                 if (robotArmClient.isConnected) {
-                    const gcodeSpeeds = computeCoordinatedSpeeds(initialAngles || null, jointAngles, speed);
+                    const segStart = w === 0 ? startPose : waypoints[w - 1];
+                    const segMm = Math.hypot(wp.x - segStart.x, wp.y - segStart.y, wp.z - segStart.z);
+                    const gcodeSpeeds = computeTipSpeeds(initialAngles || null, jointAngles, segMm, tipMmPerSec);
                     const movePromises = [];
                     for (let i = 0; i < jointAngles.length; i++) {
-                        movePromises.push(robotArmClient.moveJoint(i + 1, jointAngles[i], gcodeSpeeds[i] || speed));
+                        movePromises.push(robotArmClient.moveJoint(i + 1, jointAngles[i], gcodeSpeeds[i]));
                     }
                     await Promise.allSettled(movePromises);
                     await robotArmClient.waitForMotionComplete(30000);
@@ -5847,6 +5881,21 @@ function parseRapidMoveJ(line) {
  * @param {string} keyword - Command name to match (e.g. 'MoveLXYZ', 'MoveLOffs')
  * @returns {Array<number>|null}
  */
+/**
+ * Tool-tip speed for a RAPID MoveL line. Real RAPID uses speed data such as
+ * v100 (100 mm/s); here an optional trailing ", v<number>" is accepted:
+ *   MoveLXYZ [[150,0,200]], v100;
+ * Default 40 mm/s when absent.
+ * @param {string} line
+ * @returns {number} mm/s
+ */
+const RAPID_DEFAULT_TIP_MM_PER_SEC = 40;
+function parseRapidSpeedMmPerSec(line) {
+    const m = String(line || '').match(/\]\s*\]\s*,\s*v\s*(\d+(?:\.\d+)?)/i);
+    const v = m ? parseFloat(m[1]) : NaN;
+    return (isFinite(v) && v > 0) ? v : RAPID_DEFAULT_TIP_MM_PER_SEC;
+}
+
 function parseRapidXYZ(line, keyword) {
     if (!line) {
         return null;
@@ -6004,7 +6053,8 @@ async function runRapidProgram() {
             }
 
             const targetPose = { x: xyz[0], y: xyz[1], z: xyz[2] };
-            console.log('RAPID: MoveLXYZ on line', i + 1, 'target XYZ:', targetPose);
+            const rapidTipMmPerSec = parseRapidSpeedMmPerSec(line);
+            console.log('RAPID: MoveLXYZ on line', i + 1, 'target XYZ:', targetPose, 'at', rapidTipMmPerSec, 'mm/s');
 
             // Get current XYZ from the UI as a starting pose
             const _cp1 = getCurrentDisplayXYZ();
@@ -6084,13 +6134,16 @@ async function runRapidProgram() {
                     break;
                 }
 
-                // `jointAngles` now contains the final IK solution — dispatch with coordinated speeds.
-                const rapidSpeeds = computeCoordinatedSpeeds(initialAngles || null, jointAngles, speedStepsPerSecond);
+                // `jointAngles` now contains the final IK solution — dispatch at the
+                // requested tool-tip speed (mm/s) with all joints arriving together.
+                const segStart = w === 0 ? startPose : waypointsRapid[w - 1];
+                const segMm = Math.hypot(wp.x - segStart.x, wp.y - segStart.y, wp.z - segStart.z);
+                const rapidSpeeds = computeTipSpeeds(initialAngles || null, jointAngles, segMm, rapidTipMmPerSec);
                 const rapidPromises = [];
                 for (let j = 0; j < numJoints; j++) {
                     const targetAngle = jointAngles[j];
                     if (typeof targetAngle === 'number' && !isNaN(targetAngle)) {
-                        rapidPromises.push(robotArmClient.moveJoint(j + 1, targetAngle, rapidSpeeds[j] || speedStepsPerSecond));
+                        rapidPromises.push(robotArmClient.moveJoint(j + 1, targetAngle, rapidSpeeds[j]));
                     }
                 }
                 await Promise.allSettled(rapidPromises);
@@ -6123,7 +6176,8 @@ async function runRapidProgram() {
                 z: currentZ + offsets[2]
             };
 
-            console.log('RAPID: MoveLOffs on line', i + 1, 'offsets:', offsets, 'target XYZ:', targetPose);
+            const rapidOffsTipMmPerSec = parseRapidSpeedMmPerSec(line);
+            console.log('RAPID: MoveLOffs on line', i + 1, 'offsets:', offsets, 'target XYZ:', targetPose, 'at', rapidOffsTipMmPerSec, 'mm/s');
 
             const waypointsRapidOffs = planSafePathAroundDeadZones(startPoseRapid, targetPose, deadZones, safeZHeight);
             if (!waypointsRapidOffs) {
@@ -6178,13 +6232,16 @@ async function runRapidProgram() {
                     break;
                 }
 
-                // `jointAngles2` now contains the final IK solution — dispatch with coordinated speeds.
-                const rapidOffsSpeeds = computeCoordinatedSpeeds(initialAngles2 || null, jointAngles2, speedStepsPerSecond);
+                // `jointAngles2` now contains the final IK solution — dispatch at the
+                // requested tool-tip speed (mm/s) with all joints arriving together.
+                const segStart2 = w === 0 ? startPoseRapid : waypointsRapidOffs[w - 1];
+                const segMm2 = Math.hypot(wp.x - segStart2.x, wp.y - segStart2.y, wp.z - segStart2.z);
+                const rapidOffsSpeeds = computeTipSpeeds(initialAngles2 || null, jointAngles2, segMm2, rapidOffsTipMmPerSec);
                 const rapidOffsPromises = [];
                 for (let j = 0; j < numJoints; j++) {
                     const targetAngle = jointAngles2[j];
                     if (typeof targetAngle === 'number' && !isNaN(targetAngle)) {
-                        rapidOffsPromises.push(robotArmClient.moveJoint(j + 1, targetAngle, rapidOffsSpeeds[j] || speedStepsPerSecond));
+                        rapidOffsPromises.push(robotArmClient.moveJoint(j + 1, targetAngle, rapidOffsSpeeds[j]));
                     }
                 }
                 await Promise.allSettled(rapidOffsPromises);
