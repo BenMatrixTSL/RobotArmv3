@@ -832,7 +832,12 @@ class RobotKinematics {
         // wristRoll2Offs controls joint 5 (J6, the final wrist roll).
         const runOnePass = (currentBase, maxPositionErrorMm, baseYawOffs, shoulderOffs, elbowOffs, wristRollOffs, wristPitchOffs, wristRoll2Offs) => {
             const baseOffs = Array.isArray(baseYawOffs) && baseYawOffs.length > 0 ? baseYawOffs : [0];
-            const wr2Offs = Array.isArray(wristRoll2Offs) && wristRoll2Offs.length > 0 ? wristRoll2Offs : [0];
+            // Joint 6 rotates about the tool Z axis, so it cannot change the tool
+            // Z direction this search scores and (with the TCP on that axis) cannot
+            // move the tip. Sweeping it only multiplied the grid by 12 and let the
+            // travel penalty drag a requested spin back towards the reference pose,
+            // so J6 is always kept at the base IK value.
+            const wr2Offs = [0];
             let bestAngles = currentBase.slice();
             let bestEval = evaluateCandidate(bestAngles);
 
@@ -915,13 +920,17 @@ class RobotKinematics {
         const pass3 = runOnePass(pass2.angles, 6, [0], [0, -5, 5, -10, 10], [0, -5, 5, -10, 10], [0, -10, 10, -20, 20, -30, 30], [0, -10, 10, -20, 20, -30, 30], [0, -10, 10, -20, 20]);
         const pass4 = runOnePass(pass3.angles, 3, [0], [0, -2, 2, -5, 5], [0, -2, 2, -5, 5], [0, -5, 5, -10, 10], [0, -5, 5, -10, 10], [0, -5, 5, -10, 10]);
         const pass5 = runOnePass(pass4.angles, 12, [0, -5, 5], [0, -3, 3, -6, 6, -10, 10], [0, -3, 3, -6, 6, -10, 10], [0, -3, 3, -6, 6, -10, 10], [0, -3, 3, -6, 6, -10, 10], [0, -3, 3, -6, 6]);
-        const pass6 = runOnePass(pass5.angles, 15, [0, -1, 1, -2, 2], [0, -0.5, 0.5, -1, 1, -1.5, 1.5, -2, 2], [0, -0.5, 0.5, -1, 1, -1.5, 1.5, -2, 2], [0, -0.5, 0.5, -1, 1, -1.5, 1.5, -2, 2], [0, -0.5, 0.5, -1, 1, -1.5, 1.5, -2, 2], [0, -0.5, 0.5, -1, 1, -1.5, 1.5, -2, 2]);
+        // Fine polish in two cheap stages rather than one 9^5 grid: this whole
+        // routine runs synchronously on the server's event loop, so its cost is
+        // time during which no status reaches any client.
+        const pass6 = runOnePass(pass5.angles, 15, [0, -1, 1, -2, 2], [0, -1, 1, -2, 2], [0, -1, 1, -2, 2], [0, -1, 1, -2, 2], [0, -1, 1, -2, 2], [0]);
+        const pass7 = runOnePass(pass6.angles, 15, [0, -0.5, 0.5], [0, -0.5, 0.5], [0, -0.5, 0.5], [0, -0.5, 0.5], [0, -0.5, 0.5], [0]);
 
         return {
-            angles: pass6.angles,
-            positionErrorMm: pass6.positionErrorMm,
-            orientationErrorDeg: pass6.orientationErrorDeg,
-            achievedPosition: pass6.achievedPosition
+            angles: pass7.angles,
+            positionErrorMm: pass7.positionErrorMm,
+            orientationErrorDeg: pass7.orientationErrorDeg,
+            achievedPosition: pass7.achievedPosition
         };
     }
 

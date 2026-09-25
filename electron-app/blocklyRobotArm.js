@@ -1960,7 +1960,7 @@ function registerBlocklyGenerators() {
         highlightBlocklyBlock('${blockId}');
         await checkBlocklyPauseStop();
         appendBlocklyOutput('Opening gripper');
-        moveEndToolServo(0);
+        moveEndToolServo(180);
         await new Promise(resolve => setTimeout(resolve, 500));
         `;
     };
@@ -1971,7 +1971,7 @@ function registerBlocklyGenerators() {
         highlightBlocklyBlock('${blockId}');
         await checkBlocklyPauseStop();
         appendBlocklyOutput('Closing gripper');
-        moveEndToolServo(90);
+        moveEndToolServo(0);
         await new Promise(resolve => setTimeout(resolve, 500));
         `;
     };
@@ -2161,14 +2161,14 @@ function convertBlocklyToGCode(blocklyCode) {
             continue;
         }
 
-        // Convert gripper_open: moveEndToolServo(0)
-        if (line.includes('moveEndToolServo(0)')) {
+        // Convert gripper_open: moveEndToolServo(180)
+        if (line.includes('moveEndToolServo(180)')) {
             gcode += 'M10\n';
             continue;
         }
 
-        // Convert gripper_close: moveEndToolServo(90)
-        if (line.includes('moveEndToolServo(90)')) {
+        // Convert gripper_close: moveEndToolServo(0)
+        if (line.includes('moveEndToolServo(0)')) {
             gcode += 'M11\n';
             continue;
         }
@@ -2315,14 +2315,14 @@ function convertBlocklyToRapid(blocklyCode) {
             continue;
         }
 
-        // Convert gripper_open: moveEndToolServo(0)
-        if (line.includes('moveEndToolServo(0)')) {
+        // Convert gripper_open: moveEndToolServo(180)
+        if (line.includes('moveEndToolServo(180)')) {
             rapid += 'GripperOpen;\n';
             continue;
         }
 
-        // Convert gripper_close: moveEndToolServo(90)
-        if (line.includes('moveEndToolServo(90)')) {
+        // Convert gripper_close: moveEndToolServo(0)
+        if (line.includes('moveEndToolServo(0)')) {
             rapid += 'GripperClose;\n';
             continue;
         }
