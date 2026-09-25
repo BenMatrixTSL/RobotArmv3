@@ -462,11 +462,14 @@ function defineCustomBlocks() {
                 .appendField('Z')
                 .appendField(new Blockly.FieldNumber(-1), 'ORI_Z')
                 .appendField('Rotation (°)')
-                .appendField(new Blockly.FieldNumber(0), 'ORI_ROTATION');
+                .appendField(new Blockly.FieldNumber(0), 'ORI_ROTATION')
+                .appendField('at speed')
+                .appendField(new Blockly.FieldNumber(90, 1, 360), 'SPEED')
+                .appendField('degrees/s');
             this.setPreviousStatement(true, null);
             this.setNextStatement(true, null);
             this.setColour(230);
-            this.setTooltip('Set the tool orientation vector and spin rotation. Rotation spins the tool around its pointing axis — 0° keeps a consistent world-aligned reference regardless of position.');
+            this.setTooltip('Set the tool orientation vector and spin rotation, and turn the tool to it now, in place, at the given joint speed. Rotation spins the tool around its pointing axis — 0° keeps a consistent world-aligned reference regardless of position. Later Move TCP blocks keep this orientation.');
         }
     };
 
@@ -1360,6 +1363,66 @@ if (typeof robotArmClient !== 'undefined' && robotArmClient) {
     robotArmClient.onMoveRetry = (msg) => appendBlocklyOutput(msg);
 }
 
+/**
+ * Turns the tool to currentToolOrientation without changing the TCP position:
+ * re-solves IK on the server at the current XYZ with the new orientation,
+ * moves the joints at the given speed and waits for the motion to finish.
+ * Used by the "Set tool orientation" block so a rotation happens when the
+ * block runs (at its own speed) rather than folded into the next move.
+ * @param {number} speedStepsPerSecond
+ */
+async function blocklyApplyToolOrientationInPlace(speedStepsPerSecond) {
+    if (!currentToolOrientation) return;
+    if (!robotArmClient || !robotArmClient.isConnected) {
+        appendBlocklyOutput('Not connected — orientation stored for the next move.');
+        return;
+    }
+    if (typeof robotKinematics === 'undefined' || !robotKinematics.isConfigured()) {
+        appendBlocklyOutput('Kinematics not configured — orientation stored for the next move.');
+        return;
+    }
+    const pose = getCurrentDisplayXYZ();
+    if (!isFinite(pose.x) || !isFinite(pose.y) || !isFinite(pose.z)) {
+        appendBlocklyOutput('Current position unknown — orientation stored for the next move.');
+        return;
+    }
+
+    let currentAngles = null;
+    try {
+        const status = await robotArmClient.getStatus();
+        const numJoints = getNumJoints();
+        currentAngles = [];
+        for (let i = 0; i < numJoints; i++) {
+            currentAngles.push(status[i] && typeof status[i].angleDegrees === 'number' ? status[i].angleDegrees : 0);
+        }
+    } catch (e) {
+        console.warn('Set tool orientation: failed to read status for IK seed:', e);
+        currentAngles = null;
+    }
+
+    const target = { x: pose.x, y: pose.y, z: pose.z };
+    const baseAngles = await robotArmClient.inverseKinematics(
+        { ...target, orientation: currentToolOrientation },
+        currentAngles
+    );
+    if (!baseAngles) {
+        appendBlocklyOutput('Could not reach that orientation at the current position — stored for the next move.');
+        return;
+    }
+    // Pass the current angles as the reference so the solver prefers staying
+    // in the present configuration and only turns what the orientation needs.
+    const refined = await robotArmClient.refineOrientationWithAccuracy(target, baseAngles, currentToolOrientation, currentAngles);
+    const angles = refined.angles;
+    for (let i = 0; i < angles.length; i++) {
+        await robotArmClient.moveJoint(i + 1, angles[i], speedStepsPerSecond);
+    }
+    await robotArmClient.waitForMotionComplete(30000);
+
+    const oriErr = formatFiniteNumber(refined.orientationErrorDeg, 1);
+    const spinErr = typeof refined.spinErrorDeg === 'number' ? ', spin ' + formatFiniteNumber(refined.spinErrorDeg, 1) + '°' : '';
+    appendBlocklyOutput('Tool orientation applied (pointing error ' + oriErr + '°' + spinErr + ')');
+}
+
 function appendBlocklyOutput(text) {
     const output = document.getElementById('blocklyOutput');
     const timestamp = new Date().toLocaleTimeString();
@@ -1959,11 +2022,14 @@ function registerBlocklyGenerators() {
         const oy = block.getFieldValue('ORI_Y');
         const oz = block.getFieldValue('ORI_Z');
         const rot = block.getFieldValue('ORI_ROTATION');
+        const speedDegreesPerSecond = block.getFieldValue('SPEED') || 90;
+        const speedStepsPerSecond = degreesPerSecondToStepsPerSecond(speedDegreesPerSecond);
         return `
         highlightBlocklyBlock('${blockId}');
         await checkBlocklyPauseStop();
-        appendBlocklyOutput('Setting tool orientation to vector (${ox}, ${oy}, ${oz}) rotation ${rot}°');
+        appendBlocklyOutput('Setting tool orientation to vector (${ox}, ${oy}, ${oz}) rotation ${rot}° at ${speedDegreesPerSecond} deg/s');
         setToolOrientationVector(${ox}, ${oy}, ${oz}, ${rot});
+        await blocklyApplyToolOrientationInPlace(${speedStepsPerSecond});
         `;
     };
 
