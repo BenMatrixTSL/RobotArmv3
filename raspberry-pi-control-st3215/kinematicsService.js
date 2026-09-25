@@ -217,6 +217,38 @@ function toolZAxisFromMatrix(T) {
     return { x: -T[0][2], y: -T[1][2], z: -T[2][2] };
 }
 
+function toolXAxisFromMatrix(T) {
+    return { x: T[0][0], y: T[1][0], z: T[2][0] };
+}
+
+/**
+ * Builds a consistent tool orientation frame from a desired Z-axis and a
+ * rotation angle (mirrors buildToolFrame in electron-app/kinematics.js).
+ * Rotation=0 gives a repeatable reference X-axis regardless of where the arm
+ * is; increasing rotation spins the tool around its pointing axis.
+ * @param {{ x, y, z }} desiredZ
+ * @param {number} rotationDeg
+ * @returns {{ xAxis: {x,y,z}, yAxis: {x,y,z}, zAxis: {x,y,z} }}
+ */
+function buildToolFrame(desiredZ, rotationDeg) {
+    const z = normalizeVector(desiredZ);
+    const ref = (Math.abs(z.z) < 0.9) ? { x: 0, y: 0, z: 1 } : { x: 1, y: 0, z: 0 };
+    const dot = ref.x * z.x + ref.y * z.y + ref.z * z.z;
+    const xRef = normalizeVector({ x: ref.x - dot * z.x, y: ref.y - dot * z.y, z: ref.z - dot * z.z });
+    const yRef = {
+        x: z.y * xRef.z - z.z * xRef.y,
+        y: z.z * xRef.x - z.x * xRef.z,
+        z: z.x * xRef.y - z.y * xRef.x
+    };
+    const c = Math.cos(rotationDeg * Math.PI / 180);
+    const s = Math.sin(rotationDeg * Math.PI / 180);
+    return {
+        xAxis: { x: c * xRef.x - s * yRef.x, y: c * xRef.y - s * yRef.y, z: c * xRef.z - s * yRef.z },
+        yAxis: { x: s * xRef.x + c * yRef.x, y: s * xRef.y + c * yRef.y, z: s * xRef.z + c * yRef.z },
+        zAxis: z
+    };
+}
+
 function normalizeVector(v) {
     const x = typeof v.x === 'number' ? v.x : 0;
     const y = typeof v.y === 'number' ? v.y : 0;
@@ -586,6 +618,61 @@ class RobotKinematics {
         return { steps: steps, finalTransform: T };
     }
 
+    /**
+     * Turns the last joint so the tool's X axis matches the spin requested in
+     * desiredOrientation.rotation (degrees about the tool's pointing axis).
+     * Joint 6 rotates about the tool Z axis with the TCP on that axis, so the
+     * spin is independent of the position / pointing-direction solve and can
+     * be set after it. Both turn directions are evaluated numerically so the
+     * axis sign convention never matters.
+     * @param {Array<number>} angles - Solved joint angles (degrees)
+     * @param {{ x, y, z, rotation?: number }} desiredOrientation
+     * @returns {{ angles: Array<number>, spinErrorDeg: number|null }}
+     */
+    applyToolSpin(angles, desiredOrientation) {
+        const numJoints = this.joints.length;
+        if (!desiredOrientation || typeof desiredOrientation.rotation !== 'number' ||
+            !Array.isArray(angles) || numJoints < 6 || angles.length < 6) {
+            return { angles: angles, spinErrorDeg: null };
+        }
+        const desiredX = buildToolFrame(normalizeVector(desiredOrientation), desiredOrientation.rotation).xAxis;
+        const spinError = (a) => {
+            const fk = this.forwardKinematics(a);
+            const tz = toolZAxisFromMatrix(fk.rotation);
+            const tx = toolXAxisFromMatrix(fk.rotation);
+            // Compare against the desired X projected into the tool's actual
+            // plane, so a small pointing error does not masquerade as spin error.
+            const d = desiredX.x * tz.x + desiredX.y * tz.y + desiredX.z * tz.z;
+            const px = normalizeVector({ x: desiredX.x - d * tz.x, y: desiredX.y - d * tz.y, z: desiredX.z - d * tz.z });
+            const cos = Math.max(-1, Math.min(1, tx.x * px.x + tx.y * px.y + tx.z * px.z));
+            const cross = {
+                x: tx.y * px.z - tx.z * px.y,
+                y: tx.z * px.x - tx.x * px.z,
+                z: tx.x * px.y - tx.y * px.x
+            };
+            const sin = cross.x * tz.x + cross.y * tz.y + cross.z * tz.z;
+            return Math.atan2(sin, cos) * 180 / Math.PI; // signed, about tool Z
+        };
+        const j6 = this.joints[5];
+        const clamp = (a) => {
+            if (j6 && j6.limits) {
+                if (typeof j6.limits.lowerDegrees === 'number' && a < j6.limits.lowerDegrees) a = j6.limits.lowerDegrees;
+                if (typeof j6.limits.upperDegrees === 'number' && a > j6.limits.upperDegrees) a = j6.limits.upperDegrees;
+            }
+            return a;
+        };
+        const theta = spinError(angles);
+        let best = angles.slice();
+        let bestErr = Math.abs(theta);
+        for (const sign of [1, -1]) {
+            const cand = angles.slice();
+            cand[5] = clamp(angles[5] + sign * theta);
+            const err = Math.abs(spinError(cand));
+            if (err < bestErr) { bestErr = err; best = cand; }
+        }
+        return { angles: best, spinErrorDeg: bestErr };
+    }
+
     inverseKinematics(targetPose, initialAngles) {
         if (!this.isConfigured()) throw new Error('URDF not loaded');
         if (!targetPose || typeof targetPose.x !== 'number' || typeof targetPose.y !== 'number' || typeof targetPose.z !== 'number') {
@@ -724,6 +811,9 @@ class RobotKinematics {
         const finalError = Math.sqrt(dx * dx + dy * dy + dz * dz);
         if (finalError > 8.0) return null;
 
+        if (hasOrientationTarget) {
+            return this.applyToolSpin(angles, targetPose.orientation).angles;
+        }
         return angles;
     }
 
@@ -820,10 +910,12 @@ class RobotKinematics {
         // Early exit: skip expensive refinement if base IK is already accurate
         const baseEval = evaluateCandidate(baseAngles);
         if (baseEval && baseEval.positionErrorMm < 1.5 && baseEval.orientationErrorDeg < 3.0) {
+            const spun = this.applyToolSpin(baseAngles.slice(), desiredOrientation);
             return {
-                angles: baseAngles.slice(),
+                angles: spun.angles,
                 positionErrorMm: baseEval.positionErrorMm,
                 orientationErrorDeg: baseEval.orientationErrorDeg,
+                spinErrorDeg: spun.spinErrorDeg,
                 achievedPosition: baseEval.achievedPosition
             };
         }
@@ -926,10 +1018,13 @@ class RobotKinematics {
         const pass6 = runOnePass(pass5.angles, 15, [0, -1, 1, -2, 2], [0, -1, 1, -2, 2], [0, -1, 1, -2, 2], [0, -1, 1, -2, 2], [0, -1, 1, -2, 2], [0]);
         const pass7 = runOnePass(pass6.angles, 15, [0, -0.5, 0.5], [0, -0.5, 0.5], [0, -0.5, 0.5], [0, -0.5, 0.5], [0, -0.5, 0.5], [0]);
 
+        // J1-J5 may have moved during refinement, so re-solve the spin last.
+        const spun = this.applyToolSpin(pass7.angles, desiredOrientation);
         return {
-            angles: pass7.angles,
+            angles: spun.angles,
             positionErrorMm: pass7.positionErrorMm,
             orientationErrorDeg: pass7.orientationErrorDeg,
+            spinErrorDeg: spun.spinErrorDeg,
             achievedPosition: pass7.achievedPosition
         };
     }
