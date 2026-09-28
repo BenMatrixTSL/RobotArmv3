@@ -400,7 +400,7 @@ class RobotArm3D {
      * @returns {THREE.Vector3}
      */
     urdfMmToThreePos(posMm) {
-        return new THREE.Vector3(-posMm.y, posMm.z + RobotArm3D.BASE_TOP_Y_MM, posMm.x);
+        return new THREE.Vector3(posMm.y, posMm.z + RobotArm3D.BASE_TOP_Y_MM, posMm.x);
     }
 
     /**
@@ -409,8 +409,14 @@ class RobotArm3D {
      * @param {{x:number,y:number,z:number}} d
      * @returns {THREE.Vector3}
      */
+    // URDF (X forward, Y left, Z up) -> Three.js (X right, Y up, Z towards the
+    // camera): X->Z, Y->X, Z->Y. This is a cyclic permutation (det +1), i.e. a
+    // proper rotation. It used to be (-Y, Z, X), a reflection (det -1), which
+    // only looked right because the URDF itself was a mirror image of the arm
+    // until joints 1 and 4 were corrected; every mapping in this file must
+    // stay a proper rotation or the model turns the opposite way to the arm.
     urdfDirToThree(d) {
-        return new THREE.Vector3(-d.y, d.z, d.x);
+        return new THREE.Vector3(d.y, d.z, d.x);
     }
 
     /**
@@ -555,9 +561,9 @@ class RobotArm3D {
         // Tool-frame axes at the tool tip (which is the mount face when no tool
         // is fitted). Drawn from the FK rotation so they turn with the wrist:
         // joint 6's roll spins the red X / green Y arrows around the blue Z
-        // (tool) axis. A plain AxesHelper would stay world-aligned. Lines are
-        // used rather than rotating a helper because urdfMmToThreePos() is a
-        // mirrored mapping (det -1), which a quaternion cannot represent.
+        // (tool) axis. A plain AxesHelper would stay world-aligned; drawing
+        // lines from the mapped FK axes keeps this independent of helper
+        // orientation conventions.
         if (toolRotation) {
             const AXIS_LEN = 28;
             const axisDir = (col) => this.urdfDirToThree({
@@ -874,16 +880,17 @@ class RobotArm3D {
             // Convert URDF transform (row-major) to Three.js Matrix4 (column-major)
             // URDF: X=forward, Y=left, Z=up
             // Three.js: X=right, Y=up, Z=forward
-            // Mapping: URDF(X,Y,Z) -> Three.js(-Y,Z,X)
+            // Mapping: URDF(X,Y,Z) -> Three.js(Y,Z,X)
             const urdfPos = {
                 x: urdfTransform[0][3],
                 y: urdfTransform[1][3],
                 z: urdfTransform[2][3]
             };
             
-            // Map position: URDF (X,Y,Z) -> Three.js (-Y, Z, X) in millimeters
+            // Map position: URDF (X,Y,Z) -> Three.js (Y, Z, X) in millimeters
+            // (proper rotation — see urdfDirToThree()).
             const threePos = new THREE.Vector3(
-                -urdfPos.y * 1000,  // URDF Y -> Three.js -X (mm)
+                urdfPos.y * 1000,   // URDF Y -> Three.js X (mm)
                 urdfPos.z * 1000,   // URDF Z -> Three.js Y (mm)
                 urdfPos.x * 1000    // URDF X -> Three.js Z (mm)
             );
@@ -898,11 +905,11 @@ class RobotArm3D {
             // Map rotation matrix: URDF -> Three.js coordinate system
             // URDF basis vectors -> Three.js basis vectors
             // URDF X (1,0,0) -> Three.js Z (0,0,1)
-            // URDF Y (0,1,0) -> Three.js -X (-1,0,0)
+            // URDF Y (0,1,0) -> Three.js X (1,0,0)
             // URDF Z (0,0,1) -> Three.js Y (0,1,0)
             const threeRot = new THREE.Matrix4();
             threeRot.set(
-                -urdfRot[1][0], -urdfRot[1][1], -urdfRot[1][2], 0,  // URDF Y -> Three.js -X
+                urdfRot[1][0],  urdfRot[1][1],  urdfRot[1][2],  0,  // URDF Y -> Three.js X
                 urdfRot[2][0],  urdfRot[2][1],  urdfRot[2][2],  0,  // URDF Z -> Three.js Y
                 urdfRot[0][0],  urdfRot[0][1],  urdfRot[0][2],  0,  // URDF X -> Three.js Z
                 0,              0,              0,              1
