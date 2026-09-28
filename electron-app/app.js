@@ -57,6 +57,14 @@ let jogCommandedAngles = [];
 // re-syncs — the servo's STS_ACC register otherwise keeps whatever value it
 // last had, which is not necessarily what the UI shows).
 let accelerationDefaultsSynced = false;
+// Servo acceleration sent to every joint on connect (ST3215 register 0x29,
+// units of 100 steps/s^2). The old default of 5 (500 steps/s^2) needed 114
+// degrees of travel just to reach 100 deg/s, so on typical 20-60 degree moves
+// every joint ran a pure accelerate/decelerate triangle peaking near 45 deg/s
+// and the speed on Blockly / G-code / RAPID moves made no visible difference.
+// 30 (3000 steps/s^2) reaches 40 deg/s in 0.15 s and 100 deg/s in 0.38 s
+// (about 19 degrees), keeping a soft start without swallowing the speed.
+const DEFAULT_JOINT_ACCELERATION = 30;
 let robotArm3D = null; // 3D visualization instance
 let useSimulatedAngles = false; // Whether to use simulated angles instead of real robot angles
 let simulatedAngles = [0, 0, 0, 0]; // Simulated joint angles
@@ -604,7 +612,7 @@ function generateJointStatusCards() {
                     </div>
                     <div class="joint-field-group compact">
                         <label for="joint${i}Acceleration">Accel (0-254):</label>
-                        <input type="number" id="joint${i}Acceleration" value="5" min="0" max="254" step="1" onchange="applyJointAcceleration(${i})">
+                        <input type="number" id="joint${i}Acceleration" value="${DEFAULT_JOINT_ACCELERATION}" min="0" max="254" step="1" onchange="applyJointAcceleration(${i})">
                     </div>
                 </div>
                 <div class="joint-control-fields joint-control-compact">
@@ -3257,8 +3265,8 @@ function moveJoint(jointNumber) {
         speedStepsPerSecond = Math.round(speedDegreesPerSecond * 11.37);
     }
     
-    // Get the acceleration from the input field (optional, defaults to 5)
-    let accelerationValue = 5;
+    // Get the acceleration from the input field (optional, defaults to DEFAULT_JOINT_ACCELERATION)
+    let accelerationValue = DEFAULT_JOINT_ACCELERATION;
     const accelerationInputElement = document.getElementById(`joint${jointNumber}Acceleration`);
     if (accelerationInputElement) {
         if (accelerationInputElement.tagName === 'INPUT') {
