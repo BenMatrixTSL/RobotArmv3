@@ -177,7 +177,7 @@ const diag = {
     lastBusWriteAt: null, lastBusWriteDurationMs: 0,
     statusPollsCompleted: 0, statusPollJointIndex: 0,
     lastStatusPollAt: null, lastStatusPollDurationMs: 0,
-    cacheAgeMs: null, immediateBusCommands: 0, writeTimeouts: 0
+    cacheAgeMs: null, immediateBusCommands: 0, writeTimeouts: 0, implausibleSamples: 0
 };
 
 // ===== Helpers =====
@@ -338,6 +338,54 @@ function postStatusToMain() {
     });
 }
 
+// ===== Implausible-sample filter =====
+// A sync-read reply that passes the checksum can still carry a wrong position
+// (a corrupted frame whose checksum happens to match, or a late reply landing
+// in another joint's slot). One such sample used to go straight into the
+// status cache, so the 3D view and XYZ readout jumped wildly for a frame and
+// anything seeded from getStatus() at that instant started from nonsense.
+// A joint cannot physically move faster than MAX_PLAUSIBLE_DEG_PER_S, so a
+// sample further from the last good angle than the elapsed time allows is
+// held back and the previous good values are kept. It is accepted only once
+// SUSPECT_ACCEPT_AFTER consecutive samples agree with each other, which is
+// what a genuine jump looks like (arm pushed by hand with torque off, or the
+// first sample after a long poll gap, where the allowance has grown anyway).
+const MAX_PLAUSIBLE_DEG_PER_S = 400;
+const PLAUSIBLE_MARGIN_DEG    = 3;
+const SUSPECT_ACCEPT_AFTER    = 3;
+const suspectSamples = new Array(JOINT_COUNT).fill(null); // { angle, count } per joint
+
+function isPlausibleSample(previous, status, nowMs) {
+    if (!(status.position >= 0 && status.position <= 4095)) return false;
+    if (!previous || !previous.lastGoodAt || !previous.available) return true;
+    const dtS = Math.max((nowMs - previous.lastGoodAt) / 1000, 0.02);
+    const allowedDeg = MAX_PLAUSIBLE_DEG_PER_S * dtS + PLAUSIBLE_MARGIN_DEG;
+    return Math.abs(status.angleDegrees - previous.angleDegrees) <= allowedDeg;
+}
+
+// Returns true when the sample should be dropped (held back) this tick.
+function holdBackImplausibleSample(jointIndex, jointNum, previous, status, nowMs) {
+    if (isPlausibleSample(previous, status, nowMs)) {
+        suspectSamples[jointIndex] = null;
+        return false;
+    }
+    const s = suspectSamples[jointIndex];
+    if (s && Math.abs(s.angle - status.angleDegrees) <= PLAUSIBLE_MARGIN_DEG) {
+        s.count++;
+    } else {
+        suspectSamples[jointIndex] = { angle: status.angleDegrees, count: 1 };
+    }
+    const count = suspectSamples[jointIndex].count;
+    if (count >= SUSPECT_ACCEPT_AFTER) {
+        log(`[BUS] Joint ${jointNum}: accepting ${status.angleDegrees.toFixed(1)}° after ${count} consistent samples (was ${previous.angleDegrees.toFixed(1)}°)`);
+        suspectSamples[jointIndex] = null;
+        return false;
+    }
+    diag.implausibleSamples++;
+    vlog(`[POLL] joint=${jointNum} implausible sample ${status.angleDegrees.toFixed(1)}° (last good ${previous.angleDegrees.toFixed(1)}°) held back (${count}/${SUSPECT_ACCEPT_AFTER})`);
+    return true;
+}
+
 // ===== Servo Polling =====
 
 /**
@@ -377,6 +425,7 @@ async function refreshAllJointStatusSyncRead() {
         if (result.status === 'fulfilled') {
             servoConsecFails[jointIndex] = 0;
             const status = servos[jointIndex].quickStatusFromBuffer(result.value);
+            if (holdBackImplausibleSample(jointIndex, jointNum, previous, status, Date.now())) return;
             if (!status.torqueEnabled && servoTorqueEnabled[jointIndex]) {
                 log(`[TORQUE] Joint ${jointNum}: servo self-disabled torque (fault/overload) — will re-enable on next move`);
                 servoTorqueEnabled[jointIndex] = false;
@@ -441,6 +490,7 @@ async function refreshSingleJointStatusFromBus(jointIndex) {
     try {
         const status = await readServoQuickStatusWithRetry(servo);
         servoConsecFails[jointIndex] = 0;
+        if (holdBackImplausibleSample(jointIndex, jointNum, previous, status, Date.now())) return;
         // If the servo has self-disabled torque (overload/fault), sync local tracking
         // so the next moveJoint will re-enable it.
         if (!status.torqueEnabled && servoTorqueEnabled[jointIndex]) {
@@ -600,7 +650,7 @@ function startBusTickLoop() {
             // the leak is found and fixed.
             const mem = process.memoryUsage();
             const mb = (n) => (n / 1024 / 1024).toFixed(1);
-            log('BUS diag: ticks=' + diag.busTicks + ' skipped=' + diag.busTicksSkipped + ' writeQ=' + busWriteQueue.length + ' cacheAgeMs=' + diag.cacheAgeMs + ' lastTickMs=' + diag.lastBusTickDurationMs +
+            log('BUS diag: ticks=' + diag.busTicks + ' skipped=' + diag.busTicksSkipped + ' writeQ=' + busWriteQueue.length + ' cacheAgeMs=' + diag.cacheAgeMs + ' lastTickMs=' + diag.lastBusTickDurationMs + ' implausible=' + diag.implausibleSamples +
                 ' mem: rss=' + mb(mem.rss) + 'MB heapUsed=' + mb(mem.heapUsed) + 'MB heapTotal=' + mb(mem.heapTotal) + 'MB external=' + mb(mem.external) + 'MB arrayBuffers=' + mb(mem.arrayBuffers) + 'MB');
         }, BUS_DIAGNOSTICS_LOG_INTERVAL_MS);
     }
