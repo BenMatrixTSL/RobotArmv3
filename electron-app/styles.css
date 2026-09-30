@@ -4164,6 +4164,19 @@ body.touch-mode .position-item-actions .btn {
     width: auto;
 }
 
+/* The stored-position angle boxes sit in a grid whose columns can be as
+   narrow as 200 px. With a 60 px label and two tap-sized stepper buttons
+   that left the box ~30 px wide, so a value like -19.3 was clipped on both
+   sides (centred text) and read as a stray digit or nothing. Give the box
+   room for a signed one-decimal angle and let the columns grow to fit. */
+.position-joint-item .stepper input {
+    min-width: 72px;
+}
+
+body.touch-mode .positions-joints-grid {
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+}
+
 /* Full-height strip on a normal screen; the kiosk keeps it shorter
    because 480 px of height is the constraint there. */
 body.touch-mode .joint-card-compact {
