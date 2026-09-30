@@ -125,7 +125,7 @@ function updatePositionJointsGrid() {
         jointDiv.className = 'position-joint-item';
         jointDiv.innerHTML = `
             <label>Joint ${i}:</label>
-            <input type="number" id="positionJoint${i}" value="0" step="0.1" style="width: 100px;" oninput="updatePositionEditorPreview()">
+            <input type="number" id="positionJoint${i}" value="0" step="0.1" oninput="updatePositionEditorPreview()">
             <span>°</span>
         `;
         grid.appendChild(jointDiv);

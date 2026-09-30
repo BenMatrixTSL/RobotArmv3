@@ -35,12 +35,24 @@
     let activeField = null;
     let shiftOn = false;
     let symbolsOn = false;
+    // While the keypad is attached to an <input type="number"> the field is
+    // switched to type="text" (and back on hide). A number input blanks any
+    // partial value the browser cannot parse, so typing "-" then "5", or "5"
+    // then ".", lost the first key and negatives/decimals could not be entered
+    // at all; it also throws on setSelectionRange(), which aborted insertText()
+    // before the 'input' event fired, leaving oninput listeners (the position
+    // editor preview, XYZ readouts) stale. As text the field accepts the
+    // partial string, caret handling works, and the number type is restored
+    // afterwards so validation and steppers behave as before.
+    let activeFieldIsNumeric = false;
+    let activeFieldOriginalType = null;
 
     function isKioskMode() {
         return document.body.classList.contains('kiosk-mode');
     }
 
     function fieldWantsNumeric(el) {
+        if (el === activeField) return activeFieldIsNumeric;
         if (el.dataset.kbd === 'numeric') return true;
         if (el.dataset.kbd === 'full') return false;
         return el.tagName === 'INPUT' && el.type === 'number';
@@ -178,6 +190,18 @@
         activeField = field;
         shiftOn = false;
         symbolsOn = false;
+        activeFieldIsNumeric = fieldWantsNumeric(field);
+        activeFieldOriginalType = null;
+        if (field.tagName === 'INPUT' && field.type === 'number') {
+            activeFieldOriginalType = 'number';
+            try {
+                field.type = 'text';
+                field.setAttribute('inputmode', 'decimal');
+                // Put the caret at the end so keys append rather than prepend.
+                const len = field.value.length;
+                field.setSelectionRange(len, len);
+            } catch (_) { activeFieldOriginalType = null; }
+        }
         if (!panel) buildPanel();
         renderForActiveField();
         panel.classList.add('osk-visible');
@@ -188,7 +212,17 @@
         });
     }
 
+    function restoreFieldType() {
+        if (!activeField || !activeFieldOriginalType) return;
+        try {
+            activeField.removeAttribute('inputmode');
+            activeField.type = activeFieldOriginalType;
+        } catch (_) {}
+        activeFieldOriginalType = null;
+    }
+
     function hide() {
+        restoreFieldType();
         activeField = null;
         if (panel) panel.classList.remove('osk-visible');
         document.body.classList.remove('osk-open');
@@ -209,6 +243,8 @@
             const active = document.activeElement;
             if (panel && panel.contains(active)) return;
             if (active === activeField) return;
+            // Focus moved elsewhere: hand back the number type before the
+            // change/validation listeners on the old field see the value.
             hide();
         }, 0);
     }
