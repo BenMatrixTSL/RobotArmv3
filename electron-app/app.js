@@ -169,9 +169,9 @@ let currentToolOrientation = null;
 // Gripper servo positions shared by every programming paradigm: Blockly
 // Open/Close Gripper, G-code M10/M11 and RAPID GripperOpen/GripperClose.
 // The end tool maps angle -> 8-bit servo position as angle * 255 / 180, so
-// 141° is about 200/255. Fully open (180° = 255) drives the gripper hard
-// against its end stop; 141° opens far enough to clear a block without that.
-const GRIPPER_OPEN_ANGLE = 141;
+// 180° is the full 255 travel (fully open). Lower it (e.g. 141° ≈ 200/255)
+// if the gripper should stop short of its end stop.
+const GRIPPER_OPEN_ANGLE = 180;
 const GRIPPER_CLOSED_ANGLE = 0;
 
 function openGripper() { moveEndToolServo(GRIPPER_OPEN_ANGLE); }
