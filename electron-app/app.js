@@ -4743,26 +4743,35 @@ function computeCoordinatedSpeeds(currentAngles, targetAngles, baseStepsPerSecon
 const MAX_TIP_MOVE_JOINT_DEG_PER_S = 120;
 function computeTipSpeeds(currentAngles, targetAngles, distanceMm, mmPerSec) {
     if (!Array.isArray(targetAngles) || targetAngles.length === 0) return [];
-    const MIN_STEPS = 50;
+    // The joint with the most travel sets the pace and is never asked to go
+    // slower than MIN_LEAD_STEPS; the others scale below it in proportion to
+    // their travel, down to MIN_ANY_STEPS, so they still arrive together. A
+    // single 50 steps/s floor on every joint used to break synchronisation on
+    // slow moves (the 15 mm/s approach leg): shoulder and elbow finished half a
+    // second before the wrist and the tip dipped below the target meanwhile.
+    const MIN_ANY_STEPS  = 12;   // ~1 deg/s, for joints with a sliver of travel
+    const MIN_LEAD_STEPS = 50;   // ~4.4 deg/s, keeps slow moves from crawling
     const MAX_STEPS = Math.round(MAX_TIP_MOVE_JOINT_DEG_PER_S * DEGREES_TO_STEPS_RATIO);
     const speed = (typeof mmPerSec === 'number' && mmPerSec > 0) ? mmPerSec : 40;
     if (!Array.isArray(currentAngles) || currentAngles.length === 0) {
         // Unknown start: no travel information, so fall back to a uniform
         // moderate joint speed rather than guessing ratios.
-        const uniform = Math.min(MAX_STEPS, Math.max(MIN_STEPS, Math.round(speed * DEGREES_TO_STEPS_RATIO)));
+        const uniform = Math.min(MAX_STEPS, Math.max(MIN_LEAD_STEPS, Math.round(speed * DEGREES_TO_STEPS_RATIO)));
         return targetAngles.map(() => uniform);
     }
     const n = Math.min(currentAngles.length, targetAngles.length);
     const travels = [];
     for (let i = 0; i < n; i++) travels.push(Math.abs((targetAngles[i] || 0) - (currentAngles[i] || 0)));
     const maxTravel = Math.max(...travels);
-    if (maxTravel < 0.01) return travels.map(() => MIN_STEPS);
+    if (maxTravel < 0.01) return travels.map(() => MIN_LEAD_STEPS);
     const dist = (typeof distanceMm === 'number' && isFinite(distanceMm)) ? Math.abs(distanceMm) : 0;
     let durationS = dist / speed;
-    // Never ask the fastest joint to exceed the cap; this also handles
-    // segments with (almost) no tip travel but real joint travel.
+    // The lead joint must not crawl below MIN_LEAD_STEPS ...
+    durationS = Math.min(durationS, (maxTravel * DEGREES_TO_STEPS_RATIO) / MIN_LEAD_STEPS);
+    // ... and must never exceed the cap; this also handles segments with
+    // (almost) no tip travel but real joint travel.
     durationS = Math.max(durationS, maxTravel / MAX_TIP_MOVE_JOINT_DEG_PER_S);
-    return travels.map(t => Math.min(MAX_STEPS, Math.max(MIN_STEPS, Math.round((t / durationS) * DEGREES_TO_STEPS_RATIO))));
+    return travels.map(t => Math.min(MAX_STEPS, Math.max(MIN_ANY_STEPS, Math.round((t / durationS) * DEGREES_TO_STEPS_RATIO))));
 }
 
 // ===== Approach from above =====
