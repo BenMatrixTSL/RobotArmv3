@@ -1867,7 +1867,7 @@ function registerBlocklyGenerators() {
                 y: isFinite(_bcp1.y) ? _bcp1.y : targetPose.y,
                 z: isFinite(_bcp1.z) ? _bcp1.z : targetPose.z,
             };
-            const waypoints = planSafePathAroundDeadZones(startPose, targetPose, deadZones, safeZHeight);
+            const waypoints = insertApproachWaypoints(planSafePathAroundDeadZones(startPose, targetPose, deadZones, safeZHeight), startPose);
             if (!waypoints) {
                 appendBlocklyOutput('Move TCP to XYZ cancelled: target lies inside a dead zone.');
             } else {
@@ -1920,7 +1920,12 @@ function registerBlocklyGenerators() {
                     // segment at the block's mm/s with all joints arriving together.
                     const segStart = w === 0 ? startPose : waypoints[w - 1];
                     const segMm = Math.hypot(wp.x - segStart.x, wp.y - segStart.y, wp.z - segStart.z);
-                    const tipSpeeds = computeTipSpeeds(initialAngles, refinedAngles, segMm, ${mmPerSec});
+                    const segMmPerSec = wp.approach ? Math.min(${mmPerSec}, APPROACH_SPEED_MM_PER_S) : ${mmPerSec};
+                    if (wp.approach) {
+                        appendBlocklyOutput('Final approach: descending ' + segMm.toFixed(0) + ' mm at ' + segMmPerSec.toFixed(0) + ' mm/s');
+                        await new Promise(resolve => setTimeout(resolve, APPROACH_SETTLE_MS));
+                    }
+                    const tipSpeeds = computeTipSpeeds(initialAngles, refinedAngles, segMm, segMmPerSec);
                     const movePromises = [];
                     for (let i = 0; i < refinedAngles.length; i++) {
                         movePromises.push(robotArmClient.moveJoint(i + 1, refinedAngles[i], tipSpeeds[i]));
@@ -1970,7 +1975,7 @@ function registerBlocklyGenerators() {
                 z: currentZ + (${dz})
             };
 
-            const waypoints = planSafePathAroundDeadZones(startPose, targetPose, deadZones, safeZHeight);
+            const waypoints = insertApproachWaypoints(planSafePathAroundDeadZones(startPose, targetPose, deadZones, safeZHeight), startPose);
             if (!waypoints) {
                 appendBlocklyOutput('Move TCP by offset cancelled: target lies inside a dead zone.');
             } else {
@@ -2026,7 +2031,12 @@ function registerBlocklyGenerators() {
                     // segment at the block's mm/s with all joints arriving together.
                     const segStart = w === 0 ? startPose : waypoints[w - 1];
                     const segMm = Math.hypot(wp.x - segStart.x, wp.y - segStart.y, wp.z - segStart.z);
-                    const tipSpeeds = computeTipSpeeds(initialAngles, refinedAngles, segMm, ${mmPerSec});
+                    const segMmPerSec = wp.approach ? Math.min(${mmPerSec}, APPROACH_SPEED_MM_PER_S) : ${mmPerSec};
+                    if (wp.approach) {
+                        appendBlocklyOutput('Final approach: descending ' + segMm.toFixed(0) + ' mm at ' + segMmPerSec.toFixed(0) + ' mm/s');
+                        await new Promise(resolve => setTimeout(resolve, APPROACH_SETTLE_MS));
+                    }
+                    const tipSpeeds = computeTipSpeeds(initialAngles, refinedAngles, segMm, segMmPerSec);
                     const movePromises = [];
                     for (let i = 0; i < refinedAngles.length; i++) {
                         movePromises.push(robotArmClient.moveJoint(i + 1, refinedAngles[i], tipSpeeds[i]));

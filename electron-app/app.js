@@ -4765,6 +4765,45 @@ function computeTipSpeeds(currentAngles, targetAngles, distanceMm, mmPerSec) {
     return travels.map(t => Math.min(MAX_STEPS, Math.max(MIN_STEPS, Math.round((t / durationS) * DEGREES_TO_STEPS_RATIO))));
 }
 
+// ===== Approach from above =====
+// Joint-interpolated moves do not dip below their target geometrically, but
+// under gravity the shoulder and wrist droop behind their commanded angles
+// while descending and settle slowly afterwards, so a fast descent to a low
+// target can touch the table and drag before it rises to position. Every
+// program Cartesian move (Blockly Move TCP, G-code G1 XYZ, RAPID MoveL) now
+// finishes a descent the way a pick should: travel at the requested speed to
+// APPROACH_HEIGHT_MM above the target, let the arm settle, then descend the
+// last stretch at no more than APPROACH_SPEED_MM_PER_S.
+const APPROACH_HEIGHT_MM       = 30;
+const APPROACH_SPEED_MM_PER_S  = 15;
+const APPROACH_SETTLE_MS       = 300;
+const APPROACH_MIN_DESCENT_MM  = 5;   // smaller descents are not treated as approaches
+
+/**
+ * Inserts an approach waypoint before a final descending segment and marks the
+ * final waypoint `approach: true` so the caller slows it down and settles first.
+ * Segments that descend less than APPROACH_HEIGHT_MM become a slow approach
+ * in full; those that descend more get an extra point APPROACH_HEIGHT_MM above
+ * the target (same X/Y) with the fast leg ending there.
+ * @param {Array<{x:number,y:number,z:number}>|null} waypoints - planner output
+ * @param {{x:number,y:number,z:number}} startPose - where the move starts
+ * @returns {Array<{x:number,y:number,z:number,approach?:boolean}>|null}
+ */
+function insertApproachWaypoints(waypoints, startPose) {
+    if (!Array.isArray(waypoints) || waypoints.length === 0) return waypoints;
+    const out = waypoints.map(w => ({ x: w.x, y: w.y, z: w.z }));
+    const last = out[out.length - 1];
+    const prev = out.length >= 2 ? out[out.length - 2] : startPose;
+    if (!prev || !isFinite(prev.z) || !isFinite(last.z)) return out;
+    const descent = prev.z - last.z;
+    if (descent < APPROACH_MIN_DESCENT_MM) return out;
+    if (descent > APPROACH_HEIGHT_MM + 1) {
+        out.splice(out.length - 1, 0, { x: last.x, y: last.y, z: last.z + APPROACH_HEIGHT_MM });
+    }
+    out[out.length - 1].approach = true;
+    return out;
+}
+
 /**
  * Moves all joints to the specified target angles, respecting dead zones.
  * If the joint-space path does not intersect any dead zone, this will move
@@ -5399,7 +5438,7 @@ async function executeGCodeCommand(command) {
             };
 
             // Plan dead-zone-aware path
-            const waypoints = planSafePathAroundDeadZones(startPose, targetPose, deadZones, safeZHeight);
+            const waypoints = insertApproachWaypoints(planSafePathAroundDeadZones(startPose, targetPose, deadZones, safeZHeight), startPose);
             if (!waypoints) {
                 gcodeProcessor.log(`Error: Target position (${targetPose.x}, ${targetPose.y}, ${targetPose.z}) lies inside a dead zone. Move cancelled.`);
                 return;
@@ -5482,7 +5521,12 @@ async function executeGCodeCommand(command) {
                 if (robotArmClient.isConnected) {
                     const segStart = w === 0 ? startPose : waypoints[w - 1];
                     const segMm = Math.hypot(wp.x - segStart.x, wp.y - segStart.y, wp.z - segStart.z);
-                    const gcodeSpeeds = computeTipSpeeds(initialAngles || null, jointAngles, segMm, tipMmPerSec);
+                    const segMmPerSec = wp.approach ? Math.min(tipMmPerSec, APPROACH_SPEED_MM_PER_S) : tipMmPerSec;
+                    if (wp.approach) {
+                        gcodeProcessor.log(`Final approach: descending ${segMm.toFixed(0)} mm at ${segMmPerSec.toFixed(0)} mm/s`);
+                        await new Promise(resolve => setTimeout(resolve, APPROACH_SETTLE_MS));
+                    }
+                    const gcodeSpeeds = computeTipSpeeds(initialAngles || null, jointAngles, segMm, segMmPerSec);
                     const movePromises = [];
                     for (let i = 0; i < jointAngles.length; i++) {
                         movePromises.push(robotArmClient.moveJoint(i + 1, jointAngles[i], gcodeSpeeds[i]));
@@ -6072,7 +6116,7 @@ async function runRapidProgram() {
                 z: isFinite(_cp1.z) ? _cp1.z : targetPose.z,
             };
 
-            const waypointsRapid = planSafePathAroundDeadZones(startPose, targetPose, deadZones, safeZHeight);
+            const waypointsRapid = insertApproachWaypoints(planSafePathAroundDeadZones(startPose, targetPose, deadZones, safeZHeight), startPose);
             if (!waypointsRapid) {
                 console.warn('RAPID: MoveLXYZ target lies inside a dead zone. Move cancelled.');
                 continue;
@@ -6146,7 +6190,9 @@ async function runRapidProgram() {
                 // requested tool-tip speed (mm/s) with all joints arriving together.
                 const segStart = w === 0 ? startPose : waypointsRapid[w - 1];
                 const segMm = Math.hypot(wp.x - segStart.x, wp.y - segStart.y, wp.z - segStart.z);
-                const rapidSpeeds = computeTipSpeeds(initialAngles || null, jointAngles, segMm, rapidTipMmPerSec);
+                const segMmPerSec = wp.approach ? Math.min(rapidTipMmPerSec, APPROACH_SPEED_MM_PER_S) : rapidTipMmPerSec;
+                if (wp.approach) await new Promise(resolve => setTimeout(resolve, APPROACH_SETTLE_MS));
+                const rapidSpeeds = computeTipSpeeds(initialAngles || null, jointAngles, segMm, segMmPerSec);
                 const rapidPromises = [];
                 for (let j = 0; j < numJoints; j++) {
                     const targetAngle = jointAngles[j];
@@ -6187,7 +6233,7 @@ async function runRapidProgram() {
             const rapidOffsTipMmPerSec = parseRapidSpeedMmPerSec(line);
             console.log('RAPID: MoveLOffs on line', i + 1, 'offsets:', offsets, 'target XYZ:', targetPose, 'at', rapidOffsTipMmPerSec, 'mm/s');
 
-            const waypointsRapidOffs = planSafePathAroundDeadZones(startPoseRapid, targetPose, deadZones, safeZHeight);
+            const waypointsRapidOffs = insertApproachWaypoints(planSafePathAroundDeadZones(startPoseRapid, targetPose, deadZones, safeZHeight), startPoseRapid);
             if (!waypointsRapidOffs) {
                 console.warn('RAPID: MoveLOffs target lies inside a dead zone. Move cancelled.');
                 continue;
@@ -6244,7 +6290,9 @@ async function runRapidProgram() {
                 // requested tool-tip speed (mm/s) with all joints arriving together.
                 const segStart2 = w === 0 ? startPoseRapid : waypointsRapidOffs[w - 1];
                 const segMm2 = Math.hypot(wp.x - segStart2.x, wp.y - segStart2.y, wp.z - segStart2.z);
-                const rapidOffsSpeeds = computeTipSpeeds(initialAngles2 || null, jointAngles2, segMm2, rapidOffsTipMmPerSec);
+                const segMmPerSec2 = wp.approach ? Math.min(rapidOffsTipMmPerSec, APPROACH_SPEED_MM_PER_S) : rapidOffsTipMmPerSec;
+                if (wp.approach) await new Promise(resolve => setTimeout(resolve, APPROACH_SETTLE_MS));
+                const rapidOffsSpeeds = computeTipSpeeds(initialAngles2 || null, jointAngles2, segMm2, segMmPerSec2);
                 const rapidOffsPromises = [];
                 for (let j = 0; j < numJoints; j++) {
                     const targetAngle = jointAngles2[j];
