@@ -342,22 +342,84 @@ The kinematics commands respect these. `moveJoint` does not. Clamp in your clien
 
 ## 9. End tool (bus ID 64)
 
-The ESP32 end tool exposes a hobby-servo gripper, two PWM FET outputs (pump, valve)
-with current sensing, and two ADC inputs. The server probes it every 15 s and pushes
-`endTool` when it changes; `refreshEndTool` forces a probe after a swap.
+The end tool is an ESP32 that answers on the servo bus as ID 64 using the ST3215 packet
+format, but exposes a register map of its own (`End Tool API ESP32/REGISTER_MAP.md`).
+It carries a hobby-servo output (the gripper), two PWM FET outputs with current sensing
+(pump and valve on the pneumatic tool) and two ADC inputs. The current firmware
+implements registers 0 to 56 only; see "Not implemented" below.
 
-| Task | Command | Params |
+### Tool types the server knows
+
+The tool reports a type ID in register 3. The server reads it every 15 s (and
+immediately after `refreshEndTool`), pushes an `endTool` message when it changes, and
+switches the kinematics TCP to the matching `<end_tool>` entry in `kinematics.urdf`.
+
+| `toolTypeId` | Label | TCP offset from mount face | `controls` | Notes |
+|---|---|---|---|---|
+| 0 | Unassigned | 0 mm (TCP is the mount face) | none | Also used when no tool answers |
+| 1 | Pneumatic vacuum and valve | 119.0 mm down, 2.0 mm forward (suction cup face) | `pump`, `solenoid` | Pump on PWM1, valve on PWM2 |
+| 2 | Servo motor (gripper) | 120.2 mm down (midpoint of the closed fingers) | `servo` | Hobby servo on the servo output |
+| 3 | Pen | 155 mm down (pen tip, retracted) | none | Marked `provisional`: length is a placeholder |
+
+An ID with no URDF entry leaves the TCP at the mount face and `endTool.known` false.
+Because the TCP moves with the tool, **re-solve XYZ targets after a tool change**; joint
+angles stored for one tool put a different tool somewhere else.
+
+The `endTool` push carries `present`, `toolTypeId`, `known`, `tool:{id,label,lengthMm,
+controls,provisional}`, `tools` (every URDF entry) and `lastError`.
+
+### Commands and accepted values
+
+All tool writes need the control session. All tool reads work without it. Every value
+is clamped server-side to the range shown; out-of-range numbers are not rejected.
+
+| Command | Parameters | Range and effect |
 |---|---|---|
-| Open or close the gripper | `toolSetServoEnabledAndAngle` | `angle` 0 to 180. The firmware maps it to an 8-bit position as `angle × 255 / 180`. The app uses 0 closed and 180 open. |
-| Hold or release the gripper servo | `toolSetServoEnabled` | `enabled` |
-| Pump and valve | `toolSetPwm` | `pwm1Duty`, `enable1`, `pwm2Duty`, `enable2` (duty 0 to 255; the pendant uses 80 for the pump) |
-| Read gripper position | `toolGetServoState` | returns `currentAngle`, `currentPosition8bit` |
-| Read currents / ADC | `toolReadCurrents`, `toolReadAdc` | raw and mV |
+| `toolSetServoEnabledAndAngle` | `angle` | 0 to 180 degrees, clamped. Writes enable = 1 and the angle in one packet, so it works from the boot state. This is the gripper command: 0 is closed, 180 is fully open (the firmware maps it to the 8-bit position as `angle × 255 / 180`). The pendant and programs use 0 and 180. |
+| `toolSetServoAngle` | `angle` | 0 to 180, clamped. Angle only; the servo must already be enabled or nothing moves. |
+| `toolSetServoPosition` | `position` | 0 to 255, clamped. Raw position mapped linearly onto the pulse range (default 1000 to 2000 µs). |
+| `toolSetServoEnabled` | `enabled` | boolean. **Omitting it means true.** `false` removes drive from the servo, so a loaded gripper may relax. |
+| `toolGetServoState` | none | `{enabled, currentPosition8bit, currentAngle}`: the last *applied* command, not a measured position. |
+| `toolSetPwm` | `pwm1Duty`, `pwm2Duty`, `enable1`, `enable2` | Duties 0 to 255, clamped; a missing duty is 0. Enables are booleans and **a missing enable means true**, so always send all four fields. Both channels are written together. The pendant drives the pump as PWM1 at duty 80 and the valve as PWM2 at duty 255. |
+| `toolGetPwmState` | none | `{pwm1Duty, pwm2Duty, pwmControl}` where `pwmControl` bit 0 is PWM1 enable and bit 1 is PWM2 enable. |
+| `toolReadCurrents` | none | `{pwm1CurrentRaw, pwm2CurrentRaw, servoCurrentRaw}`; despite the names these are milliamps on the current firmware. |
+| `toolReadAdc` | none | `{adc0Raw, adc1Raw, adc0mV, adc1mV}`. |
+| `toolGetIdentity` | none | `{protocolVersion, firmwareMajor, firmwareMinor, toolTypeId}`. `firmwareMinor` 2 or higher means the hobby-servo registers exist. |
+| `toolPing` | none | `{ok}`. |
 
-The tool answers slowly compared with the servos; the server allows it 1 s per write
-and five attempts. Allow about 500 ms for a gripper to physically close before moving
-on, as the reply only confirms the command was accepted. Tool writes need the control
-session; tool reads do not.
+### Not implemented on the current firmware
+
+The server still exposes four commands written against an earlier register spec.
+The firmware only services registers 0 to 56, so:
+
+- **`toolSetWatchdog` must not be used.** It writes a 16-bit timeout to registers 6
+  and 7, which on this firmware are *PWM2 duty* and the *PWM control flags*. A
+  "timeout" of, say, 2000 ms would set PWM2 to duty 208 and switch PWM outputs on.
+- `toolGetStatus` reads registers 66 and 68, which do not exist; expect an error or
+  meaningless values. The status-flag bits listed in the firmware document (overcurrent,
+  watchdog, forced-off) are not set by this firmware.
+- `toolClearFaults` and `toolReset` write registers 65 and 64, which do not exist, so
+  they do nothing.
+
+### Behaviour and rules
+
+- The hobby servo is **disabled at boot** until something writes enable = 1. Use
+  `toolSetServoEnabledAndAngle` for the first command after power-up.
+- There is **no watchdog on the tool**. Pump, valve and servo stay exactly as last
+  commanded if your client crashes or disconnects. Switch outputs off
+  (`toolSetPwm` with both duties 0 and both enables false) and park the gripper before
+  you exit, and treat that as part of your error handling.
+- A reply confirms the command was accepted, not that the gripper has moved. Allow
+  roughly 500 ms for the gripper to travel before the next motion; the pendant's
+  programs wait that long after every open or close.
+- The tool answers more slowly than the servos. The server gives each tool write a
+  1 s timeout and up to five attempts 150 ms apart, so a tool command can take most of
+  a second to fail. Do not issue tool commands faster than that budget allows.
+- Both PWM outputs are written together by `toolSetPwm`. To change one channel,
+  resend the other channel's current values with it.
+- The servo pulse range (registers 51 to 54, default 1000 to 2000 µs) and the tool
+  type ID (register 3) have no server command; they are configuration set with raw
+  register writes on the tool and should be left alone in normal use.
 
 ---
 
