@@ -4805,6 +4805,81 @@ function insertApproachWaypoints(waypoints, startPose) {
 }
 
 /**
+ * Moves to a taught set of joint angles (a stored position) with the same
+ * approach-from-above behaviour as the Cartesian moves. If the target's tool
+ * tip is lower than the current tip by at least APPROACH_MIN_DESCENT_MM, the
+ * move is split: a coordinated joint move at speedDegreesPerSecond to a point
+ * APPROACH_HEIGHT_MM above the target (solved by IK, same tool direction and
+ * spin, seeded from the target so the arm keeps its configuration), a settle
+ * pause, then the last stretch at no more than APPROACH_SPEED_MM_PER_S of tip
+ * speed, ending exactly on the stored angles. Otherwise it is one coordinated
+ * joint move. Waits for the motion to finish before returning.
+ * @param {Array<number>} currentAngles
+ * @param {Array<number>} targetAngles
+ * @param {number} speedDegreesPerSecond
+ * @param {(msg:string)=>void} [log]
+ */
+async function moveToStoredAnglesWithApproach(currentAngles, targetAngles, speedDegreesPerSecond, log) {
+    const say = typeof log === 'function' ? log : function () {};
+    const n = targetAngles.length;
+    const sendCoordinated = async function (fromAngles, toAngles, speedsStepsPerSecond) {
+        const promises = [];
+        for (let i = 0; i < n; i++) {
+            if (typeof toAngles[i] !== 'number' || isNaN(toAngles[i])) continue;
+            promises.push(robotArmClient.moveJoint(i + 1, toAngles[i], speedsStepsPerSecond[i]));
+        }
+        await Promise.allSettled(promises);
+        await robotArmClient.waitForMotionComplete(30000);
+    };
+    const degSpeedsToSteps = function (fromAngles, toAngles) {
+        return calculateScaledSpeeds(fromAngles, toAngles, speedDegreesPerSecond)
+            .map(function (d) { return degreesPerSecondToStepsPerSecond(Math.max(d, 50 / 11.37)); });
+    };
+
+    let plan = null;
+    try {
+        if (typeof robotKinematics !== 'undefined' && robotKinematics.isConfigured() &&
+            Array.isArray(currentAngles) && currentAngles.length === n) {
+            const fkNow = robotKinematics.forwardKinematics(currentAngles);
+            const fkTarget = robotKinematics.forwardKinematics(targetAngles);
+            const descent = fkNow.position.z - fkTarget.position.z;
+            if (descent >= APPROACH_MIN_DESCENT_MM) {
+                plan = { descent: descent, target: fkTarget.position, viaAngles: null, finalMm: descent };
+                if (descent > APPROACH_HEIGHT_MM + 1) {
+                    const R = fkTarget.rotation;
+                    const toolZ = { x: -R[0][2], y: -R[1][2], z: -R[2][2] };
+                    const viaPose = { x: fkTarget.position.x, y: fkTarget.position.y, z: fkTarget.position.z + APPROACH_HEIGHT_MM, orientation: toolZ };
+                    const via = robotKinematics.inverseKinematics(viaPose, targetAngles);
+                    if (via && via.length === n) {
+                        if (n > 5) via[5] = targetAngles[5]; // keep the taught spin
+                        plan.viaAngles = via;
+                        plan.finalMm = APPROACH_HEIGHT_MM;
+                    }
+                }
+            }
+        }
+    } catch (e) {
+        console.warn('moveToStoredAnglesWithApproach: planning failed, moving directly:', e.message);
+        plan = null;
+    }
+
+    if (!plan) {
+        await sendCoordinated(currentAngles, targetAngles, degSpeedsToSteps(currentAngles, targetAngles));
+        return;
+    }
+
+    let fromAngles = currentAngles;
+    if (plan.viaAngles) {
+        say('Approach: moving to ' + APPROACH_HEIGHT_MM + ' mm above the target first');
+        await sendCoordinated(currentAngles, plan.viaAngles, degSpeedsToSteps(currentAngles, plan.viaAngles));
+        fromAngles = plan.viaAngles;
+    }
+    say('Final approach: descending ' + plan.finalMm.toFixed(0) + ' mm at ' + APPROACH_SPEED_MM_PER_S + ' mm/s');
+    await new Promise(function (resolve) { setTimeout(resolve, APPROACH_SETTLE_MS); });
+    await sendCoordinated(fromAngles, targetAngles, computeTipSpeeds(fromAngles, targetAngles, plan.finalMm, APPROACH_SPEED_MM_PER_S));
+}
+
+/**
  * Moves all joints to the specified target angles, respecting dead zones.
  * If the joint-space path does not intersect any dead zone, this will move
  * directly in joint space. If it does, the move is converted into a
@@ -5348,8 +5423,18 @@ async function executeGCodeCommand(command) {
 
             gcodeProcessor.log(`Moving to stored position ${positionNumber} (${positionLabel}) at speed ${speedDegreesPerSecond} degrees/s`);
             
-            // Use the existing moveJointsToAnglesWithDeadZones function for dead-zone aware movement
-            if (typeof moveJointsToAnglesWithDeadZones === 'function') {
+            // Taught positions are approached from above (see moveToStoredAnglesWithApproach).
+            if (typeof moveToStoredAnglesWithApproach === 'function' && robotArmClient.isConnected) {
+                let currentAnglesForApproach = null;
+                try {
+                    const st = await robotArmClient.getStatus();
+                    currentAnglesForApproach = [];
+                    for (let i = 0; i < targetAngles.length; i++) {
+                        currentAnglesForApproach.push(st[i] && typeof st[i].angleDegrees === 'number' ? st[i].angleDegrees : 0);
+                    }
+                } catch (e) { currentAnglesForApproach = null; }
+                await moveToStoredAnglesWithApproach(currentAnglesForApproach, targetAngles, speedDegreesPerSecond, function (m) { gcodeProcessor.log(m); });
+            } else if (typeof moveJointsToAnglesWithDeadZones === 'function') {
                 await moveJointsToAnglesWithDeadZones(targetAngles, speedDegreesPerSecond);
             } else {
                 // Fallback: direct joint movement

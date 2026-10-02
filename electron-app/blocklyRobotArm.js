@@ -1820,25 +1820,11 @@ function registerBlocklyGenerators() {
         if (!targetAngles_pos_${sanitizedId}) {
             appendBlocklyOutput('Could not move to Position ${positionNumber} ("${positionLabel}") — it could not be resolved to joint angles (missing, or XYZ target unreachable with the current tool).');
         } else {
-            // Calculate scaled speeds using linear interpolation
-            const scaledSpeeds_pos_${sanitizedId} = calculateScaledSpeeds(currentAngles_pos_${sanitizedId}, targetAngles_pos_${sanitizedId}, ${speedDegreesPerSecond});
-
             appendBlocklyOutput('Moving to ${positionLabel} at speed ${speedDegreesPerSecond} degrees/s (scaled speeds for synchronized arrival)');
-
-            const movePromises_pos_${sanitizedId} = [];
-            for (let i = 0; i < numJoints_pos_${sanitizedId}; i++) {
-                movePromises_pos_${sanitizedId}.push(
-                    scaledSpeeds_pos_${sanitizedId}[i] > 0
-                        ? robotArmClient.moveJoint(i + 1, targetAngles_pos_${sanitizedId}[i], degreesPerSecondToStepsPerSecond(scaledSpeeds_pos_${sanitizedId}[i]))
-                        : Promise.resolve()
-                );
-            }
-            // Use Promise.allSettled so waitForMotionComplete is only registered
-            // after the serial-bus drain is fully complete. Status pushes that
-            // fire during the drain (showing isMoving:false before the servo has
-            // started moving) are ignored because the listener isn't attached yet.
-            await Promise.allSettled(movePromises_pos_${sanitizedId});
-            await robotArmClient.waitForMotionComplete(30000);
+            // Coordinated joint move; a descent is approached from 30 mm above at a
+            // capped tip speed (moveToStoredAnglesWithApproach in app.js). Waits for
+            // the motion to finish before the next block runs.
+            await moveToStoredAnglesWithApproach(currentAngles_pos_${sanitizedId}, targetAngles_pos_${sanitizedId}, ${speedDegreesPerSecond}, appendBlocklyOutput);
         }
         `;
     };
