@@ -7190,7 +7190,7 @@ const DEFAULT_URDF = `<?xml version="1.0"?>
   <joint name="tool_servo" type="fixed">
     <parent link="tool_link"/>
     <child link="tcp_servo"/>
-    <origin xyz="0 0 -0.12019" rpy="0 0 0"/>
+    <origin xyz="0 0 -0.130" rpy="0 0 0"/>
     <end_tool id="2" label="Servo motor" controls="servo"/>
   </joint>
 
