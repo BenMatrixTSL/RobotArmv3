@@ -307,6 +307,17 @@ The kinematics commands respect these. `moveJoint` does not. Clamp in your clien
 
 ## 8. Rules that are not enforced for you
 
+- **Do not change the joint zero positions.** The arm is supplied pre-zeroed: each
+  servo's zero-point calibration (EEPROM register 31, "Position correction", also
+  reachable through the servo's own centre-calibration command) is set so that 0° on
+  every joint is the physical home pose the URDF describes, with the arm upright and
+  the tool pointing down. The kinematics solver has no other reference. Shifting a
+  zero, re-centring a servo, or fitting a replacement servo without restoring the same
+  physical zero makes every forward and inverse kinematics result wrong by that
+  offset, so XYZ moves land in the wrong place while joint-angle moves still look
+  fine. Treat the zero offsets as part of the mechanical build, and if a servo has
+  to be replaced, zero it with the joint physically at the home pose before using
+  any Cartesian command.
 - **Joint limits** on `moveJoint` (above). Exceeding them can drive a link into the base
   or the table.
 - **Dead zones and collision avoidance.** The pendant plans "up, over, down" paths
