@@ -2190,49 +2190,10 @@ if (typeof window !== 'undefined') {
 
 // ===== Blockly to G-code / RAPID Conversion Functions =====
 
-// Fixed-count repeat loops are unrolled; this caps the total emitted
-// iterations so a "repeat 100000" block can't produce a megabyte of G-code.
-const GCODE_MAX_UNROLLED_ITERATIONS = 500;
-
-/**
- * Reads a value input that must be a plain number (a math_number block, or
- * a math_arithmetic/negate tree of plain numbers). Returns null when the
- * value comes from a variable, vision block or other runtime expression,
- * since G-code has no way to evaluate those.
- */
-function gcodeConstantValue(block, inputName) {
-    const target = block.getInputTargetBlock(inputName);
-    if (!target) return null;
-    return gcodeEvalConstantBlock(target);
-}
-
-function gcodeEvalConstantBlock(b) {
-    if (!b) return null;
-    switch (b.type) {
-        case 'math_number': {
-            const v = parseFloat(b.getFieldValue('NUM'));
-            return isFinite(v) ? v : null;
-        }
-        case 'math_negate': {
-            const v = gcodeConstantValue(b, 'NUM');
-            return v === null ? null : -v;
-        }
-        case 'math_arithmetic': {
-            const a = gcodeConstantValue(b, 'A');
-            const c = gcodeConstantValue(b, 'B');
-            if (a === null || c === null) return null;
-            switch (b.getFieldValue('OP')) {
-                case 'ADD':      return a + c;
-                case 'MINUS':    return a - c;
-                case 'MULTIPLY': return a * c;
-                case 'DIVIDE':   return c === 0 ? null : a / c;
-                case 'POWER':    return Math.pow(a, c);
-            }
-            return null;
-        }
-    }
-    return null;
-}
+// Loops whose condition can't be expressed in G-code (e.g. "repeat while
+// true") are converted to a counted loop of this many passes, with a comment
+// telling the user how to change it.
+const GCODE_FALLBACK_LOOP_COUNT = 10;
 
 function gcodeNum(v, decimals) {
     const d = decimals === undefined ? 1 : decimals;
@@ -2245,10 +2206,14 @@ function gcodeNum(v, decimals) {
  * whenever a block's runtime implementation does).
  *
  * Emits one G-code line per block where the G-code executor has an
- * equivalent (see executeGCodeCommand in app.js). Blocks that G-code can't
- * express — variables, conditionals, vision lookups, relative TCP moves —
- * are left as "; NOT CONVERTED:" comments so the gap is visible in the
- * editor rather than silently dropped.
+ * equivalent (see executeGCodeCommand in app.js). Control flow uses the
+ * processor's N-labels, GOTO, IF and #variables (see gcodeProcessor.js):
+ * loops become label/IF/GOTO structures, Blockly variables become #n, and
+ * values that only exist at run time (block count, block X/Y) are fetched
+ * into a #variable with M780/M782/M783 just before they're used.
+ *
+ * Anything that still can't be expressed is left as a "; NOT CONVERTED:"
+ * comment so the gap is visible in the editor rather than silently dropped.
  *
  * @param {Blockly.Workspace} [workspace] - defaults to the live Blockly workspace
  * @returns {string} G-code program
@@ -2263,23 +2228,158 @@ function convertBlocklyToGCode(workspace) {
 
     const out = [];
     const notConverted = [];
-    let unrolledIterations = 0;
+    const warnings = [];
+    let indent = '';
 
-    function emit(line) { out.push(line); }
-    function skip(block, reason) {
+    function emit(line) { out.push(line === '' ? '' : indent + line); }
+    function skip(reason) {
         notConverted.push(reason);
         emit(`; NOT CONVERTED: ${reason}`);
+    }
+    function warn(reason) {
+        warnings.push(reason);
+        emit(`; WARNING: ${reason}`);
     }
     function isEnabled(b) {
         return typeof b.isEnabled === 'function' ? b.isEnabled() : !b.disabled;
     }
 
-    // Walk a statement chain starting at `block`, following next-connections.
+    // ── Labels and variables ─────────────────────────────────────────────
+    let nextLabel = 100;
+    function newLabel() { const n = nextLabel; nextLabel += 10; return n; }
+
+    // Blockly variable name → #n. User variables are numbered first so
+    // they're easy to find; loop counters and temporaries follow.
+    const varNumbers = {};
+    let nextVar = 1;
+    function varFor(name) {
+        if (varNumbers[name] === undefined) varNumbers[name] = nextVar++;
+        return varNumbers[name];
+    }
+    function tempVar(purpose) { return varFor(`(${purpose} ${nextVar})`); }
+    function blockVarName(b, field) {
+        const f = b.getField(field || 'VAR');
+        return f ? f.getText() : 'var';
+    }
+
+    // ── Loop context for break/continue ──────────────────────────────────
+    const loopStack = []; // { continueLabel, breakLabel }
+
+    // ── Values ───────────────────────────────────────────────────────────
+    // Converts a value block to a G-code expression string ("45", "#1",
+    // "[#1 + 10]"). Returns null if it can't be expressed. May emit prelude
+    // lines (M780/M782/M783) that load run-time values into a variable.
+    function valueToGCode(b) {
+        if (!b) return null;
+        switch (b.type) {
+            case 'math_number': {
+                const v = parseFloat(b.getFieldValue('NUM'));
+                return isFinite(v) ? gcodeNum(v, 3) : null;
+            }
+            case 'variables_get':
+                return `#${varFor(blockVarName(b))}`;
+            case 'math_negate': {
+                const v = inputToGCode(b, 'NUM');
+                return v === null ? null : `[0 - ${v}]`;
+            }
+            case 'math_arithmetic': {
+                const a = inputToGCode(b, 'A');
+                const c = inputToGCode(b, 'B');
+                if (a === null || c === null) return null;
+                const op = { ADD: '+', MINUS: '-', MULTIPLY: '*', DIVIDE: '/' }[b.getFieldValue('OP')];
+                if (!op) return null; // POWER has no G-code operator
+                return `[${a} ${op} ${c}]`;
+            }
+            case 'block_count': {
+                const v = tempVar('block count');
+                emit(`M780 V${v} ; detected block count → #${v}`);
+                return `#${v}`;
+            }
+            case 'block_x_at':
+            case 'block_y_at': {
+                const idx = inputToGCode(b, 'INDEX');
+                if (idx === null) return null;
+                const v = tempVar(b.type === 'block_x_at' ? 'block X' : 'block Y');
+                emit(`${b.type === 'block_x_at' ? 'M782' : 'M783'} P${idx} V${v} ; block ${idx} ${b.type === 'block_x_at' ? 'X' : 'Y'} (mm) → #${v}`);
+                return `#${v}`;
+            }
+        }
+        return null;
+    }
+    function inputToGCode(b, inputName) {
+        return valueToGCode(b.getInputTargetBlock(inputName));
+    }
+    function describeValue(b, inputName) {
+        const t = b.getInputTargetBlock(inputName);
+        return t ? `"${t.type}" block` : 'empty input';
+    }
+
+    // ── Conditions ───────────────────────────────────────────────────────
+    // Converts a boolean block to { always: true|false } or
+    // { cond: 'A OP B', negated: 'A OP' B' }. Returns null if not expressible.
+    const INVERT = { EQ: 'NE', NE: 'EQ', LT: 'GE', GE: 'LT', GT: 'LE', LE: 'GT' };
+    function conditionToGCode(b) {
+        if (!b) return null;
+        switch (b.type) {
+            case 'logic_boolean':
+                return { always: b.getFieldValue('BOOL') === 'TRUE' };
+            case 'logic_negate': {
+                const inner = conditionToGCode(b.getInputTargetBlock('BOOL'));
+                if (!inner) return null;
+                if (inner.always !== undefined) return { always: !inner.always };
+                return { cond: inner.negated, negated: inner.cond };
+            }
+            case 'logic_compare': {
+                const a = inputToGCode(b, 'A');
+                const c = inputToGCode(b, 'B');
+                if (a === null || c === null) return null;
+                const op = { EQ: 'EQ', NEQ: 'NE', LT: 'LT', LTE: 'LE', GT: 'GT', GTE: 'GE' }[b.getFieldValue('OP')];
+                if (!op) return null;
+                return { cond: `${a} ${op} ${c}`, negated: `${a} ${INVERT[op]} ${c}` };
+            }
+        }
+        return null;
+    }
+
+    // Emits "jump to `label` unless the condition holds" (used at the top of
+    // loops and if-branches).
+    function emitJumpUnless(condition, label) {
+        if (condition.always === true) return;            // never jump
+        if (condition.always === false) { emit(`GOTO ${label}`); return; }
+        emit(`IF [${condition.negated}] GOTO ${label}`);
+    }
+
+    // ── Statement walking ────────────────────────────────────────────────
     function walkChain(block) {
         for (let b = block; b; b = b.getNextBlock()) {
             if (!isEnabled(b)) { emit(`; (disabled block skipped: ${b.type})`); continue; }
             convertBlock(b);
         }
+    }
+
+    function walkBody(block) {
+        const saved = indent;
+        indent += '  ';
+        walkChain(block);
+        indent = saved;
+    }
+
+    // Standard counted loop: #c = 0 / N top / IF [#c GE count] GOTO end /
+    // body / N cont / #c = #c + 1 / GOTO top / N end
+    function emitCountedLoop(countExpr, body, title) {
+        const c = tempVar('loop counter');
+        const top = newLabel(), cont = newLabel(), end = newLabel();
+        emit(`; ${title}`);
+        emit(`#${c} = 0`);
+        emit(`N${top}`);
+        emit(`IF [#${c} GE ${countExpr}] GOTO ${end}`);
+        loopStack.push({ continueLabel: cont, breakLabel: end });
+        walkBody(body);
+        loopStack.pop();
+        emit(`N${cont}`);
+        emit(`#${c} = #${c} + 1`);
+        emit(`GOTO ${top}`);
+        emit(`N${end}`);
     }
 
     function convertBlock(b) {
@@ -2294,19 +2394,14 @@ function convertBlocklyToGCode(workspace) {
             }
             case 'move_all_joints': {
                 const parts = [];
-                const missing = [];
+                const bad = [];
                 for (let j = 1; j <= 6; j++) {
-                    const v = gcodeConstantValue(b, 'JOINT' + j);
-                    if (v === null) {
-                        if (b.getInputTargetBlock('JOINT' + j)) missing.push(j);
-                        continue; // empty input = leave that joint where it is
-                    }
-                    parts.push(`J${j}=${gcodeNum(v)}`);
+                    if (!b.getInputTargetBlock('JOINT' + j)) continue; // empty = leave joint where it is
+                    const v = inputToGCode(b, 'JOINT' + j);
+                    if (v === null) { bad.push(`joint ${j} (${describeValue(b, 'JOINT' + j)})`); continue; }
+                    parts.push(`J${j}=${v}`);
                 }
-                if (missing.length) {
-                    skip(b, `Move All Joints — joint ${missing.join(', ')} value is not a plain number (variable or expression)`);
-                    break;
-                }
+                if (bad.length) { skip(`Move All Joints — can't convert ${bad.join(', ')}`); break; }
                 if (parts.length === 0) { emit('; Move All Joints with no joint values'); break; }
                 const speed = parseFloat(b.getFieldValue('SPEED')) || 40;
                 emit(`G1 ${parts.join(' ')} F${gcodeNum(speed)}`);
@@ -2323,26 +2418,23 @@ function convertBlocklyToGCode(workspace) {
 
             // ── Cartesian moves ──────────────────────────────────────────
             case 'move_xyz': {
-                const x = gcodeConstantValue(b, 'X');
-                const y = gcodeConstantValue(b, 'Y');
-                const z = gcodeConstantValue(b, 'Z');
+                const x = inputToGCode(b, 'X');
+                const y = inputToGCode(b, 'Y');
+                const z = inputToGCode(b, 'Z');
                 if (x === null || y === null || z === null) {
-                    skip(b, 'Move TCP to XYZ — X/Y/Z must all be plain numbers (variable or vision value used)');
+                    const bad = ['X', 'Y', 'Z'].filter((n, i) => [x, y, z][i] === null).map(n => `${n} (${describeValue(b, n)})`);
+                    skip(`Move TCP to XYZ — can't convert ${bad.join(', ')}`);
                     break;
                 }
                 // G-code F for Cartesian moves is mm/min; the block is mm/s.
                 const mmPerSec = parseFloat(b.getFieldValue('SPEED')) || 40;
-                emit(`G1 X${gcodeNum(x)} Y${gcodeNum(y)} Z${gcodeNum(z)} F${gcodeNum(mmPerSec * 60, 0)}`);
+                emit(`G1 X${x} Y${y} Z${z} F${gcodeNum(mmPerSec * 60, 0)}`);
                 break;
             }
             case 'move_xyz_offset': {
-                const dx = gcodeConstantValue(b, 'DX');
-                const dy = gcodeConstantValue(b, 'DY');
-                const dz = gcodeConstantValue(b, 'DZ');
-                const desc = (dx === null || dy === null || dz === null)
-                    ? 'values are not plain numbers'
-                    : `dX${gcodeNum(dx)} dY${gcodeNum(dy)} dZ${gcodeNum(dz)}`;
-                skip(b, `Move TCP by offset (${desc}) — G-code moves are absolute only; use Move TCP to X/Y/Z`);
+                const dx = inputToGCode(b, 'DX'), dy = inputToGCode(b, 'DY'), dz = inputToGCode(b, 'DZ');
+                const desc = (dx === null || dy === null || dz === null) ? 'values can\'t be converted' : `dX${dx} dY${dy} dZ${dz}`;
+                skip(`Move TCP by offset (${desc}) — G-code moves are absolute only; use Move TCP to X/Y/Z`);
                 break;
             }
             case 'set_tool_orientation': {
@@ -2351,7 +2443,7 @@ function convertBlocklyToGCode(workspace) {
                 const oz = parseFloat(b.getFieldValue('ORI_Z')) || 0;
                 const rot = parseFloat(b.getFieldValue('ORI_ROTATION')) || 0;
                 emit(`G1 I${gcodeNum(ox, 3)} J${gcodeNum(oy, 3)} K${gcodeNum(oz, 3)} ; tool orientation (applies to following XYZ moves)`);
-                if (rot !== 0) emit(`; NOT CONVERTED: tool rotation ${gcodeNum(rot)}° has no G-code equivalent`);
+                if (rot !== 0) skip(`tool rotation ${gcodeNum(rot)}° has no G-code equivalent`);
                 break;
             }
 
@@ -2380,7 +2472,7 @@ function convertBlocklyToGCode(workspace) {
                 emit('; Stop All Joints — not needed, G-code moves run to completion');
                 break;
             case 'set_servo':
-                skip(b, `Set Servo on Joint ${b.getFieldValue('JOINT')} has no G-code equivalent`);
+                skip(`Set Servo on Joint ${b.getFieldValue('JOINT')} has no G-code equivalent`);
                 break;
 
             // ── End tool ─────────────────────────────────────────────────
@@ -2398,58 +2490,164 @@ function convertBlocklyToGCode(workspace) {
 
             // ── Vision ───────────────────────────────────────────────────
             case 'save_block_to_position': {
-                const idx  = gcodeConstantValue(b, 'INDEX');
-                const slot = gcodeConstantValue(b, 'SLOT');
-                const z    = gcodeConstantValue(b, 'Z');
+                const idx  = inputToGCode(b, 'INDEX');
+                const slot = inputToGCode(b, 'SLOT');
+                const z    = inputToGCode(b, 'Z');
                 if (idx === null || slot === null) {
-                    skip(b, 'Save block to position — index and slot must be plain numbers');
+                    skip('Save block to position — index and slot can\'t be converted');
                     break;
                 }
-                emit(`M781 P${Math.round(idx)} L${Math.round(slot)}${z === null ? '' : ' Z' + gcodeNum(z)}`);
+                emit(`M781 P${idx} L${slot}${z === null ? '' : ' Z' + z}`);
                 break;
             }
 
-            // ── Control flow ─────────────────────────────────────────────
+            // ── Variables ────────────────────────────────────────────────
+            case 'variables_set': {
+                const name = blockVarName(b);
+                const v = inputToGCode(b, 'VALUE');
+                if (v === null) { skip(`set ${name} — value (${describeValue(b, 'VALUE')}) can't be converted`); break; }
+                emit(`#${varFor(name)} = ${v} ; ${name}`);
+                break;
+            }
+            case 'math_change': {
+                const name = blockVarName(b);
+                const v = inputToGCode(b, 'DELTA');
+                if (v === null) { skip(`change ${name} — amount (${describeValue(b, 'DELTA')}) can't be converted`); break; }
+                emit(`#${varFor(name)} = #${varFor(name)} + ${v} ; ${name}`);
+                break;
+            }
+
+            // ── Loops ────────────────────────────────────────────────────
             case 'controls_repeat_ext':
             case 'controls_repeat': {
-                const times = b.type === 'controls_repeat'
-                    ? parseInt(b.getFieldValue('TIMES'), 10)
-                    : gcodeConstantValue(b, 'TIMES');
                 const body = b.getInputTargetBlock('DO');
-                if (times === null || !isFinite(times)) {
-                    skip(b, 'Repeat loop — count is not a plain number; body emitted once');
-                    if (body) walkChain(body);
-                    break;
+                let count = b.type === 'controls_repeat'
+                    ? gcodeNum(parseInt(b.getFieldValue('TIMES'), 10) || 0, 0)
+                    : inputToGCode(b, 'TIMES');
+                if (count === null) {
+                    warn(`repeat count (${describeValue(b, 'TIMES')}) can't be converted — using ${GCODE_FALLBACK_LOOP_COUNT} passes`);
+                    count = String(GCODE_FALLBACK_LOOP_COUNT);
                 }
-                const n = Math.max(0, Math.round(times));
-                emit(`; Repeat ${n} times (unrolled)`);
-                for (let i = 0; i < n; i++) {
-                    if (unrolledIterations++ >= GCODE_MAX_UNROLLED_ITERATIONS) {
-                        skip(b, `Repeat loop truncated after ${GCODE_MAX_UNROLLED_ITERATIONS} total unrolled iterations`);
-                        break;
-                    }
-                    if (n > 1) emit(`; -- iteration ${i + 1}/${n}`);
-                    if (body) walkChain(body);
-                }
+                emitCountedLoop(count, body, `Repeat ${count} times`);
                 break;
             }
-            case 'controls_whileUntil':
-            case 'controls_for':
+            case 'controls_whileUntil': {
+                const until = b.getFieldValue('MODE') === 'UNTIL';
+                const body = b.getInputTargetBlock('DO');
+                const condBlock = b.getInputTargetBlock('BOOL');
+                let condition = conditionToGCode(condBlock);
+                if (condition && until) {
+                    condition = condition.always !== undefined
+                        ? { always: !condition.always }
+                        : { cond: condition.negated, negated: condition.cond };
+                }
+                if (!condition) {
+                    warn(`${until ? 'repeat until' : 'repeat while'} condition (${condBlock ? `"${condBlock.type}" block` : 'empty'}) can't be converted — looping ${GCODE_FALLBACK_LOOP_COUNT} times instead`);
+                    emitCountedLoop(String(GCODE_FALLBACK_LOOP_COUNT), body, `Loop ${GCODE_FALLBACK_LOOP_COUNT} times (was a conditional loop)`);
+                    break;
+                }
+                if (condition.always === true) {
+                    // "repeat while true" — an endless loop. Run a fixed number of
+                    // passes so the program finishes, and say how to change that.
+                    emit(`; Blockly "${until ? 'repeat until false' : 'repeat while true'}" is an endless loop.`);
+                    emit(`; Converted to ${GCODE_FALLBACK_LOOP_COUNT} passes — change the number in the IF line below,`);
+                    emit('; or delete that IF line to loop forever (use Stop to end the program).');
+                    emitCountedLoop(String(GCODE_FALLBACK_LOOP_COUNT), body, `Loop ${GCODE_FALLBACK_LOOP_COUNT} times`);
+                    break;
+                }
+                if (condition.always === false) {
+                    emit(`; ${until ? 'repeat until true' : 'repeat while false'} — body never runs, skipped`);
+                    break;
+                }
+                const top = newLabel(), end = newLabel();
+                emit(`; ${until ? 'Repeat until' : 'Repeat while'} [${until ? condition.negated : condition.cond}]`);
+                emit(`N${top}`);
+                emitJumpUnless(condition, end);
+                loopStack.push({ continueLabel: top, breakLabel: end });
+                walkBody(body);
+                loopStack.pop();
+                emit(`GOTO ${top}`);
+                emit(`N${end}`);
+                break;
+            }
+            case 'controls_for': {
+                const name = blockVarName(b);
+                const v = varFor(name);
+                const from = inputToGCode(b, 'FROM');
+                const to   = inputToGCode(b, 'TO');
+                const by   = inputToGCode(b, 'BY');
+                const body = b.getInputTargetBlock('DO');
+                if (from === null || to === null || by === null) {
+                    warn(`count with ${name} — from/to/by can't all be converted — looping ${GCODE_FALLBACK_LOOP_COUNT} times instead`);
+                    emitCountedLoop(String(GCODE_FALLBACK_LOOP_COUNT), body, `Loop ${GCODE_FALLBACK_LOOP_COUNT} times (was count with ${name})`);
+                    break;
+                }
+                // Blockly counts downwards if "by" is negative; G-code can only
+                // check one direction, so pick it from the sign when it's a constant.
+                const descending = parseFloat(by) < 0;
+                if (isNaN(parseFloat(by))) warn(`count with ${name} — step "${by}" isn't a plain number, assuming it counts upwards`);
+                const top = newLabel(), cont = newLabel(), end = newLabel();
+                emit(`; Count with ${name} from ${from} to ${to} by ${by}`);
+                emit(`#${v} = ${from}`);
+                emit(`N${top}`);
+                emit(`IF [#${v} ${descending ? 'LT' : 'GT'} ${to}] GOTO ${end}`);
+                loopStack.push({ continueLabel: cont, breakLabel: end });
+                walkBody(body);
+                loopStack.pop();
+                emit(`N${cont}`);
+                emit(`#${v} = #${v} + ${by}`);
+                emit(`GOTO ${top}`);
+                emit(`N${end}`);
+                break;
+            }
             case 'controls_forEach':
+                skip('for each item in list — G-code has no lists; its contents were skipped');
+                break;
+            case 'controls_flow_statements': {
+                const flow = b.getFieldValue('FLOW');
+                const ctx = loopStack[loopStack.length - 1];
+                if (!ctx) { skip(`${flow === 'BREAK' ? 'break' : 'continue'} outside a loop`); break; }
+                emit(`GOTO ${flow === 'BREAK' ? ctx.breakLabel : ctx.continueLabel} ; ${flow === 'BREAK' ? 'break out of loop' : 'continue with next iteration'}`);
+                break;
+            }
+
+            // ── Conditionals ─────────────────────────────────────────────
             case 'controls_if':
-            case 'controls_ifelse':
-                skip(b, `${b.type.replace('controls_', '')} block — G-code has no conditionals/loops; its contents were skipped`);
+            case 'controls_ifelse': {
+                const end = newLabel();
+                let n = 0;
+                while (b.getInput('IF' + n)) {
+                    const condBlock = b.getInputTargetBlock('IF' + n);
+                    const condition = conditionToGCode(condBlock);
+                    const next = newLabel();
+                    emit(`; ${n === 0 ? 'if' : 'else if'} ${condition && condition.cond ? `[${condition.cond}]` : ''}`);
+                    if (!condition) {
+                        skip(`${n === 0 ? 'if' : 'else if'} condition (${condBlock ? `"${condBlock.type}" block` : 'empty'}) can't be converted — this branch was skipped`);
+                        emit(`GOTO ${next}`);
+                    } else {
+                        emitJumpUnless(condition, next);
+                        walkBody(b.getInputTargetBlock('DO' + n));
+                        emit(`GOTO ${end}`);
+                    }
+                    emit(`N${next}`);
+                    n++;
+                }
+                if (b.getInput('ELSE')) {
+                    emit('; else');
+                    walkBody(b.getInputTargetBlock('ELSE'));
+                }
+                emit(`N${end}`);
                 break;
-            case 'variables_set':
-            case 'math_change':
-                skip(b, `${b.type === 'variables_set' ? 'set' : 'change'} variable "${b.getField('VAR') ? b.getField('VAR').getText() : '?'}" — G-code has no variables`);
+            }
+
+            case 'text_print': {
+                const t = b.getInputTargetBlock('TEXT');
+                emit(`; print: ${t && t.type === 'text' ? t.getFieldValue('TEXT') : '(expression)'}`);
                 break;
-            case 'text_print':
-                emit(`; print: ${(b.getInputTargetBlock('TEXT') && b.getInputTargetBlock('TEXT').type === 'text') ? b.getInputTargetBlock('TEXT').getFieldValue('TEXT') : '(expression)'}`);
-                break;
+            }
 
             default:
-                skip(b, `"${b.type}" block has no G-code equivalent`);
+                skip(`"${b.type}" block has no G-code equivalent`);
                 break;
         }
     }
@@ -2462,8 +2660,16 @@ function convertBlocklyToGCode(workspace) {
     let gcode = '; G-code converted from Blockly program\n';
     gcode += '; Generated automatically - review before running\n';
     gcode += '; Joint moves: G1 Jn=deg F=deg/s   Stored positions: G1 Pn   TCP moves: G1 X Y Z F=mm/min\n';
+    gcode += '; Loops/ifs use N-labels, GOTO, IF [..] GOTO and #variables (see the G-code cheat sheet)\n';
+    const userVars = Object.keys(varNumbers).filter(k => !k.startsWith('('));
+    if (userVars.length) {
+        gcode += `; Variables: ${userVars.map(k => `${k} = #${varNumbers[k]}`).join(', ')}\n`;
+    }
+    if (warnings.length) {
+        gcode += `; ${warnings.length} WARNING(S) — search for "WARNING"\n`;
+    }
     if (notConverted.length) {
-        gcode += `; WARNING: ${notConverted.length} block(s) could not be converted — search for "NOT CONVERTED"\n`;
+        gcode += `; ${notConverted.length} block(s) could not be converted — search for "NOT CONVERTED"\n`;
     }
     gcode += '\n' + out.join('\n') + '\n\nM30\n';
     return gcode;

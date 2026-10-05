@@ -5146,6 +5146,7 @@ function loadDefaultGCode() {
 ;   M0 P milliseconds - Pause for specified time (e.g., M0 P5000 = pause 5 seconds)
 ;   M204 A<value> - Set acceleration for all joints (0-254, unit: 100 step/s²)
 ;   M204 J<joint> A<value> - Set acceleration for specific joint (0-254, unit: 100 step/s²)
+;   #1 = value / N100 / GOTO 100 / IF [#1 LT 3] GOTO 100 - Variables, labels and loops
 ;   M30 - Program end
 
 ; Start at home position
@@ -5183,6 +5184,16 @@ M0
 ; Move joints to negative angles
 J1=-30 J2=-20 J3=-15 F50
 M0
+
+; Loop: wave Joint 1 three times using a counter variable
+#1 = 0
+N100
+IF [#1 GE 3] GOTO 110
+J1=20 F60
+J1=-20 F60
+#1 = #1 + 1
+GOTO 100
+N110
 
 ; Return to home position
 G28 F45
@@ -5906,12 +5917,37 @@ async function executeGCodeCommand(command) {
             gcodeProcessor.log('M65: Solenoid off');
             setEndToolSolenoidEnabled(false);
         } else if (command.code === 'M780') {
-            // M780 = report how many coloured blocks the camera currently sees
+            // M780 [V<n>] = report how many coloured blocks the camera currently
+            // sees, optionally storing the count in variable #n (M780 V1)
             try {
                 const count = await getDetectedBlockCount();
-                gcodeProcessor.log(`M780: ${count} block(s) detected`);
+                if (typeof command.params.V === 'number') {
+                    gcodeProcessor.setVar(Math.round(command.params.V), count);
+                    gcodeProcessor.log(`M780: ${count} block(s) detected → #${Math.round(command.params.V)}`);
+                } else {
+                    gcodeProcessor.log(`M780: ${count} block(s) detected`);
+                }
             } catch (e) {
                 gcodeProcessor.log(`M780: vision error — ${e.message}`);
+            }
+        } else if (command.code === 'M782' || command.code === 'M783') {
+            // M782 P<block index> V<n> = store detected block's world X (mm) in #n
+            // M783 P<block index> V<n> = store detected block's world Y (mm) in #n
+            const idx = command.params.P;
+            const varNumber = command.params.V;
+            if (typeof idx !== 'number' || typeof varNumber !== 'number') {
+                gcodeProcessor.log(`${command.code}: needs P<block index> and V<variable>, e.g. ${command.code} P0 V1`);
+            } else {
+                try {
+                    const value = command.code === 'M782'
+                        ? await getDetectedBlockXAt(Math.round(idx))
+                        : await getDetectedBlockYAt(Math.round(idx));
+                    gcodeProcessor.setVar(Math.round(varNumber), value);
+                    gcodeProcessor.log(`${command.code}: block ${Math.round(idx)} ${command.code === 'M782' ? 'X' : 'Y'} = ${value.toFixed(1)} mm → #${Math.round(varNumber)}`);
+                } catch (e) {
+                    gcodeProcessor.log(`${command.code}: ${e.message}`);
+                    throw e; // stop the program — a move using this value would go somewhere wrong
+                }
             }
         } else if (command.code === 'M781') {
             // M781 P<block index> L<position slot> [Z<height mm>]

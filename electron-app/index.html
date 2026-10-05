@@ -601,9 +601,39 @@
                             <td>
                                 Camera block detection. Blocks are indexed 0, 1, 2… by position in the camera's view, nearest the top first (a block lower down gets a higher index).<br>
                                 <code>M780</code> → logs how many coloured blocks are currently visible.<br>
+                                <code>M780 V1</code> → same, and stores the count in variable <code>#1</code>.<br>
                                 <code>M781 P0 L10</code> → saves block index&nbsp;0's position into Stored Position slot&nbsp;10 (table height, Z=0).<br>
                                 <code>M781 P0 L10 Z50</code> → same, but at height 50&nbsp;mm.<br>
+                                <code>M782 P0 V2</code> / <code>M783 P0 V3</code> → store block&nbsp;0's world X / Y (mm) in <code>#2</code> / <code>#3</code>, e.g. for <code>G1 X#2 Y#3 Z50</code>.<br>
                                 Requires ArUco markers to be visible so the camera has a world coordinate frame.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>Variables</strong><br><code>#1</code>…<code>#999</code></td>
+                            <td>
+                                Numeric variables that can be used wherever a number goes.<br>
+                                <code>#1 = 45</code> → set variable 1.<br>
+                                <code>#1 = #1 + 10</code> → arithmetic with <code>+ - * /</code>; use <code>[ ]</code> to group: <code>#2 = [#1 * 2] / 3</code>.<br>
+                                <code>G1 J1=#1 F40</code>, <code>M0 P#2</code>, <code>G1 X[#1 + 10] Y0 Z50</code> → values are substituted when the line runs.<br>
+                                All variables start at 0 each time the program is run.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>Labels &amp; loops</strong><br><code>N</code>, <code>GOTO</code>, <code>IF</code></td>
+                            <td>
+                                <code>N100</code> → label a line (on its own, or as a prefix: <code>N100 G1 J1=0</code>).<br>
+                                <code>GOTO 100</code> → jump to the line labelled <code>N100</code>.<br>
+                                <code>IF [#1 LT 3] GOTO 100</code> → jump only if the condition holds. Compare with <code>EQ NE GT GE LT LE</code> (or <code>== != &gt; &gt;= &lt; &lt;=</code>).<br>
+                                A counted loop:<br>
+                                <code>#1 = 0</code><br>
+                                <code>N100</code><br>
+                                <code>IF [#1 GE 3] GOTO 110</code><br>
+                                <code>&nbsp;&nbsp;G1 J1=20 F60</code><br>
+                                <code>&nbsp;&nbsp;G1 J1=-20 F60</code><br>
+                                <code>&nbsp;&nbsp;#1 = #1 + 1</code><br>
+                                <code>GOTO 100</code><br>
+                                <code>N110</code><br>
+                                A plain <code>GOTO</code> back to an earlier label loops forever — use <strong>Stop</strong> to end it. The Blockly → G-Code converter generates this form for repeat / while / count loops and if blocks.
                             </td>
                         </tr>
                         <tr>
