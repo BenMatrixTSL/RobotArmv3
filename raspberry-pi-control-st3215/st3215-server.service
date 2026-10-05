@@ -17,6 +17,9 @@ WorkingDirectory=INSTALL_DIR
 ExecStart=NODE_PATH server.js
 Environment=ROBOT_ARM_DEBUG_LOG=LOG_DIR/server-debug.log
 Environment=NODE_ENV=production
+# 1 ms between joint reads gives a ~25 ms status cycle (40 Hz); 0 reaches ~21 ms but
+# showed occasional UART overruns on a loaded Pi. 4 was the old hard-coded value (~40 ms).
+Environment=JOINT_POLL_GAP_MS=1
 # Restart whenever the process stops (crash, exit, or serial error during startup)
 Restart=always
 RestartSec=5
