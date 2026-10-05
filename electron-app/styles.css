@@ -449,6 +449,14 @@ header h1 {
 /* Tab Content */
 .tab-content-container {
     flex: 1;
+    /* Flex items default to min-width:auto, which lets a wide table push the
+       page out past the window instead of scrolling inside its wrapper. */
+    min-width: 0;
+}
+
+.tab-content {
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 .tab-content {
@@ -2006,9 +2014,22 @@ header h1 {
 
 .calibration-table td.cal-name {
     white-space: normal;
-    min-width: 200px;
+    min-width: 160px;
     font-weight: 500;
     cursor: help;
+}
+
+/* Value / default / range are the long text columns - let them wrap rather
+   than forcing the whole table wider than the page */
+.calibration-table td.cal-default,
+.calibration-table td.cal-range,
+.calibration-table td.cal-meaning {
+    white-space: normal;
+    min-width: 110px;
+}
+
+.calibration-table input.cal-edit-input {
+    width: 80px;
 }
 
 .calibration-table td.cal-value {

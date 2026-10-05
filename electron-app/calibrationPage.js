@@ -176,9 +176,9 @@ function renderEepromTable() {
                 <td class="cal-name" title="${escapeCalibrationText(r.description)}">${escapeCalibrationText(r.name)}</td>
                 <td>${r.bytes}</td>
                 <td class="cal-value">${r.raw}</td>
-                <td class="cal-value">${escapeCalibrationText(r.meaningful)}</td>
+                <td class="cal-value cal-meaning">${escapeCalibrationText(r.meaningful)}</td>
                 <td class="cal-default">${escapeCalibrationText(r.defaultMeaningful)}</td>
-                <td>${escapeCalibrationText(rangeStr)}</td>
+                <td class="cal-range">${escapeCalibrationText(rangeStr)}</td>
                 <td>${readOnly ? 'read' : 'r/w'}</td>
                 ${editCell}
             </tr>
@@ -208,7 +208,7 @@ function renderSramTable() {
                 <td class="cal-name" title="${escapeCalibrationText(r.description)}">${escapeCalibrationText(r.name)}</td>
                 <td>${r.bytes}</td>
                 <td class="cal-value">${r.raw}</td>
-                <td class="cal-value">${escapeCalibrationText(r.meaningful)}</td>
+                <td class="cal-value cal-meaning">${escapeCalibrationText(r.meaningful)}</td>
                 <td>${readOnly ? 'read' : 'live (read-only here)'}</td>
             </tr>
         `;
