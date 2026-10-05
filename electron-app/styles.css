@@ -2903,6 +2903,61 @@ body.touch-mode .kinematics-angle-input {
     margin-top: 12px;
 }
 
+/* ---- Kinematics step cards: Origin × Rotation = T_i, then the running product ---- */
+.kin-matrix-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin: 8px 0 4px;
+}
+
+.kin-running-row {
+    padding-top: 8px;
+    border-top: 1px dashed #ddd;
+}
+
+.kin-matrix-block {
+    display: inline-block;
+}
+
+.kin-matrix-caption {
+    font-size: 12px;
+    color: #555;
+    margin-bottom: 3px;
+}
+
+.kin-op {
+    font-size: 20px;
+    font-weight: 700;
+    color: #555;
+    padding: 18px 2px 0;
+}
+
+.kin-running-label {
+    font-size: 14px;
+    padding-top: 18px;
+}
+
+/* Colour key — what drives which entries */
+.kin-key {
+    display: inline-block;
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-weight: 700;
+}
+
+.kin-colour-key {
+    font-size: 13px;
+    line-height: 2;
+}
+
+.kin-hl-origin        { background: #d6e9ff; color: #1f4f8a; }
+.kin-hl-origin-rot    { background: #ecf4ff; color: #1f4f8a; }
+.kin-hl-axis          { background: #d9f2d9; color: #1e6b2a; font-weight: 700; }
+.kin-hl-angle         { background: #ffe4c4; color: #8a4a0f; }
+.kin-hl-position      { background: #ead9ff; color: #4a2a80; font-weight: 700; }
+
 .kinematics-matrix {
     border-collapse: collapse;
     font-family: 'Courier New', monospace;
@@ -2912,6 +2967,7 @@ body.touch-mode .kinematics-angle-input {
 .kinematics-matrix td {
     padding: 2px 6px;
     text-align: right;
+    min-width: 58px;
     border: 1px solid #ddd;
 }
 

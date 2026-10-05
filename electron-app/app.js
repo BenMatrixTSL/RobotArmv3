@@ -403,19 +403,17 @@ function updateKinematicsMatrices(jointAnglesOverride) {
                 }
                 const usedEl = document.getElementById(`kinStep${s}Used`);
                 if (usedEl) usedEl.textContent = (step.angleUsed != null ? step.angleUsed : 0).toFixed(2) + '°';
+                const thetaEl = document.getElementById(`kinStep${s}Theta`);
+                if (thetaEl) thetaEl.textContent = (step.angleUsed != null ? step.angleUsed : 0).toFixed(1) + '°';
             }
             const posEl = document.getElementById(`kinStep${s}Pos`);
             if (posEl) posEl.textContent = `X=${px.toFixed(1)}, Y=${py.toFixed(1)}, Z=${pz.toFixed(1)}`;
 
-            for (let r = 0; r < 4; r++) {
-                const row = T[r] || [0, 0, 0, 0];
-                for (let c = 0; c < 4; c++) {
-                    const cell = document.getElementById(`kinStep${s}M${r}${c}`);
-                    if (!cell) continue;
-                    const v = row[c] || 0;
-                    cell.textContent = c === 3 ? (v * 1000).toFixed(1) : v.toFixed(3);
-                }
-            }
+            // Fill the four matrices: Origin (O), Rotation (R), Joint = O×R (J), Running product (M)
+            fillKinematicsMatrix(`kinStep${s}O`, step.originMatrix);
+            fillKinematicsMatrix(`kinStep${s}R`, step.rotationMatrix);
+            fillKinematicsMatrix(`kinStep${s}J`, step.jointMatrix);
+            fillKinematicsMatrix(`kinStep${s}M`, T);
         });
     } catch (error) {
         console.error('updateKinematicsMatrices error:', error);
@@ -439,43 +437,85 @@ function buildKinematicsStepCards(display, steps, revoluteCount) {
     const holder = document.getElementById('endToolPanelHolder');
     if (toolPanel && holder && toolPanel.parentElement !== holder) holder.appendChild(toolPanel);
 
+    const swatch = (cls, text) => `<span class="kin-key ${cls}">${text}</span>`;
+
     let html = '';
     html += '<div class="kinematics-steps">';
     html += '<p><strong>Forward Kinematics Matrices (Base → Joint / Tool)</strong><br>';
-    html += 'Angles shown include any zero offsets defined in the URDF. ';
-    html += 'The top-left 3×3 of each matrix is the rotation; the last column is translation in millimetres.</p>';
+    html += 'Each joint contributes one transform T<sub>i</sub> = Origin<sub>i</sub> × Rotation(axis<sub>i</sub>, θ<sub>i</sub>). ';
+    html += 'The running product T<sub>0…i</sub> = T<sub>0…i−1</sub> × T<sub>i</sub> is where that joint\'s frame ends up in the base frame. ';
+    html += 'Rotation entries are unitless; the last column is translation in millimetres.</p>';
+    html += '<p class="kin-colour-key">Colour key: ' +
+        swatch('kin-hl-origin', 'Origin (URDF xyz / rpy)') + ' ' +
+        swatch('kin-hl-axis', 'Axis (the component the joint turns about)') + ' ' +
+        swatch('kin-hl-angle', 'Angle θ (entries that change as the joint moves)') + ' ' +
+        swatch('kin-hl-position', 'Resulting position of this frame') + '</p>';
 
     steps.forEach((step, s) => {
         const name = step.name || `Step ${step.index}`;
         const isJoint = s < revoluteCount;
         const origin = step.origin || { x: 0, y: 0, z: 0 };
         const axis = step.axis || { x: 0, y: 0, z: 0 };
+        const hasRpy = Math.abs(origin.roll || 0) > 1e-9 || Math.abs(origin.pitch || 0) > 1e-9 || Math.abs(origin.yaw || 0) > 1e-9;
+
+        // Which rotation-matrix entries the angle drives depends on the axis:
+        // for an axis-aligned joint the row and column of that axis stay fixed
+        // (its diagonal entry is the 1), and the other 2×2 block holds cos/sin.
+        const comps = [Math.abs(axis.x || 0), Math.abs(axis.y || 0), Math.abs(axis.z || 0)];
+        const nonZero = comps.filter(v => v > 1e-9).length;
+        const k = comps.indexOf(Math.max(...comps));
+        const rotationClass = (r, c) => {
+            if (r === 3 || c === 3) return '';
+            if (nonZero !== 1) return 'kin-hl-angle';
+            if (r === k && c === k) return 'kin-hl-axis';
+            if (r !== k && c !== k) return 'kin-hl-angle';
+            return '';
+        };
+        const originClass = (r, c) => (r < 3 && c === 3) ? 'kin-hl-origin' : (hasRpy && r < 3 && c < 3 ? 'kin-hl-origin-rot' : '');
+        // T_i = Origin × Rotation: the translation is the origin's (a pure
+        // rotation adds none); the 3×3 is Origin's rpy rotation × Rotation(axis, θ).
+        const jointClass = (r, c) => (r < 3 && c === 3) ? 'kin-hl-origin' : (r < 3 && c < 3 ? 'kin-hl-angle' : '');
+        const runningClass = (r, c) => (r < 3 && c === 3) ? 'kin-hl-position' : '';
 
         html += `<div class="kinematics-step" id="kinStep${s}">`;
         html += `<h4>${isJoint ? `Joint ${s + 1}` : 'Tool'} — ${name} (step ${step.index})</h4>`;
         html += '<table class="kinematics-step-info"><tbody>';
         if (isJoint) {
             if (useSimulatedAngles) {
-                html += `<tr><td>Simulated angle</td><td><input type="number" class="kinematics-angle-input" id="kinStep${s}Input" step="0.1" min="-180" max="180" value="0" onchange="setKinematicsSimulatedAngle(${s}, this.value)"> °</td></tr>`;
+                html += `<tr><td>${swatch('kin-hl-angle', 'Simulated angle')}</td><td><input type="number" class="kinematics-angle-input" id="kinStep${s}Input" step="0.1" min="-180" max="180" value="0" onchange="setKinematicsSimulatedAngle(${s}, this.value)"> °</td></tr>`;
             } else {
-                html += `<tr><td>Live angle</td><td><span class="kinematics-angle-live" id="kinStep${s}Live">–</span></td></tr>`;
+                html += `<tr><td>${swatch('kin-hl-angle', 'Live angle')}</td><td><span class="kinematics-angle-live" id="kinStep${s}Live">–</span></td></tr>`;
             }
-            html += `<tr><td>Used angle (with zero offset)</td><td id="kinStep${s}Used">–</td></tr>`;
+            html += `<tr><td>${swatch('kin-hl-angle', 'Used angle θ')} (with zero offset)</td><td id="kinStep${s}Used">–</td></tr>`;
         }
-        html += `<tr><td>Origin (m)</td><td>(${(origin.x || 0).toFixed(3)}, ${(origin.y || 0).toFixed(3)}, ${(origin.z || 0).toFixed(3)})</td></tr>`;
+        html += `<tr><td>${swatch('kin-hl-origin', 'Origin')} xyz (m)</td><td>(${(origin.x || 0).toFixed(3)}, ${(origin.y || 0).toFixed(3)}, ${(origin.z || 0).toFixed(3)})` +
+            (hasRpy ? ` &nbsp; rpy (rad) (${(origin.roll || 0).toFixed(3)}, ${(origin.pitch || 0).toFixed(3)}, ${(origin.yaw || 0).toFixed(3)})` : '') + '</td></tr>';
         if (isJoint) {
-            html += `<tr><td>Axis</td><td>(${(axis.x || 0).toFixed(3)}, ${(axis.y || 0).toFixed(3)}, ${(axis.z || 0).toFixed(3)})</td></tr>`;
+            html += `<tr><td>${swatch('kin-hl-axis', 'Axis')}</td><td>(${(axis.x || 0).toFixed(3)}, ${(axis.y || 0).toFixed(3)}, ${(axis.z || 0).toFixed(3)})` +
+                (nonZero === 1 ? ` — turns about ${['X', 'Y', 'Z'][k]}` : '') + '</td></tr>';
         }
-        html += `<tr><td>Position (mm)</td><td id="kinStep${s}Pos">–</td></tr>`;
+        html += `<tr><td>${swatch('kin-hl-position', 'Position')} (mm)</td><td id="kinStep${s}Pos">–</td></tr>`;
         html += '</tbody></table>';
 
-        html += '<table class="kinematics-matrix"><tbody>';
-        for (let r = 0; r < 4; r++) {
-            html += '<tr>';
-            for (let c = 0; c < 4; c++) html += `<td id="kinStep${s}M${r}${c}">–</td>`;
-            html += '</tr>';
+        // Joint transform: Origin × Rotation = T_i   (tool steps have no rotation)
+        html += '<div class="kin-matrix-row">';
+        if (isJoint) {
+            html += kinematicsMatrixHtml(`kinStep${s}O`, 'Origin<sub>' + (s + 1) + '</sub>', originClass);
+            html += '<div class="kin-op">×</div>';
+            html += kinematicsMatrixHtml(`kinStep${s}R`, `Rotation(axis, <span id="kinStep${s}Theta">–</span>)`, rotationClass);
+            html += '<div class="kin-op">=</div>';
+            html += kinematicsMatrixHtml(`kinStep${s}J`, 'T<sub>' + (s + 1) + '</sub> (this joint)', jointClass);
+        } else {
+            html += kinematicsMatrixHtml(`kinStep${s}J`, 'T<sub>tool</sub> (fixed offset)', originClass);
         }
-        html += '</tbody></table>';
+        html += '</div>';
+
+        // Running product
+        html += '<div class="kin-matrix-row kin-running-row">';
+        html += `<div class="kin-op kin-running-label">${s === 0 ? 'T<sub>0…1</sub> = T<sub>1</sub>' : `T<sub>0…${isJoint ? s + 1 : 'tool'}</sub> = T<sub>0…${s}</sub> × T<sub>${isJoint ? s + 1 : 'tool'}</sub>`} →</div>`;
+        html += kinematicsMatrixHtml(`kinStep${s}M`, 'Running product (base → this frame)', runningClass);
+        html += '</div>';
+
         if (s === steps.length - 1) html += '<div id="kinematicsEndToolSlot"></div>';
         html += '</div>';
     });
@@ -485,6 +525,42 @@ function buildKinematicsStepCards(display, steps, revoluteCount) {
 
     const slot = document.getElementById('kinematicsEndToolSlot');
     if (slot && toolPanel) slot.appendChild(toolPanel);
+}
+
+/**
+ * HTML for one captioned 4×4 matrix with per-cell ids (`${idPrefix}${r}${c}`)
+ * and highlight classes chosen by cellClass(r, c).
+ */
+function kinematicsMatrixHtml(idPrefix, caption, cellClass) {
+    let html = '<div class="kin-matrix-block">';
+    html += `<div class="kin-matrix-caption">${caption}</div>`;
+    html += '<table class="kinematics-matrix"><tbody>';
+    for (let r = 0; r < 4; r++) {
+        html += '<tr>';
+        for (let c = 0; c < 4; c++) {
+            const cls = cellClass ? cellClass(r, c) : '';
+            html += `<td id="${idPrefix}${r}${c}"${cls ? ` class="${cls}"` : ''}>–</td>`;
+        }
+        html += '</tr>';
+    }
+    html += '</tbody></table></div>';
+    return html;
+}
+
+/**
+ * Writes a 4×4 matrix (metres) into the cells created by kinematicsMatrixHtml.
+ */
+function fillKinematicsMatrix(idPrefix, M) {
+    if (!M) return;
+    for (let r = 0; r < 4; r++) {
+        const row = M[r] || [0, 0, 0, 0];
+        for (let c = 0; c < 4; c++) {
+            const cell = document.getElementById(`${idPrefix}${r}${c}`);
+            if (!cell) continue;
+            const v = row[c] || 0;
+            cell.textContent = c === 3 ? (r === 3 ? '1' : (v * 1000).toFixed(1)) : v.toFixed(3);
+        }
+    }
 }
 
 /**

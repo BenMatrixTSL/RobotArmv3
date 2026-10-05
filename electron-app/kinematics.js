@@ -572,7 +572,10 @@ class RobotKinematics {
                 angleUsed: angleDeg,
                 origin: joint.origin,
                 axis: joint.axis,
-                transform: T
+                originMatrix: T_origin,       // from the URDF origin (xyz + rpy)
+                rotationMatrix: T_rotation,   // Rotation(axis, angle)
+                jointMatrix: T_joint,         // originMatrix × rotationMatrix
+                transform: T                  // running product up to and including this step
             });
         }
 
@@ -596,6 +599,9 @@ class RobotKinematics {
                     angleUsed: 0,
                     origin: toolJoint.origin,
                     axis: { x: 0, y: 0, z: 0 },
+                    originMatrix: T_tool,
+                    rotationMatrix: identity4x4(),
+                    jointMatrix: T_tool,
                     transform: T
                 });
             }

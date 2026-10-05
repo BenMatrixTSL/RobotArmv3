@@ -979,22 +979,22 @@
                 <table class="kinematics-matrix">
                     <tbody>
                         <tr>
-                            <td>R<sub>11</sub></td>
-                            <td>R<sub>12</sub></td>
-                            <td>R<sub>13</sub></td>
-                            <td>T<sub>x</sub> (mm)</td>
+                            <td class="kin-hl-angle">R<sub>11</sub></td>
+                            <td class="kin-hl-angle">R<sub>12</sub></td>
+                            <td class="kin-hl-angle">R<sub>13</sub></td>
+                            <td class="kin-hl-origin">T<sub>x</sub> (mm)</td>
                         </tr>
                         <tr>
-                            <td>R<sub>21</sub></td>
-                            <td>R<sub>22</sub></td>
-                            <td>R<sub>23</sub></td>
-                            <td>T<sub>y</sub> (mm)</td>
+                            <td class="kin-hl-angle">R<sub>21</sub></td>
+                            <td class="kin-hl-angle">R<sub>22</sub></td>
+                            <td class="kin-hl-angle">R<sub>23</sub></td>
+                            <td class="kin-hl-origin">T<sub>y</sub> (mm)</td>
                         </tr>
                         <tr>
-                            <td>R<sub>31</sub></td>
-                            <td>R<sub>32</sub></td>
-                            <td>R<sub>33</sub></td>
-                            <td>T<sub>z</sub> (mm)</td>
+                            <td class="kin-hl-angle">R<sub>31</sub></td>
+                            <td class="kin-hl-angle">R<sub>32</sub></td>
+                            <td class="kin-hl-angle">R<sub>33</sub></td>
+                            <td class="kin-hl-origin">T<sub>z</sub> (mm)</td>
                         </tr>
                         <tr>
                             <td>0</td>
@@ -1005,8 +1005,10 @@
                     </tbody>
                 </table>
                 <p class="info-text">
-                    The top-left 3×3 entries R<sub>ij</sub> form the rotation matrix.
-                    The last column holds the translation in millimetres (internally stored in metres).
+                    The top-left 3×3 entries R<sub>ij</sub> form the rotation (driven by each joint's axis and angle).
+                    The last column holds the translation in millimetres (from each joint's origin; internally stored in metres).
+                    In each step below: <strong>Origin × Rotation(axis, θ) = T<sub>i</sub></strong>, then the running product
+                    multiplies T<sub>i</sub> onto everything before it to give that frame's position in the base frame.
                 </p>
             </div>
             <div id="kinematicsMatricesDisplay" class="kinematics-matrices-display"></div>
