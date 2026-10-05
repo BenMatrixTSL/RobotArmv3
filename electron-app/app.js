@@ -336,12 +336,7 @@ function updateKinematicsMatrices(jointAnglesOverride) {
         return;
     }
 
-    // Replacing the display's content would destroy the End Tool panel if it
-    // is currently housed in the last step card — park it first.
     const showPlainMessage = function (message) {
-        const toolPanel = document.getElementById('endToolPanel');
-        const holder = document.getElementById('endToolPanelHolder');
-        if (toolPanel && holder && toolPanel.parentElement !== holder) holder.appendChild(toolPanel);
         display.textContent = message;
         delete display.dataset.layoutKey;
     };
@@ -425,18 +420,13 @@ function updateKinematicsMatrices(jointAnglesOverride) {
  * Builds the step cards for the Kinematics tab (structure only; values are
  * filled in by updateKinematicsMatrices). Revolute-joint cards carry that
  * joint's angle — a text box when simulating, a live read-out otherwise —
- * so the angles can be worked with right next to their matrices. The End
- * Tool panel is moved into the last (tool-mount) card.
+ * so the angles can be worked with right next to their matrices. The last
+ * (tool) card's title carries the fitted-tool status and a Re-check button.
  * @param {HTMLElement} display
  * @param {Array} steps
  * @param {number} revoluteCount
  */
 function buildKinematicsStepCards(display, steps, revoluteCount) {
-    // Park the End Tool panel outside the display before the DOM is replaced
-    const toolPanel = document.getElementById('endToolPanel');
-    const holder = document.getElementById('endToolPanelHolder');
-    if (toolPanel && holder && toolPanel.parentElement !== holder) holder.appendChild(toolPanel);
-
     const swatch = (cls, text) => `<span class="kin-key ${cls}">${text}</span>`;
 
     let html = '';
@@ -478,7 +468,13 @@ function buildKinematicsStepCards(display, steps, revoluteCount) {
         const runningClass = (r, c) => (r < 3 && c === 3) ? 'kin-hl-position' : '';
 
         html += `<div class="kinematics-step" id="kinStep${s}">`;
-        html += `<h4>${isJoint ? `Joint ${s + 1}` : 'Tool'} — ${name} (step ${step.index})</h4>`;
+        if (s === steps.length - 1) {
+            html += `<h4 class="kin-tool-title"><span>${isJoint ? `Joint ${s + 1}` : 'Tool'} — ${name} (step ${step.index})</span>` +
+                `<span class="end-tool-state" id="endToolState" title="">–</span>` +
+                `<button class="btn btn-small btn-secondary" onclick="refreshEndTool()">Re-check tool</button></h4>`;
+        } else {
+            html += `<h4>${isJoint ? `Joint ${s + 1}` : 'Tool'} — ${name} (step ${step.index})</h4>`;
+        }
         html += '<table class="kinematics-step-info"><tbody>';
         if (isJoint) {
             if (useSimulatedAngles) {
@@ -516,15 +512,14 @@ function buildKinematicsStepCards(display, steps, revoluteCount) {
         html += kinematicsMatrixHtml(`kinStep${s}M`, 'Running product (base → this frame)', runningClass);
         html += '</div>';
 
-        if (s === steps.length - 1) html += '<div id="kinematicsEndToolSlot"></div>';
         html += '</div>';
     });
 
     html += '</div>';
     display.innerHTML = html;
 
-    const slot = document.getElementById('kinematicsEndToolSlot');
-    if (slot && toolPanel) slot.appendChild(toolPanel);
+    // The status span was just re-created — fill it in
+    if (typeof renderEndToolPanel === 'function') renderEndToolPanel();
 }
 
 /**
@@ -1137,15 +1132,17 @@ function applyEndToolControlVisibility() {
 }
 
 /**
- * Draws the End Tool panel on the Kinematics tab.
+ * Fills in the fitted-tool status shown in the tool step card's title on
+ * the Kinematics tab (the detail text goes in its hover tooltip).
  */
 function renderEndToolPanel() {
     const stateEl = document.getElementById('endToolState');
-    const detailEl = document.getElementById('endToolDetail');
-    const tbody = document.getElementById('endToolTableBody');
-    if (!stateEl || !detailEl || !tbody) {
+    if (!stateEl) {
         return;
     }
+    // Detail text goes into the tooltip; the tool table is no longer shown.
+    const detailEl = { set textContent(v) { stateEl.title = v; } };
+    const tbody = document.getElementById('endToolTableBody');
 
     const s = lastEndToolState;
 
@@ -1182,6 +1179,7 @@ function renderEndToolPanel() {
         : (typeof robotKinematics !== 'undefined' && robotKinematics &&
            typeof robotKinematics.getEndTools === 'function' ? robotKinematics.getEndTools() : []);
 
+    if (!tbody) return;
     if (!tools.length) {
         tbody.innerHTML = '<tr><td colspan="4" class="end-tool-empty">' +
             'No end tools defined in kinematics.urdf.</td></tr>';

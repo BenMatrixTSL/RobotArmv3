@@ -2898,9 +2898,17 @@ body.touch-mode .kinematics-angle-input {
     margin-top: 8px;
 }
 
-/* End Tool panel sits inside the last (tool-mount) step card */
-#kinematicsEndToolSlot .end-tool-panel {
-    margin-top: 12px;
+/* Tool card title: status + Re-check button inline */
+.kin-tool-title {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+}
+
+.kin-tool-title .end-tool-state {
+    font-size: 14px;
+    font-weight: 600;
 }
 
 /* ---- Kinematics step cards: Origin × Rotation = T_i, then the running product ---- */

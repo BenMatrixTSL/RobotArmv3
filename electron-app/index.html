@@ -1012,42 +1012,6 @@
                 </p>
             </div>
             <div id="kinematicsMatricesDisplay" class="kinematics-matrices-display"></div>
-
-            <!-- End Tool panel. Shown inside the tool-mount step card (the last
-                 step) once the matrices are rendered; this holder is only its
-                 fallback home while kinematics is not configured. -->
-            <div id="endToolPanelHolder">
-                <div class="settings-panel end-tool-panel" id="endToolPanel">
-                    <h3>End Tool</h3>
-                    <p class="info-text">
-                        The tool reports what it is in register 3, and the controller applies the matching
-                        tool from <code>kinematics.urdf</code>. Every stored position, and every XYZ move,
-                        is measured to that tool's working tip.
-                    </p>
-                    <div class="end-tool-summary" id="endToolSummary">
-                        <span class="end-tool-state" id="endToolState">Not connected</span>
-                        <span class="end-tool-detail" id="endToolDetail"></span>
-                    </div>
-                    <div class="control-row">
-                        <button class="btn btn-secondary" onclick="refreshEndTool()">Re-check tool</button>
-                    </div>
-                    <div class="end-tool-table-wrap">
-                        <table class="end-tool-table" id="endToolTable">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Tool</th>
-                                    <th>Offset from mount (mm)</th>
-                                    <th>Length</th>
-                                </tr>
-                            </thead>
-                            <tbody id="endToolTableBody">
-                                <!-- Populated from the URDF -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
         </div>
 
         <!-- Stored Positions Tab -->
