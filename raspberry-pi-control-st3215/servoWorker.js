@@ -48,6 +48,9 @@ const BUS_DIAGNOSTICS_LOG_INTERVAL_MS = parseInt(process.env.BUS_DIAGNOSTICS_LOG
 const STATUS_POLL_INTERVAL_MS = parseInt(process.env.STATUS_POLL_INTERVAL_MS || '20', 10);
 const MIN_BUS_TICK_GAP_MS     = parseInt(process.env.MIN_BUS_TICK_GAP_MS     || '4',  10);
 const JOINTS_PER_POLL_TICK    = parseInt(process.env.JOINTS_PER_POLL_TICK    || '6',  10);
+// Pause between consecutive joint reads within one tick, so the previous servo
+// has released the half-duplex line. Dominates the tick time (5 gaps per tick).
+const JOINT_POLL_GAP_MS       = parseInt(process.env.JOINT_POLL_GAP_MS       || '4',  10);
 const MAX_BUS_WRITE_QUEUE_SIZE  = 100;
 const MAX_BUS_WRITES_WHEN_IDLE  = 0;
 const MAX_BUS_WRITES_WHEN_BUSY  = 4;
@@ -603,7 +606,7 @@ async function runBusTick() {
             }
             await withTimeout(refreshSingleJointStatusFromBus(statusPollJointIndex), BUS_TICK_OP_TIMEOUT_MS, 'joint status poll');
             statusPollJointIndex = (statusPollJointIndex + 1) % JOINT_COUNT;
-            if (p < jointsToPoll - 1) await new Promise(r => setTimeout(r, 4));
+            if (p < jointsToPoll - 1 && JOINT_POLL_GAP_MS > 0) await new Promise(r => setTimeout(r, JOINT_POLL_GAP_MS));
         }
         diag.statusPollJointIndex = statusPollJointIndex;
         await new Promise(r => setTimeout(r, 1));
@@ -1481,7 +1484,7 @@ process.on('message', (msg) => {
 // longer auto-applied at startup — they're configured manually via the
 // Commissioning panel or Calibration page and persist on the servo's own
 // EEPROM, so there's nothing to reapply here.
-log(`Servo worker starting (pid=${process.pid} VERBOSE_LOG=${VERBOSE_LOG} STATUS_POLL_MS=${STATUS_POLL_INTERVAL_MS} MIN_GAP_MS=${MIN_BUS_TICK_GAP_MS})`);
+log(`Servo worker starting (pid=${process.pid} VERBOSE_LOG=${VERBOSE_LOG} STATUS_POLL_MS=${STATUS_POLL_INTERVAL_MS} MIN_GAP_MS=${MIN_BUS_TICK_GAP_MS} JOINT_GAP_MS=${JOINT_POLL_GAP_MS})`);
 initializeServos().then(async () => {
     await refreshJointStatusCacheFromBus();
     startBusTickLoop();
