@@ -398,8 +398,15 @@ function updateKinematicsMatrices(jointAnglesOverride) {
                 }
                 const usedEl = document.getElementById(`kinStep${s}Used`);
                 if (usedEl) usedEl.textContent = ((step.angleUsed != null ? step.angleUsed : 0) * Math.PI / 180).toFixed(4) + ' rad';
+                const thetaRad = (step.angleUsed != null ? step.angleUsed : 0) * Math.PI / 180;
                 const thetaEl = document.getElementById(`kinStep${s}Theta`);
-                if (thetaEl) thetaEl.textContent = 'θ = ' + ((step.angleUsed != null ? step.angleUsed : 0) * Math.PI / 180).toFixed(3) + ' rad';
+                if (thetaEl) thetaEl.textContent = 'θ = ' + thetaRad.toFixed(3) + ' rad';
+                const cosEl = document.getElementById(`kinStep${s}Cos`);
+                if (cosEl) cosEl.textContent = Math.cos(thetaRad).toFixed(3);
+                const sinEl = document.getElementById(`kinStep${s}Sin`);
+                if (sinEl) sinEl.textContent = Math.sin(thetaRad).toFixed(3);
+                const vEl = document.getElementById(`kinStep${s}V`);
+                if (vEl) vEl.textContent = (1 - Math.cos(thetaRad)).toFixed(3);
             }
             const posEl = document.getElementById(`kinStep${s}Pos`);
             if (posEl) posEl.textContent = `X=${px.toFixed(1)}, Y=${py.toFixed(1)}, Z=${pz.toFixed(1)}`;
@@ -493,6 +500,12 @@ function buildKinematicsStepCards(display, steps, revoluteCount) {
         html += `<tr><td>${swatch('kin-hl-position', 'Position')} (mm)</td><td id="kinStep${s}Pos">–</td></tr>`;
         html += '</tbody></table>';
 
+        // How θ produces the nine rotation entries: the symbolic R for this axis,
+        // with the live cos θ / sin θ values it is evaluated from.
+        if (isJoint) {
+            html += kinematicsRotationDerivationHtml(s, axis, nonZero, k, rotationClass);
+        }
+
         // Joint transform: Origin × Rotation = T_i   (tool steps have no rotation)
         html += '<div class="kin-matrix-row">';
         if (isJoint) {
@@ -520,6 +533,63 @@ function buildKinematicsStepCards(display, steps, revoluteCount) {
 
     // The status span was just re-created — fill it in
     if (typeof renderEndToolPanel === 'function') renderEndToolPanel();
+}
+
+/**
+ * HTML showing how a joint's 3×3 rotation entries are derived from θ: the
+ * symbolic matrix for its axis plus the live cos θ / sin θ values.
+ *
+ * Axis-aligned joints get the familiar single-axis forms (a negative axis
+ * direction flips the sign of the sin entries, since it rotates by −θ):
+ *   X: [1 0 0; 0 c −s; 0 s c]   Y: [c 0 s; 0 1 0; −s 0 c]   Z: [c −s 0; s c 0; 0 0 1]
+ * Any other axis uses Rodrigues' formula with c = cos θ, s = sin θ, v = 1 − c.
+ * @param {number} s - step index (for element ids)
+ * @param {{x:number,y:number,z:number}} axis
+ * @param {number} nonZero - how many axis components are non-zero
+ * @param {number} k - index of the dominant axis component
+ * @param {function(number, number): string} rotationClass - highlight class for a cell
+ */
+function kinematicsRotationDerivationHtml(s, axis, nonZero, k, rotationClass) {
+    const C = 'cos θ', S = 'sin θ', NS = '−sin θ';
+    let sym, about, values;
+    if (nonZero === 1) {
+        const neg = [axis.x, axis.y, axis.z][k] < 0;
+        const sp = neg ? NS : S, sn = neg ? S : NS; // sin entries swap sign for a negative axis
+        sym = [
+            [['1', '0', '0'], ['0', C, sn], ['0', sp, C]],
+            [[C, '0', sp], ['0', '1', '0'], [sn, '0', C]],
+            [[C, sn, '0'], [sp, C, '0'], ['0', '0', '1']]
+        ][k];
+        about = `Rotation about ${neg ? '−' : ''}${['X', 'Y', 'Z'][k]} by θ`;
+        values = `cos θ = <span id="kinStep${s}Cos">–</span> &nbsp; sin θ = <span id="kinStep${s}Sin">–</span>`;
+    } else {
+        // Rodrigues' rotation formula for a unit axis (x, y, z)
+        sym = [
+            ['c + x²v', 'xyv − zs', 'xzv + ys'],
+            ['xyv + zs', 'c + y²v', 'yzv − xs'],
+            ['xzv − ys', 'yzv + xs', 'c + z²v']
+        ];
+        const len = Math.hypot(axis.x || 0, axis.y || 0, axis.z || 0) || 1;
+        about = 'Rotation about a general axis (Rodrigues)';
+        values = `x, y, z = ${(axis.x / len).toFixed(3)}, ${(axis.y / len).toFixed(3)}, ${(axis.z / len).toFixed(3)} &nbsp; ` +
+            `c = cos θ = <span id="kinStep${s}Cos">–</span> &nbsp; s = sin θ = <span id="kinStep${s}Sin">–</span> &nbsp; v = 1 − c = <span id="kinStep${s}V">–</span>`;
+    }
+
+    let html = '<div class="kin-derivation">';
+    html += `<div class="kin-derivation-label">${about} — the 9 rotation entries come from θ:</div>`;
+    html += '<table class="kinematics-matrix kin-symbolic"><tbody>';
+    for (let r = 0; r < 3; r++) {
+        html += '<tr>';
+        for (let c = 0; c < 3; c++) {
+            const cls = rotationClass ? rotationClass(r, c) : '';
+            html += `<td${cls ? ` class="${cls}"` : ''}>${sym[r][c]}</td>`;
+        }
+        html += '</tr>';
+    }
+    html += '</tbody></table>';
+    html += `<div class="kin-derivation-values">${values}</div>`;
+    html += '</div>';
+    return html;
 }
 
 /**

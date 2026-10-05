@@ -2947,6 +2947,37 @@ body.touch-mode .kinematics-angle-input {
     padding-top: 18px;
 }
 
+/* Symbolic rotation matrix: how θ becomes the 9 entries */
+.kin-derivation {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin: 6px 0 4px;
+    padding: 6px 8px;
+    background: #fafafa;
+    border: 1px dashed #e0e0e0;
+    border-radius: 4px;
+}
+
+.kin-derivation-label {
+    font-size: 12px;
+    color: #555;
+    flex-basis: 100%;
+}
+
+.kin-symbolic td {
+    text-align: center;
+    min-width: 64px;
+    font-size: 12px;
+}
+
+.kin-derivation-values {
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    color: #333;
+}
+
 /* Colour key — what drives which entries */
 .kin-key {
     display: inline-block;
