@@ -144,6 +144,27 @@ if [ ! -f "$BLACKLIST_FILE" ]; then
 fi
 echo ""
 
+echo "Step 3c: Put the servo bus on the full PL011 UART"
+# By default the Pi gives the PL011 (ttyAMA0: 16-byte FIFO, own clock, error
+# flags) to Bluetooth and leaves the GPIO14/15 header on the mini-UART (ttyS0:
+# 8-byte FIFO, clock tied to the core). At 1 Mbps the mini-UART overruns if the
+# kernel is ~80 us late servicing it. miniuart-bt swaps them: /dev/serial0
+# becomes ttyAMA0 and Bluetooth drops to the mini-UART (still works, at a
+# lower rate). Same pins, no wiring change. Takes effect on next reboot.
+if [ -f "$BOOT_CONFIG" ]; then
+    if grep -qE '^\s*dtoverlay=(miniuart-bt|disable-bt)' "$BOOT_CONFIG"; then
+        echo "  Already configured in $BOOT_CONFIG."
+    else
+        printf '\n# Servo bus on the full PL011 UART (/dev/serial0 -> ttyAMA0); Bluetooth on the mini-UART\ndtoverlay=miniuart-bt\n' >> "$BOOT_CONFIG"
+        echo "  $BOOT_CONFIG: added dtoverlay=miniuart-bt"
+        NEEDS_REBOOT=1
+    fi
+fi
+if [ -L /dev/serial0 ]; then
+    echo "  /dev/serial0 currently -> $(readlink /dev/serial0)$( [ "$(readlink /dev/serial0)" = "ttyAMA0" ] && echo ' (PL011, good)' || echo ' (mini-UART until reboot)')"
+fi
+echo ""
+
 echo "Step 4: Install systemd service"
 TEMP_SERVICE="/tmp/$SERVICE_NAME"
 sed -e "s|INSTALL_DIR|$INSTALL_DIR|g" \
@@ -189,7 +210,7 @@ echo "  tail -f $LOG_DIR/server-debug.log"
 echo "  sudo journalctl -u $SERVICE_NAME -f"
 echo ""
 if [ "$NEEDS_REBOOT" = "1" ]; then
-    echo "*** Onboard analogue audio was disabled for the status LED — reboot to apply:"
+    echo "*** config.txt changed (audio off for the status LED / PL011 for the servo bus) - reboot to apply:"
     echo "***   sudo reboot"
     echo ""
 fi
