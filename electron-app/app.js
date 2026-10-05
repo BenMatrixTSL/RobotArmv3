@@ -397,9 +397,9 @@ function updateKinematicsMatrices(jointAnglesOverride) {
                     if (parseFloat(inputEl.value) !== v) inputEl.value = Number(v.toFixed(2));
                 }
                 const usedEl = document.getElementById(`kinStep${s}Used`);
-                if (usedEl) usedEl.textContent = (step.angleUsed != null ? step.angleUsed : 0).toFixed(2) + '°';
+                if (usedEl) usedEl.textContent = ((step.angleUsed != null ? step.angleUsed : 0) * Math.PI / 180).toFixed(4) + ' rad';
                 const thetaEl = document.getElementById(`kinStep${s}Theta`);
-                if (thetaEl) thetaEl.textContent = (step.angleUsed != null ? step.angleUsed : 0).toFixed(1) + '°';
+                if (thetaEl) thetaEl.textContent = 'θ = ' + ((step.angleUsed != null ? step.angleUsed : 0) * Math.PI / 180).toFixed(3) + ' rad';
             }
             const posEl = document.getElementById(`kinStep${s}Pos`);
             if (posEl) posEl.textContent = `X=${px.toFixed(1)}, Y=${py.toFixed(1)}, Z=${pz.toFixed(1)}`;
@@ -482,7 +482,7 @@ function buildKinematicsStepCards(display, steps, revoluteCount) {
             } else {
                 html += `<tr><td>${swatch('kin-hl-angle', 'Live angle')}</td><td><span class="kinematics-angle-live" id="kinStep${s}Live">–</span></td></tr>`;
             }
-            html += `<tr><td>${swatch('kin-hl-angle', 'Used angle θ')} (with zero offset)</td><td id="kinStep${s}Used">–</td></tr>`;
+            html += `<tr><td>${swatch('kin-hl-angle', 'θ')} (radians)</td><td id="kinStep${s}Used">–</td></tr>`;
         }
         html += `<tr><td>${swatch('kin-hl-origin', 'Origin')} xyz (m)</td><td>(${(origin.x || 0).toFixed(3)}, ${(origin.y || 0).toFixed(3)}, ${(origin.z || 0).toFixed(3)})` +
             (hasRpy ? ` &nbsp; rpy (rad) (${(origin.roll || 0).toFixed(3)}, ${(origin.pitch || 0).toFixed(3)}, ${(origin.yaw || 0).toFixed(3)})` : '') + '</td></tr>';
