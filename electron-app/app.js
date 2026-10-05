@@ -304,11 +304,13 @@ function resolveStoredPositionAngles(positionNumber) {
 }
 
 /**
- * Moves the arm to a stored position object, dead-zone aware. Works for both
- * angles-type and XYZ-type positions (see resolvePositionToAngles).
+ * Moves the arm to a stored position object — dead-zone aware and approaching
+ * descents from above, exactly as the programming modes do (they all share
+ * moveToStoredAnglesWithApproach). Works for both angles-type and XYZ-type
+ * positions (see resolvePositionToAngles).
  * @param {object} position
  * @param {number} [speedDegreesPerSecond=40]
- * @returns {Promise<boolean>} true if the move was dispatched, false if the position couldn't be resolved
+ * @returns {Promise<boolean>} true if the move was dispatched, false if the position couldn't be resolved or was refused
  */
 async function moveToStoredPositionEntry(position, speedDegreesPerSecond = 40) {
     const targetAngles = resolvePositionToAngles(position);
@@ -320,8 +322,7 @@ async function moveToStoredPositionEntry(position, speedDegreesPerSecond = 40) {
         showAppMessage(`Could not move to ${label} — ${reason}.`);
         return false;
     }
-    await moveJointsToAnglesWithDeadZones(targetAngles, speedDegreesPerSecond);
-    return true;
+    return moveToStoredAnglesWithApproach(null, targetAngles, speedDegreesPerSecond, showAppMessage);
 }
 
 /**
@@ -4814,43 +4815,65 @@ function insertApproachWaypoints(waypoints, startPose) {
 }
 
 /**
- * Moves to a taught set of joint angles (a stored position) with the same
- * approach-from-above behaviour as the Cartesian moves. If the target's tool
- * tip is lower than the current tip by at least APPROACH_MIN_DESCENT_MM, the
- * move is split: a coordinated joint move at speedDegreesPerSecond to a point
- * APPROACH_HEIGHT_MM above the target (solved by IK, same tool direction and
- * spin, seeded from the target so the arm keeps its configuration), a settle
- * pause, then the last stretch at no more than APPROACH_SPEED_MM_PER_S of tip
- * speed, ending exactly on the stored angles. Otherwise it is one coordinated
- * joint move. Waits for the motion to finish before returning.
- * @param {Array<number>} currentAngles
+ * Moves to a taught set of joint angles (a stored position). This is THE
+ * stored-position move — the pendant, Blockly, G-code and RAPID all call it,
+ * so they behave identically:
+ *
+ *  - Dead zones: every leg travels via moveJointsToAnglesWithDeadZones, which
+ *    goes straight in joint space when the swept path is clear and otherwise
+ *    re-routes up-and-over as a Cartesian path (see planSafePathAroundDeadZones).
+ *    A target whose tool tip sits inside a dead zone is refused.
+ *  - Approach from above: if the target tip is lower than the current tip by
+ *    at least APPROACH_MIN_DESCENT_MM, the move is split — travel at
+ *    speedDegreesPerSecond to a point APPROACH_HEIGHT_MM above the target
+ *    (solved by IK, same tool direction and spin, seeded from the target so
+ *    the arm keeps its configuration), a settle pause, then the last stretch
+ *    straight down at no more than APPROACH_SPEED_MM_PER_S, ending exactly on
+ *    the stored angles.
+ *
+ * Waits for the motion to finish before returning.
+ * @param {Array<number>|null} currentAngles - current joint angles (read from status if null)
  * @param {Array<number>} targetAngles
  * @param {number} speedDegreesPerSecond
  * @param {(msg:string)=>void} [log]
+ * @returns {Promise<boolean>} false if the move was refused (e.g. target in a dead zone)
  */
 async function moveToStoredAnglesWithApproach(currentAngles, targetAngles, speedDegreesPerSecond, log) {
-    const say = typeof log === 'function' ? log : function () {};
+    const say = typeof log === 'function' ? log : function (m) { showAppMessage(m); };
     const n = targetAngles.length;
-    const sendCoordinated = async function (fromAngles, toAngles, speedsStepsPerSecond) {
+    const kinematicsReady = typeof robotKinematics !== 'undefined' && robotKinematics.isConfigured();
+
+    if (!Array.isArray(currentAngles) || currentAngles.length !== n) {
+        currentAngles = null;
+        try {
+            const st = await robotArmClient.getStatus();
+            currentAngles = [];
+            for (let i = 0; i < n; i++) currentAngles.push((st[i] && typeof st[i].angleDegrees === 'number') ? st[i].angleDegrees : 0);
+        } catch (e) { currentAngles = null; }
+    }
+
+    const sendDescent = async function (fromAngles, toAngles, descentMm) {
         const promises = [];
+        const speeds = computeTipSpeeds(fromAngles, toAngles, descentMm, APPROACH_SPEED_MM_PER_S);
         for (let i = 0; i < n; i++) {
             if (typeof toAngles[i] !== 'number' || isNaN(toAngles[i])) continue;
-            promises.push(robotArmClient.moveJoint(i + 1, toAngles[i], speedsStepsPerSecond[i]));
+            promises.push(robotArmClient.moveJoint(i + 1, toAngles[i], speeds[i]));
         }
         await Promise.allSettled(promises);
         await robotArmClient.waitForMotionComplete(30000);
     };
-    const degSpeedsToSteps = function (fromAngles, toAngles) {
-        return calculateScaledSpeeds(fromAngles, toAngles, speedDegreesPerSecond)
-            .map(function (d) { return degreesPerSecondToStepsPerSecond(Math.max(d, 50 / 11.37)); });
-    };
 
     let plan = null;
     try {
-        if (typeof robotKinematics !== 'undefined' && robotKinematics.isConfigured() &&
-            Array.isArray(currentAngles) && currentAngles.length === n) {
+        if (kinematicsReady && Array.isArray(currentAngles)) {
             const fkNow = robotKinematics.forwardKinematics(currentAngles);
             const fkTarget = robotKinematics.forwardKinematics(targetAngles);
+
+            if (Array.isArray(deadZones) && deadZones.length > 0 && pointInAnyZone(fkTarget.position, deadZones)) {
+                say(`Move cancelled: the stored position's tool tip (${fkTarget.position.x.toFixed(0)}, ${fkTarget.position.y.toFixed(0)}, ${fkTarget.position.z.toFixed(0)}) is inside a dead zone.`);
+                return false;
+            }
+
             const descent = fkNow.position.z - fkTarget.position.z;
             if (descent >= APPROACH_MIN_DESCENT_MM) {
                 plan = { descent: descent, target: fkTarget.position, viaAngles: null, finalMm: descent };
@@ -4861,6 +4884,12 @@ async function moveToStoredAnglesWithApproach(currentAngles, targetAngles, speed
                     const via = robotKinematics.inverseKinematics(viaPose, targetAngles);
                     if (via && via.length === n) {
                         if (n > 5) via[5] = targetAngles[5]; // keep the taught spin
+                        // The final 30 mm is a straight vertical drop; refuse it if that line clips a zone.
+                        if (Array.isArray(deadZones) && deadZones.length > 0 &&
+                            segmentIntersectsAnyZone(viaPose, fkTarget.position, deadZones)) {
+                            say('Move cancelled: the final descent onto the stored position would pass through a dead zone.');
+                            return false;
+                        }
                         plan.viaAngles = via;
                         plan.finalMm = APPROACH_HEIGHT_MM;
                     }
@@ -4872,20 +4901,29 @@ async function moveToStoredAnglesWithApproach(currentAngles, targetAngles, speed
         plan = null;
     }
 
-    if (!plan) {
-        await sendCoordinated(currentAngles, targetAngles, degSpeedsToSteps(currentAngles, targetAngles));
-        return;
+    if (!plan || !plan.viaAngles) {
+        // Single leg, dead-zone aware. (A short descent with no via point is
+        // still treated as the slow final approach so it lands gently.)
+        if (plan && Array.isArray(currentAngles)) {
+            const clear = !(Array.isArray(deadZones) && deadZones.length > 0) ||
+                !(await jointPathIntersectsDeadZone(currentAngles, targetAngles, deadZones, 40));
+            if (clear) {
+                say('Final approach: descending ' + plan.finalMm.toFixed(0) + ' mm at ' + APPROACH_SPEED_MM_PER_S + ' mm/s');
+                await new Promise(function (resolve) { setTimeout(resolve, APPROACH_SETTLE_MS); });
+                await sendDescent(currentAngles, targetAngles, plan.finalMm);
+                return true;
+            }
+        }
+        await moveJointsToAnglesWithDeadZones(targetAngles, speedDegreesPerSecond);
+        return true;
     }
 
-    let fromAngles = currentAngles;
-    if (plan.viaAngles) {
-        say('Approach: moving to ' + APPROACH_HEIGHT_MM + ' mm above the target first');
-        await sendCoordinated(currentAngles, plan.viaAngles, degSpeedsToSteps(currentAngles, plan.viaAngles));
-        fromAngles = plan.viaAngles;
-    }
+    say('Approach: moving to ' + APPROACH_HEIGHT_MM + ' mm above the target first');
+    await moveJointsToAnglesWithDeadZones(plan.viaAngles, speedDegreesPerSecond);
     say('Final approach: descending ' + plan.finalMm.toFixed(0) + ' mm at ' + APPROACH_SPEED_MM_PER_S + ' mm/s');
     await new Promise(function (resolve) { setTimeout(resolve, APPROACH_SETTLE_MS); });
-    await sendCoordinated(fromAngles, targetAngles, computeTipSpeeds(fromAngles, targetAngles, plan.finalMm, APPROACH_SPEED_MM_PER_S));
+    await sendDescent(plan.viaAngles, targetAngles, plan.finalMm);
+    return true;
 }
 
 /**
@@ -5665,172 +5703,51 @@ async function executeGCodeCommand(command) {
         
         // Get speed from F parameter (in degrees/s)
         const speedDegreesPerSecond = command.params.F || 40; // Default speed in degrees/s
-        // Convert degrees/s to steps/s for the API
-        let speedStepsPerSecond;
-        if (typeof degreesPerSecondToStepsPerSecond === 'function') {
-            speedStepsPerSecond = degreesPerSecondToStepsPerSecond(speedDegreesPerSecond);
-        } else if (typeof window !== 'undefined' && typeof window.degreesPerSecondToStepsPerSecond === 'function') {
-            speedStepsPerSecond = window.degreesPerSecondToStepsPerSecond(speedDegreesPerSecond);
-        } else {
-            speedStepsPerSecond = Math.round(speedDegreesPerSecond * 11.37);
-        }
-        const speed = speedStepsPerSecond;
-        
+
         if (robotArmClient.isConnected) {
-            const numJoints = getNumJoints();
-
-            // Fetch current angles so we can (a) scale speeds for coordinated arrival
-            // and (b) compute how long to wait for the slowest joint to reach 0°.
-            let currentAngles = null;
-            let maxTravelDeg = 180; // conservative fallback
-            try {
-                const status = await robotArmClient.getStatus();
-                if (Array.isArray(status) && status.length > 0) {
-                    currentAngles = status.map(j =>
-                        (j && typeof j.angleDegrees === 'number' && !isNaN(j.angleDegrees))
-                            ? j.angleDegrees : 0
-                    );
-                    maxTravelDeg = currentAngles.reduce((m, a) => Math.max(m, Math.abs(a)), 0);
-                }
-            } catch (e) { /* use fallback */ }
-
-            const homeTargets = new Array(numJoints).fill(0);
-            const coordSpeeds = computeCoordinatedSpeeds(currentAngles, homeTargets, speed);
-            const homePromises = [];
-            for (let i = 1; i <= numJoints; i++) {
-                homePromises.push(robotArmClient.moveJoint(i, 0, coordSpeeds[i - 1] || speed));
-            }
-            await Promise.allSettled(homePromises);
-            await robotArmClient.waitForMotionComplete(30000);
+            // Coordinated, dead-zone aware (same mover as Blockly / RAPID / pendant)
+            await moveJointsToAnglesWithDeadZones(new Array(getNumJoints()).fill(0), speedDegreesPerSecond);
         }
-        
+
     } else if (command.code.startsWith('J') || commandHasJointAngleParams(command.params)) {
         // Joint command: J1..J6 to move individual joints or multiple joints simultaneously
         // Format: J1=angle J2=angle J3=angle F=speed or J1=45 F45
         // Example: J1=45 J2=-30 F45 (move joints 1 and 2 simultaneously at 45 degrees/s)
-        // Example: J1=45 J2=30 J3=20 J4=10 J5=0 J6=0 F60 (move all 6 joints simultaneously)
-        // Uses linear interpolation to scale speeds so all joints arrive simultaneously
-        
-        // Get speed from F parameter (in degrees/s)
+        // Joints not named keep their current angle. Runs through the shared
+        // dead-zone-aware mover (same as Blockly, RAPID and the pendant), which
+        // scales speeds so all joints arrive together.
         const speedDegreesPerSecond = command.params.F || 40; // Default speed in degrees/s
         const numJoints = getNumJoints();
-        let movedAny = false;
-        
-        // Collect target angles for joints that need to move
-        const targetAngles = [];
-        const jointsToMove = [];
+        const requested = {};
         for (let i = 1; i <= numJoints; i++) {
-            const jParam = `J${i}`;
-            const angle = command.params[jParam];
-            if (angle !== undefined) {
-                targetAngles.push(angle);
-                jointsToMove.push(i);
-                movedAny = true;
-            } else {
-                targetAngles.push(null); // Joint not specified in command
-            }
+            if (command.params[`J${i}`] !== undefined) requested[i] = command.params[`J${i}`];
         }
-        
-        if (movedAny) {
-            // Get current joint angles for linear interpolation
-            try {
-                const status = await robotArmClient.getStatus();
-                const currentAngles = [];
-                for (let i = 0; i < numJoints; i++) {
-                    if (status[i] && typeof status[i].angleDegrees === 'number') {
-                        currentAngles.push(status[i].angleDegrees);
-                    } else {
-                        currentAngles.push(0);
-                    }
-                }
-                
-                // Filter to only joints that need to move
-                const currentAnglesToMove = jointsToMove.map(jointNum => currentAngles[jointNum - 1]);
-                const targetAnglesToMove = jointsToMove.map(jointNum => targetAngles[jointNum - 1]);
-                
-                // Calculate scaled speeds using linear interpolation
-                let scaledSpeeds;
-                if (typeof calculateScaledSpeeds === 'function') {
-                    scaledSpeeds = calculateScaledSpeeds(currentAnglesToMove, targetAnglesToMove, speedDegreesPerSecond);
-                } else if (typeof window !== 'undefined' && typeof window.calculateScaledSpeeds === 'function') {
-                    scaledSpeeds = window.calculateScaledSpeeds(currentAnglesToMove, targetAnglesToMove, speedDegreesPerSecond);
-                } else {
-                    // Fallback: use base speed for all joints
-                    scaledSpeeds = Array(jointsToMove.length).fill(speedDegreesPerSecond);
-                }
-                
-                // Move joints with scaled speeds
-                gcodeProcessor.log(`Moving joints ${jointsToMove.join(', ')} simultaneously (scaled speeds for synchronized arrival)`);
-                for (let i = 0; i < jointsToMove.length; i++) {
-                    const jointNum = jointsToMove[i];
-                    const targetAngle = targetAnglesToMove[i];
-                    const scaledSpeedDegreesPerSecond = scaledSpeeds[i];
-                    
-                    if (scaledSpeedDegreesPerSecond > 0) {
-                        // Convert degrees/s to steps/s
-                        let speedStepsPerSecond;
-                        if (typeof degreesPerSecondToStepsPerSecond === 'function') {
-                            speedStepsPerSecond = degreesPerSecondToStepsPerSecond(scaledSpeedDegreesPerSecond);
-                        } else if (typeof window !== 'undefined' && typeof window.degreesPerSecondToStepsPerSecond === 'function') {
-                            speedStepsPerSecond = window.degreesPerSecondToStepsPerSecond(scaledSpeedDegreesPerSecond);
-                        } else {
-                            speedStepsPerSecond = Math.round(scaledSpeedDegreesPerSecond * 11.37);
-                        }
-                        
-                        gcodeProcessor.log(`  Joint ${jointNum}: ${targetAngle}° at ${scaledSpeedDegreesPerSecond.toFixed(1)} degrees/s`);
-                        if (robotArmClient.isConnected) {
-                            await robotArmClient.moveJoint(jointNum, targetAngle, speedStepsPerSecond);
-                        }
-                    }
-                }
-            } catch (error) {
-                // Fallback: use base speed if status retrieval fails
-                console.warn('Failed to get joint status for linear interpolation, using base speed:', error);
-                gcodeProcessor.log(`Moving joints ${jointsToMove.join(', ')} simultaneously at ${speedDegreesPerSecond} degrees/s`);
-                let speedStepsPerSecond;
-                if (typeof degreesPerSecondToStepsPerSecond === 'function') {
-                    speedStepsPerSecond = degreesPerSecondToStepsPerSecond(speedDegreesPerSecond);
-                } else if (typeof window !== 'undefined' && typeof window.degreesPerSecondToStepsPerSecond === 'function') {
-                    speedStepsPerSecond = window.degreesPerSecondToStepsPerSecond(speedDegreesPerSecond);
-                } else {
-                    speedStepsPerSecond = Math.round(speedDegreesPerSecond * 11.37);
-                }
-                const fallbackPromises = [];
-                for (let i = 0; i < jointsToMove.length; i++) {
-                    const jointNum = jointsToMove[i];
-                    const targetAngle = targetAnglesToMove[i];
-                    gcodeProcessor.log(`Moving Joint ${jointNum} to ${targetAngle}° at speed ${speedDegreesPerSecond} degrees/s`);
-                    if (robotArmClient.isConnected) {
-                        fallbackPromises.push(robotArmClient.moveJoint(jointNum, targetAngle, speedStepsPerSecond));
-                    }
-                }
-                await Promise.allSettled(fallbackPromises);
-            }
+        // A bare "J1=45" line parses as code J1 with the angle only in the text
+        if (Object.keys(requested).length === 0 && command.code.startsWith('J')) {
+            const m = command.line.match(/J(d+)s*=s*([-+]?d*.?d+)/i);
+            if (m) requested[parseInt(m[1], 10)] = parseFloat(m[2]);
         }
-
-        // If no joint parameters found, check if the command code itself is a joint command (e.g., J1=45)
-        if (!movedAny && command.code.startsWith('J')) {
-            const jointMatch = command.code.match(/J(\d+)/i);
-            if (jointMatch) {
-                const jointNumber = parseInt(jointMatch[1]);
-                // Try to get angle from the command line directly
-                const angleMatch = command.line.match(/J\d+\s*=\s*([-+]?\d*\.?\d+)/i);
-                if (angleMatch) {
-                    const angle = parseFloat(angleMatch[1]);
-                    gcodeProcessor.log(`Moving Joint ${jointNumber} to ${angle}° at speed ${speedDegreesPerSecond} degrees/s`);
-                    if (robotArmClient.isConnected) {
-                        await robotArmClient.moveJoint(jointNumber, angle, speed);
-                        movedAny = true;
-                    }
-                }
-            }
-        }
-
-        if (movedAny) {
-            await robotArmClient.waitForMotionComplete(30000);
-        } else {
+        const jointsToMove = Object.keys(requested).map(Number).filter(j => j >= 1 && j <= numJoints);
+        if (jointsToMove.length === 0) {
             gcodeProcessor.log(`Warning: No joint angles specified in ${command.code} command`);
+            return;
         }
+        if (!robotArmClient.isConnected) return;
+
+        let targetAngles;
+        try {
+            const status = await robotArmClient.getStatus();
+            targetAngles = [];
+            for (let i = 0; i < numJoints; i++) {
+                targetAngles.push((status[i] && typeof status[i].angleDegrees === 'number') ? status[i].angleDegrees : 0);
+            }
+        } catch (error) {
+            console.warn('Failed to get joint status for joint move, assuming unnamed joints are at 0:', error);
+            targetAngles = new Array(numJoints).fill(0);
+        }
+        jointsToMove.forEach(j => { targetAngles[j - 1] = requested[j]; });
+        gcodeProcessor.log(`Moving joint${jointsToMove.length > 1 ? 's' : ''} ${jointsToMove.map(j => `${j}→${requested[j]}°`).join(', ')} at ${speedDegreesPerSecond} degrees/s (dead-zone aware)`);
+        await moveJointsToAnglesWithDeadZones(targetAngles, speedDegreesPerSecond);
         
     } else if (command.code.startsWith('M')) {
         // M codes (miscellaneous commands)
@@ -6246,7 +6163,6 @@ async function executeRapidCommand(stmt) {
     const lineNumber = stmt.lineNumber;
     const numJoints = getNumJoints();
     const speedDegreesPerSecond = parseRapidJointSpeed(line);
-    const speedStepsPerSecond = degreesPerSecondToStepsPerSecond(speedDegreesPerSecond);
 
     // Absolute joint move: MoveJ and MoveAbsJ
     if (/^MoveJ\b/i.test(line) || /^MoveAbsJ\b/i.test(line)) {
@@ -6562,15 +6478,9 @@ async function executeRapidCommand(stmt) {
             console.warn('RAPID: Could not parse SetDO on line', lineNumber, ':', line);
         }
     } else if (/^Home\b/i.test(line)) {
-        // Home; is just a MoveAbsJ to all zeros
-        const homeAngles = new Array(numJoints).fill(0);
+        // Home; is a MoveAbsJ to all zeros — dead-zone aware like every other move
         console.log('RAPID: Home on line', lineNumber);
-        const rapidHomePromises = [];
-        for (let j = 0; j < numJoints; j++) {
-            rapidHomePromises.push(robotArmClient.moveJoint(j + 1, homeAngles[j], speedStepsPerSecond));
-        }
-        await Promise.allSettled(rapidHomePromises);
-        await robotArmClient.waitForMotionComplete(30000);
+        await moveJointsToAnglesWithDeadZones(new Array(numJoints).fill(0), speedDegreesPerSecond);
     } else if (/^GripperOpen\b/i.test(line)) {
         console.log('RAPID: GripperOpen on line', lineNumber);
         if (robotArmClient && robotArmClient.isConnected) {
