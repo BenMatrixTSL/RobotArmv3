@@ -201,6 +201,10 @@ function initializeBlockly() {
                 scaleSpeed: 1.1
             },
             trashcan: true,
+            // Blockly's click/delete sounds are the only audio the app plays.
+            // On the Pi kiosk, opening the headphone audio device reprograms
+            // the PWM clock the WS2812B status LED uses and freezes the strip.
+            sounds: false,
             // Enable variables
             variables: true
         });

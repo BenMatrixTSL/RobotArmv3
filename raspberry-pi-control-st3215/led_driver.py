@@ -3,6 +3,11 @@
 WS2812B LED driver for the robot arm server.
 Reads newline-delimited JSON commands from stdin, controls LEDs, replies on stdout.
 
+Drives GPIO18 via PWM0 + DMA (rpi_ws281x). The Pi's headphone-jack audio
+(dtparam=audio=on / snd_bcm2835) uses the same PWM clock: if anything plays
+audio through it the strip freezes on its last frame until this process
+re-initialises. install-service.sh disables that audio; HDMI audio is unaffected.
+
 Commands:
   {"cmd": "fill",       "r":0, "g":170, "b":0}
   {"cmd": "comet",      "r":255, "g":208, "b":0, "tail":14, "speed":1.4, "heads":1}
