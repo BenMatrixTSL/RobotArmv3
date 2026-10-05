@@ -45,11 +45,12 @@ async function readCalibrationForJoint(jointNumber) {
 }
 
 /**
- * Toggles the page between read-only and edit mode. Requires a non-empty
- * password to enter edit mode (the server rejects the write itself if the
- * password is wrong - this is just gating the UI, not authenticating).
+ * Toggles the page between read-only and edit mode. Entering edit mode asks
+ * the server to verify the control-lock password first (verifyPassword is
+ * side-effect free), so the write controls only appear for the real
+ * password - the server still checks it again on every write.
  */
-function toggleCalibrationWriteMode() {
+async function toggleCalibrationWriteMode() {
     const passwordInput = document.getElementById('calibrationWritePassword');
     const button = document.getElementById('calibrationUnlockWritesButton');
     const editHeader = document.getElementById('calibrationEditHeader');
@@ -71,6 +72,27 @@ function toggleCalibrationWriteMode() {
     if (!passwordInput.value) {
         showAppMessage('Enter the control-lock password to enable editing.');
         return;
+    }
+    if (!robotArmClient || !robotArmClient.isConnected) {
+        showAppMessage('Connect to the robot arm controller first - the password is checked by the server.');
+        return;
+    }
+
+    button.disabled = true;
+    try {
+        const result = await robotArmClient.verifyPassword(passwordInput.value);
+        if (!result || !result.ok) {
+            showAppMessage('Incorrect password - editing stays disabled.');
+            setCalibrationStatus('Incorrect password');
+            passwordInput.focus();
+            passwordInput.select();
+            return;
+        }
+    } catch (error) {
+        showAppMessage('Could not verify the password: ' + error.message);
+        return;
+    } finally {
+        button.disabled = false;
     }
 
     calibrationWriteModeEnabled = true;

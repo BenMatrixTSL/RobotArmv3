@@ -33,6 +33,7 @@ Read-only commands always work: `getStatus`, `getJointConfigs`, kinematics, etc.
 | `releaseControl` | Give up control so another app can move the arm. |
 | `lockControl` | Take control (if free) and **lock** it — see below. |
 | `unlockControl` | Clear the lock (holder: no password needed; anyone else: needs the lock password). |
+| `verifyPassword` | Check the lock password without taking, locking or changing anything. Replies `{ type: "verifyPasswordResult", ok, message }`. Used by UIs to reveal write controls only for the real password. |
 | `getControlStatus` | See who has control, and whether it's locked. |
 
 When a client disconnects, control is released automatically (including a locked session).

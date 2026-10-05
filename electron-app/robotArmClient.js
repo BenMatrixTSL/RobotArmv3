@@ -812,6 +812,15 @@ class RobotArmClient {
     }
 
     /**
+     * Check the control-lock password without taking, locking or changing
+     * anything. Resolves { ok, message }.
+     * @param {string} password
+     */
+    verifyPassword(password) {
+        return this.sendRequest('verifyPassword', { password: password }, 3000);
+    }
+
+    /**
      * Query who holds arm control.
      */
     getControlStatus() {

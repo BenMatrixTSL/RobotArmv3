@@ -35,6 +35,7 @@ const INSTANT_SERVER_COMMANDS = {
     releaseControl: true,
     lockControl: true,
     unlockControl: true,
+    verifyPassword: true,
     getPiNetworkInfo: true,
     getPiEthernetSettings: true,
     setPiEthernetSettings: true,
@@ -751,6 +752,15 @@ async function handleCommand(ws, data) {
 
         case 'getControlStatus': {
             sendResponse(getControlStatusPayload(ws));
+            break;
+        }
+
+        case 'verifyPassword': {
+            // Side-effect-free check of the control-lock password, so a UI can
+            // gate its edit controls on the real password rather than on the
+            // field merely being non-empty. Does not take or lock control.
+            const ok = typeof data.password === 'string' && data.password === CONTROL_LOCK_PASSWORD;
+            sendResponse({ type: 'verifyPasswordResult', ok: ok, message: ok ? 'Password accepted' : 'Incorrect password' });
             break;
         }
 
