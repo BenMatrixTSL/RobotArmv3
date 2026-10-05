@@ -82,7 +82,8 @@ function applyState(state) {
             send({ cmd: 'fill', r: 140, g: 0, b: 220 });
             break;
         case 'online':
-            send({ cmd: 'fill', r: 0, g: 200, b: 60 });
+            // Pure green — any blue component reads as cyan on this strip.
+            send({ cmd: 'fill', r: 0, g: 220, b: 0 });
             break;
         default:
             send({ cmd: 'off' });
