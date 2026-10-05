@@ -750,6 +750,14 @@
                             </td>
                         </tr>
                         <tr>
+                            <td><strong>SetToolOri</strong></td>
+                            <td>
+                                Set the tool orientation used by following <code>MoveLXYZ</code> / <code>MoveLOffs</code> moves: a direction vector for the tool's Z-axis, plus an optional spin rotation around it in degrees.<br>
+                                <code>SetToolOri [[0, 0, -1]];</code> → tool pointing straight down.<br>
+                                <code>SetToolOri [[0, 0, -1], 45];</code> → pointing down, rotated 45° about its own axis.
+                            </td>
+                        </tr>
+                        <tr>
                             <td><strong>MoveJoint</strong></td>
                             <td>
                                 Move one joint and leave the others where they are.<br>

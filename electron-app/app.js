@@ -6502,14 +6502,14 @@ async function executeRapidCommand(stmt) {
     } else if (/^SetToolOri\b/i.test(line)) {
         // SetToolOri [[ux,uy,uz]];              → set orientation vector
         // SetToolOri [[ux,uy,uz],rot];           → set orientation + spin rotation (degrees)
-        const xyz = await parseRapidXYZ(line, 'SetToolOri');
-        if (!xyz) {
-            console.warn('RAPID: Could not parse SetToolOri on line', lineNumber, ':', line);
-            return;
+        // Vector and optional rotation may be expressions: SetToolOri [[0, 0, -1], spin * 2];
+        const m = line.match(/^SetToolOri\s*\[\s*\[([^\]]+)\]\s*(?:,\s*(.+?))?\s*\]\s*$/i);
+        if (!m) {
+            throw new Error(`Line ${lineNumber}: SetToolOri needs "SetToolOri [[ux,uy,uz]]" or "SetToolOri [[ux,uy,uz],rot]"`);
         }
-        // Parse optional rotation after the vector bracket: SetToolOri [[x,y,z],rot]
-        const rotMatch = line.match(/\]\s*,\s*([-+]?[0-9]*\.?[0-9]+)/);
-        const rot = rotMatch ? parseFloat(rotMatch[1]) : undefined;
+        const xyz = await rapidProcessor.evaluateList(m[1]);
+        if (xyz.length < 3) throw new Error(`Line ${lineNumber}: SetToolOri needs three vector components`);
+        const rot = m[2] !== undefined ? await rapidProcessor.evaluate(m[2]) : undefined;
         setToolOrientationVector(xyz[0], xyz[1], xyz[2], rot);
         console.log('RAPID: SetToolOri on line', lineNumber, 'orientation:', xyz, 'rotation:', rot);
     } else if (/^WaitTime\b/i.test(line)) {
