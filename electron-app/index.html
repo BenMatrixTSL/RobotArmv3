@@ -660,14 +660,20 @@
         <div id="rapid-tab" class="tab-content">
             <h2>ABB RAPID Control (Simple Subset)</h2>
             <p class="info-text">
-                This tab lets you experiment with a very small, beginner-friendly subset of ABB&apos;s RAPID language.
-                At the moment we only support simple joint moves using <code>MoveJ</code> with a list of joint angles.
+                This tab lets you experiment with a beginner-friendly subset of ABB&apos;s RAPID language:
+                joint and Cartesian moves, tool commands, and real RAPID control flow
+                (<code>VAR num</code>, <code>WHILE</code>, <code>FOR</code>, <code>IF</code>, <code>GOTO</code>).
             </p>
 
             <div class="gcode-controls">
                 <h3>Execution Control</h3>
                 <div class="control-buttons">
-                    <button class="btn btn-primary btn-motion" onclick="runRapidProgram()">Run RAPID Program</button>
+                    <button class="btn btn-primary btn-motion" id="rapidRunButton" onclick="runRapidProgram()">Run RAPID Program</button>
+                    <button class="btn btn-danger btn-motion" id="rapidStopButton" onclick="stopRapidProgram()" disabled>Stop</button>
+                </div>
+                <div class="execution-status">
+                    <div>Status: <span id="rapidStatus">Ready</span></div>
+                    <div>Current Line: <span id="rapidCurrentLine">-</span></div>
                 </div>
             </div>
 
@@ -681,10 +687,16 @@
                 <textarea id="rapidContent" placeholder="Type simple RAPID code here...&#10;Example:&#10;! Absolute joint move&#10;MoveJ [[0,10,20,0,0,0]];&#10;! Cartesian move&#10;MoveLXYZ [[150,0,200]];"></textarea>
             </div>
 
+            <div class="gcode-log">
+                <h3>Execution Log</h3>
+                <div id="rapidOutput" class="log-content"></div>
+            </div>
+
             <div class="settings-panel" style="margin-top: 20px;">
                 <h3>RAPID Cheat Sheet (Supported Subset)</h3>
                 <p class="info-text">
-                    This is not a full RAPID interpreter. It only supports a tiny subset that maps cleanly to your 6‑axis arm (plus fixed tool mount).
+                    This is not a full RAPID interpreter. It only supports a small subset that maps cleanly to your 6‑axis arm (plus fixed tool mount).
+                    Anywhere a number is expected you can write an expression using variables, e.g. <code>MoveAbsJ [[i * 10, 0, 20, 0, 0, 0]];</code>
                 </p>
                 <table class="kinematics-step-info">
                     <tbody>
@@ -696,11 +708,66 @@
                             </td>
                         </tr>
                         <tr>
+                            <td><strong>Variables</strong><br><code>VAR num</code></td>
+                            <td>
+                                <code>VAR num count := 0;</code> → declare a variable (declare before use).<br>
+                                <code>count := count + 1;</code> → assign; arithmetic with <code>+ - * / DIV MOD</code> and <code>( )</code>.<br>
+                                <code>TPWrite "Count is " \Num:=count;</code> → print to the execution log.<br>
+                                Camera functions usable in any expression: <code>GetBlockCount()</code>, <code>GetBlockX(i)</code>, <code>GetBlockY(i)</code> (mm).
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>Loops</strong><br><code>WHILE</code>, <code>FOR</code></td>
+                            <td>
+                                <code>WHILE count &lt; 3 DO</code> … <code>ENDWHILE</code> → repeat while the condition holds. Compare with <code>= &lt;&gt; &lt; &lt;= &gt; &gt;=</code>, combine with <code>AND OR NOT</code>, or use <code>TRUE</code> / <code>FALSE</code>.<br>
+                                <code>FOR i FROM 1 TO 5 DO</code> … <code>ENDFOR</code> → counted loop (optional <code>STEP 2</code> before <code>DO</code>).<br>
+                                <code>WHILE TRUE DO</code> … <code>ENDWHILE</code> loops forever — use <strong>Stop</strong> or <code>EXIT;</code> to end.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>Conditions</strong><br><code>IF</code></td>
+                            <td>
+                                <code>IF GetBlockCount() &gt; 0 THEN</code><br>
+                                <code>&nbsp;&nbsp;MoveToPos 10;</code><br>
+                                <code>ELSEIF count = 2 THEN</code> … <code>ELSE</code> … <code>ENDIF</code><br>
+                                <code>ELSEIF</code> and <code>ELSE</code> are optional.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>Jumps</strong><br><code>GOTO</code>, <code>EXIT</code></td>
+                            <td>
+                                <code>again:</code> → label a line (name followed by a colon).<br>
+                                <code>GOTO again;</code> → jump to that label (e.g. to break out of a loop).<br>
+                                <code>EXIT;</code> → end the program immediately.
+                            </td>
+                        </tr>
+                        <tr>
                             <td><strong>MoveJ</strong></td>
                             <td>
                                 Joint move using 6 joint angles in degrees.<br>
-                                <code>MoveJ [[J1,J2,J3,J4,J5,J6]];</code><br>
+                                <code>MoveJ [[J1,J2,J3,J4,J5,J6]];</code> or <code>MoveJ [[J1,J2,J3,J4,J5,J6]], v60;</code> (joint speed in deg/s, default 40)<br>
                                 Example: <code>MoveJ [[0,10,20,0,0,0]];</code> → move to J1=0°, J2=10°, J3=20°, J4=0°, J5=0°, J6=0° (default speed).
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>MoveJoint</strong></td>
+                            <td>
+                                Move one joint and leave the others where they are.<br>
+                                <code>MoveJoint 1, 45;</code> or <code>MoveJoint 1, 45, v60;</code> (joint speed in deg/s, default 40)
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>MoveToPos</strong></td>
+                            <td>
+                                Move to a Stored Position (slot 0–99 from the Stored Positions tab), approaching from above like the pendant does.<br>
+                                <code>MoveToPos 5;</code> or <code>MoveToPos 5, v60;</code> (joint speed in deg/s, default 40)
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>SetAcc</strong></td>
+                            <td>
+                                Set a joint's acceleration (0–254, unit: 100 step/s²).<br>
+                                <code>SetAcc 2, 50;</code> → joint 2 acceleration 50.
                             </td>
                         </tr>
                         <tr>
@@ -1672,6 +1739,8 @@
     <script src="robotArmClient.js?v=20260925b"></script>
     <!-- G-Code Processor: Parses and executes G-code commands -->
     <script src="gcodeProcessor.js"></script>
+    <!-- RAPID Processor: variables, loops and conditionals for the RAPID subset -->
+    <script src="rapidProcessor.js"></script>
     <!-- Kinematics: Forward and inverse kinematics calculations -->
     <script src="urdfParser.js"></script>
     <script src="kinematics.js"></script>

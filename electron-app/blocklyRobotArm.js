@@ -2676,166 +2676,418 @@ function convertBlocklyToGCode(workspace) {
 }
 
 /**
- * Converts Blockly JavaScript code to RAPID format
- * This is a simple converter that handles common robot arm commands
- * @param {string} blocklyCode - JavaScript code generated from Blockly
+ * Converts the current Blockly workspace to the app's RAPID subset by
+ * walking the block tree (see convertBlocklyToGCode for the G-code twin).
+ *
+ * RAPID has real structured control flow, so loops and ifs convert
+ * directly: repeat → FOR, while/until → WHILE, if/else → IF/ELSEIF/ELSE,
+ * Blockly variables → VAR num, break/continue → GOTO labels. Vision values
+ * become GetBlockCount()/GetBlockX(i)/GetBlockY(i) calls inside expressions.
+ *
+ * Anything that still can't be expressed is left as a "! NOT CONVERTED:"
+ * comment so the gap is visible in the editor rather than silently dropped.
+ *
+ * @param {Blockly.Workspace} [workspace] - defaults to the live Blockly workspace
  * @returns {string} RAPID program
  */
-function convertBlocklyToRapid(blocklyCode) {
-    if (!blocklyCode || blocklyCode.trim() === '') {
-        return '! No blocks in workspace\n';
+function convertBlocklyToRapid(workspace) {
+    const ws = workspace || blocklyWorkspace;
+    if (!ws) return '! No blocks in workspace\n';
+
+    const topBlocks = ws.getTopBlocks(true).filter(b =>
+        !b.outputConnection && (b.previousConnection || b.nextConnection));
+    if (topBlocks.length === 0) return '! No blocks in workspace\n';
+
+    const out = [];
+    const notConverted = [];
+    const warnings = [];
+    let indent = '';
+
+    function emit(line) { out.push(indent + line); }
+    function skip(reason) {
+        notConverted.push(reason);
+        emit(`! NOT CONVERTED: ${reason}`);
+    }
+    function warn(reason) {
+        warnings.push(reason);
+        emit(`! WARNING: ${reason}`);
+    }
+    function isEnabled(b) {
+        return typeof b.isEnabled === 'function' ? b.isEnabled() : !b.disabled;
+    }
+    function num(v, decimals) { return gcodeNum(v, decimals === undefined ? 1 : decimals); }
+
+    // ── Variables ────────────────────────────────────────────────────────
+    // Blockly variable names can contain anything; RAPID identifiers can't.
+    const rapidNames = {};      // Blockly name → RAPID identifier
+    const usedNames = new Set();
+    const RESERVED = new Set(['if', 'then', 'else', 'elseif', 'endif', 'while', 'do', 'endwhile', 'for',
+        'from', 'to', 'step', 'endfor', 'var', 'num', 'bool', 'goto', 'exit', 'stop', 'true', 'false',
+        'and', 'or', 'not', 'div', 'mod', 'tpwrite']);
+    function rapidName(name) {
+        if (rapidNames[name]) return rapidNames[name];
+        let id = String(name).replace(/[^A-Za-z0-9_]/g, '_').replace(/^(\d)/, 'v$1') || 'v';
+        if (RESERVED.has(id.toLowerCase())) id = id + '_';
+        let candidate = id, n = 2;
+        while (usedNames.has(candidate.toLowerCase())) candidate = `${id}${n++}`;
+        usedNames.add(candidate.toLowerCase());
+        rapidNames[name] = candidate;
+        return candidate;
+    }
+    function tempName(base) {
+        let n = 1;
+        while (usedNames.has(`${base}${n}`.toLowerCase())) n++;
+        usedNames.add(`${base}${n}`.toLowerCase());
+        return `${base}${n}`;
+    }
+    function blockVarName(b, field) {
+        const f = b.getField(field || 'VAR');
+        return f ? f.getText() : 'var';
+    }
+    let labelCounter = 0;
+    function newLabel(base) { return `${base}${++labelCounter}`; }
+
+    // ── Loop context for break/continue ──────────────────────────────────
+    const loopStack = []; // { breakLabel, continueLabel, breakUsed, continueUsed }
+
+    // ── Values ───────────────────────────────────────────────────────────
+    function valueToRapid(b) {
+        if (!b) return null;
+        switch (b.type) {
+            case 'math_number': {
+                const v = parseFloat(b.getFieldValue('NUM'));
+                return isFinite(v) ? num(v, 3) : null;
+            }
+            case 'variables_get':
+                return rapidName(blockVarName(b));
+            case 'math_negate': {
+                const v = inputToRapid(b, 'NUM');
+                return v === null ? null : `(-${v})`;
+            }
+            case 'math_arithmetic': {
+                const a = inputToRapid(b, 'A');
+                const c = inputToRapid(b, 'B');
+                if (a === null || c === null) return null;
+                const op = { ADD: '+', MINUS: '-', MULTIPLY: '*', DIVIDE: '/' }[b.getFieldValue('OP')];
+                if (!op) return null; // POWER has no RAPID operator in this subset
+                return `(${a} ${op} ${c})`;
+            }
+            case 'block_count':
+                return 'GetBlockCount()';
+            case 'block_x_at':
+            case 'block_y_at': {
+                const idx = inputToRapid(b, 'INDEX');
+                if (idx === null) return null;
+                return `${b.type === 'block_x_at' ? 'GetBlockX' : 'GetBlockY'}(${idx})`;
+            }
+        }
+        return null;
+    }
+    function inputToRapid(b, inputName) {
+        return valueToRapid(b.getInputTargetBlock(inputName));
+    }
+    function describeValue(b, inputName) {
+        const t = b.getInputTargetBlock(inputName);
+        return t ? `"${t.type}" block` : 'empty input';
+    }
+
+    // ── Conditions ───────────────────────────────────────────────────────
+    function conditionToRapid(b) {
+        if (!b) return null;
+        switch (b.type) {
+            case 'logic_boolean':
+                return b.getFieldValue('BOOL') === 'TRUE' ? 'TRUE' : 'FALSE';
+            case 'logic_negate': {
+                const inner = conditionToRapid(b.getInputTargetBlock('BOOL'));
+                return inner === null ? null : `NOT (${inner})`;
+            }
+            case 'logic_operation': {
+                const a = conditionToRapid(b.getInputTargetBlock('A'));
+                const c = conditionToRapid(b.getInputTargetBlock('B'));
+                if (a === null || c === null) return null;
+                return `(${a} ${b.getFieldValue('OP') === 'AND' ? 'AND' : 'OR'} ${c})`;
+            }
+            case 'logic_compare': {
+                const a = inputToRapid(b, 'A');
+                const c = inputToRapid(b, 'B');
+                if (a === null || c === null) return null;
+                const op = { EQ: '=', NEQ: '<>', LT: '<', LTE: '<=', GT: '>', GTE: '>=' }[b.getFieldValue('OP')];
+                if (!op) return null;
+                return `${a} ${op} ${c}`;
+            }
+        }
+        return null;
+    }
+
+    // ── Statement walking ────────────────────────────────────────────────
+    function walkChain(block) {
+        for (let b = block; b; b = b.getNextBlock()) {
+            if (!isEnabled(b)) { emit(`! (disabled block skipped: ${b.type})`); continue; }
+            convertBlock(b);
+        }
+    }
+    function walkBody(block) {
+        const saved = indent;
+        indent += '  ';
+        walkChain(block);
+        indent = saved;
+    }
+
+    // Emits a loop body with break/continue support. `open` and `close` are
+    // the loop's opening and closing lines.
+    function emitLoop(open, body, close, title) {
+        const ctx = { breakLabel: newLabel('loop_end'), continueLabel: newLabel('loop_next'), breakUsed: false, continueUsed: false };
+        if (title) emit(`! ${title}`);
+        emit(open);
+        loopStack.push(ctx);
+        walkBody(body);
+        loopStack.pop();
+        if (ctx.continueUsed) emit(`  ${ctx.continueLabel}:`);
+        emit(close);
+        if (ctx.breakUsed) emit(`${ctx.breakLabel}:`);
+    }
+
+    function speedSuffix(b, field, dflt) {
+        const v = parseFloat(b.getFieldValue(field || 'SPEED')) || dflt;
+        return `, v${num(v)}`;
+    }
+
+    function convertBlock(b) {
+        switch (b.type) {
+            // ── Joint-space moves ────────────────────────────────────────
+            case 'move_joint': {
+                emit(`MoveJoint ${b.getFieldValue('JOINT')}, ${num(parseFloat(b.getFieldValue('ANGLE')))}${speedSuffix(b, 'SPEED', 40)};`);
+                break;
+            }
+            case 'move_all_joints': {
+                const values = [];
+                const bad = [];
+                let missing = 0;
+                for (let j = 1; j <= 6; j++) {
+                    if (!b.getInputTargetBlock('JOINT' + j)) { values.push(null); missing++; continue; }
+                    const v = inputToRapid(b, 'JOINT' + j);
+                    if (v === null) bad.push(`joint ${j} (${describeValue(b, 'JOINT' + j)})`);
+                    values.push(v);
+                }
+                if (bad.length) { skip(`Move All Joints — can't convert ${bad.join(', ')}`); break; }
+                if (missing === 6) { emit('! Move All Joints with no joint values'); break; }
+                if (missing === 0) {
+                    emit(`MoveAbsJ [[${values.join(', ')}]]${speedSuffix(b, 'SPEED', 40)};`);
+                } else {
+                    // MoveAbsJ needs all six angles; move the given joints one at a time instead
+                    emit(`! Move All Joints with ${6 - missing} joint(s) set — moved one joint at a time`);
+                    values.forEach((v, i) => { if (v !== null) emit(`MoveJoint ${i + 1}, ${v}${speedSuffix(b, 'SPEED', 40)};`); });
+                }
+                break;
+            }
+            case 'move_to_position': {
+                const slot = parseInt(b.getFieldValue('POSITION'), 10);
+                const pos = (typeof getPosition === 'function') ? getPosition(slot) : null;
+                emit(`MoveToPos ${slot}${speedSuffix(b, 'SPEED', 40)};${pos && pos.label ? ` ! ${pos.label}` : ''}`);
+                break;
+            }
+
+            // ── Cartesian moves ──────────────────────────────────────────
+            case 'move_xyz':
+            case 'move_xyz_offset': {
+                const names = b.type === 'move_xyz' ? ['X', 'Y', 'Z'] : ['DX', 'DY', 'DZ'];
+                const vals = names.map(n => inputToRapid(b, n));
+                if (vals.some(v => v === null)) {
+                    const bad = names.filter((n, i) => vals[i] === null).map(n => `${n} (${describeValue(b, n)})`);
+                    skip(`${b.type === 'move_xyz' ? 'Move TCP to XYZ' : 'Move TCP by offset'} — can't convert ${bad.join(', ')}`);
+                    break;
+                }
+                emit(`${b.type === 'move_xyz' ? 'MoveLXYZ' : 'MoveLOffs'} [[${vals.join(', ')}]]${speedSuffix(b, 'SPEED', 40)};`);
+                break;
+            }
+            case 'set_tool_orientation': {
+                const ox = parseFloat(b.getFieldValue('ORI_X')) || 0;
+                const oy = parseFloat(b.getFieldValue('ORI_Y')) || 0;
+                const oz = parseFloat(b.getFieldValue('ORI_Z')) || 0;
+                const rot = parseFloat(b.getFieldValue('ORI_ROTATION')) || 0;
+                emit(`SetToolOri [[${num(ox, 3)}, ${num(oy, 3)}, ${num(oz, 3)}], ${num(rot)}];`);
+                break;
+            }
+
+            // ── Timing ───────────────────────────────────────────────────
+            case 'wait_seconds':
+                emit(`WaitTime ${num(parseFloat(b.getFieldValue('SECONDS')) || 0)};`);
+                break;
+            case 'wait_until_stopped':
+            case 'wait_until_all_stopped':
+                emit('! (RAPID moves already wait for motion to finish)');
+                break;
+
+            // ── Motion control ───────────────────────────────────────────
+            case 'set_acceleration':
+                emit(`SetAcc ${b.getFieldValue('JOINT')}, ${parseInt(b.getFieldValue('ACCELERATION'), 10) || 5};`);
+                break;
+            case 'stop_joint':
+                emit(`! Stop Joint ${b.getFieldValue('JOINT')} — not needed, RAPID moves run to completion`);
+                break;
+            case 'stop_all':
+                emit('! Stop All Joints — not needed, RAPID moves run to completion');
+                break;
+            case 'set_servo':
+                skip(`Set Servo on Joint ${b.getFieldValue('JOINT')} has no RAPID equivalent`);
+                break;
+
+            // ── End tool ─────────────────────────────────────────────────
+            case 'gripper_open':  emit('GripperOpen;'); break;
+            case 'gripper_close': emit('GripperClose;'); break;
+            case 'pump_on':       emit('PumpOn;'); break;
+            case 'pump_off':      emit('PumpOff;'); break;
+            case 'solenoid_on':   emit('SolenoidOn;'); break;
+            case 'solenoid_off':  emit('SolenoidOff;'); break;
+            case 'end_tool_servo':
+                emit(`ServoTo ${parseInt(b.getFieldValue('ANGLE'), 10) || 0};`);
+                break;
+
+            // ── Vision ───────────────────────────────────────────────────
+            case 'save_block_to_position': {
+                const idx  = inputToRapid(b, 'INDEX');
+                const slot = inputToRapid(b, 'SLOT');
+                const z    = inputToRapid(b, 'Z');
+                if (idx === null || slot === null) { skip('Save block to position — index and slot can\'t be converted'); break; }
+                emit(`SaveBlockToPos ${idx}, ${slot}${z === null ? '' : ', ' + z};`);
+                break;
+            }
+
+            // ── Variables ────────────────────────────────────────────────
+            case 'variables_set': {
+                const name = blockVarName(b);
+                const v = inputToRapid(b, 'VALUE');
+                if (v === null) { skip(`set ${name} — value (${describeValue(b, 'VALUE')}) can't be converted`); break; }
+                emit(`${rapidName(name)} := ${v};`);
+                break;
+            }
+            case 'math_change': {
+                const name = blockVarName(b);
+                const v = inputToRapid(b, 'DELTA');
+                if (v === null) { skip(`change ${name} — amount (${describeValue(b, 'DELTA')}) can't be converted`); break; }
+                emit(`${rapidName(name)} := ${rapidName(name)} + ${v};`);
+                break;
+            }
+
+            // ── Loops ────────────────────────────────────────────────────
+            case 'controls_repeat_ext':
+            case 'controls_repeat': {
+                let count = b.type === 'controls_repeat'
+                    ? String(parseInt(b.getFieldValue('TIMES'), 10) || 0)
+                    : inputToRapid(b, 'TIMES');
+                if (count === null) {
+                    warn(`repeat count (${describeValue(b, 'TIMES')}) can't be converted — using 10`);
+                    count = '10';
+                }
+                const counter = tempName('rep');
+                emitLoop(`FOR ${counter} FROM 1 TO ${count} DO`, b.getInputTargetBlock('DO'), 'ENDFOR', `Repeat ${count} times`);
+                break;
+            }
+            case 'controls_whileUntil': {
+                const until = b.getFieldValue('MODE') === 'UNTIL';
+                const condBlock = b.getInputTargetBlock('BOOL');
+                let cond = conditionToRapid(condBlock);
+                if (cond === null) {
+                    warn(`${until ? 'repeat until' : 'repeat while'} condition (${condBlock ? `"${condBlock.type}" block` : 'empty'}) can't be converted — looping 10 times instead`);
+                    emitLoop(`FOR ${tempName('rep')} FROM 1 TO 10 DO`, b.getInputTargetBlock('DO'), 'ENDFOR');
+                    break;
+                }
+                if (until) cond = cond === 'TRUE' ? 'FALSE' : cond === 'FALSE' ? 'TRUE' : `NOT (${cond})`;
+                if (cond === 'TRUE') {
+                    emit('! Endless loop (Blockly "repeat while true") — press Stop to end it,');
+                    emit('! or change TRUE to a condition such as count < 10.');
+                }
+                emitLoop(`WHILE ${cond} DO`, b.getInputTargetBlock('DO'), 'ENDWHILE');
+                break;
+            }
+            case 'controls_for': {
+                const name = rapidName(blockVarName(b));
+                const from = inputToRapid(b, 'FROM');
+                const to   = inputToRapid(b, 'TO');
+                const by   = inputToRapid(b, 'BY');
+                if (from === null || to === null || by === null) {
+                    warn(`count with ${name} — from/to/by can't all be converted — looping 10 times instead`);
+                    emitLoop(`FOR ${name} FROM 1 TO 10 DO`, b.getInputTargetBlock('DO'), 'ENDFOR');
+                    break;
+                }
+                const step = (by === '1') ? '' : ` STEP ${by}`;
+                emitLoop(`FOR ${name} FROM ${from} TO ${to}${step} DO`, b.getInputTargetBlock('DO'), 'ENDFOR');
+                break;
+            }
+            case 'controls_forEach':
+                skip('for each item in list — RAPID subset has no lists; its contents were skipped');
+                break;
+            case 'controls_flow_statements': {
+                const flow = b.getFieldValue('FLOW');
+                const ctx = loopStack[loopStack.length - 1];
+                if (!ctx) { skip(`${flow === 'BREAK' ? 'break' : 'continue'} outside a loop`); break; }
+                if (flow === 'BREAK') { ctx.breakUsed = true; emit(`GOTO ${ctx.breakLabel}; ! break out of loop`); }
+                else { ctx.continueUsed = true; emit(`GOTO ${ctx.continueLabel}; ! continue with next iteration`); }
+                break;
+            }
+
+            // ── Conditionals ─────────────────────────────────────────────
+            case 'controls_if':
+            case 'controls_ifelse': {
+                let n = 0;
+                let opened = false;
+                while (b.getInput('IF' + n)) {
+                    const condBlock = b.getInputTargetBlock('IF' + n);
+                    const cond = conditionToRapid(condBlock);
+                    if (cond === null) {
+                        skip(`${n === 0 ? 'if' : 'else if'} condition (${condBlock ? `"${condBlock.type}" block` : 'empty'}) can't be converted — this branch was skipped`);
+                    } else {
+                        emit(`${opened ? 'ELSEIF' : 'IF'} ${cond} THEN`);
+                        opened = true;
+                        walkBody(b.getInputTargetBlock('DO' + n));
+                    }
+                    n++;
+                }
+                if (b.getInput('ELSE')) {
+                    if (opened) { emit('ELSE'); walkBody(b.getInputTargetBlock('ELSE')); }
+                    else { emit('! else (no convertible condition before it — runs unconditionally)'); walkChain(b.getInputTargetBlock('ELSE')); }
+                }
+                if (opened) emit('ENDIF');
+                break;
+            }
+
+            case 'text_print': {
+                const t = b.getInputTargetBlock('TEXT');
+                if (t && t.type === 'text') emit(`TPWrite "${t.getFieldValue('TEXT').replace(/"/g, '\'')}";`);
+                else {
+                    const v = valueToRapid(t);
+                    if (v === null) skip('print — value can\'t be converted');
+                    else emit(`TPWrite "" \\Num:=${v};`);
+                }
+                break;
+            }
+
+            default:
+                skip(`"${b.type}" block has no RAPID equivalent`);
+                break;
+        }
+    }
+
+    for (const top of topBlocks) {
+        if (topBlocks.length > 1) emit(`! --- block stack ${topBlocks.indexOf(top) + 1} of ${topBlocks.length} ---`);
+        walkChain(top);
     }
 
     let rapid = '! RAPID program converted from Blockly\n';
-    rapid += '! Generated automatically - review before running\n\n';
+    rapid += '! Generated automatically - review before running\n';
+    if (warnings.length) rapid += `! ${warnings.length} WARNING(S) — search for "WARNING"\n`;
+    if (notConverted.length) rapid += `! ${notConverted.length} block(s) could not be converted — search for "NOT CONVERTED"\n`;
 
-    // Track current joint angles for relative moves
-    let currentAngles = [0, 0, 0, 0, 0];
-    let lineNumber = 0;
-
-    // Split code into lines and process each
-    const lines = blocklyCode.split('\n');
-
-    for (let i = 0; i < lines.length; i++) {
-        let line = lines[i].trim();
-        if (line === '') continue;
-
-        // Skip Blockly-specific function calls
-        if (line.includes('highlightBlocklyBlock') || 
-            line.includes('checkBlocklyPauseStop') ||
-            line.includes('appendBlocklyOutput') ||
-            line.includes('getNumJoints') ||
-            line.includes('robotArmClient.getStatus') ||
-            line.includes('moveJointsToAnglesWithDeadZones') ||
-            line.includes('planSafePathAroundDeadZones') ||
-            line.includes('robotKinematics.inverseKinematics')) {
-            continue;
-        }
-
-        // Convert move_joint: robotArmClient.moveJoint(joint, angle, speed)
-        const moveJointMatch = line.match(/robotArmClient\.moveJoint\((\d+),\s*([-\d.]+),\s*([-\d.]+)\)/);
-        if (moveJointMatch) {
-            const jointIndex = parseInt(moveJointMatch[1]) - 1; // Convert to 0-based
-            const angle = parseFloat(moveJointMatch[2]);
-            currentAngles[jointIndex] = angle;
-            rapid += `MoveJ [[${currentAngles[0]},${currentAngles[1]},${currentAngles[2]},${currentAngles[3]},${currentAngles[4]}]];\n`;
-            continue;
-        }
-
-        // Convert move_all_joints: targetAngles array
-        const moveAllMatch = line.match(/const\s+targetAngles\s*=\s*\[([^\]]+)\]/);
-        if (moveAllMatch) {
-            const anglesStr = moveAllMatch[1];
-            const angles = anglesStr.split(',').map(a => parseFloat(a.trim()));
-            currentAngles = angles.slice(0, 5); // Take first 5
-            while (currentAngles.length < 5) currentAngles.push(0);
-            rapid += `MoveJ [[${currentAngles[0]},${currentAngles[1]},${currentAngles[2]},${currentAngles[3]},${currentAngles[4]}]];\n`;
-            continue;
-        }
-
-        // Convert stop_joint: robotArmClient.stopJoint(joint)
-        const stopJointMatch = line.match(/robotArmClient\.stopJoint\((\d+)\)/);
-        if (stopJointMatch) {
-            rapid += `! Stop Joint ${stopJointMatch[1]}\n`;
-            rapid += `WaitTime 0.1;\n`;
-            continue;
-        }
-
-        // Convert stop_all: robotArmClient.stopAllJoints()
-        if (line.includes('robotArmClient.stopAllJoints()')) {
-            rapid += '! Stop all joints\n';
-            rapid += 'WaitTime 0.1;\n';
-            continue;
-        }
-
-        // Convert set_acceleration: robotArmClient.setAcceleration(joint, accel)
-        const setAccelMatch = line.match(/robotArmClient\.setAcceleration\((\d+),\s*(\d+)\)/);
-        if (setAccelMatch) {
-            rapid += `! Set acceleration for Joint ${setAccelMatch[1]} to ${setAccelMatch[2]}\n`;
-            rapid += `WaitTime 0.1;\n`;
-            continue;
-        }
-
-        // Convert set_servo: robotArmClient.setServoAngle(joint, angle)
-        const setServoMatch = line.match(/robotArmClient\.setServoAngle\((\d+),\s*([-\d.]+)\)/);
-        if (setServoMatch) {
-            rapid += `! Set servo on Joint ${setServoMatch[1]} to ${setServoMatch[2]}°\n`;
-            rapid += `WaitTime 0.1;\n`;
-            continue;
-        }
-
-        // Convert gripper_open: openGripper()
-        if (line.includes('openGripper()')) {
-            rapid += 'GripperOpen;\n';
-            continue;
-        }
-
-        // Convert gripper_close: closeGripper()
-        if (line.includes('closeGripper()')) {
-            rapid += 'GripperClose;\n';
-            continue;
-        }
-
-        // Convert pump_on/pump_off (vacuum = pump + solenoid)
-        if (line.includes('setVacuum(true)')) {
-            rapid += 'PumpOn;\n';
-            continue;
-        }
-        if (line.includes('setVacuum(false)')) {
-            rapid += 'PumpOff;\n';
-            continue;
-        }
-
-        // Convert solenoid_on / solenoid_off
-        if (line.includes('setEndToolSolenoidEnabled(true)')) {
-            rapid += 'SolenoidOn;\n';
-            continue;
-        }
-        if (line.includes('setEndToolSolenoidEnabled(false)')) {
-            rapid += 'SolenoidOff;\n';
-            continue;
-        }
-
-        // Convert end_tool_servo: moveEndToolServoTo(angle)
-        const servoToMatch = line.match(/moveEndToolServoTo\((\d+)\)/);
-        if (servoToMatch) {
-            rapid += `ServoTo ${servoToMatch[1]};\n`;
-            continue;
-        }
-
-        // Convert wait: setTimeout or Promise delay
-        const waitMatch = line.match(/setTimeout\(resolve,\s*(\d+)\)/);
-        if (waitMatch) {
-            const ms = parseInt(waitMatch[1]);
-            const seconds = (ms / 1000).toFixed(1);
-            rapid += `WaitTime ${seconds};\n`;
-            continue;
-        }
-
-        // Convert wait loops (simplified)
-        if (line.includes('while') && line.includes('elapsed') && line.includes('waitTime')) {
-            const waitTimeMatch = blocklyCode.match(/const\s+waitTime_\w+\s*=\s*(\d+)/);
-            if (waitTimeMatch) {
-                const ms = parseInt(waitTimeMatch[1]);
-                const seconds = (ms / 1000).toFixed(1);
-                rapid += `WaitTime ${seconds};\n`;
-            }
-        }
-
-        // Convert move to position (stored position)
-        const moveToPosMatch = blocklyCode.match(/targetAngles_pos_\w+\s*=\s*\[([^\]]+)\]/);
-        if (moveToPosMatch && !rapid.includes('targetAngles_pos_')) {
-            const anglesStr = moveToPosMatch[1];
-            const angles = anglesStr.split(',').map(a => parseFloat(a.trim()));
-            currentAngles = angles.slice(0, 5);
-            while (currentAngles.length < 5) currentAngles.push(0);
-            rapid += `MoveJ [[${currentAngles[0]},${currentAngles[1]},${currentAngles[2]},${currentAngles[3]},${currentAngles[4]}]];\n`;
+    // Declare every Blockly variable up front (RAPID needs VAR before use).
+    // Loop counters are declared by their FOR statements.
+    const userVars = Object.keys(rapidNames).filter(k => !k.startsWith('('));
+    if (userVars.length) {
+        rapid += '\n! Variables\n';
+        for (const k of userVars) {
+            rapid += `VAR num ${rapidNames[k]} := 0;${rapidNames[k] !== k ? ` ! Blockly variable "${k}"` : ''}\n`;
         }
     }
-
-    // Add program end comment
-    rapid += '\n! Program end\n';
-
+    rapid += '\n' + out.join('\n') + '\n\n! Program end\n';
     return rapid;
 }
 
@@ -2886,16 +3138,14 @@ function convertBlocklyToRapidAndOpen() {
         return;
     }
 
-    // Generate JavaScript code from blocks
-    const blocklyCode = generateBlocklyCode();
-    
-    if (!blocklyCode || blocklyCode.trim() === '') {
+    if (blocklyWorkspace.getTopBlocks(false).length === 0) {
         showAppMessage('No blocks in workspace. Add some blocks to create a program.');
         return;
     }
 
-    // Convert to RAPID
-    const rapid = convertBlocklyToRapid(blocklyCode);
+    // Convert to RAPID (walks the block tree directly)
+    const rapid = convertBlocklyToRapid(blocklyWorkspace);
+    const notConverted = (rapid.match(/! NOT CONVERTED:/g) || []).length;
 
     // Switch to RAPID tab
     switchToTab('rapid');
@@ -2905,7 +3155,9 @@ function convertBlocklyToRapidAndOpen() {
         const rapidTextarea = document.getElementById('rapidContent');
         if (rapidTextarea) {
             rapidTextarea.value = rapid;
-            showAppMessage('Blockly program converted to RAPID and loaded');
+            showAppMessage(notConverted
+                ? `Converted to RAPID — ${notConverted} block(s) could not be converted, see "NOT CONVERTED" comments`
+                : 'Blockly program converted to RAPID and loaded');
         }
     }, 100);
 }

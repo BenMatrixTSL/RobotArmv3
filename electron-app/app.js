@@ -6003,6 +6003,15 @@ WaitTime 2;
 ! Turn on a (simulated) digital output 1
 SetDO 1, 1;
 
+! Loop: wave joint 1 three times using a variable
+VAR num count := 0;
+WHILE count < 3 DO
+  MoveAbsJ [[20,0,0,0,0,0]], v60;
+  MoveAbsJ [[-20,0,0,0,0,0]], v60;
+  count := count + 1;
+  TPWrite "Wave " \\Num:=count;
+ENDWHILE
+
 ! Return to home
 Home;`;
 
@@ -6019,21 +6028,18 @@ Home;`;
  * @param {string} line - RAPID source line
  * @returns {Array<number>|null}
  */
-function parseRapidMoveJ(line) {
+async function parseRapidMoveJ(line) {
     if (!line) {
         return null;
     }
 
-    // Basic format: MoveJ [[a,b,c,d,e]];
+    // Basic format: MoveJ [[a,b,c,d,e]];  — each entry may be an expression
     const moveMatch = line.match(/MoveJ\s*\[\s*\[\s*([^\]]+)\s*\]\s*\]/i);
     if (!moveMatch) {
         return null;
     }
 
-    const inside = moveMatch[1];
-    const parts = inside.split(',').map(function (p) {
-        return parseFloat(p.trim());
-    });
+    const parts = await rapidProcessor.evaluateList(moveMatch[1]);
 
     if (parts.length === 0) {
         return null;
@@ -6078,7 +6084,7 @@ function parseRapidSpeedMmPerSec(line) {
     return (isFinite(v) && v > 0) ? v : RAPID_DEFAULT_TIP_MM_PER_SEC;
 }
 
-function parseRapidXYZ(line, keyword) {
+async function parseRapidXYZ(line, keyword) {
     if (!line) {
         return null;
     }
@@ -6089,10 +6095,8 @@ function parseRapidXYZ(line, keyword) {
         return null;
     }
 
-    const inside = match[1];
-    const parts = inside.split(',').map(function (p) {
-        return parseFloat(p.trim());
-    });
+    // Each entry may be an expression using RAPID variables
+    const parts = await rapidProcessor.evaluateList(match[1]);
 
     if (parts.length < 3) {
         return null;
@@ -6112,16 +6116,20 @@ function parseRapidXYZ(line, keyword) {
 
 /**
  * Runs the RAPID program written in the RAPID editor.
- * Supports:
- *   - Comment lines starting with "!"
- *   - MoveJ [[J1,J2,J3,J4,J5]];
- *   - MoveAbsJ [[J1,J2,J3,J4,J5]];
- *   - MoveJOffs [[dJ1,dJ2,dJ3,dJ4,dJ5]];
- *   - MoveLXYZ [[X,Y,Z]];
- *   - MoveLOffs [[dX,dY,dZ]];
- *   - WaitTime t;
- *   - SetDO n, v;
- *   - Home;
+ *
+ * Language features (variables, WHILE/FOR/IF, GOTO, expressions) live in
+ * rapidProcessor.js; this file executes the arm commands:
+ *   - MoveJ / MoveAbsJ [[J1..J6]][, v<deg/s>];
+ *   - MoveJOffs [[dJ1..dJ6]][, v<deg/s>];
+ *   - MoveToPos <slot>[, v<deg/s>];        (stored position)
+ *   - MoveLXYZ [[X,Y,Z]][, v<mm/s>];
+ *   - MoveLOffs [[dX,dY,dZ]][, v<mm/s>];
+ *   - SetToolOri [[ux,uy,uz]][,rot];
+ *   - WaitTime t;   SetAcc j, a;   SetDO n, v;   Home;
+ *   - GripperOpen/GripperClose; PumpOn/PumpOff; SolenoidOn/SolenoidOff; ServoTo a;
+ *   - GetBlockCount;  SaveBlockToPos i, slot[, z];
+ * Every numeric argument may be an expression using variables, e.g.
+ *   MoveAbsJ [[i * 10, 0, 20, 0, 0, 0]], v60;
  */
 async function runRapidProgram() {
     if (!robotArmClient || !robotArmClient.isConnected) {
@@ -6135,426 +6143,530 @@ async function runRapidProgram() {
         return;
     }
 
-    const source = textarea.value || '';
-    const lines = source.split(/\r?\n/);
-
-    if (lines.length === 0) {
-        showAppMessage('No RAPID code to run.');
+    if (rapidProcessor.isRunning) {
+        showAppMessage('A RAPID program is already running — press Stop first.');
         return;
     }
 
-    const numJoints = getNumJoints();
-
-    // Fixed speed for now (degrees per second)
-    const speedDegreesPerSecond = 40;
-    let speedStepsPerSecond;
-    if (typeof degreesPerSecondToStepsPerSecond === 'function') {
-        speedStepsPerSecond = degreesPerSecondToStepsPerSecond(speedDegreesPerSecond);
-    } else if (typeof window !== 'undefined' && typeof window.degreesPerSecondToStepsPerSecond === 'function') {
-        speedStepsPerSecond = window.degreesPerSecondToStepsPerSecond(speedDegreesPerSecond);
-    } else {
-        speedStepsPerSecond = Math.round(speedDegreesPerSecond * 11.37);
+    try {
+        const info = rapidProcessor.load(textarea.value || '');
+        if (info.statements === 0) {
+            showAppMessage('No RAPID code to run.');
+            return;
+        }
+    } catch (e) {
+        setRapidStatus('Error: ' + e.message, true);
+        showAppMessage('RAPID: ' + e.message);
+        return;
     }
 
-    console.log('Starting RAPID program...');
+    // Functions usable inside RAPID expressions
+    rapidProcessor.functions = {
+        getblockcount: async () => getDetectedBlockCount(),
+        getblockx: async (args) => getDetectedBlockXAt(Math.round(args[0] || 0)),
+        getblocky: async (args) => getDetectedBlockYAt(Math.round(args[0] || 0)),
+    };
+    rapidProcessor.onLog = (m) => setRapidStatus(m);
+    rapidProcessor.onLineChange = (lineNumber) => {
+        const el = document.getElementById('rapidCurrentLine');
+        if (el) el.textContent = String(lineNumber);
+    };
 
-    for (let i = 0; i < lines.length; i++) {
-        let line = lines[i];
-        if (!line) {
-            continue;
+    updateRapidButtonStates(true);
+    try {
+        await rapidProcessor.start(executeRapidCommand);
+    } finally {
+        updateRapidButtonStates(false);
+    }
+}
+
+function stopRapidProgram() {
+    if (!rapidProcessor.isRunning) return;
+    rapidProcessor.stop();
+    if (robotArmClient && robotArmClient.isConnected && typeof robotArmClient.stopAllJoints === 'function') {
+        try { robotArmClient.stopAllJoints(); } catch (e) { /* best effort */ }
+    }
+    setRapidStatus('Stop requested…');
+}
+
+function setRapidStatus(message, isError) {
+    const el = document.getElementById('rapidStatus');
+    if (el) {
+        el.textContent = message;
+        el.style.color = isError ? '#c00' : '';
+    }
+    const logEl = document.getElementById('rapidOutput');
+    if (logEl && typeof appendCappedLog === 'function') {
+        appendCappedLog(logEl, `[${new Date().toLocaleTimeString()}] ${message}`);
+    }
+}
+
+function updateRapidButtonStates(running) {
+    const runBtn = document.getElementById('rapidRunButton');
+    const stopBtn = document.getElementById('rapidStopButton');
+    if (runBtn) runBtn.disabled = !!running;
+    if (stopBtn) stopBtn.disabled = !running;
+}
+
+/**
+ * Default joint speed for RAPID joint moves when no ", v<deg/s>" is given.
+ */
+const RAPID_DEFAULT_JOINT_DEG_PER_SEC = 40;
+
+/**
+ * Joint speed (deg/s) from an optional trailing ", v<number>" on a joint move.
+ * @param {string} line
+ * @returns {number}
+ */
+function parseRapidJointSpeed(line) {
+    const m = String(line || '').match(/\]\s*\]\s*,\s*v\s*(\d+(?:\.\d+)?)/i);
+    const v = m ? parseFloat(m[1]) : NaN;
+    return (isFinite(v) && v > 0) ? v : RAPID_DEFAULT_JOINT_DEG_PER_SEC;
+}
+
+/**
+ * Executes one RAPID arm command. Called by rapidProcessor for every
+ * statement that is not control flow or a variable operation.
+ * @param {{keyword: string, line: string, lineNumber: number}} stmt
+ */
+async function executeRapidCommand(stmt) {
+    const line = stmt.line;
+    const lineNumber = stmt.lineNumber;
+    const numJoints = getNumJoints();
+    const speedDegreesPerSecond = parseRapidJointSpeed(line);
+    const speedStepsPerSecond = degreesPerSecondToStepsPerSecond(speedDegreesPerSecond);
+
+    // Absolute joint move: MoveJ and MoveAbsJ
+    if (/^MoveJ\b/i.test(line) || /^MoveAbsJ\b/i.test(line)) {
+        const angles = await parseRapidMoveJ(line);
+        if (!angles) {
+            console.warn('RAPID: Could not parse MoveJ/MoveAbsJ on line', lineNumber, ':', line);
+            return;
         }
 
-        line = line.trim();
-
-        // Skip empty lines and comments
-        if (line.length === 0 || line.startsWith('!')) {
-            continue;
-        }
-
-        // Absolute joint move: MoveJ and MoveAbsJ
-        if (/^MoveJ\b/i.test(line) || /^MoveAbsJ\b/i.test(line)) {
-            const angles = parseRapidMoveJ(line);
-            if (!angles) {
-                console.warn('RAPID: Could not parse MoveJ/MoveAbsJ on line', i + 1, ':', line);
-                continue;
+        console.log('RAPID: MoveJ/MoveAbsJ on line', lineNumber, 'angles:', angles);
+        
+        // Use dead-zone-aware joint movement helper
+        const targetAngles = [];
+        for (let j = 0; j < numJoints; j++) {
+            if (typeof angles[j] === 'number' && !isNaN(angles[j])) {
+                targetAngles.push(angles[j]);
+            } else {
+                targetAngles.push(0);
             }
+        }
+        await moveJointsToAnglesWithDeadZones(targetAngles, speedDegreesPerSecond);
+    } else if (/^MoveJOffs\b/i.test(line)) {
+        // Incremental joint move: offsets added to current joint angles
+        const offsets = await parseRapidMoveJ(line);
+        if (!offsets) {
+            console.warn('RAPID: Could not parse MoveJOffs on line', lineNumber, ':', line);
+            return;
+        }
 
-            console.log('RAPID: MoveJ/MoveAbsJ on line', i + 1, 'angles:', angles);
-            
-            // Use dead-zone-aware joint movement helper
-            const targetAngles = [];
+        console.log('RAPID: MoveJOffs on line', lineNumber, 'offsets:', offsets);
+
+        let currentAngles = new Array(numJoints).fill(0);
+        try {
+            const status = await robotArmClient.getStatus();
             for (let j = 0; j < numJoints; j++) {
-                if (typeof angles[j] === 'number' && !isNaN(angles[j])) {
-                    targetAngles.push(angles[j]);
-                } else {
-                    targetAngles.push(0);
+                if (status[j] && typeof status[j].angleDegrees === 'number') {
+                    currentAngles[j] = status[j].angleDegrees;
                 }
             }
-            await moveJointsToAnglesWithDeadZones(targetAngles, speedDegreesPerSecond);
-        } else if (/^MoveJOffs\b/i.test(line)) {
-            // Incremental joint move: offsets added to current joint angles
-            const offsets = parseRapidMoveJ(line);
-            if (!offsets) {
-                console.warn('RAPID: Could not parse MoveJOffs on line', i + 1, ':', line);
-                continue;
+        } catch (err) {
+            console.warn('RAPID: Failed to read current joint angles for MoveJOffs, using zeros:', err);
+        }
+
+        const targetAngles = [];
+        for (let j = 0; j < numJoints; j++) {
+            const offset = typeof offsets[j] === 'number' && !isNaN(offsets[j]) ? offsets[j] : 0;
+            targetAngles.push(currentAngles[j] + offset);
+        }
+        
+        // Use dead-zone-aware joint movement helper
+        await moveJointsToAnglesWithDeadZones(targetAngles, speedDegreesPerSecond);
+    } else if (/^MoveLXYZ\b/i.test(line)) {
+        // Cartesian move to an absolute XYZ position in mm
+        if (!robotKinematics.isConfigured()) {
+            console.warn('RAPID: Kinematics not configured, cannot run MoveLXYZ.');
+            return;
+        }
+
+        const xyz = await parseRapidXYZ(line, 'MoveLXYZ');
+        if (!xyz) {
+            console.warn('RAPID: Could not parse MoveLXYZ on line', lineNumber, ':', line);
+            return;
+        }
+
+        const targetPose = { x: xyz[0], y: xyz[1], z: xyz[2] };
+        const rapidTipMmPerSec = parseRapidSpeedMmPerSec(line);
+        console.log('RAPID: MoveLXYZ on line', lineNumber, 'target XYZ:', targetPose, 'at', rapidTipMmPerSec, 'mm/s');
+
+        // Get current XYZ from the UI as a starting pose
+        const _cp1 = getCurrentDisplayXYZ();
+        const startPose = {
+            x: isFinite(_cp1.x) ? _cp1.x : targetPose.x,
+            y: isFinite(_cp1.y) ? _cp1.y : targetPose.y,
+            z: isFinite(_cp1.z) ? _cp1.z : targetPose.z,
+        };
+
+        const waypointsRapid = insertApproachWaypoints(planSafePathAroundDeadZones(startPose, targetPose, deadZones, safeZHeight), startPose);
+        if (!waypointsRapid) {
+            console.warn('RAPID: MoveLXYZ target lies inside a dead zone. Move cancelled.');
+            return;
+        }
+
+        // MoveLXYZ — linear Cartesian if mode is 'linear' and we have control
+        if (movementMode === 'linear' && robotArmClient.hasArmControl) {
+            let prevRapidAngles = null;
+            try {
+                const st0 = await robotArmClient.getStatus();
+                prevRapidAngles = st0.map(j => (j && typeof j.angleDegrees === 'number') ? j.angleDegrees : 0);
+            } catch (e) { prevRapidAngles = null; }
+            for (let w = 0; w < waypointsRapid.length; w++) {
+                const wp = waypointsRapid[w];
+                if (!prevRapidAngles) break;
+                const ok = await executeLinearMoveToXYZ(wp, prevRapidAngles);
+                if (!ok) break;
+                try { const st = await robotArmClient.getStatus(); prevRapidAngles = st.map(j => (j && typeof j.angleDegrees === 'number') ? j.angleDegrees : 0); } catch (e) {}
             }
+            return;
+        }
 
-            console.log('RAPID: MoveJOffs on line', i + 1, 'offsets:', offsets);
+        for (let w = 0; w < waypointsRapid.length; w++) {
+            const wp = waypointsRapid[w];
 
-            let currentAngles = new Array(numJoints).fill(0);
+            // Try to get a starting guess from the real robot
+            let initialAngles = null;
             try {
                 const status = await robotArmClient.getStatus();
+                initialAngles = [];
                 for (let j = 0; j < numJoints; j++) {
                     if (status[j] && typeof status[j].angleDegrees === 'number') {
-                        currentAngles[j] = status[j].angleDegrees;
+                        initialAngles.push(status[j].angleDegrees);
+                    } else {
+                        initialAngles.push(0);
                     }
                 }
             } catch (err) {
-                console.warn('RAPID: Failed to read current joint angles for MoveJOffs, using zeros:', err);
+                console.warn('RAPID: Failed to get status for MoveLXYZ starting guess, using zeros:', err);
+                initialAngles = null;
             }
 
-            const targetAngles = [];
-            for (let j = 0; j < numJoints; j++) {
-                const offset = typeof offsets[j] === 'number' && !isNaN(offsets[j]) ? offsets[j] : 0;
-                targetAngles.push(currentAngles[j] + offset);
+            // First solve for position (and orientation), then refine.
+            let baseAngles = null;
+            let jointAngles = null;
+
+            if (!robotKinematics || !robotKinematics.isConfigured()) {
+                console.warn('RAPID: Kinematics not configured. Load joint configurations first.');
+                break;
             }
-            
-            // Use dead-zone-aware joint movement helper
-            await moveJointsToAnglesWithDeadZones(targetAngles, speedDegreesPerSecond);
-        } else if (/^MoveLXYZ\b/i.test(line)) {
-            // Cartesian move to an absolute XYZ position in mm
-            if (!robotKinematics.isConfigured()) {
-                console.warn('RAPID: Kinematics not configured, cannot run MoveLXYZ.');
-                continue;
-            }
-
-            const xyz = parseRapidXYZ(line, 'MoveLXYZ');
-            if (!xyz) {
-                console.warn('RAPID: Could not parse MoveLXYZ on line', i + 1, ':', line);
-                continue;
-            }
-
-            const targetPose = { x: xyz[0], y: xyz[1], z: xyz[2] };
-            const rapidTipMmPerSec = parseRapidSpeedMmPerSec(line);
-            console.log('RAPID: MoveLXYZ on line', i + 1, 'target XYZ:', targetPose, 'at', rapidTipMmPerSec, 'mm/s');
-
-            // Get current XYZ from the UI as a starting pose
-            const _cp1 = getCurrentDisplayXYZ();
-            const startPose = {
-                x: isFinite(_cp1.x) ? _cp1.x : targetPose.x,
-                y: isFinite(_cp1.y) ? _cp1.y : targetPose.y,
-                z: isFinite(_cp1.z) ? _cp1.z : targetPose.z,
-            };
-
-            const waypointsRapid = insertApproachWaypoints(planSafePathAroundDeadZones(startPose, targetPose, deadZones, safeZHeight), startPose);
-            if (!waypointsRapid) {
-                console.warn('RAPID: MoveLXYZ target lies inside a dead zone. Move cancelled.');
-                continue;
-            }
-
-            // MoveLXYZ — linear Cartesian if mode is 'linear' and we have control
-            if (movementMode === 'linear' && robotArmClient.hasArmControl) {
-                let prevRapidAngles = null;
-                try {
-                    const st0 = await robotArmClient.getStatus();
-                    prevRapidAngles = st0.map(j => (j && typeof j.angleDegrees === 'number') ? j.angleDegrees : 0);
-                } catch (e) { prevRapidAngles = null; }
-                for (let w = 0; w < waypointsRapid.length; w++) {
-                    const wp = waypointsRapid[w];
-                    if (!prevRapidAngles) break;
-                    const ok = await executeLinearMoveToXYZ(wp, prevRapidAngles);
-                    if (!ok) break;
-                    try { const st = await robotArmClient.getStatus(); prevRapidAngles = st.map(j => (j && typeof j.angleDegrees === 'number') ? j.angleDegrees : 0); } catch (e) {}
-                }
-                continue; // next RAPID line
-            }
-
-            for (let w = 0; w < waypointsRapid.length; w++) {
-                const wp = waypointsRapid[w];
-
-                // Try to get a starting guess from the real robot
-                let initialAngles = null;
-                try {
-                    const status = await robotArmClient.getStatus();
-                    initialAngles = [];
-                    for (let j = 0; j < numJoints; j++) {
-                        if (status[j] && typeof status[j].angleDegrees === 'number') {
-                            initialAngles.push(status[j].angleDegrees);
-                        } else {
-                            initialAngles.push(0);
-                        }
-                    }
-                } catch (err) {
-                    console.warn('RAPID: Failed to get status for MoveLXYZ starting guess, using zeros:', err);
-                    initialAngles = null;
-                }
-
-                // First solve for position (and orientation), then refine.
-                let baseAngles = null;
-                let jointAngles = null;
-
-                if (!robotKinematics || !robotKinematics.isConfigured()) {
-                    console.warn('RAPID: Kinematics not configured. Load joint configurations first.');
-                    break;
-                }
-                baseAngles = robotKinematics.inverseKinematics(
-                    { x: wp.x, y: wp.y, z: wp.z, orientation: currentToolOrientation },
+            baseAngles = robotKinematics.inverseKinematics(
+                { x: wp.x, y: wp.y, z: wp.z, orientation: currentToolOrientation },
+                initialAngles
+            );
+            if (baseAngles) {
+                const refined = robotKinematics.refineOrientationWithAccuracy(
+                    { x: wp.x, y: wp.y, z: wp.z },
+                    baseAngles,
+                    currentToolOrientation,
                     initialAngles
                 );
-                if (baseAngles) {
-                    const refined = robotKinematics.refineOrientationWithAccuracy(
-                        { x: wp.x, y: wp.y, z: wp.z },
-                        baseAngles,
-                        currentToolOrientation,
-                        initialAngles
-                    );
-                    jointAngles = refined && Array.isArray(refined.angles) ? refined.angles : null;
-                }
+                jointAngles = refined && Array.isArray(refined.angles) ? refined.angles : null;
+            }
 
-                if (!jointAngles) {
-                    console.warn('RAPID: MoveLXYZ IK failed for waypoint', wp);
-                    break;
-                }
+            if (!jointAngles) {
+                console.warn('RAPID: MoveLXYZ IK failed for waypoint', wp);
+                break;
+            }
 
-                // `jointAngles` now contains the final IK solution — dispatch at the
-                // requested tool-tip speed (mm/s) with all joints arriving together.
-                const segStart = w === 0 ? startPose : waypointsRapid[w - 1];
-                const segMm = Math.hypot(wp.x - segStart.x, wp.y - segStart.y, wp.z - segStart.z);
-                const segMmPerSec = wp.approach ? Math.min(rapidTipMmPerSec, APPROACH_SPEED_MM_PER_S) : rapidTipMmPerSec;
-                if (wp.approach) await new Promise(resolve => setTimeout(resolve, APPROACH_SETTLE_MS));
-                const rapidSpeeds = computeTipSpeeds(initialAngles || null, jointAngles, segMm, segMmPerSec);
-                const rapidPromises = [];
+            // `jointAngles` now contains the final IK solution — dispatch at the
+            // requested tool-tip speed (mm/s) with all joints arriving together.
+            const segStart = w === 0 ? startPose : waypointsRapid[w - 1];
+            const segMm = Math.hypot(wp.x - segStart.x, wp.y - segStart.y, wp.z - segStart.z);
+            const segMmPerSec = wp.approach ? Math.min(rapidTipMmPerSec, APPROACH_SPEED_MM_PER_S) : rapidTipMmPerSec;
+            if (wp.approach) await new Promise(resolve => setTimeout(resolve, APPROACH_SETTLE_MS));
+            const rapidSpeeds = computeTipSpeeds(initialAngles || null, jointAngles, segMm, segMmPerSec);
+            const rapidPromises = [];
+            for (let j = 0; j < numJoints; j++) {
+                const targetAngle = jointAngles[j];
+                if (typeof targetAngle === 'number' && !isNaN(targetAngle)) {
+                    rapidPromises.push(robotArmClient.moveJoint(j + 1, targetAngle, rapidSpeeds[j]));
+                }
+            }
+            await Promise.allSettled(rapidPromises);
+            await robotArmClient.waitForMotionComplete(30000);
+            initialAngles = jointAngles.slice();
+        }
+    } else if (/^MoveLOffs\b/i.test(line)) {
+        // Cartesian offset move: offsets applied in XYZ space in mm
+        if (!robotKinematics.isConfigured()) {
+            console.warn('RAPID: Kinematics not configured, cannot run MoveLOffs.');
+            return;
+        }
+
+        const offsets = await parseRapidXYZ(line, 'MoveLOffs');
+        if (!offsets) {
+            console.warn('RAPID: Could not parse MoveLOffs on line', lineNumber, ':', line);
+            return;
+        }
+
+        // Get current XYZ from the UI
+        const _cp2 = getCurrentDisplayXYZ();
+        const startPoseRapid = {
+            x: isFinite(_cp2.x) ? _cp2.x : 0,
+            y: isFinite(_cp2.y) ? _cp2.y : 0,
+            z: isFinite(_cp2.z) ? _cp2.z : 0,
+        };
+        const targetPose = {
+            x: currentX + offsets[0],
+            y: currentY + offsets[1],
+            z: currentZ + offsets[2]
+        };
+
+        const rapidOffsTipMmPerSec = parseRapidSpeedMmPerSec(line);
+        console.log('RAPID: MoveLOffs on line', lineNumber, 'offsets:', offsets, 'target XYZ:', targetPose, 'at', rapidOffsTipMmPerSec, 'mm/s');
+
+        const waypointsRapidOffs = insertApproachWaypoints(planSafePathAroundDeadZones(startPoseRapid, targetPose, deadZones, safeZHeight), startPoseRapid);
+        if (!waypointsRapidOffs) {
+            console.warn('RAPID: MoveLOffs target lies inside a dead zone. Move cancelled.');
+            return;
+        }
+
+        for (let w = 0; w < waypointsRapidOffs.length; w++) {
+            const wp = waypointsRapidOffs[w];
+
+            // Starting guess from current joint angles
+            let initialAngles2 = null;
+            try {
+                const status2 = await robotArmClient.getStatus();
+                initialAngles2 = [];
                 for (let j = 0; j < numJoints; j++) {
-                    const targetAngle = jointAngles[j];
-                    if (typeof targetAngle === 'number' && !isNaN(targetAngle)) {
-                        rapidPromises.push(robotArmClient.moveJoint(j + 1, targetAngle, rapidSpeeds[j]));
+                    if (status2[j] && typeof status2[j].angleDegrees === 'number') {
+                        initialAngles2.push(status2[j].angleDegrees);
+                    } else {
+                        initialAngles2.push(0);
                     }
                 }
-                await Promise.allSettled(rapidPromises);
-                await robotArmClient.waitForMotionComplete(30000);
-                initialAngles = jointAngles.slice();
-            }
-        } else if (/^MoveLOffs\b/i.test(line)) {
-            // Cartesian offset move: offsets applied in XYZ space in mm
-            if (!robotKinematics.isConfigured()) {
-                console.warn('RAPID: Kinematics not configured, cannot run MoveLOffs.');
-                continue;
+            } catch (err2) {
+                console.warn('RAPID: Failed to get status for MoveLOffs starting guess, using zeros:', err2);
+                initialAngles2 = null;
             }
 
-            const offsets = parseRapidXYZ(line, 'MoveLOffs');
-            if (!offsets) {
-                console.warn('RAPID: Could not parse MoveLOffs on line', i + 1, ':', line);
-                continue;
+            // First solve for position (and orientation), then refine.
+            let baseAngles2 = null;
+            let jointAngles2 = null;
+
+            if (!robotKinematics || !robotKinematics.isConfigured()) {
+                console.warn('RAPID: Kinematics not configured. Load joint configurations first.');
+                break;
             }
-
-            // Get current XYZ from the UI
-            const _cp2 = getCurrentDisplayXYZ();
-            const startPoseRapid = {
-                x: isFinite(_cp2.x) ? _cp2.x : 0,
-                y: isFinite(_cp2.y) ? _cp2.y : 0,
-                z: isFinite(_cp2.z) ? _cp2.z : 0,
-            };
-            const targetPose = {
-                x: currentX + offsets[0],
-                y: currentY + offsets[1],
-                z: currentZ + offsets[2]
-            };
-
-            const rapidOffsTipMmPerSec = parseRapidSpeedMmPerSec(line);
-            console.log('RAPID: MoveLOffs on line', i + 1, 'offsets:', offsets, 'target XYZ:', targetPose, 'at', rapidOffsTipMmPerSec, 'mm/s');
-
-            const waypointsRapidOffs = insertApproachWaypoints(planSafePathAroundDeadZones(startPoseRapid, targetPose, deadZones, safeZHeight), startPoseRapid);
-            if (!waypointsRapidOffs) {
-                console.warn('RAPID: MoveLOffs target lies inside a dead zone. Move cancelled.');
-                continue;
-            }
-
-            for (let w = 0; w < waypointsRapidOffs.length; w++) {
-                const wp = waypointsRapidOffs[w];
-
-                // Starting guess from current joint angles
-                let initialAngles2 = null;
-                try {
-                    const status2 = await robotArmClient.getStatus();
-                    initialAngles2 = [];
-                    for (let j = 0; j < numJoints; j++) {
-                        if (status2[j] && typeof status2[j].angleDegrees === 'number') {
-                            initialAngles2.push(status2[j].angleDegrees);
-                        } else {
-                            initialAngles2.push(0);
-                        }
-                    }
-                } catch (err2) {
-                    console.warn('RAPID: Failed to get status for MoveLOffs starting guess, using zeros:', err2);
-                    initialAngles2 = null;
-                }
-
-                // First solve for position (and orientation), then refine.
-                let baseAngles2 = null;
-                let jointAngles2 = null;
-
-                if (!robotKinematics || !robotKinematics.isConfigured()) {
-                    console.warn('RAPID: Kinematics not configured. Load joint configurations first.');
-                    break;
-                }
-                baseAngles2 = robotKinematics.inverseKinematics(
-                    { x: wp.x, y: wp.y, z: wp.z, orientation: currentToolOrientation },
+            baseAngles2 = robotKinematics.inverseKinematics(
+                { x: wp.x, y: wp.y, z: wp.z, orientation: currentToolOrientation },
+                initialAngles2
+            );
+            if (baseAngles2) {
+                const refined2 = robotKinematics.refineOrientationWithAccuracy(
+                    { x: wp.x, y: wp.y, z: wp.z },
+                    baseAngles2,
+                    currentToolOrientation,
                     initialAngles2
                 );
-                if (baseAngles2) {
-                    const refined2 = robotKinematics.refineOrientationWithAccuracy(
-                        { x: wp.x, y: wp.y, z: wp.z },
-                        baseAngles2,
-                        currentToolOrientation,
-                        initialAngles2
-                    );
-                    jointAngles2 = refined2 && Array.isArray(refined2.angles) ? refined2.angles : null;
-                }
+                jointAngles2 = refined2 && Array.isArray(refined2.angles) ? refined2.angles : null;
+            }
 
-                if (!jointAngles2) {
-                    console.warn('RAPID: MoveLOffs IK failed for waypoint', wp);
-                    break;
-                }
+            if (!jointAngles2) {
+                console.warn('RAPID: MoveLOffs IK failed for waypoint', wp);
+                break;
+            }
 
-                // `jointAngles2` now contains the final IK solution — dispatch at the
-                // requested tool-tip speed (mm/s) with all joints arriving together.
-                const segStart2 = w === 0 ? startPoseRapid : waypointsRapidOffs[w - 1];
-                const segMm2 = Math.hypot(wp.x - segStart2.x, wp.y - segStart2.y, wp.z - segStart2.z);
-                const segMmPerSec2 = wp.approach ? Math.min(rapidOffsTipMmPerSec, APPROACH_SPEED_MM_PER_S) : rapidOffsTipMmPerSec;
-                if (wp.approach) await new Promise(resolve => setTimeout(resolve, APPROACH_SETTLE_MS));
-                const rapidOffsSpeeds = computeTipSpeeds(initialAngles2 || null, jointAngles2, segMm2, segMmPerSec2);
-                const rapidOffsPromises = [];
-                for (let j = 0; j < numJoints; j++) {
-                    const targetAngle = jointAngles2[j];
-                    if (typeof targetAngle === 'number' && !isNaN(targetAngle)) {
-                        rapidOffsPromises.push(robotArmClient.moveJoint(j + 1, targetAngle, rapidOffsSpeeds[j]));
-                    }
-                }
-                await Promise.allSettled(rapidOffsPromises);
-                await robotArmClient.waitForMotionComplete(30000);
-                initialAngles2 = jointAngles2.slice();
-            }
-        } else if (/^SetToolOri\b/i.test(line)) {
-            // SetToolOri [[ux,uy,uz]];              → set orientation vector
-            // SetToolOri [[ux,uy,uz],rot];           → set orientation + spin rotation (degrees)
-            const xyz = parseRapidXYZ(line, 'SetToolOri');
-            if (!xyz) {
-                console.warn('RAPID: Could not parse SetToolOri on line', i + 1, ':', line);
-                continue;
-            }
-            // Parse optional rotation after the vector bracket: SetToolOri [[x,y,z],rot]
-            const rotMatch = line.match(/\]\s*,\s*([-+]?[0-9]*\.?[0-9]+)/);
-            const rot = rotMatch ? parseFloat(rotMatch[1]) : undefined;
-            setToolOrientationVector(xyz[0], xyz[1], xyz[2], rot);
-            console.log('RAPID: SetToolOri on line', i + 1, 'orientation:', xyz, 'rotation:', rot);
-        } else if (/^WaitTime\b/i.test(line)) {
-            // WaitTime t; where t is seconds
-            const match = line.match(/WaitTime\s+([0-9]*\.?[0-9]+)/i);
-            if (match) {
-                const seconds = parseFloat(match[1]);
-                const ms = isNaN(seconds) ? 0 : Math.max(0, seconds * 1000);
-                console.log('RAPID: WaitTime', seconds, 'seconds');
-                await new Promise(function (resolve) {
-                    setTimeout(resolve, ms);
-                });
-            } else {
-                console.warn('RAPID: Could not parse WaitTime value on line', i + 1, ':', line);
-            }
-        } else if (/^SetDO\b/i.test(line)) {
-            // SetDO n, v; where n is channel, v is 0 or 1
-            const match = line.match(/SetDO\s+(\d+)\s*,\s*(\d+)/i);
-            if (match) {
-                const channel = parseInt(match[1], 10);
-                const value = parseInt(match[2], 10) ? 1 : 0;
-                console.log('RAPID: SetDO channel', channel, 'to', value);
-                if (typeof robotArmClient.setOutput === 'function') {
-                    try {
-                        robotArmClient.setOutput(channel, value);
-                    } catch (err) {
-                        console.warn('RAPID: setOutput failed:', err);
-                    }
-                }
-            } else {
-                console.warn('RAPID: Could not parse SetDO on line', i + 1, ':', line);
-            }
-        } else if (/^Home\b/i.test(line)) {
-            // Home; is just a MoveAbsJ to all zeros
-            const homeAngles = new Array(numJoints).fill(0);
-            console.log('RAPID: Home on line', i + 1);
-            const rapidHomePromises = [];
+            // `jointAngles2` now contains the final IK solution — dispatch at the
+            // requested tool-tip speed (mm/s) with all joints arriving together.
+            const segStart2 = w === 0 ? startPoseRapid : waypointsRapidOffs[w - 1];
+            const segMm2 = Math.hypot(wp.x - segStart2.x, wp.y - segStart2.y, wp.z - segStart2.z);
+            const segMmPerSec2 = wp.approach ? Math.min(rapidOffsTipMmPerSec, APPROACH_SPEED_MM_PER_S) : rapidOffsTipMmPerSec;
+            if (wp.approach) await new Promise(resolve => setTimeout(resolve, APPROACH_SETTLE_MS));
+            const rapidOffsSpeeds = computeTipSpeeds(initialAngles2 || null, jointAngles2, segMm2, segMmPerSec2);
+            const rapidOffsPromises = [];
             for (let j = 0; j < numJoints; j++) {
-                rapidHomePromises.push(robotArmClient.moveJoint(j + 1, homeAngles[j], speedStepsPerSecond));
+                const targetAngle = jointAngles2[j];
+                if (typeof targetAngle === 'number' && !isNaN(targetAngle)) {
+                    rapidOffsPromises.push(robotArmClient.moveJoint(j + 1, targetAngle, rapidOffsSpeeds[j]));
+                }
             }
-            await Promise.allSettled(rapidHomePromises);
+            await Promise.allSettled(rapidOffsPromises);
             await robotArmClient.waitForMotionComplete(30000);
-        } else if (/^GripperOpen\b/i.test(line)) {
-            console.log('RAPID: GripperOpen on line', i + 1);
-            if (robotArmClient && robotArmClient.isConnected) {
-                await robotArmClient.sendRequest('toolSetServoEnabledAndAngle', { angle: GRIPPER_OPEN_ANGLE });
-                await new Promise(function (resolve) { setTimeout(resolve, 500); });
-            }
-        } else if (/^GripperClose\b/i.test(line)) {
-            console.log('RAPID: GripperClose on line', i + 1);
-            if (robotArmClient && robotArmClient.isConnected) {
-                await robotArmClient.sendRequest('toolSetServoEnabledAndAngle', { angle: GRIPPER_CLOSED_ANGLE });
-                await new Promise(function (resolve) { setTimeout(resolve, 500); });
-            }
-        } else if (/^PumpOn\b/i.test(line)) {
-            console.log('RAPID: PumpOn on line', i + 1);
-            setVacuum(true);
-        } else if (/^PumpOff\b/i.test(line)) {
-            console.log('RAPID: PumpOff on line', i + 1);
-            setVacuum(false);
-        } else if (/^SolenoidOn\b/i.test(line)) {
-            console.log('RAPID: SolenoidOn on line', i + 1);
-            setEndToolSolenoidEnabled(true);
-        } else if (/^SolenoidOff\b/i.test(line)) {
-            console.log('RAPID: SolenoidOff on line', i + 1);
-            setEndToolSolenoidEnabled(false);
-        } else if (/^GetBlockCount\b/i.test(line)) {
-            console.log('RAPID: GetBlockCount on line', i + 1);
-            try {
-                const count = await getDetectedBlockCount();
-                showAppMessage(`RAPID: ${count} block(s) detected`);
-            } catch (e) {
-                showAppMessage('RAPID: GetBlockCount failed — ' + e.message);
-            }
-        } else if (/^SaveBlockToPos\b/i.test(line)) {
-            // SaveBlockToPos <index>, <slot>[, <zmm>];
-            const m = line.match(/^SaveBlockToPos\s+(\d+)\s*,\s*(\d+)\s*(?:,\s*(-?[\d.]+))?/i);
-            if (m) {
-                const idx = parseInt(m[1], 10);
-                const slot = parseInt(m[2], 10);
-                const z = m[3] !== undefined ? parseFloat(m[3]) : undefined;
-                console.log('RAPID: SaveBlockToPos', idx, slot, z, 'on line', i + 1);
-                try {
-                    const result = await saveDetectedBlockToPositionSlot(idx, slot, z);
-                    showAppMessage(`RAPID: block ${idx} (${result.block.color}) saved to position ${slot}`);
-                } catch (e) {
-                    showAppMessage('RAPID: SaveBlockToPos failed — ' + e.message);
-                }
-            } else {
-                console.warn('RAPID: Could not parse SaveBlockToPos on line', i + 1, ':', line);
-            }
-        } else if (/^ServoTo\b/i.test(line)) {
-            // ServoTo <angle>;  e.g. ServoTo 90;
-            const m = line.match(/^ServoTo\s+([\d.]+)/i);
-            if (m) {
-                const angle = Math.max(0, Math.min(180, Math.round(parseFloat(m[1]))));
-                console.log('RAPID: ServoTo', angle, 'on line', i + 1);
-                if (robotArmClient && robotArmClient.isConnected) {
-                    await robotArmClient.sendRequest('toolSetServoEnabledAndAngle', { angle });
-                    await new Promise(function (resolve) { setTimeout(resolve, 500); });
-                }
-            } else {
-                console.warn('RAPID: ServoTo missing angle on line', i + 1);
+            initialAngles2 = jointAngles2.slice();
+        }
+    } else if (/^SetToolOri\b/i.test(line)) {
+        // SetToolOri [[ux,uy,uz]];              → set orientation vector
+        // SetToolOri [[ux,uy,uz],rot];           → set orientation + spin rotation (degrees)
+        const xyz = await parseRapidXYZ(line, 'SetToolOri');
+        if (!xyz) {
+            console.warn('RAPID: Could not parse SetToolOri on line', lineNumber, ':', line);
+            return;
+        }
+        // Parse optional rotation after the vector bracket: SetToolOri [[x,y,z],rot]
+        const rotMatch = line.match(/\]\s*,\s*([-+]?[0-9]*\.?[0-9]+)/);
+        const rot = rotMatch ? parseFloat(rotMatch[1]) : undefined;
+        setToolOrientationVector(xyz[0], xyz[1], xyz[2], rot);
+        console.log('RAPID: SetToolOri on line', lineNumber, 'orientation:', xyz, 'rotation:', rot);
+    } else if (/^WaitTime\b/i.test(line)) {
+        // WaitTime t; where t is seconds (may be an expression)
+        const match = line.match(/^WaitTime\s+(.+)$/i);
+        if (match) {
+            const seconds = await rapidProcessor.evaluate(match[1]);
+            const ms = isNaN(seconds) ? 0 : Math.max(0, seconds * 1000);
+            console.log('RAPID: WaitTime', seconds, 'seconds');
+            // Sleep in short chunks so Stop takes effect promptly
+            const deadline = Date.now() + ms;
+            while (rapidProcessor.isRunning && Date.now() < deadline) {
+                await new Promise(function (resolve) { setTimeout(resolve, Math.min(100, deadline - Date.now())); });
             }
         } else {
-            console.warn('RAPID: Unsupported line (MoveJ/MoveAbsJ/MoveJOffs/MoveLXYZ/MoveLOffs/WaitTime/SetDO/Home/GripperOpen/GripperClose/PumpOn/PumpOff/SolenoidOn/SolenoidOff/ServoTo/GetBlockCount/SaveBlockToPos):', line);
+            console.warn('RAPID: Could not parse WaitTime value on line', lineNumber, ':', line);
         }
+    } else if (/^SetDO\b/i.test(line)) {
+        // SetDO n, v; where n is channel, v is 0 or 1
+        const match = line.match(/^SetDO\s+(.+?)\s*,\s*(.+)$/i);
+        if (match) {
+            const channel = Math.round(await rapidProcessor.evaluate(match[1]));
+            const value = (await rapidProcessor.evaluate(match[2])) ? 1 : 0;
+            console.log('RAPID: SetDO channel', channel, 'to', value);
+            if (typeof robotArmClient.setOutput === 'function') {
+                try {
+                    robotArmClient.setOutput(channel, value);
+                } catch (err) {
+                    console.warn('RAPID: setOutput failed:', err);
+                }
+            }
+        } else {
+            console.warn('RAPID: Could not parse SetDO on line', lineNumber, ':', line);
+        }
+    } else if (/^Home\b/i.test(line)) {
+        // Home; is just a MoveAbsJ to all zeros
+        const homeAngles = new Array(numJoints).fill(0);
+        console.log('RAPID: Home on line', lineNumber);
+        const rapidHomePromises = [];
+        for (let j = 0; j < numJoints; j++) {
+            rapidHomePromises.push(robotArmClient.moveJoint(j + 1, homeAngles[j], speedStepsPerSecond));
+        }
+        await Promise.allSettled(rapidHomePromises);
+        await robotArmClient.waitForMotionComplete(30000);
+    } else if (/^GripperOpen\b/i.test(line)) {
+        console.log('RAPID: GripperOpen on line', lineNumber);
+        if (robotArmClient && robotArmClient.isConnected) {
+            await robotArmClient.sendRequest('toolSetServoEnabledAndAngle', { angle: GRIPPER_OPEN_ANGLE });
+            await new Promise(function (resolve) { setTimeout(resolve, 500); });
+        }
+    } else if (/^GripperClose\b/i.test(line)) {
+        console.log('RAPID: GripperClose on line', lineNumber);
+        if (robotArmClient && robotArmClient.isConnected) {
+            await robotArmClient.sendRequest('toolSetServoEnabledAndAngle', { angle: GRIPPER_CLOSED_ANGLE });
+            await new Promise(function (resolve) { setTimeout(resolve, 500); });
+        }
+    } else if (/^PumpOn\b/i.test(line)) {
+        console.log('RAPID: PumpOn on line', lineNumber);
+        setVacuum(true);
+    } else if (/^PumpOff\b/i.test(line)) {
+        console.log('RAPID: PumpOff on line', lineNumber);
+        setVacuum(false);
+    } else if (/^SolenoidOn\b/i.test(line)) {
+        console.log('RAPID: SolenoidOn on line', lineNumber);
+        setEndToolSolenoidEnabled(true);
+    } else if (/^SolenoidOff\b/i.test(line)) {
+        console.log('RAPID: SolenoidOff on line', lineNumber);
+        setEndToolSolenoidEnabled(false);
+    } else if (/^GetBlockCount\b/i.test(line)) {
+        console.log('RAPID: GetBlockCount on line', lineNumber);
+        try {
+            const count = await getDetectedBlockCount();
+            rapidProcessor.log(`${count} block(s) detected`);
+        } catch (e) {
+            rapidProcessor.log('GetBlockCount failed — ' + e.message);
+        }
+    } else if (/^SaveBlockToPos\b/i.test(line)) {
+        // SaveBlockToPos <index>, <slot>[, <zmm>];  (arguments may be expressions)
+        const m = line.match(/^SaveBlockToPos\s+(.+)$/i);
+        const args = m ? await rapidProcessor.evaluateList(m[1]) : [];
+        if (args.length >= 2) {
+            const idx = Math.round(args[0]);
+            const slot = Math.round(args[1]);
+            const z = args.length > 2 ? args[2] : undefined;
+            console.log('RAPID: SaveBlockToPos', idx, slot, z, 'on line', lineNumber);
+            try {
+                const result = await saveDetectedBlockToPositionSlot(idx, slot, z);
+                rapidProcessor.log(`block ${idx} (${result.block.color}) saved to position ${slot}`);
+            } catch (e) {
+                throw new Error(`Line ${lineNumber}: SaveBlockToPos failed — ${e.message}`);
+            }
+        } else {
+            throw new Error(`Line ${lineNumber}: SaveBlockToPos needs "SaveBlockToPos <index>, <slot>[, <z mm>]"`);
+        }
+    } else if (/^ServoTo\b/i.test(line)) {
+        // ServoTo <angle>;  e.g. ServoTo 90;  (may be an expression)
+        const m = line.match(/^ServoTo\s+(.+)$/i);
+        if (m) {
+            const angle = Math.max(0, Math.min(180, Math.round(await rapidProcessor.evaluate(m[1]))));
+            console.log('RAPID: ServoTo', angle, 'on line', lineNumber);
+            if (robotArmClient && robotArmClient.isConnected) {
+                await robotArmClient.sendRequest('toolSetServoEnabledAndAngle', { angle });
+                await new Promise(function (resolve) { setTimeout(resolve, 500); });
+            }
+        } else {
+            console.warn('RAPID: ServoTo missing angle on line', lineNumber);
+        }
+    } else if (/^MoveToPos\b/i.test(line)) {
+        // MoveToPos <slot>[, v<deg/s>];  — move to a Stored Position (0-99)
+        const m = line.match(/^MoveToPos\s+(.+?)(?:\s*,\s*v\s*\d+(?:\.\d+)?)?\s*$/i);
+        const slot = m ? Math.round(await rapidProcessor.evaluate(m[1])) : NaN;
+        const speedMatch = line.match(/,\s*v\s*(\d+(?:\.\d+)?)\s*$/i);
+        const posSpeed = speedMatch ? parseFloat(speedMatch[1]) : RAPID_DEFAULT_JOINT_DEG_PER_SEC;
+        const position = (isFinite(slot) && typeof getPosition === 'function') ? getPosition(slot) : null;
+        if (!position) {
+            throw new Error(`Line ${lineNumber}: MoveToPos — stored position ${isFinite(slot) ? slot : '?'} not found`);
+        }
+        const targetAngles = resolvePositionToAngles(position);
+        if (!targetAngles) {
+            throw new Error(`Line ${lineNumber}: MoveToPos — stored position ${slot} could not be resolved to joint angles`);
+        }
+        console.log('RAPID: MoveToPos', slot, 'on line', lineNumber, 'at', posSpeed, 'deg/s');
+        let currentAnglesForApproach = null;
+        try {
+            const st = await robotArmClient.getStatus();
+            currentAnglesForApproach = targetAngles.map((_, i) => (st[i] && typeof st[i].angleDegrees === 'number') ? st[i].angleDegrees : 0);
+        } catch (e) { currentAnglesForApproach = null; }
+        await moveToStoredAnglesWithApproach(currentAnglesForApproach, targetAngles, posSpeed, function (m) { rapidProcessor.log(m); });
+    } else if (/^MoveJoint\b/i.test(line)) {
+        // MoveJoint <joint>, <angle>[, v<deg/s>];  — move one joint, leave the rest
+        const m = line.match(/^MoveJoint\s+(.+?)\s*,\s*(.+?)(?:\s*,\s*v\s*\d+(?:\.\d+)?)?\s*$/i);
+        if (!m) throw new Error(`Line ${lineNumber}: MoveJoint needs "MoveJoint <joint>, <angle>[, v<deg/s>]"`);
+        const joint = Math.round(await rapidProcessor.evaluate(m[1]));
+        const angle = await rapidProcessor.evaluate(m[2]);
+        if (joint < 1 || joint > numJoints) throw new Error(`Line ${lineNumber}: MoveJoint — joint ${joint} is out of range`);
+        const speedMatch = line.match(/,\s*v\s*(\d+(?:\.\d+)?)\s*$/i);
+        const jointSpeed = speedMatch ? parseFloat(speedMatch[1]) : RAPID_DEFAULT_JOINT_DEG_PER_SEC;
+        console.log('RAPID: MoveJoint', joint, 'to', angle, 'at', jointSpeed, 'deg/s on line', lineNumber);
+        const status = await robotArmClient.getStatus();
+        const targetAngles = [];
+        for (let j = 0; j < numJoints; j++) {
+            targetAngles.push((status[j] && typeof status[j].angleDegrees === 'number') ? status[j].angleDegrees : 0);
+        }
+        targetAngles[joint - 1] = angle;
+        await moveJointsToAnglesWithDeadZones(targetAngles, jointSpeed);
+    } else if (/^SetAcc\b/i.test(line)) {
+        // SetAcc <joint>, <acceleration 0-254>;
+        const m = line.match(/^SetAcc\s+(.+?)\s*,\s*(.+)$/i);
+        if (!m) throw new Error(`Line ${lineNumber}: SetAcc needs "SetAcc <joint>, <0-254>"`);
+        const joint = Math.round(await rapidProcessor.evaluate(m[1]));
+        const accel = Math.max(0, Math.min(254, Math.round(await rapidProcessor.evaluate(m[2]))));
+        if (joint < 1 || joint > numJoints) throw new Error(`Line ${lineNumber}: SetAcc — joint ${joint} is out of range`);
+        console.log('RAPID: SetAcc joint', joint, 'to', accel, 'on line', lineNumber);
+        robotArmClient.setAcceleration(joint, accel);
+    } else {
+        throw new Error(`Line ${lineNumber}: unsupported command "${stmt.keyword}" — see the RAPID cheat sheet`);
     }
-
-    console.log('RAPID program finished.');
 }
 
 // ===== Settings =====
