@@ -2190,150 +2190,282 @@ if (typeof window !== 'undefined') {
 
 // ===== Blockly to G-code / RAPID Conversion Functions =====
 
+// Fixed-count repeat loops are unrolled; this caps the total emitted
+// iterations so a "repeat 100000" block can't produce a megabyte of G-code.
+const GCODE_MAX_UNROLLED_ITERATIONS = 500;
+
 /**
- * Converts Blockly JavaScript code to G-code format
- * This is a simple converter that handles common robot arm commands
- * @param {string} blocklyCode - JavaScript code generated from Blockly
+ * Reads a value input that must be a plain number (a math_number block, or
+ * a math_arithmetic/negate tree of plain numbers). Returns null when the
+ * value comes from a variable, vision block or other runtime expression,
+ * since G-code has no way to evaluate those.
+ */
+function gcodeConstantValue(block, inputName) {
+    const target = block.getInputTargetBlock(inputName);
+    if (!target) return null;
+    return gcodeEvalConstantBlock(target);
+}
+
+function gcodeEvalConstantBlock(b) {
+    if (!b) return null;
+    switch (b.type) {
+        case 'math_number': {
+            const v = parseFloat(b.getFieldValue('NUM'));
+            return isFinite(v) ? v : null;
+        }
+        case 'math_negate': {
+            const v = gcodeConstantValue(b, 'NUM');
+            return v === null ? null : -v;
+        }
+        case 'math_arithmetic': {
+            const a = gcodeConstantValue(b, 'A');
+            const c = gcodeConstantValue(b, 'B');
+            if (a === null || c === null) return null;
+            switch (b.getFieldValue('OP')) {
+                case 'ADD':      return a + c;
+                case 'MINUS':    return a - c;
+                case 'MULTIPLY': return a * c;
+                case 'DIVIDE':   return c === 0 ? null : a / c;
+                case 'POWER':    return Math.pow(a, c);
+            }
+            return null;
+        }
+    }
+    return null;
+}
+
+function gcodeNum(v, decimals) {
+    const d = decimals === undefined ? 1 : decimals;
+    return Number(v).toFixed(d).replace(/\.0+$/, '').replace(/(\.\d*?)0+$/, '$1');
+}
+
+/**
+ * Converts the current Blockly workspace to G-code by walking the block
+ * tree directly (not by scraping the generated JavaScript, which changes
+ * whenever a block's runtime implementation does).
+ *
+ * Emits one G-code line per block where the G-code executor has an
+ * equivalent (see executeGCodeCommand in app.js). Blocks that G-code can't
+ * express — variables, conditionals, vision lookups, relative TCP moves —
+ * are left as "; NOT CONVERTED:" comments so the gap is visible in the
+ * editor rather than silently dropped.
+ *
+ * @param {Blockly.Workspace} [workspace] - defaults to the live Blockly workspace
  * @returns {string} G-code program
  */
-function convertBlocklyToGCode(blocklyCode) {
-    if (!blocklyCode || blocklyCode.trim() === '') {
-        return '; No blocks in workspace\n';
+function convertBlocklyToGCode(workspace) {
+    const ws = workspace || blocklyWorkspace;
+    if (!ws) return '; No blocks in workspace\n';
+
+    const topBlocks = ws.getTopBlocks(true).filter(b =>
+        !b.outputConnection && (b.previousConnection || b.nextConnection));
+    if (topBlocks.length === 0) return '; No blocks in workspace\n';
+
+    const out = [];
+    const notConverted = [];
+    let unrolledIterations = 0;
+
+    function emit(line) { out.push(line); }
+    function skip(block, reason) {
+        notConverted.push(reason);
+        emit(`; NOT CONVERTED: ${reason}`);
+    }
+    function isEnabled(b) {
+        return typeof b.isEnabled === 'function' ? b.isEnabled() : !b.disabled;
+    }
+
+    // Walk a statement chain starting at `block`, following next-connections.
+    function walkChain(block) {
+        for (let b = block; b; b = b.getNextBlock()) {
+            if (!isEnabled(b)) { emit(`; (disabled block skipped: ${b.type})`); continue; }
+            convertBlock(b);
+        }
+    }
+
+    function convertBlock(b) {
+        switch (b.type) {
+            // ── Joint-space moves ────────────────────────────────────────
+            case 'move_joint': {
+                const joint = b.getFieldValue('JOINT');
+                const angle = parseFloat(b.getFieldValue('ANGLE'));
+                const speed = parseFloat(b.getFieldValue('SPEED')) || 40;
+                emit(`G1 J${joint}=${gcodeNum(angle)} F${gcodeNum(speed)}`);
+                break;
+            }
+            case 'move_all_joints': {
+                const parts = [];
+                const missing = [];
+                for (let j = 1; j <= 6; j++) {
+                    const v = gcodeConstantValue(b, 'JOINT' + j);
+                    if (v === null) {
+                        if (b.getInputTargetBlock('JOINT' + j)) missing.push(j);
+                        continue; // empty input = leave that joint where it is
+                    }
+                    parts.push(`J${j}=${gcodeNum(v)}`);
+                }
+                if (missing.length) {
+                    skip(b, `Move All Joints — joint ${missing.join(', ')} value is not a plain number (variable or expression)`);
+                    break;
+                }
+                if (parts.length === 0) { emit('; Move All Joints with no joint values'); break; }
+                const speed = parseFloat(b.getFieldValue('SPEED')) || 40;
+                emit(`G1 ${parts.join(' ')} F${gcodeNum(speed)}`);
+                break;
+            }
+            case 'move_to_position': {
+                const slot = parseInt(b.getFieldValue('POSITION'), 10);
+                const speed = parseFloat(b.getFieldValue('SPEED')) || 40;
+                const pos = (typeof getPosition === 'function') ? getPosition(slot) : null;
+                const label = pos && pos.label ? ` ; ${pos.label}` : '';
+                emit(`G1 P${slot} F${gcodeNum(speed)}${label}`);
+                break;
+            }
+
+            // ── Cartesian moves ──────────────────────────────────────────
+            case 'move_xyz': {
+                const x = gcodeConstantValue(b, 'X');
+                const y = gcodeConstantValue(b, 'Y');
+                const z = gcodeConstantValue(b, 'Z');
+                if (x === null || y === null || z === null) {
+                    skip(b, 'Move TCP to XYZ — X/Y/Z must all be plain numbers (variable or vision value used)');
+                    break;
+                }
+                // G-code F for Cartesian moves is mm/min; the block is mm/s.
+                const mmPerSec = parseFloat(b.getFieldValue('SPEED')) || 40;
+                emit(`G1 X${gcodeNum(x)} Y${gcodeNum(y)} Z${gcodeNum(z)} F${gcodeNum(mmPerSec * 60, 0)}`);
+                break;
+            }
+            case 'move_xyz_offset': {
+                const dx = gcodeConstantValue(b, 'DX');
+                const dy = gcodeConstantValue(b, 'DY');
+                const dz = gcodeConstantValue(b, 'DZ');
+                const desc = (dx === null || dy === null || dz === null)
+                    ? 'values are not plain numbers'
+                    : `dX${gcodeNum(dx)} dY${gcodeNum(dy)} dZ${gcodeNum(dz)}`;
+                skip(b, `Move TCP by offset (${desc}) — G-code moves are absolute only; use Move TCP to X/Y/Z`);
+                break;
+            }
+            case 'set_tool_orientation': {
+                const ox = parseFloat(b.getFieldValue('ORI_X')) || 0;
+                const oy = parseFloat(b.getFieldValue('ORI_Y')) || 0;
+                const oz = parseFloat(b.getFieldValue('ORI_Z')) || 0;
+                const rot = parseFloat(b.getFieldValue('ORI_ROTATION')) || 0;
+                emit(`G1 I${gcodeNum(ox, 3)} J${gcodeNum(oy, 3)} K${gcodeNum(oz, 3)} ; tool orientation (applies to following XYZ moves)`);
+                if (rot !== 0) emit(`; NOT CONVERTED: tool rotation ${gcodeNum(rot)}° has no G-code equivalent`);
+                break;
+            }
+
+            // ── Timing ───────────────────────────────────────────────────
+            case 'wait_seconds': {
+                const secs = parseFloat(b.getFieldValue('SECONDS')) || 0;
+                emit(`M0 P${Math.round(secs * 1000)}`);
+                break;
+            }
+            case 'wait_until_stopped':
+            case 'wait_until_all_stopped':
+                emit('; (G-code moves already wait for motion to finish)');
+                break;
+
+            // ── Motion control ───────────────────────────────────────────
+            case 'set_acceleration': {
+                const joint = b.getFieldValue('JOINT');
+                const accel = parseInt(b.getFieldValue('ACCELERATION'), 10);
+                emit(`M204 J${joint} A${isFinite(accel) ? accel : 5}`);
+                break;
+            }
+            case 'stop_joint':
+                emit(`; Stop Joint ${b.getFieldValue('JOINT')} — not needed, G-code moves run to completion`);
+                break;
+            case 'stop_all':
+                emit('; Stop All Joints — not needed, G-code moves run to completion');
+                break;
+            case 'set_servo':
+                skip(b, `Set Servo on Joint ${b.getFieldValue('JOINT')} has no G-code equivalent`);
+                break;
+
+            // ── End tool ─────────────────────────────────────────────────
+            case 'gripper_open':  emit('M10'); break;
+            case 'gripper_close': emit('M11'); break;
+            case 'pump_on':       emit('M62'); break;
+            case 'pump_off':      emit('M63'); break;
+            case 'solenoid_on':   emit('M64'); break;
+            case 'solenoid_off':  emit('M65'); break;
+            case 'end_tool_servo': {
+                const angle = parseInt(b.getFieldValue('ANGLE'), 10);
+                emit(`M12 P${isFinite(angle) ? angle : 90}`);
+                break;
+            }
+
+            // ── Vision ───────────────────────────────────────────────────
+            case 'save_block_to_position': {
+                const idx  = gcodeConstantValue(b, 'INDEX');
+                const slot = gcodeConstantValue(b, 'SLOT');
+                const z    = gcodeConstantValue(b, 'Z');
+                if (idx === null || slot === null) {
+                    skip(b, 'Save block to position — index and slot must be plain numbers');
+                    break;
+                }
+                emit(`M781 P${Math.round(idx)} L${Math.round(slot)}${z === null ? '' : ' Z' + gcodeNum(z)}`);
+                break;
+            }
+
+            // ── Control flow ─────────────────────────────────────────────
+            case 'controls_repeat_ext':
+            case 'controls_repeat': {
+                const times = b.type === 'controls_repeat'
+                    ? parseInt(b.getFieldValue('TIMES'), 10)
+                    : gcodeConstantValue(b, 'TIMES');
+                const body = b.getInputTargetBlock('DO');
+                if (times === null || !isFinite(times)) {
+                    skip(b, 'Repeat loop — count is not a plain number; body emitted once');
+                    if (body) walkChain(body);
+                    break;
+                }
+                const n = Math.max(0, Math.round(times));
+                emit(`; Repeat ${n} times (unrolled)`);
+                for (let i = 0; i < n; i++) {
+                    if (unrolledIterations++ >= GCODE_MAX_UNROLLED_ITERATIONS) {
+                        skip(b, `Repeat loop truncated after ${GCODE_MAX_UNROLLED_ITERATIONS} total unrolled iterations`);
+                        break;
+                    }
+                    if (n > 1) emit(`; -- iteration ${i + 1}/${n}`);
+                    if (body) walkChain(body);
+                }
+                break;
+            }
+            case 'controls_whileUntil':
+            case 'controls_for':
+            case 'controls_forEach':
+            case 'controls_if':
+            case 'controls_ifelse':
+                skip(b, `${b.type.replace('controls_', '')} block — G-code has no conditionals/loops; its contents were skipped`);
+                break;
+            case 'variables_set':
+            case 'math_change':
+                skip(b, `${b.type === 'variables_set' ? 'set' : 'change'} variable "${b.getField('VAR') ? b.getField('VAR').getText() : '?'}" — G-code has no variables`);
+                break;
+            case 'text_print':
+                emit(`; print: ${(b.getInputTargetBlock('TEXT') && b.getInputTargetBlock('TEXT').type === 'text') ? b.getInputTargetBlock('TEXT').getFieldValue('TEXT') : '(expression)'}`);
+                break;
+
+            default:
+                skip(b, `"${b.type}" block has no G-code equivalent`);
+                break;
+        }
+    }
+
+    for (const top of topBlocks) {
+        if (topBlocks.length > 1) emit(`; --- block stack ${topBlocks.indexOf(top) + 1} of ${topBlocks.length} ---`);
+        walkChain(top);
     }
 
     let gcode = '; G-code converted from Blockly program\n';
-    gcode += '; Generated automatically - review before running\n\n';
-
-    // Split code into lines and process each
-    const lines = blocklyCode.split('\n');
-    let inComment = false;
-
-    for (let i = 0; i < lines.length; i++) {
-        let line = lines[i].trim();
-        if (line === '') continue;
-
-        // Skip Blockly-specific function calls
-        if (line.includes('highlightBlocklyBlock') || 
-            line.includes('checkBlocklyPauseStop') ||
-            line.includes('appendBlocklyOutput') ||
-            line.includes('getNumJoints') ||
-            line.includes('robotArmClient.getStatus') ||
-            line.includes('moveJointsToAnglesWithDeadZones') ||
-            line.includes('planSafePathAroundDeadZones') ||
-            line.includes('robotKinematics.inverseKinematics')) {
-            // These are Blockly runtime functions, skip them
-            continue;
-        }
-
-        // Convert move_joint: robotArmClient.moveJoint(joint, angle, speed)
-        const moveJointMatch = line.match(/robotArmClient\.moveJoint\((\d+),\s*([-\d.]+),\s*([-\d.]+)\)/);
-        if (moveJointMatch) {
-            const joint = moveJointMatch[1];
-            const angle = parseFloat(moveJointMatch[2]);
-            const speedStepsPerSecond = parseFloat(moveJointMatch[3]);
-            // Convert steps/s back to degrees/s (approximate)
-            const speedDegreesPerSecond = Math.round((speedStepsPerSecond / 11.37) * 10) / 10;
-            gcode += `G1 J${joint}=${angle.toFixed(1)} F${speedDegreesPerSecond.toFixed(1)}\n`;
-            continue;
-        }
-
-        // Convert stop_joint: robotArmClient.stopJoint(joint)
-        const stopJointMatch = line.match(/robotArmClient\.stopJoint\((\d+)\)/);
-        if (stopJointMatch) {
-            const joint = stopJointMatch[1];
-            gcode += `; Stop Joint ${joint}\n`;
-            gcode += `M0 P100\n`; // Pause for 100ms
-            continue;
-        }
-
-        // Convert stop_all: robotArmClient.stopAllJoints()
-        if (line.includes('robotArmClient.stopAllJoints()')) {
-            gcode += '; Stop all joints\n';
-            gcode += 'M0 P100\n';
-            continue;
-        }
-
-        // Convert set_acceleration: robotArmClient.setAcceleration(joint, accel)
-        const setAccelMatch = line.match(/robotArmClient\.setAcceleration\((\d+),\s*(\d+)\)/);
-        if (setAccelMatch) {
-            const joint = setAccelMatch[1];
-            const accel = setAccelMatch[2];
-            gcode += `M204 J${joint} A${accel}\n`;
-            continue;
-        }
-
-        // Convert set_servo: robotArmClient.setServoAngle(joint, angle)
-        const setServoMatch = line.match(/robotArmClient\.setServoAngle\((\d+),\s*([-\d.]+)\)/);
-        if (setServoMatch) {
-            const joint = setServoMatch[1];
-            const angle = setServoMatch[2];
-            gcode += `; Set servo on Joint ${joint} to ${angle}°\n`;
-            gcode += `M0 P100\n`;
-            continue;
-        }
-
-        // Convert gripper_open: openGripper()
-        if (line.includes('openGripper()')) {
-            gcode += 'M10\n';
-            continue;
-        }
-
-        // Convert gripper_close: closeGripper()
-        if (line.includes('closeGripper()')) {
-            gcode += 'M11\n';
-            continue;
-        }
-
-        // Convert pump_on/pump_off (vacuum = pump + solenoid)
-        if (line.includes('setVacuum(true)')) {
-            gcode += 'M62\n';
-            continue;
-        }
-        if (line.includes('setVacuum(false)')) {
-            gcode += 'M63\n';
-            continue;
-        }
-
-        // Convert solenoid_on / solenoid_off
-        if (line.includes('setEndToolSolenoidEnabled(true)')) {
-            gcode += 'M64\n';
-            continue;
-        }
-        if (line.includes('setEndToolSolenoidEnabled(false)')) {
-            gcode += 'M65\n';
-            continue;
-        }
-
-        // Convert end_tool_servo: moveEndToolServoTo(angle)
-        const servoToMatch = line.match(/moveEndToolServoTo\((\d+)\)/);
-        if (servoToMatch) {
-            gcode += `M12 P${servoToMatch[1]}\n`;
-            continue;
-        }
-
-        // Convert wait: setTimeout or Promise delay
-        const waitMatch = line.match(/setTimeout\(resolve,\s*(\d+)\)/);
-        if (waitMatch) {
-            const ms = parseInt(waitMatch[1]);
-            const seconds = (ms / 1000).toFixed(1);
-            gcode += `M0 P${ms}\n`; // Pause in milliseconds
-            continue;
-        }
-
-        // Convert wait loops (simplified)
-        if (line.includes('while') && line.includes('elapsed') && line.includes('waitTime')) {
-            // This is a wait block, try to extract duration
-            const waitTimeMatch = blocklyCode.match(/const\s+waitTime_\w+\s*=\s*(\d+)/);
-            if (waitTimeMatch) {
-                const ms = parseInt(waitTimeMatch[1]);
-                gcode += `M0 P${ms}\n`;
-            }
-        }
+    gcode += '; Generated automatically - review before running\n';
+    gcode += '; Joint moves: G1 Jn=deg F=deg/s   Stored positions: G1 Pn   TCP moves: G1 X Y Z F=mm/min\n';
+    if (notConverted.length) {
+        gcode += `; WARNING: ${notConverted.length} block(s) could not be converted — search for "NOT CONVERTED"\n`;
     }
-
-    // Add program end
-    gcode += '\nM30\n';
-
+    gcode += '\n' + out.join('\n') + '\n\nM30\n';
     return gcode;
 }
 
@@ -2510,16 +2642,14 @@ function convertBlocklyToGCodeAndOpen() {
         return;
     }
 
-    // Generate JavaScript code from blocks
-    const blocklyCode = generateBlocklyCode();
-    
-    if (!blocklyCode || blocklyCode.trim() === '') {
+    if (blocklyWorkspace.getTopBlocks(false).length === 0) {
         showAppMessage('No blocks in workspace. Add some blocks to create a program.');
         return;
     }
 
-    // Convert to G-code
-    const gcode = convertBlocklyToGCode(blocklyCode);
+    // Convert to G-code (walks the block tree directly)
+    const gcode = convertBlocklyToGCode(blocklyWorkspace);
+    const notConverted = (gcode.match(/; NOT CONVERTED:/g) || []).length;
 
     // Switch to G-code tab
     switchToTab('gcode');
@@ -2534,7 +2664,9 @@ function convertBlocklyToGCodeAndOpen() {
             document.getElementById('gcodeLineCount').textContent = lines.length;
             // Apply changes to processor
             applyGCodeChanges();
-            showAppMessage('Blockly program converted to G-code and loaded');
+            showAppMessage(notConverted
+                ? `Converted to G-code — ${notConverted} block(s) could not be converted, see "NOT CONVERTED" comments`
+                : 'Blockly program converted to G-code and loaded');
         }
     }, 100);
 }
