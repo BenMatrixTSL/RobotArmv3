@@ -11,7 +11,7 @@
  *   torque_off   → solid grey/white   (motors online but disengaged)
  *   linear_path  → dual yellow comet  (executeLinearMove in progress)
  *   moving       → yellow comet       (any joint moving)
- *   connected    → solid cyan         (client holds the control session)
+ *   connected    → solid green        (client holds the control session, idle)
  *   partial      → solid purple       (some servos not detected)
  *   online       → solid green        (all servos ready, no active session)
  *   off          → all LEDs off       (startup / shutdown)
@@ -75,7 +75,9 @@ function applyState(state) {
             send({ cmd: 'comet', r: 255, g: 208, b: 0, tail: 14, speed: 1.4, heads: 1 });
             break;
         case 'connected':
-            send({ cmd: 'fill', r: 0, g: 160, b: 255 });
+            // Same green as 'online' — a client holding the session but not
+            // moving the arm isn't worth a different colour; movement shows yellow.
+            send({ cmd: 'fill', r: 0, g: 200, b: 60 });
             break;
         case 'partial':
             send({ cmd: 'fill', r: 140, g: 0, b: 220 });
