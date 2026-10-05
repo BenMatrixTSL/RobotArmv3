@@ -951,52 +951,23 @@
         <div id="kinematics-tab" class="tab-content">
             <h2>Kinematics and Transform Matrices</h2>
 
-            <div class="settings-panel end-tool-panel">
-                <h3>End Tool</h3>
-                <p class="info-text">
-                    The tool reports what it is in register 3, and the controller applies the matching
-                    tool from <code>kinematics.urdf</code>. Every position below, and every XYZ move,
-                    is measured to that tool's working tip.
-                </p>
-                <div class="end-tool-summary" id="endToolSummary">
-                    <span class="end-tool-state" id="endToolState">Not connected</span>
-                    <span class="end-tool-detail" id="endToolDetail"></span>
+            <div class="simulation-panel kinematics-source-panel">
+                <div class="simulation-controls">
+                    <label class="simulation-toggle">
+                        <input type="checkbox" id="kinematicsUseSimulated" onchange="toggleSimulationMode('kinematics')">
+                        <span>Simulate joint angles</span>
+                    </label>
+                    <p class="info-text" id="kinematicsSourceText">
+                        Showing the arm's live joint angles — each step below updates in real time as the arm moves.
+                        Tick to type your own angles into the step cards instead (shared with the 3D view's simulation mode).
+                    </p>
                 </div>
-                <div class="control-row">
-                    <button class="btn btn-secondary" onclick="refreshEndTool()">Re-check tool</button>
-                </div>
-                <div class="end-tool-table-wrap">
-                    <table class="end-tool-table" id="endToolTable">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Tool</th>
-                                <th>Offset from mount (mm)</th>
-                                <th>Length</th>
-                            </tr>
-                        </thead>
-                        <tbody id="endToolTableBody">
-                            <!-- Populated from the URDF -->
-                        </tbody>
-                    </table>
+                <div class="simulation-buttons" id="kinematicsSimButtons" style="display: none;">
+                    <button class="btn btn-small" onclick="resetSimulatedAnglesForKinematics()">Reset to 0°</button>
+                    <button class="btn btn-small" onclick="copyRealAnglesToSimForKinematics()">Copy from Robot</button>
                 </div>
             </div>
 
-            <div class="simulation-panel">
-                <h3>Simulated Joint Angles (for Kinematics)</h3>
-                <p class="info-text">
-                    These angles are the same ones used by the 3D visualisation when "Use Simulated Angles" is enabled.
-                    Adjust them here to see how the transforms and XYZ positions change.
-                </p>
-                <div class="simulated-angles-grid" id="kinematicsAnglesGrid">
-                    <!-- Kinematics angle controls will be generated dynamically -->
-                </div>
-                <div class="simulation-buttons">
-                    <button class="btn btn-small" onclick="resetSimulatedAnglesForKinematics()">Reset to 0°</button>
-                    <button class="btn btn-small" onclick="copyRealAnglesToSimForKinematics()">Copy from Robot</button>
-                    <button class="btn btn-small" onclick="updateKinematicsFromAngles()">Update Matrices</button>
-                </div>
-            </div>
             <p class="info-text">
                 This tab shows how forward kinematics builds up from the base to the end effector.
                 For each joint, we apply a transform
@@ -1039,6 +1010,42 @@
                 </p>
             </div>
             <div id="kinematicsMatricesDisplay" class="kinematics-matrices-display"></div>
+
+            <!-- End Tool panel. Shown inside the tool-mount step card (the last
+                 step) once the matrices are rendered; this holder is only its
+                 fallback home while kinematics is not configured. -->
+            <div id="endToolPanelHolder">
+                <div class="settings-panel end-tool-panel" id="endToolPanel">
+                    <h3>End Tool</h3>
+                    <p class="info-text">
+                        The tool reports what it is in register 3, and the controller applies the matching
+                        tool from <code>kinematics.urdf</code>. Every stored position, and every XYZ move,
+                        is measured to that tool's working tip.
+                    </p>
+                    <div class="end-tool-summary" id="endToolSummary">
+                        <span class="end-tool-state" id="endToolState">Not connected</span>
+                        <span class="end-tool-detail" id="endToolDetail"></span>
+                    </div>
+                    <div class="control-row">
+                        <button class="btn btn-secondary" onclick="refreshEndTool()">Re-check tool</button>
+                    </div>
+                    <div class="end-tool-table-wrap">
+                        <table class="end-tool-table" id="endToolTable">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Tool</th>
+                                    <th>Offset from mount (mm)</th>
+                                    <th>Length</th>
+                                </tr>
+                            </thead>
+                            <tbody id="endToolTableBody">
+                                <!-- Populated from the URDF -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Stored Positions Tab -->

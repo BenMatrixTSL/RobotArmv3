@@ -336,10 +336,20 @@ function updateKinematicsMatrices(jointAnglesOverride) {
         return;
     }
 
-        if (!robotKinematics || typeof robotKinematics.isConfigured !== 'function' || !robotKinematics.isConfigured()) {
-            display.textContent = 'Kinematics not configured. Load a URDF configuration first.';
-            return;
-        }
+    // Replacing the display's content would destroy the End Tool panel if it
+    // is currently housed in the last step card — park it first.
+    const showPlainMessage = function (message) {
+        const toolPanel = document.getElementById('endToolPanel');
+        const holder = document.getElementById('endToolPanelHolder');
+        if (toolPanel && holder && toolPanel.parentElement !== holder) holder.appendChild(toolPanel);
+        display.textContent = message;
+        delete display.dataset.layoutKey;
+    };
+
+    if (!robotKinematics || typeof robotKinematics.isConfigured !== 'function' || !robotKinematics.isConfigured()) {
+        showPlainMessage('Kinematics not configured. Load a URDF configuration first.');
+        return;
+    }
 
     let angles = jointAnglesOverride;
 
@@ -348,8 +358,8 @@ function updateKinematicsMatrices(jointAnglesOverride) {
         if (robotArm3D && Array.isArray(robotArm3D.jointAngles) && robotArm3D.jointAngles.length > 0) {
             angles = robotArm3D.jointAngles.slice();
         } else {
-            display.textContent = 'No joint angles available. Move the robot or update the visualization first.';
-            return;
+            // Still draw the cards (at 0°) so the layout and End Tool panel are there before the first status arrives
+            angles = new Array(robotKinematics.getJointCount()).fill(0);
         }
     }
 
@@ -362,61 +372,137 @@ function updateKinematicsMatrices(jointAnglesOverride) {
             return;
         }
 
-        let html = '';
-        html += '<div class="kinematics-steps">';
-        html += '<p><strong>Forward Kinematics Matrices (Base → Joint / Tool)</strong><br>';
-        html += 'Angles shown include any zero offsets defined in the URDF. ';
-        html += 'The top-left 3×3 of each matrix is the rotation; the last column is translation in millimetres.</p>';
+        // The cards are built once per step layout and then updated in place:
+        // this runs on every status push, and rebuilding the DOM each time
+        // would be wasteful and would kill the End Tool panel (which lives
+        // inside the last card) and any angle box the user is typing in.
+        const revoluteCount = robotKinematics.getJointCount();
+        const layoutKey = steps.map(s => s.name + '@' + s.index).join('|') + '#' + (useSimulatedAngles ? 'sim' : 'live');
+        if (display.dataset.layoutKey !== layoutKey) {
+            buildKinematicsStepCards(display, steps, revoluteCount);
+            display.dataset.layoutKey = layoutKey;
+        }
 
-        steps.forEach(step => {
-            const name = step.name || `Step ${step.index}`;
-            const input = step.angleInput != null ? step.angleInput.toFixed(2) : '0.00';
-            const used = step.angleUsed != null ? step.angleUsed.toFixed(2) : '0.00';
-            const origin = step.origin || { x: 0, y: 0, z: 0, roll: 0, pitch: 0, yaw: 0 };
-            const axis = step.axis || { x: 0, y: 0, z: 0 };
-
+        steps.forEach((step, s) => {
+            const card = document.getElementById(`kinStep${s}`);
+            if (!card) return;
+            const isJoint = s < revoluteCount;
             const T = step.transform || [];
-            const px_m = (T[0] && T[0][3]) || 0;
-            const py_m = (T[1] && T[1][3]) || 0;
-            const pz_m = (T[2] && T[2][3]) || 0;
-            const px = px_m * 1000;
-            const py = py_m * 1000;
-            const pz = pz_m * 1000;
+            const px = ((T[0] && T[0][3]) || 0) * 1000;
+            const py = ((T[1] && T[1][3]) || 0) * 1000;
+            const pz = ((T[2] && T[2][3]) || 0) * 1000;
 
-            html += '<div class="kinematics-step">';
-            html += `<h4>${name} (step ${step.index})</h4>`;
-            html += '<table class="kinematics-step-info"><tbody>';
-            html += `<tr><td>Input angle</td><td>${input}°</td></tr>`;
-            html += `<tr><td>Used angle (with zero offset)</td><td>${used}°</td></tr>`;
-            html += `<tr><td>Origin (m)</td><td>(${(origin.x || 0).toFixed(3)}, ${(origin.y || 0).toFixed(3)}, ${(origin.z || 0).toFixed(3)})</td></tr>`;
-            html += `<tr><td>Axis</td><td>(${(axis.x || 0).toFixed(3)}, ${(axis.y || 0).toFixed(3)}, ${(axis.z || 0).toFixed(3)})</td></tr>`;
-            html += `<tr><td>Position (mm)</td><td>X=${px.toFixed(1)}, Y=${py.toFixed(1)}, Z=${pz.toFixed(1)}</td></tr>`;
-            html += '</tbody></table>';
+            if (isJoint) {
+                const liveEl = document.getElementById(`kinStep${s}Live`);
+                if (liveEl) liveEl.textContent = (step.angleInput != null ? step.angleInput : 0).toFixed(1) + '°';
+                const inputEl = document.getElementById(`kinStep${s}Input`);
+                // Don't fight the user: only refresh a simulated-angle box when it isn't focused
+                if (inputEl && document.activeElement !== inputEl) {
+                    const v = step.angleInput != null ? step.angleInput : 0;
+                    if (parseFloat(inputEl.value) !== v) inputEl.value = Number(v.toFixed(2));
+                }
+                const usedEl = document.getElementById(`kinStep${s}Used`);
+                if (usedEl) usedEl.textContent = (step.angleUsed != null ? step.angleUsed : 0).toFixed(2) + '°';
+            }
+            const posEl = document.getElementById(`kinStep${s}Pos`);
+            if (posEl) posEl.textContent = `X=${px.toFixed(1)}, Y=${py.toFixed(1)}, Z=${pz.toFixed(1)}`;
 
-            html += '<table class="kinematics-matrix"><tbody>';
             for (let r = 0; r < 4; r++) {
                 const row = T[r] || [0, 0, 0, 0];
-                html += '<tr>';
                 for (let c = 0; c < 4; c++) {
+                    const cell = document.getElementById(`kinStep${s}M${r}${c}`);
+                    if (!cell) continue;
                     const v = row[c] || 0;
-                    if (c === 3) {
-                        const mm = v * 1000;
-                        html += `<td>${mm.toFixed(1)}</td>`;
-                    } else {
-                        html += `<td>${v.toFixed(3)}</td>`;
-                    }
+                    cell.textContent = c === 3 ? (v * 1000).toFixed(1) : v.toFixed(3);
                 }
-                html += '</tr>';
             }
-            html += '</tbody></table>';
-            html += '</div>';
         });
-
-        html += '</div>';
-        display.innerHTML = html;
     } catch (error) {
         console.error('updateKinematicsMatrices error:', error);
-        display.textContent = 'Error calculating matrices: ' + error.message;
+        showPlainMessage('Error calculating matrices: ' + error.message);
+    }
+}
+
+/**
+ * Builds the step cards for the Kinematics tab (structure only; values are
+ * filled in by updateKinematicsMatrices). Revolute-joint cards carry that
+ * joint's angle — a text box when simulating, a live read-out otherwise —
+ * so the angles can be worked with right next to their matrices. The End
+ * Tool panel is moved into the last (tool-mount) card.
+ * @param {HTMLElement} display
+ * @param {Array} steps
+ * @param {number} revoluteCount
+ */
+function buildKinematicsStepCards(display, steps, revoluteCount) {
+    // Park the End Tool panel outside the display before the DOM is replaced
+    const toolPanel = document.getElementById('endToolPanel');
+    const holder = document.getElementById('endToolPanelHolder');
+    if (toolPanel && holder && toolPanel.parentElement !== holder) holder.appendChild(toolPanel);
+
+    let html = '';
+    html += '<div class="kinematics-steps">';
+    html += '<p><strong>Forward Kinematics Matrices (Base → Joint / Tool)</strong><br>';
+    html += 'Angles shown include any zero offsets defined in the URDF. ';
+    html += 'The top-left 3×3 of each matrix is the rotation; the last column is translation in millimetres.</p>';
+
+    steps.forEach((step, s) => {
+        const name = step.name || `Step ${step.index}`;
+        const isJoint = s < revoluteCount;
+        const origin = step.origin || { x: 0, y: 0, z: 0 };
+        const axis = step.axis || { x: 0, y: 0, z: 0 };
+
+        html += `<div class="kinematics-step" id="kinStep${s}">`;
+        html += `<h4>${isJoint ? `Joint ${s + 1}` : 'Tool'} — ${name} (step ${step.index})</h4>`;
+        html += '<table class="kinematics-step-info"><tbody>';
+        if (isJoint) {
+            if (useSimulatedAngles) {
+                html += `<tr><td>Simulated angle</td><td><input type="number" class="kinematics-angle-input" id="kinStep${s}Input" step="0.1" min="-180" max="180" value="0" onchange="setKinematicsSimulatedAngle(${s}, this.value)"> °</td></tr>`;
+            } else {
+                html += `<tr><td>Live angle</td><td><span class="kinematics-angle-live" id="kinStep${s}Live">–</span></td></tr>`;
+            }
+            html += `<tr><td>Used angle (with zero offset)</td><td id="kinStep${s}Used">–</td></tr>`;
+        }
+        html += `<tr><td>Origin (m)</td><td>(${(origin.x || 0).toFixed(3)}, ${(origin.y || 0).toFixed(3)}, ${(origin.z || 0).toFixed(3)})</td></tr>`;
+        if (isJoint) {
+            html += `<tr><td>Axis</td><td>(${(axis.x || 0).toFixed(3)}, ${(axis.y || 0).toFixed(3)}, ${(axis.z || 0).toFixed(3)})</td></tr>`;
+        }
+        html += `<tr><td>Position (mm)</td><td id="kinStep${s}Pos">–</td></tr>`;
+        html += '</tbody></table>';
+
+        html += '<table class="kinematics-matrix"><tbody>';
+        for (let r = 0; r < 4; r++) {
+            html += '<tr>';
+            for (let c = 0; c < 4; c++) html += `<td id="kinStep${s}M${r}${c}">–</td>`;
+            html += '</tr>';
+        }
+        html += '</tbody></table>';
+        if (s === steps.length - 1) html += '<div id="kinematicsEndToolSlot"></div>';
+        html += '</div>';
+    });
+
+    html += '</div>';
+    display.innerHTML = html;
+
+    const slot = document.getElementById('kinematicsEndToolSlot');
+    if (slot && toolPanel) slot.appendChild(toolPanel);
+}
+
+/**
+ * A simulated angle was edited in a Kinematics step card.
+ * @param {number} jointIndex - 0-based
+ * @param {string|number} value
+ */
+function setKinematicsSimulatedAngle(jointIndex, value) {
+    const numJoints = getRevoluteJointCount();
+    while (simulatedAngles.length < numJoints) simulatedAngles.push(0);
+    const v = parseFloat(value);
+    simulatedAngles[jointIndex] = isFinite(v) ? v : 0;
+    // Keep the 3D tab's simulation boxes in step so updateSimulatedVisualization reads the same values
+    const simInput = document.getElementById(`simJoint${jointIndex + 1}`);
+    if (simInput) simInput.value = simulatedAngles[jointIndex];
+    updateKinematicsMatrices(simulatedAngles);
+    if (useSimulatedAngles && typeof updateSimulatedVisualization === 'function') {
+        updateSimulatedVisualization();
     }
 }
 
@@ -1964,94 +2050,55 @@ function initializeDeadZones() {
 }
 
 /**
- * Initialises the Kinematics tab (angle controls + first matrices view)
+ * Initialises the Kinematics tab (first matrices view; the step cards carry
+ * the angle controls — see buildKinematicsStepCards)
  */
 function initializeKinematicsTab() {
-    generateKinematicsAngleControls();
-    // Show matrices for current simulated angles (or real angles if no sim yet)
+    refreshKinematicsSourceUi();
     updateKinematicsMatrices();
 }
 
 /**
- * Generates joint angle controls for the Kinematics tab
+ * Reflects the simulate/live choice in the Kinematics tab's own controls and
+ * rebuilds the step cards for that mode.
  */
-function generateKinematicsAngleControls() {
-    const container = document.getElementById('kinematicsAnglesGrid');
-    if (!container) return;
-
-    const numJoints = getJointAngleControlCount();
-
-    // Ensure simulatedAngles length matches
-    while (simulatedAngles.length < numJoints) {
-        simulatedAngles.push(0);
+function refreshKinematicsSourceUi() {
+    const checkbox = document.getElementById('kinematicsUseSimulated');
+    if (checkbox) checkbox.checked = useSimulatedAngles;
+    const text = document.getElementById('kinematicsSourceText');
+    if (text) {
+        text.textContent = useSimulatedAngles
+            ? 'Simulating: type an angle into any step card below and the matrices, XYZ positions and 3D view follow it.'
+            : 'Showing the arm\'s live joint angles — each step below updates in real time as the arm moves. Tick to type your own angles into the step cards instead (shared with the 3D view\'s simulation mode).';
     }
-    while (simulatedAngles.length > numJoints) {
-        simulatedAngles.pop();
-    }
+    const buttons = document.getElementById('kinematicsSimButtons');
+    if (buttons) buttons.style.display = useSimulatedAngles ? '' : 'none';
 
-    let html = '';
-    for (let i = 1; i <= numJoints; i++) {
-        const currentValue = simulatedAngles[i - 1] || 0;
-        html += `
-            <div class="simulated-angle-control">
-                <label>Joint ${i} (degrees):</label>
-                <input type="text" id="kinematicsJoint${i}" value="${currentValue}" onchange="updateKinematicsFromAngles()">
-            </div>
-        `;
-    }
-
-    container.innerHTML = html;
-}
-
-/**
- * Reads angles from Kinematics tab inputs into simulatedAngles and updates matrices (and optionally 3D)
- */
-function updateKinematicsFromAngles() {
-    const angles = [];
-    const numJoints = simulatedAngles.length || getNumJoints();
-
-    for (let i = 1; i <= numJoints; i++) {
-        const input = document.getElementById(`kinematicsJoint${i}`);
-        if (input) {
-            angles.push(parseFloat(input.value) || 0);
-        }
-    }
-
-    if (angles.length > 0) {
-        simulatedAngles = angles.slice();
-    }
-
-    // Update the matrices using these angles
-    updateKinematicsMatrices(simulatedAngles);
-
-    // If simulation mode is enabled in 3D, keep it in sync
-    if (useSimulatedAngles && typeof updateSimulatedVisualization === 'function') {
-        updateSimulatedVisualization();
+    // Mode is part of the card layout, so this re-renders with inputs or live read-outs
+    if (useSimulatedAngles) {
+        const n = getRevoluteJointCount();
+        while (simulatedAngles.length < n) simulatedAngles.push(0);
+        updateKinematicsMatrices(simulatedAngles);
+    } else {
+        updateKinematicsMatrices(Array.isArray(lastGoodJointStatus) && lastGoodJointStatus.length > 0
+            ? lastGoodJointStatus.map(j => (j && typeof j.angleDegrees === 'number') ? j.angleDegrees : 0)
+            : null);
     }
 }
 
 /**
- * Resets Kinematics simulated angles to 0°
+ * Resets the simulated angles to 0° (Kinematics tab button)
  */
 function resetSimulatedAnglesForKinematics() {
-    const numJoints = simulatedAngles.length || getNumJoints();
-    simulatedAngles = Array(numJoints).fill(0);
-    generateKinematicsAngleControls();
+    if (typeof resetSimulatedAngles === 'function') resetSimulatedAngles();
     updateKinematicsMatrices(simulatedAngles);
-    if (useSimulatedAngles && typeof updateSimulatedVisualization === 'function') {
-        updateSimulatedVisualization();
-    }
 }
 
 /**
- * Copies real robot angles into Kinematics simulated angles, then updates matrices
+ * Copies the arm's current angles into the simulated angles (Kinematics tab button)
  */
 function copyRealAnglesToSimForKinematics() {
-    if (typeof copyRealAnglesToSim === 'function') {
-        copyRealAnglesToSim();
-    }
-    // Refresh our local controls from the global simulatedAngles
-    generateKinematicsAngleControls();
+    if (typeof copyRealAnglesToSim === 'function') copyRealAnglesToSim();
     updateKinematicsMatrices(simulatedAngles);
 }
 
@@ -3162,6 +3209,11 @@ function updateJointStatus(joints) {
         lastHeavyUiUpdateAt = now;
         update3DVisualizationWithAngles(anglesForDisplay);
         updateXYZPosition(anglesForDisplay);
+        // update3DVisualizationWithAngles also refreshes the Kinematics tab's
+        // step cards; keep them live even if the 3D view never initialised.
+        if (!robotArm3D && !useSimulatedAngles) {
+            updateKinematicsMatrices(getJointAnglesForKinematics(jointAngles));
+        }
     }
 }
 
@@ -8164,34 +8216,41 @@ function debug3DVisualization() {
 // ===== Simulation Mode Functions =====
 
 /**
- * Toggles between real robot angles and simulated angles
+ * Toggles between real robot angles and simulated angles. One shared mode
+ * drives both the 3D view and the Kinematics tab; either tab's checkbox can
+ * change it and the other follows.
+ * @param {string} [source] - 'kinematics' when its checkbox was clicked (default: the 3D tab's)
  */
-function toggleSimulationMode() {
-    const checkbox = document.getElementById('useSimulatedAngles');
-    useSimulatedAngles = checkbox.checked;
-    
+function toggleSimulationMode(source) {
+    const checkbox3d = document.getElementById('useSimulatedAngles');
+    const checkboxKin = document.getElementById('kinematicsUseSimulated');
+    const changed = source === 'kinematics' ? checkboxKin : checkbox3d;
+    useSimulatedAngles = !!(changed && changed.checked);
+    if (checkbox3d) checkbox3d.checked = useSimulatedAngles;
+    if (checkboxKin) checkboxKin.checked = useSimulatedAngles;
+
     const panel = document.getElementById('simulatedAnglesPanel');
     const modeText = document.getElementById('simulationModeText');
     const modeDisplay = document.getElementById('visualizationMode');
-    
+
     if (useSimulatedAngles) {
         // Show simulation controls
-        panel.style.display = 'block';
-        modeText.textContent = 'Simulation mode enabled. Visualization uses your manual angle settings.';
+        if (panel) panel.style.display = 'block';
+        if (modeText) modeText.textContent = 'Simulation mode enabled. Visualization uses your manual angle settings.';
         if (modeDisplay) {
             modeDisplay.textContent = 'Simulated';
         }
-        
+
         // Update visualization with simulated angles
         updateSimulatedVisualization();
     } else {
         // Hide simulation controls
-        panel.style.display = 'none';
-        modeText.textContent = 'Currently showing real robot joint angles. Enable simulation to manually set angles.';
+        if (panel) panel.style.display = 'none';
+        if (modeText) modeText.textContent = 'Currently showing real robot joint angles. Enable simulation to manually set angles.';
         if (modeDisplay) {
             modeDisplay.textContent = 'Real Robot';
         }
-        
+
         // Update visualization with real angles
         const realAngles = [];
         const numJoints = getNumJoints();
@@ -8206,6 +8265,8 @@ function toggleSimulationMode() {
         }
         update3DVisualizationWithAngles(realAngles);
     }
+
+    if (typeof refreshKinematicsSourceUi === 'function') refreshKinematicsSourceUi();
 }
 
 /**

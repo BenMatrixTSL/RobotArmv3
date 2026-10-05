@@ -2872,6 +2872,37 @@ header h1 {
     white-space: nowrap;
 }
 
+/* Per-joint angle shown in each Kinematics step card */
+.kinematics-angle-live {
+    font-size: 16px;
+    font-weight: 700;
+    color: #2c3e50;
+    font-variant-numeric: tabular-nums;
+}
+
+.kinematics-angle-input {
+    width: 90px;
+    padding: 4px 6px;
+    font-size: 14px;
+    border: 1px solid #bbb;
+    border-radius: 4px;
+}
+
+body.touch-mode .kinematics-angle-input {
+    width: 110px;
+    padding: 8px;
+    font-size: 16px;
+}
+
+.kinematics-source-panel .simulation-buttons {
+    margin-top: 8px;
+}
+
+/* End Tool panel sits inside the last (tool-mount) step card */
+#kinematicsEndToolSlot .end-tool-panel {
+    margin-top: 12px;
+}
+
 .kinematics-matrix {
     border-collapse: collapse;
     font-family: 'Courier New', monospace;
