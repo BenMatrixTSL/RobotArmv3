@@ -1376,18 +1376,21 @@ if (typeof robotArmClient !== 'undefined' && robotArmClient) {
  *    not even re-sent;
  *  - otherwise the pose is re-solved at the server-FK position with the
  *    current angles as seed and reference, so the wrist re-poses in place.
- * Used by the "Set tool orientation" block so a rotation happens when the
- * block runs, at its own speed, rather than folded into the next move.
+ * Shared by the Blockly "Set tool orientation" block, G-code "G1 I J K [R] [F]"
+ * and RAPID "SetToolOri" so all three turn the tool when the command runs, at
+ * its own speed, rather than folding it into the next move.
  * @param {number} speedStepsPerSecond
+ * @param {function(string)} [log] - where progress messages go (default: Blockly output)
  */
-async function blocklyApplyToolOrientationInPlace(speedStepsPerSecond) {
+async function applyToolOrientationInPlace(speedStepsPerSecond, log) {
+    const appendOutput = typeof log === 'function' ? log : appendBlocklyOutput;
     if (!currentToolOrientation) return;
     if (!robotArmClient || !robotArmClient.isConnected) {
-        appendBlocklyOutput('Not connected \u2014 orientation stored for the next move.');
+        appendOutput('Not connected \u2014 orientation stored for the next move.');
         return;
     }
     if (typeof robotKinematics === 'undefined' || !robotKinematics.isConfigured()) {
-        appendBlocklyOutput('Kinematics not configured \u2014 orientation stored for the next move.');
+        appendOutput('Kinematics not configured \u2014 orientation stored for the next move.');
         return;
     }
 
@@ -1401,7 +1404,7 @@ async function blocklyApplyToolOrientationInPlace(speedStepsPerSecond) {
             currentAngles.push(status[i].angleDegrees);
         }
     } catch (e) {
-        appendBlocklyOutput('Current joint angles unknown (' + e.message + ') \u2014 orientation stored for the next move.');
+        appendOutput('Current joint angles unknown (' + e.message + ') \u2014 orientation stored for the next move.');
         return;
     }
 
@@ -1423,7 +1426,7 @@ async function blocklyApplyToolOrientationInPlace(speedStepsPerSecond) {
         spinErrorDeg = spun.spinErrorDeg;
         const j6 = targetAngles.length - 1;
         if (Math.abs(targetAngles[j6] - currentAngles[j6]) < 0.2) {
-            appendBlocklyOutput('Tool orientation already set (joint 6 at ' + currentAngles[j6].toFixed(1) + '\u00b0)');
+            appendOutput('Tool orientation already set (joint 6 at ' + currentAngles[j6].toFixed(1) + '\u00b0)');
             return;
         }
         await robotArmClient.moveJoint(j6 + 1, targetAngles[j6], speedStepsPerSecond);
@@ -1433,7 +1436,7 @@ async function blocklyApplyToolOrientationInPlace(speedStepsPerSecond) {
         const target = { x: fk.position.x, y: fk.position.y, z: fk.position.z };
         const baseAngles = await robotArmClient.inverseKinematics({ ...target, orientation: want }, currentAngles);
         if (!baseAngles) {
-            appendBlocklyOutput('Could not reach that orientation at the current position \u2014 stored for the next move.');
+            appendOutput('Could not reach that orientation at the current position \u2014 stored for the next move.');
             return;
         }
         const refined = await robotArmClient.refineOrientationWithAccuracy(target, baseAngles, want, currentAngles);
@@ -1446,7 +1449,12 @@ async function blocklyApplyToolOrientationInPlace(speedStepsPerSecond) {
     await robotArmClient.waitForMotionComplete(30000);
 
     const spinStr = typeof spinErrorDeg === 'number' ? ', spin error ' + formatFiniteNumber(spinErrorDeg, 1) + '\u00b0' : '';
-    appendBlocklyOutput('Tool orientation applied (joint 6 to ' + targetAngles[targetAngles.length - 1].toFixed(1) + '\u00b0' + spinStr + ')');
+    appendOutput('Tool orientation applied (joint 6 to ' + targetAngles[targetAngles.length - 1].toFixed(1) + '\u00b0' + spinStr + ')');
+}
+
+/** Blockly wrapper — kept so generated block code keeps working. */
+async function blocklyApplyToolOrientationInPlace(speedStepsPerSecond) {
+    return applyToolOrientationInPlace(speedStepsPerSecond, appendBlocklyOutput);
 }
 
 function appendBlocklyOutput(text) {
@@ -2442,8 +2450,8 @@ function convertBlocklyToGCode(workspace) {
                 const oy = parseFloat(b.getFieldValue('ORI_Y')) || 0;
                 const oz = parseFloat(b.getFieldValue('ORI_Z')) || 0;
                 const rot = parseFloat(b.getFieldValue('ORI_ROTATION')) || 0;
-                emit(`G1 I${gcodeNum(ox, 3)} J${gcodeNum(oy, 3)} K${gcodeNum(oz, 3)} ; tool orientation (applies to following XYZ moves)`);
-                if (rot !== 0) skip(`tool rotation ${gcodeNum(rot)}° has no G-code equivalent`);
+                const oriSpeed = parseFloat(b.getFieldValue('SPEED')) || 90;
+                emit(`G1 I${gcodeNum(ox, 3)} J${gcodeNum(oy, 3)} K${gcodeNum(oz, 3)} R${gcodeNum(rot)} F${gcodeNum(oriSpeed)} ; turn tool to this orientation now`);
                 break;
             }
 
@@ -2905,7 +2913,7 @@ function convertBlocklyToRapid(workspace) {
                 const oy = parseFloat(b.getFieldValue('ORI_Y')) || 0;
                 const oz = parseFloat(b.getFieldValue('ORI_Z')) || 0;
                 const rot = parseFloat(b.getFieldValue('ORI_ROTATION')) || 0;
-                emit(`SetToolOri [[${num(ox, 3)}, ${num(oy, 3)}, ${num(oz, 3)}], ${num(rot)}];`);
+                emit(`SetToolOri [[${num(ox, 3)}, ${num(oy, 3)}, ${num(oz, 3)}], ${num(rot)}]${speedSuffix(b, 'SPEED', 90)};`);
                 break;
             }
 

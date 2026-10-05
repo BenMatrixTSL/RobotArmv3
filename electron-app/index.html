@@ -532,6 +532,7 @@
                                 • <strong>Stored position (by name):</strong> <code>G1 P"Home" F60</code> → move to stored position named "Home"<br>
                                 • <strong>Joint-space moves:</strong> <code>G1 J1=45 J2=20 F60</code> → move joints 1 and 2 to 45° and 20°<br>
                                 • <strong>Cartesian XYZ:</strong> <code>G1 X150 Y0 Z200 F2400</code> → move TCP to XYZ position (requires kinematics). For XYZ moves <code>F</code> is a feed rate in mm/min (G-code convention): F2400 = 40&nbsp;mm/s tool speed. For P and J moves <code>F</code> stays in deg/s.<br>
+                                • <strong>Tool orientation:</strong> <code>G1 I0 J0 K-1 R45 F90</code> → point the tool's Z-axis along vector (I,J,K) with spin rotation <code>R</code> degrees, turning the tool in place now at <code>F</code> deg/s (default 90). Later XYZ moves keep this orientation. Add <code>X Y Z</code> on the same line to set it as part of that move instead.<br>
                                 The <code>P</code> parameter can be a number (0-99) or a quoted string (position name) from the Stored Positions tab.
                             </td>
                         </tr>
@@ -752,9 +753,10 @@
                         <tr>
                             <td><strong>SetToolOri</strong></td>
                             <td>
-                                Set the tool orientation used by following <code>MoveLXYZ</code> / <code>MoveLOffs</code> moves: a direction vector for the tool's Z-axis, plus an optional spin rotation around it in degrees.<br>
+                                Turn the tool in place now, and keep that orientation for following <code>MoveLXYZ</code> / <code>MoveLOffs</code> moves: a direction vector for the tool's Z-axis, plus an optional spin rotation around it in degrees.<br>
                                 <code>SetToolOri [[0, 0, -1]];</code> → tool pointing straight down.<br>
-                                <code>SetToolOri [[0, 0, -1], 45];</code> → pointing down, rotated 45° about its own axis.
+                                <code>SetToolOri [[0, 0, -1], 45];</code> → pointing down, rotated 45° about its own axis.<br>
+                                <code>SetToolOri [[0, 0, -1], 45], v60;</code> → same, turning at 60&nbsp;deg/s (default 90).
                             </td>
                         </tr>
                         <tr>

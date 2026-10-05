@@ -5495,14 +5495,26 @@ async function executeGCodeCommand(command) {
             return;
         }
         
-        // Optional orientation vector (I, J, K) for the tool's Z-axis
-        if (typeof command.params.I === 'number' ||
+        // Optional orientation vector (I, J, K) for the tool's Z-axis, plus an
+        // optional spin rotation R in degrees. Combined with X/Y/Z it applies
+        // to that move; on its own it turns the tool in place right now (F in
+        // deg/s, default 90) — the same behaviour as the Blockly block and
+        // RAPID's SetToolOri.
+        const hasOrientation = typeof command.params.I === 'number' ||
             typeof command.params.J === 'number' ||
-            typeof command.params.K === 'number') {
+            typeof command.params.K === 'number';
+        if (hasOrientation) {
             const oriX = typeof command.params.I === 'number' ? command.params.I : 0;
             const oriY = typeof command.params.J === 'number' ? command.params.J : 0;
             const oriZ = typeof command.params.K === 'number' ? command.params.K : 0;
-            setToolOrientationVector(oriX, oriY, oriZ);
+            const rot = typeof command.params.R === 'number' ? command.params.R : undefined;
+            setToolOrientationVector(oriX, oriY, oriZ, rot);
+            if (command.params.X === undefined && command.params.Y === undefined && command.params.Z === undefined) {
+                const degPerSec = (typeof command.params.F === 'number' && command.params.F > 0) ? command.params.F : 90;
+                gcodeProcessor.log(`Tool orientation (${oriX}, ${oriY}, ${oriZ})${rot !== undefined ? ` rotation ${rot}°` : ''} — turning tool in place at ${degPerSec} deg/s`);
+                await applyToolOrientationInPlace(degreesPerSecondToStepsPerSecond(degPerSec), (m) => gcodeProcessor.log(m));
+                return;
+            }
         }
 
         // Check if kinematics is configured
@@ -6502,16 +6514,21 @@ async function executeRapidCommand(stmt) {
     } else if (/^SetToolOri\b/i.test(line)) {
         // SetToolOri [[ux,uy,uz]];              → set orientation vector
         // SetToolOri [[ux,uy,uz],rot];           → set orientation + spin rotation (degrees)
-        // Vector and optional rotation may be expressions: SetToolOri [[0, 0, -1], spin * 2];
-        const m = line.match(/^SetToolOri\s*\[\s*\[([^\]]+)\]\s*(?:,\s*(.+?))?\s*\]\s*$/i);
+        // SetToolOri [[ux,uy,uz]];  SetToolOri [[ux,uy,uz],rot];  SetToolOri [[ux,uy,uz],rot], v90;
+        // Vector and rotation may be expressions. Sets the orientation for
+        // later MoveLXYZ/MoveLOffs moves AND turns the tool in place now (v in
+        // deg/s, default 90), matching the Blockly block and G-code "G1 I J K".
+        const m = line.match(/^SetToolOri\s*\[\s*\[([^\]]+)\]\s*(?:,\s*(.+?))?\s*\](?:\s*,\s*v\s*(\d+(?:\.\d+)?))?\s*$/i);
         if (!m) {
-            throw new Error(`Line ${lineNumber}: SetToolOri needs "SetToolOri [[ux,uy,uz]]" or "SetToolOri [[ux,uy,uz],rot]"`);
+            throw new Error(`Line ${lineNumber}: SetToolOri needs "SetToolOri [[ux,uy,uz]]" or "SetToolOri [[ux,uy,uz],rot][, v<deg/s>]"`);
         }
         const xyz = await rapidProcessor.evaluateList(m[1]);
         if (xyz.length < 3) throw new Error(`Line ${lineNumber}: SetToolOri needs three vector components`);
         const rot = m[2] !== undefined ? await rapidProcessor.evaluate(m[2]) : undefined;
+        const oriSpeed = m[3] !== undefined ? parseFloat(m[3]) : 90;
         setToolOrientationVector(xyz[0], xyz[1], xyz[2], rot);
-        console.log('RAPID: SetToolOri on line', lineNumber, 'orientation:', xyz, 'rotation:', rot);
+        console.log('RAPID: SetToolOri on line', lineNumber, 'orientation:', xyz, 'rotation:', rot, 'at', oriSpeed, 'deg/s');
+        await applyToolOrientationInPlace(degreesPerSecondToStepsPerSecond(oriSpeed), (msg) => rapidProcessor.log(msg));
     } else if (/^WaitTime\b/i.test(line)) {
         // WaitTime t; where t is seconds (may be an expression)
         const match = line.match(/^WaitTime\s+(.+)$/i);
