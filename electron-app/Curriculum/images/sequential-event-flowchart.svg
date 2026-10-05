@@ -146,7 +146,7 @@
      text-anchor="middle"
      font-size="10px"
      fill="#1e293b"
-     id="text6">G28 — Move to Home</text>
+     id="text6">G28 - Move to Home</text>
   <text
      x="132"
      y="170"
@@ -179,7 +179,7 @@
      text-anchor="middle"
      font-size="10px"
      fill="#1e293b"
-     id="text8">G01 — Move to Pick Above</text>
+     id="text8">G01 - Move to Pick Above</text>
   <text
      x="132"
      y="220"
@@ -212,7 +212,7 @@
      text-anchor="middle"
      font-size="10px"
      fill="#1e293b"
-     id="text10">G01 — Lower to Pick</text>
+     id="text10">G01 - Lower to Pick</text>
   <text
      x="132"
      y="270"
@@ -245,7 +245,7 @@
      text-anchor="middle"
      font-size="10px"
      fill="#1e293b"
-     id="text12">G04 — Grip / Dwell</text>
+     id="text12">G04 - Grip / Dwell</text>
   <text
      x="132"
      y="320"
@@ -297,7 +297,7 @@
      y="391.18182"
      font-size="9px"
      fill="#dc2626"
-     id="text16">✗ Blocks — can't respond to E-Stop mid-step!</text>
+     id="text16">✗ Blocks - can't respond to E-Stop mid-step!</text>
   <!-- EVENT-DRIVEN column -->
   <!-- Event loop box -->
   <rect

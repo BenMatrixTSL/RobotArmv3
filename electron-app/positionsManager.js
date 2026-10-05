@@ -22,7 +22,7 @@ function initializePositions() {
         numJointsInput.addEventListener('change', updatePositionJointsGrid);
     }
 
-    // XYZ inputs are authoritative when position type is 'xyz' — recompute the
+    // XYZ inputs are authoritative when position type is 'xyz' - recompute the
     // angle preview whenever they change.
     ['positionX', 'positionY', 'positionZ'].forEach(id => {
         const el = document.getElementById(id);
@@ -73,8 +73,8 @@ function updatePositionTypeUI() {
     const previewNote = document.getElementById('positionPreviewNote');
     if (previewNote) {
         previewNote.textContent = anglesAuthoritative
-            ? 'XYZ shown below is a live preview (forward kinematics) — not saved.'
-            : 'Joint angles shown below are a live preview (inverse kinematics for the CURRENT tool) — not saved. A different tool will resolve this XYZ to different angles at move time.';
+            ? 'XYZ shown below is a live preview (forward kinematics) - not saved.'
+            : 'Joint angles shown below are a live preview (inverse kinematics for the CURRENT tool) - not saved. A different tool will resolve this XYZ to different angles at move time.';
     }
 
     updatePositionEditorPreview();
@@ -296,7 +296,7 @@ function savePosition() {
     const type = getSelectedPositionType();
     // Both field groups are read at save time: the authoritative one is what
     // gets saved as the position's real data, the other is just the live
-    // preview (cached alongside for the list/3D view — not used to move).
+    // preview (cached alongside for the list/3D view - not used to move).
     const angles = getPositionAngles();
     const xInput = parseFloat(document.getElementById('positionX').value);
     const yInput = parseFloat(document.getElementById('positionY').value);
@@ -394,7 +394,7 @@ function loadPosition() {
     }
     
     // Load into editor. Missing type = legacy position saved before this field
-    // existed — treat as 'angles', matching its actual data shape.
+    // existed - treat as 'angles', matching its actual data shape.
     document.getElementById('positionLabel').value = position.label || '';
     setPositionType(position.type === 'xyz' ? 'xyz' : 'angles');
     setPositionAngles(position.angles || []);
@@ -491,7 +491,7 @@ function refreshPositionsList() {
             ? `X:${pos.xyz.x.toFixed(1)} Y:${pos.xyz.y.toFixed(1)} Z:${pos.xyz.z.toFixed(1)} mm`
             : '';
         // Whichever field isn't authoritative for this position's type is shown
-        // as a "(preview)" hint — it's a cached snapshot, not what's actually used to move.
+        // as a "(preview)" hint - it's a cached snapshot, not what's actually used to move.
         const primaryStr = type === 'xyz' ? xyzStr : anglesStr;
         const previewStr = type === 'xyz'
             ? (anglesStr ? `${anglesStr} (preview)` : '')
@@ -718,7 +718,7 @@ async function loadCurrentRobotAngles() {
             }
         }
         
-        // Set angles in editor — capturing live angles implies saving as angles-type.
+        // Set angles in editor - capturing live angles implies saving as angles-type.
         setPositionType('angles');
         setPositionAngles(angles);
         updatePositionTypeUI();

@@ -410,7 +410,7 @@ def main():
     if not device_has_capture_formats(active_device):
         print(
             f"Error: {active_device} is not a video capture device "
-            '(try /dev/video0 — "Inappropriate ioctl" means wrong node).',
+            '(try /dev/video0 - "Inappropriate ioctl" means wrong node).',
             file=sys.stderr,
         )
         print("Check formats: v4l2-ctl -d /dev/video0 --list-formats-ext", file=sys.stderr)

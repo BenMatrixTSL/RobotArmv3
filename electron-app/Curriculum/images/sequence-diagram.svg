@@ -6,7 +6,7 @@
   </defs>
   <rect width="580" height="340" fill="#f8fafc" rx="8"/>
   <text x="290" y="24" text-anchor="middle" font-size="15" font-weight="700" fill="#1e293b">Pick-and-Place Sequence Diagram</text>
-  <text x="290" y="40" text-anchor="middle" font-size="11" fill="#64748b">One complete cycle — HOME → PICK → PLACE → HOME</text>
+  <text x="290" y="40" text-anchor="middle" font-size="11" fill="#64748b">One complete cycle - HOME → PICK → PLACE → HOME</text>
 
   <!-- Timeline axis -->
   <line x1="40" y1="80" x2="560" y2="80" stroke="#e2e8f0" stroke-width="1.5"/>

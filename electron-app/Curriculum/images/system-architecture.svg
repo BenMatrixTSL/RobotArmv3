@@ -13,7 +13,7 @@
 
   <!-- ── LAYER 1: User / HMI ── -->
   <rect x="20" y="52" width="580" height="70" rx="8" fill="#eff6ff" stroke="#3b82f6" stroke-width="2"/>
-  <text x="30" y="68" font-size="10" font-weight="700" fill="#1d4ed8">Layer 1 — User Interface (HMI)</text>
+  <text x="30" y="68" font-size="10" font-weight="700" fill="#1d4ed8">Layer 1 - User Interface (HMI)</text>
 
   <!-- Electron App -->
   <rect x="40"  y="72" width="130" height="40" rx="6" fill="#3b82f6" stroke="#1d4ed8" stroke-width="1.5"/>
@@ -47,7 +47,7 @@
 
   <!-- ── LAYER 2: Raspberry Pi ── -->
   <rect x="20" y="152" width="580" height="90" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
-  <text x="30" y="168" font-size="10" font-weight="700" fill="#15803d">Layer 2 — Raspberry Pi Controller</text>
+  <text x="30" y="168" font-size="10" font-weight="700" fill="#15803d">Layer 2 - Raspberry Pi Controller</text>
 
   <!-- Pi box -->
   <rect x="40" y="174" width="130" height="58" rx="6" fill="#16a34a" stroke="#15803d" stroke-width="1.5"/>
@@ -78,7 +78,7 @@
 
   <!-- ── LAYER 3: Hardware ── -->
   <rect x="20" y="272" width="580" height="120" rx="8" fill="#faf5ff" stroke="#7c3aed" stroke-width="2"/>
-  <text x="30" y="288" font-size="10" font-weight="700" fill="#6d28d9">Layer 3 — Hardware</text>
+  <text x="30" y="288" font-size="10" font-weight="700" fill="#6d28d9">Layer 3 - Hardware</text>
 
   <!-- Servos -->
   <rect x="40"  y="296" width="88" height="86" rx="6" fill="#7c3aed" stroke="#6d28d9" stroke-width="1.5"/>
@@ -131,6 +131,6 @@
   <line x1="324" y1="340" x2="334" y2="340" stroke="#94a3b8" stroke-width="2"/>
 
   <!-- ── Data flow note ── -->
-  <text x="310" y="408" text-anchor="middle" font-size="9" fill="#64748b">Bidirectional arrows = command + status/telemetry return path  |  E-Stop is hardware-level — overrides software at all times</text>
+  <text x="310" y="408" text-anchor="middle" font-size="9" fill="#64748b">Bidirectional arrows = command + status/telemetry return path  |  E-Stop is hardware-level - overrides software at all times</text>
   <text x="310" y="422" text-anchor="middle" font-size="9" fill="#64748b">AS5600 encoder feedback travels back via servo status packets over the same UART bus</text>
 </svg>

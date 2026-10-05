@@ -1,7 +1,7 @@
 <svg viewBox="0 0 520 380" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, sans-serif">
   <rect width="520" height="380" fill="#f8fafc" rx="8"/>
   <text x="260" y="22" text-anchor="middle" font-size="14" font-weight="700" fill="#1e293b">Automation Cell Layout</text>
-  <text x="260" y="38" text-anchor="middle" font-size="10" fill="#64748b">Top-down view of a typical robot workcell — fencing, stations, and safety zones</text>
+  <text x="260" y="38" text-anchor="middle" font-size="10" fill="#64748b">Top-down view of a typical robot workcell - fencing, stations, and safety zones</text>
 
   <!-- Cell boundary (safety fence) -->
   <rect x="40" y="50" width="380" height="280" rx="6" fill="none" stroke="#dc2626" stroke-width="3" stroke-dasharray="10,5"/>
@@ -84,5 +84,5 @@
   <rect x="436" y="208" width="12" height="10" rx="2" fill="#16a34a"/>
   <text x="454" y="217" font-size="9" fill="#16a34a">Access gate</text>
 
-  <text x="260" y="368" text-anchor="middle" font-size="9" fill="#64748b">All personnel must remain outside the fence when the robot is energised — access gate triggers E-Stop on open</text>
+  <text x="260" y="368" text-anchor="middle" font-size="9" fill="#64748b">All personnel must remain outside the fence when the robot is energised - access gate triggers E-Stop on open</text>
 </svg>

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Module 11 — Mechatronic System Integration</title>
+<title>Module 11 - Mechatronic System Integration</title>
 <style>
   :root {
     --bg: #f8fafc; --card: #ffffff; --border: #e2e8f0;
@@ -131,15 +131,15 @@
     <img src="images/system-architecture.svg" alt="Full system architecture diagram" style="width:100%;height:auto;display:block;border-radius:8px;margin:12px 0;">
     <p>Every action you trigger in the app travels through five distinct layers before a joint actually moves:</p>
     <div class="layer-stack">
-      <div class="layer layer-app">&#128187; HMI / Electron App — User clicks a button or runs a G-code file</div>
+      <div class="layer layer-app">&#128187; HMI / Electron App - User clicks a button or runs a G-code file</div>
       <div class="layer-arrow">&#8595; WebSocket (JSON, TCP 8080)</div>
-      <div class="layer layer-ws">&#128257; Network Transport — Command sent as a JSON packet over Wi-Fi or LAN</div>
+      <div class="layer layer-ws">&#128257; Network Transport - Command sent as a JSON packet over Wi-Fi or LAN</div>
       <div class="layer-arrow">&#8595; Server on Raspberry Pi receives and parses</div>
-      <div class="layer layer-server">&#127381; Controller (Raspberry Pi) — Motion planning, safety checks, PID setpoints calculated</div>
+      <div class="layer layer-server">&#127381; Controller (Raspberry Pi) - Motion planning, safety checks, PID setpoints calculated</div>
       <div class="layer-arrow">&#8595; UART serial bus at 1 Mbaud</div>
-      <div class="layer layer-serial">&#128268; Serial Protocol — Position command sent to each ST3215 servo by ID</div>
+      <div class="layer layer-serial">&#128268; Serial Protocol - Position command sent to each ST3215 servo by ID</div>
       <div class="layer-arrow">&#8595; Internal servo electronics</div>
-      <div class="layer layer-hw">&#128302; Actuator / Sensor — Motor drives joint; AS5600 encoder reads back position</div>
+      <div class="layer layer-hw">&#128302; Actuator / Sensor - Motor drives joint; AS5600 encoder reads back position</div>
     </div>
     <div class="highlight-box">
       <strong>Key insight:</strong> A fault at any layer produces a symptom at a different layer. A network drop (layer 2) looks like the arm ignoring commands (layer 5 symptom). Tracing faults means working through the stack systematically.
@@ -149,13 +149,13 @@
       <div class="callout-body">
         <strong>Five-Layer System Stack</strong></br>
         <ol style="margin:0.5rem 0 0;padding-left:1.2rem;">
-          <li><strong>HMI — Electron App</strong>: the user interface running on PC or the robot arm touchscreen</li>
+          <li><strong>HMI - Electron App</strong>: the user interface running on PC or the robot arm touchscreen</li>
           <li><strong>WebSocket / JSON over TCP:8080</strong>: bi-directional real-time messaging</li>
           <li><strong>Server on Raspberry Pi</strong>: control session management, kinematics solver, motion planning, safety enforcement, G-code/RAPID execution</li>
           <li><strong>Serial bus interface (1 Mbps half-duplex)</strong>: the daisy-chained physical link, polled every 20 ms</li>
           <li><strong>ST3215 servo hardware + AS5600 sensors</strong>: actuators with internal PID, position/load/temperature sensors, and independent magnetic encoders via I²C</li>
         </ol>
-        The LED strip and camera are <em>peripheral</em> subsystems alongside this stack — they do not carry motion commands. A fault at any one layer produces symptoms at a different layer; the key skill in this module is tracing a symptom back to its source layer.
+        The LED strip and camera are <em>peripheral</em> subsystems alongside this stack - they do not carry motion commands. A fault at any one layer produces symptoms at a different layer; the key skill in this module is tracing a symptom back to its source layer.
       </div>
     </div>
   </div>
@@ -175,17 +175,17 @@
     <div class="callout callout-tip">
       <span class="callout-icon">💡</span>
       <div class="callout-body">
-        <strong>LED Strip — Cross-Layer Integration Example</strong></br>
+        <strong>LED Strip - Cross-Layer Integration Example</strong></br>
         The WS2812B LED status strip on the arm is a clean example of cross-layer integration. Its colour is determined by the server reading conditions across multiple layers simultaneously: the number of connected WebSocket clients (layer 2), the serial bus health (layer 4), joint thermal faults (layer 5), and whether a move is in progress (layer 3). A single physical output aggregates the state of the entire system. When diagnosing a fault, the LED strip gives you a fast first indicator of which layer to investigate.
       </div>
     </div>
     <div class="callout callout-info">
       <span class="callout-icon">🤏</span>
       <div class="callout-body">
-        <strong>End-Tool Node — Embedded Subsystem Integration</strong></br>
+        <strong>End-Tool Node - Embedded Subsystem Integration</strong></br>
         The ESP32 microcontroller at the tip of the arm (bus address 64) is a complete embedded subsystem on the same serial bus as the main joints. It has its own identity, fault register, PWM outputs, hobby servo drive, and ADC current sensing. Integrating it raised several engineering challenges:
         <ul style="margin:0.4rem 0 0;padding-left:1.2rem;">
-          <li><strong>Bus arbitration</strong>: two device types (servos and ESP32) share one bus — the server must address them correctly</li>
+          <li><strong>Bus arbitration</strong>: two device types (servos and ESP32) share one bus - the server must address them correctly</li>
           <li><strong>Watchdog management</strong>: the ESP32 has its own communication watchdog that must be refreshed periodically</li>
           <li><strong>Fault isolation</strong>: an ESP32 fault must not freeze the main joint control loop</li>
         </ul>
@@ -195,7 +195,7 @@
     <div class="callout callout-info">
       <span class="callout-icon">📷</span>
       <div class="callout-body">
-        <strong>Camera Subsystem — Perception Integration</strong></br>
+        <strong>Camera Subsystem - Perception Integration</strong></br>
         A USB camera on the Raspberry Pi provides a perception input. It streams JPEG frames to port 8082, and the server proxies the ArUco marker detection and coloured block highlighting results into the WebSocket feed. From the app's perspective, vision data arrives alongside joint telemetry on the same connection. The <span class="ui-ref">Camera</span> tab displays the live stream with overlaid detections. This is a genuine multi-process integration scenario: the control system and the vision system run independently and must be synchronised without blocking each other.
       </div>
     </div>
@@ -204,12 +204,12 @@
   <!-- WORKSHEET -->
   <div class="section-card worksheet-card">
     <span class="pill pill-worksheet">Worksheet</span>
-    <h2>Activity — Full-System Trace</h2>
+    <h2>Activity - Full-System Trace</h2>
     <p>You will trace a single user action through all five layers of the system, observing what happens at each stage.</p>
     <ul class="steps">
-      <li>Open the app and connect to the arm via the <span class="tab-ref">Connection</span> tab. Note the connection status — this confirms layers 1–2 are working.</li>
-      <li>Navigate to the <span class="tab-ref">3D Visualization</span> tab. This shows the forward kinematics model (layer 3/5 — the software model).</li>
-      <li><p>Click the <strong>Pop Out</strong> button in the <span class="ui-ref">3D Visualisation</span> tab to open the 3D model in a separate always-on-top window. Arrange this alongside the main app window showing <span class="ui-ref">Joint Control</span>. Now, when you command Joint 1 to move 30°, you can simultaneously watch the 3D model update, the live angle readout change, and the load % respond — three data streams from three system layers, all in one view.</p></li>
+      <li>Open the app and connect to the arm via the <span class="tab-ref">Connection</span> tab. Note the connection status - this confirms layers 1–2 are working.</li>
+      <li>Navigate to the <span class="tab-ref">3D Visualization</span> tab. This shows the forward kinematics model (layer 3/5 - the software model).</li>
+      <li><p>Click the <strong>Pop Out</strong> button in the <span class="ui-ref">3D Visualisation</span> tab to open the 3D model in a separate always-on-top window. Arrange this alongside the main app window showing <span class="ui-ref">Joint Control</span>. Now, when you command Joint 1 to move 30°, you can simultaneously watch the 3D model update, the live angle readout change, and the load % respond - three data streams from three system layers, all in one view.</p></li>
       <li>Open the <span class="tab-ref">Joint Control</span> tab alongside. Command Joint 1 to move 30°. Simultaneously watch: (a) the 3D model update, (b) the live position readout, (c) the load value change mid-move.</li>
       <li>Now use the <span class="tab-ref">G-Code Control</span> tab to run a short two-move program. This exercises layers 1→5 with a programmatic sequence rather than manual input.</li>
       <li>Use the <span class="tab-ref">Visual Programming</span> (Blockly) tab to build the same two moves as a block program. Compare: which interface felt more reliable? Which was faster to create?</li>
@@ -235,9 +235,9 @@
   <div class="section-card">
     <span class="pill pill-sowhat">So What?</span>
     <h2>Why Integration Is the Hard Part</h2>
-    <p>Individual components — servos, Raspberry Pi, network — are well-understood in isolation. The difficulty in real engineering projects is making them work <em>together</em> reliably. This is why systems integration is a dedicated engineering role in industry.</p>
-    <p>When you built a Blockly program and watched it execute on the physical arm, you experienced the entire mechatronic stack in action. Most users never think about the five layers beneath a button press — but engineers must design, test, and maintain every one of them.</p>
-    <p><strong>Industry connection:</strong> Automotive manufacturing robots, surgical robots, and warehouse automation systems all follow the same layered model — HMI → network/fieldbus → controller → actuator/sensor. The vocabulary and patterns you have learned here transfer directly.</p>
+    <p>Individual components - servos, Raspberry Pi, network - are well-understood in isolation. The difficulty in real engineering projects is making them work <em>together</em> reliably. This is why systems integration is a dedicated engineering role in industry.</p>
+    <p>When you built a Blockly program and watched it execute on the physical arm, you experienced the entire mechatronic stack in action. Most users never think about the five layers beneath a button press - but engineers must design, test, and maintain every one of them.</p>
+    <p><strong>Industry connection:</strong> Automotive manufacturing robots, surgical robots, and warehouse automation systems all follow the same layered model - HMI → network/fieldbus → controller → actuator/sensor. The vocabulary and patterns you have learned here transfer directly.</p>
   </div>
 
   <!-- MCQ -->
@@ -286,9 +286,9 @@
 <script>
 const answers = { q1: 'b', q2: 'b', q3: 'b' };
 const feedback = {
-  q1: { b: 'Correct! PID runs inside each ST3215 servo — only setpoints travel over the network, keeping the control loop fast.', wrong: 'Not quite. PID runs inside each ST3215 servo, keeping the control loop local and fast.' },
+  q1: { b: 'Correct! PID runs inside each ST3215 servo - only setpoints travel over the network, keeping the control loop fast.', wrong: 'Not quite. PID runs inside each ST3215 servo, keeping the control loop local and fast.' },
   q2: { b: 'Correct! Mechatronics integrates mechanical, electrical, software and control engineering.', wrong: 'Not quite. Mechatronics combines mechanical, electrical, software and control engineering.' },
-  q3: { b: 'Correct! A silently dropped command most likely indicates a network/WebSocket failure between the app and the Pi.', wrong: 'Not quite. A silent drop with no movement suggests the command never reached the Pi — check the network/WebSocket layer first.' }
+  q3: { b: 'Correct! A silently dropped command most likely indicates a network/WebSocket failure between the app and the Pi.', wrong: 'Not quite. A silent drop with no movement suggests the command never reached the Pi - check the network/WebSocket layer first.' }
 };
 function checkMCQ() {
   let score = 0;

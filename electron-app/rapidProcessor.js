@@ -2,7 +2,7 @@
  * RAPID Processor
  *
  * Parses and runs the app's beginner-friendly subset of ABB RAPID. This file
- * owns the language side — variables, expressions and control flow — and
+ * owns the language side - variables, expressions and control flow - and
  * hands every arm command (MoveJ, MoveLXYZ, GripperOpen, …) to the executor
  * callback that app.js supplies, with a way to evaluate expressions inside
  * the command's arguments.
@@ -160,7 +160,7 @@ class RapidProcessor {
 
     getVar(name) {
         const v = this.vars[name.toLowerCase()];
-        if (v === undefined) throw new Error(`Unknown variable "${name}" — declare it first with VAR num ${name} := 0;`);
+        if (v === undefined) throw new Error(`Unknown variable "${name}" - declare it first with VAR num ${name} := 0;`);
         return v;
     }
 
@@ -359,14 +359,14 @@ class RapidProcessor {
                         next = this.labels[s.name];
                         break;
                     case 'EXIT':
-                        this.log('EXIT — program ended');
+                        this.log('EXIT - program ended');
                         next = st.length;
                         break;
                     case 'VAR':
                         this.setVar(s.name, s.expression === null ? 0 : await this.evaluate(s.expression));
                         break;
                     case 'ASSIGN':
-                        if (!this.hasVar(s.name)) throw new Error(`Line ${s.lineNumber}: "${s.name}" is not declared — add VAR num ${s.name} := 0; first`);
+                        if (!this.hasVar(s.name)) throw new Error(`Line ${s.lineNumber}: "${s.name}" is not declared - add VAR num ${s.name} := 0; first`);
                         this.setVar(s.name, await this.evaluate(s.expression));
                         break;
                     case 'TPWRITE': {
@@ -393,7 +393,7 @@ class RapidProcessor {
                     case 'ENDFOR': {
                         const f = st[s.startIndex];
                         const state = forState[s.startIndex];
-                        if (!state) break; // jumped into the loop body — just fall through
+                        if (!state) break; // jumped into the loop body - just fall through
                         const v = this.getVar(f.name) + state.step;
                         this.setVar(f.name, v);
                         if (state.step > 0 ? v <= state.to : v >= state.to) next = s.startIndex + 1;

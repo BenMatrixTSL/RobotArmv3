@@ -1,16 +1,16 @@
 /**
- * Calibration tab — reads a servo's full EEPROM and SRAM blocks and renders
+ * Calibration tab - reads a servo's full EEPROM and SRAM blocks and renders
  * them against the STS3215 memory table (stsMemoryTable.js). The EEPROM
  * table highlights anything that differs from the factory default so a
  * change made at some point in the past (e.g. during PID/overload tuning)
  * is easy to spot later. The SRAM table shows live/runtime state (position,
- * speed, load, current, fault flags, torque switch, etc.) read-only — see
+ * speed, load, current, fault flags, torque switch, etc.) read-only - see
  * stsMemoryTable.js for why SRAM writes aren't offered on this page.
  *
  * Editing is off by default and EEPROM-only. "Enable Editing" switches
  * writable EEPROM rows into an editable state; each write still requires the
  * control-lock password (typed once into calibrationWritePassword and sent
- * with every write — the server is the actual authority, this page doesn't
+ * with every write - the server is the actual authority, this page doesn't
  * validate the password itself). The Position Correction and Commissioning
  * panels lower on the page are only revealed once that same password has
  * been entered via "Enable Editing".
@@ -47,7 +47,7 @@ async function readCalibrationForJoint(jointNumber) {
 /**
  * Toggles the page between read-only and edit mode. Requires a non-empty
  * password to enter edit mode (the server rejects the write itself if the
- * password is wrong — this is just gating the UI, not authenticating).
+ * password is wrong - this is just gating the UI, not authenticating).
  */
 function toggleCalibrationWriteMode() {
     const passwordInput = document.getElementById('calibrationWritePassword');
@@ -92,7 +92,7 @@ function renderCalibrationTable() {
 /**
  * Shows the currently selected joint's Position Correction value (decoded
  * from the cached EEPROM block, same as the main table) next to the
- * up/down nudge buttons — "—" until that joint has actually been read.
+ * up/down nudge buttons - " - " until that joint has actually been read.
  */
 function renderPositionCorrectionDisplay() {
     const valueEl = document.getElementById('posCorrectionValue');
@@ -100,7 +100,7 @@ function renderPositionCorrectionDisplay() {
     const jointNumber = parseInt(document.getElementById('calibrationJointSelect').value, 10);
     const cached = calibrationRawByJoint[jointNumber];
     if (!cached) {
-        valueEl.textContent = 'Position Correction: —';
+        valueEl.textContent = 'Position Correction: - ';
         return;
     }
     const raw = rawValueAtAddress(cached.eeprom, STS_POSITION_CORRECTION_ADDRESS, 2);
@@ -131,7 +131,7 @@ function renderEepromTable() {
     tbody.innerHTML = rows.map(r => {
         const addrHex = '0x' + r.address.toString(16).toUpperCase().padStart(2, '0');
         const readOnly = r.access === 'read';
-        const rangeStr = r.min === -1 && r.max === -1 ? '—' : `${r.min}..${r.max} ${r.unit === '—' ? '' : r.unit}`.trim();
+        const rangeStr = r.min === -1 && r.max === -1 ? ' - ' : `${r.min}..${r.max} ${r.unit === ' - ' ? '' : r.unit}`.trim();
 
         let editCell = '';
         if (calibrationWriteModeEnabled) {
@@ -179,7 +179,7 @@ function renderSramTable() {
     tbody.innerHTML = decoded.map(r => {
         const addrHex = '0x' + r.address.toString(16).toUpperCase().padStart(2, '0');
         const readOnly = r.access === 'read';
-        const rangeStr = r.min === -1 && r.max === -1 ? '—' : `${r.min}..${r.max} ${r.unit === '—' ? '' : r.unit}`.trim();
+        const rangeStr = r.min === -1 && r.max === -1 ? ' - ' : `${r.min}..${r.max} ${r.unit === ' - ' ? '' : r.unit}`.trim();
         return `
             <tr>
                 <td>${addrHex} <span style="color:#999;">(${r.address})</span></td>
@@ -227,7 +227,7 @@ async function writeCalibrationRegister(address) {
     input.disabled = true;
 
     // A few registers (Position Correction, in particular) use a bit pattern
-    // that isn't standard two's complement — encode the value the user typed
+    // that isn't standard two's complement - encode the value the user typed
     // into the actual raw integer the servo expects before sending it.
     const encodedValue = encodeRegisterValue(reg, rawValue);
 
@@ -237,7 +237,7 @@ async function writeCalibrationRegister(address) {
 
         // The write's own reply already waits for the servo's EEPROM-write
         // settle time server-side, but read it back explicitly rather than
-        // trusting "success" alone — that's the only way to know the table
+        // trusting "success" alone - that's the only way to know the table
         // reflects what the hardware actually holds, not just what we asked for.
         setCalibrationStatus(`Verifying Joint ${jointNumber} address ${addrHex}...`);
         await readCalibrationForJoint(jointNumber);
@@ -245,10 +245,10 @@ async function writeCalibrationRegister(address) {
 
         const confirmedReg = decodeEepromBlock(calibrationRawByJoint[jointNumber].eeprom).find(r => r.address === address);
         if (confirmedReg && confirmedReg.raw === encodedValue) {
-            setCalibrationStatus(`Confirmed — Joint ${jointNumber} address ${addrHex} now reads ${rawValue} (${confirmedReg.meaningful}).`);
+            setCalibrationStatus(`Confirmed - Joint ${jointNumber} address ${addrHex} now reads ${rawValue} (${confirmedReg.meaningful}).`);
         } else {
             const actual = confirmedReg ? confirmedReg.meaningful : '(read failed)';
-            setCalibrationStatus(`Wrote ${rawValue} but the read-back shows ${actual} — the write may not have taken effect. Try again or check the servo connection.`);
+            setCalibrationStatus(`Wrote ${rawValue} but the read-back shows ${actual} - the write may not have taken effect. Try again or check the servo connection.`);
         }
     } catch (error) {
         setCalibrationStatus(`Failed to write Joint ${jointNumber} address ${addrHex}: ${error.message}`);
@@ -256,11 +256,11 @@ async function writeCalibrationRegister(address) {
     }
 }
 
-// EEPROM address of Position Correction (2 bytes, signed-step encoding —
+// EEPROM address of Position Correction (2 bytes, signed-step encoding -
 // see encodeSignedStep/decodeSignedStepNumeric in stsMemoryTable.js).
 const STS_POSITION_CORRECTION_ADDRESS = 0x1F;
 // SRAM Target Location (goal position) address and the absolute step value
-// that commands the servo to the mechanical center — same plain 0-4095
+// that commands the servo to the mechanical center - same plain 0-4095
 // encoding robotArmST3215.js's moveToPosition() uses, NOT the signed-step
 // encoding stsMemoryTable.js decodes this register as for display. Driving
 // the servo there is what makes a Position Correction change visible
@@ -272,7 +272,7 @@ const STS_TARGET_LOCATION_RECENTER_VALUE = 2048;
  * Nudges the selected joint's Position Correction by `direction` (-1 or +1)
  * times the step size field, writes it, then commands the servo to the
  * mechanical center (Target Location = 2048) so the change is reflected in
- * the servo's live position right away — this physically moves the joint.
+ * the servo's live position right away - this physically moves the joint.
  * Re-reads the joint afterward and checks the read-back actually matches
  * what was written before reporting success, so the on-page value and the
  * main EEPROM table only ever show what's genuinely on the hardware.
@@ -312,7 +312,7 @@ async function adjustPositionCorrection(direction) {
         await robotArmClient.writeServoEepromRaw(jointNumber, STS_TARGET_LOCATION_ADDRESS, STS_TARGET_LOCATION_RECENTER_VALUE, password);
 
         // Both writes' own replies already wait for their bus-write settle
-        // time, but that move is still ongoing SRAM/bus traffic — give it a
+        // time, but that move is still ongoing SRAM/bus traffic - give it a
         // moment before reading back, rather than racing it, and then
         // actually check the read-back matches what was written instead of
         // just assuming it did (readCalibrationForJoint swallows its own
@@ -330,7 +330,7 @@ async function adjustPositionCorrection(direction) {
             setCalibrationStatus(`Joint ${jointNumber}: Position Correction confirmed at ${newValue} step, moved to center (2048).`);
         } else {
             const actual = confirmedCache ? `${decodeSignedStepNumeric(confirmedRaw)} step` : '(read failed)';
-            setCalibrationStatus(`Wrote Position Correction ${newValue} step but the read-back shows ${actual} — the write may not have taken effect. Try again or check the servo connection.`);
+            setCalibrationStatus(`Wrote Position Correction ${newValue} step but the read-back shows ${actual} - the write may not have taken effect. Try again or check the servo connection.`);
         }
     } catch (error) {
         setCalibrationStatus(`Failed to adjust Joint ${jointNumber}'s Position Correction: ${error.message}`);
@@ -343,7 +343,7 @@ async function adjustPositionCorrection(direction) {
 // Custom values that override the factory default for these registers,
 // applied to every joint identically. Every other writable register from
 // COMMISSIONING_MIN_ADDRESS through COMMISSIONING_MAX_ADDRESS is instead
-// reset to its factory default — see commissioningWritesForJoint() below.
+// reset to its factory default - see commissioningWritesForJoint() below.
 const COMMISSIONING_OVERRIDES = {
     0x0E: { value: 140, label: 'Max input voltage' },
     0x17: { value: 10, label: 'I coefficient' },
@@ -359,7 +359,7 @@ const COMMISSIONING_MAX_ADDRESS = 0x27;
 const COMMISSIONING_JOINT_COUNT = 6;
 
 // Position correction (0x1F) is per-servo zero-point calibration, not a
-// generic default — commissioning must never stomp it, so it's handled
+// generic default - commissioning must never stomp it, so it's handled
 // separately from this button entirely.
 const COMMISSIONING_SKIP_ADDRESSES = new Set([0x1F]);
 
@@ -372,7 +372,7 @@ const COMMISSIONING_CENTER_STEP = 2048;
 /**
  * This joint's min/max angle limit, as raw steps (0-4095, center 2048 = 0°),
  * read live from the loaded kinematics.urdf via the global robotKinematics
- * instance (kinematics.js) — not a hardcoded copy of the URDF's numbers,
+ * instance (kinematics.js) - not a hardcoded copy of the URDF's numbers,
  * which would silently go stale the next time someone tunes a joint limit
  * there. Throws if the URDF hasn't loaded (or doesn't describe this joint),
  * rather than writing a limit computed from missing data.
@@ -381,7 +381,7 @@ function commissioningAngleLimitsForJoint(jointNumber) {
     const joint = robotKinematics.joints && robotKinematics.joints[jointNumber - 1];
     const limits = joint && joint.limits;
     if (!limits || typeof limits.lowerRadians !== 'number' || typeof limits.upperRadians !== 'number') {
-        throw new Error(`No joint limits available for Joint ${jointNumber} — kinematics.urdf may not have loaded yet`);
+        throw new Error(`No joint limits available for Joint ${jointNumber} - kinematics.urdf may not have loaded yet`);
     }
     const min = Math.round(COMMISSIONING_CENTER_STEP + limits.lowerRadians * COMMISSIONING_STEPS_PER_RADIAN);
     const max = Math.round(COMMISSIONING_CENTER_STEP + limits.upperRadians * COMMISSIONING_STEPS_PER_RADIAN);
@@ -396,8 +396,8 @@ function commissioningAngleLimitsForJoint(jointNumber) {
  * Commissioning button, in address order: COMMISSIONING_OVERRIDES's custom
  * values, this joint's angle limits from commissioningAngleLimitsForJoint(),
  * and every other writable register in the 0x07-0x27 range reset to its
- * factory default — skipping addresses the Calibration page itself refuses
- * to write (ID, Baud rate, Phase — STS_WRITE_BLOCKED_ADDRESSES, from
+ * factory default - skipping addresses the Calibration page itself refuses
+ * to write (ID, Baud rate, Phase - STS_WRITE_BLOCKED_ADDRESSES, from
  * stsMemoryTable.js) and COMMISSIONING_SKIP_ADDRESSES.
  */
 function commissioningWritesForJoint(jointNumber) {
@@ -435,7 +435,7 @@ function rawValueAtAddress(bytes, address, byteCount) {
 }
 
 /**
- * Writes commissioningWritesForJoint()'s registers to every joint's servo —
+ * Writes commissioningWritesForJoint()'s registers to every joint's servo -
  * but reads each joint's current EEPROM first and skips any register that's
  * already at its target value, so re-running commissioning on an
  * already-commissioned arm only touches what's actually changed (a fresh or
@@ -451,7 +451,7 @@ async function commissionAllServos() {
         return;
     }
     if (!robotKinematics.joints || robotKinematics.joints.length < COMMISSIONING_JOINT_COUNT) {
-        showAppMessage("Joint limits aren't loaded yet (kinematics.urdf) — wait for the app to finish starting up and try again.");
+        showAppMessage("Joint limits aren't loaded yet (kinematics.urdf) - wait for the app to finish starting up and try again.");
         return;
     }
 
@@ -482,9 +482,9 @@ async function commissionAllServos() {
                 const response = await robotArmClient.readServoEepromRaw(joint);
                 currentBytes = response.eepromBytes;
             } catch (error) {
-                // Can't tell what's already correct — fall back to writing
+                // Can't tell what's already correct - fall back to writing
                 // every register for this joint, same as before this change.
-                failures.push(`Joint ${joint}: couldn't read current EEPROM (${error.message}) — writing every register unconditionally`);
+                failures.push(`Joint ${joint}: couldn't read current EEPROM (${error.message}) - writing every register unconditionally`);
             }
 
             for (const { address, value, label, bytes } of commissioningWritesForJoint(joint)) {
@@ -498,7 +498,7 @@ async function commissionAllServos() {
                     await writeCommissioningRegisterWithRetry(joint, address, value, password);
                     successCount++;
                 } catch (error) {
-                    // A bulk run touches ~150 registers across 6 servos — one
+                    // A bulk run touches ~150 registers across 6 servos - one
                     // transient bus hiccup must not silently abort every
                     // write after it, so record the failure and keep going.
                     failures.push(`Joint ${joint} ${addrHex} (${label}): ${error.message}`);
@@ -506,7 +506,7 @@ async function commissionAllServos() {
             }
         }
 
-        // Every joint's registers just changed — drop the whole cache rather
+        // Every joint's registers just changed - drop the whole cache rather
         // than leave other joints' tables showing stale pre-commissioning
         // bytes, then re-read the one currently on screen.
         for (const key of Object.keys(calibrationRawByJoint)) delete calibrationRawByJoint[key];
@@ -522,7 +522,7 @@ async function commissionAllServos() {
         } else {
             setCalibrationStatus(
                 `Commissioned ${successCount} register write(s), ${skippedCount} already correct; ` +
-                `${failures.length} failed (likely a transient bus error — re-run to retry just those): ${failures.join('; ')}`
+                `${failures.length} failed (likely a transient bus error - re-run to retry just those): ${failures.join('; ')}`
             );
         }
     } catch (error) {
@@ -534,7 +534,7 @@ async function commissionAllServos() {
 
 /**
  * A single commissioning register write, with its own retry on top of
- * writeServoEepromRaw's own low-level bus retry — bulk commissioning touches
+ * writeServoEepromRaw's own low-level bus retry - bulk commissioning touches
  * ~150 registers in one run, so one transient bus hiccup among all of them
  * shouldn't need a whole extra pass over every joint to recover from.
  */

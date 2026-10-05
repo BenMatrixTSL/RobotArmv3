@@ -360,7 +360,7 @@ class RobotArmClient {
         }
 
         if (data.type === 'urdfConfig') {
-            // Server is pushing its authoritative URDF — apply it locally
+            // Server is pushing its authoritative URDF - apply it locally
             if (data.urdfText && typeof applyLoadedUrdf === 'function') {
                 applyLoadedUrdf(data.urdfText, 'server').catch(function(e) {
                     console.warn('Failed to apply server URDF:', e.message);
@@ -372,15 +372,15 @@ class RobotArmClient {
         if (data.type === 'servoThermalFault') {
             console.warn('Servo thermal fault:', data.message);
             if (typeof showAppMessage === 'function') {
-                showAppMessage('⚠️ ' + (data.message || 'A servo overheated — waiting for cool-down'));
+                showAppMessage('⚠️ ' + (data.message || 'A servo overheated - waiting for cool-down'));
             }
             return;
         }
 
         if (data.type === 'servoWorkerCrashed') {
-            console.error('Servo worker crashed (code ' + data.code + ') — server is restarting it');
+            console.error('Servo worker crashed (code ' + data.code + ') - server is restarting it');
             if (typeof showAppMessage === 'function') {
-                showAppMessage('⚠️ Servo controller crashed — reconnecting automatically');
+                showAppMessage('⚠️ Servo controller crashed - reconnecting automatically');
             }
             return;
         }
@@ -486,8 +486,8 @@ class RobotArmClient {
         // Ensure speed is a valid number
         const speedValue = (typeof speed === 'number' && !isNaN(speed) && speed >= 0) ? speed : 1500;
         // The worker already retries a lost ACK a few times back-to-back (a few
-        // hundred ms). A servo that stays silent longer than that — seen on
-        // joint 2 under load at a low, extended pose — needs a longer pause with
+        // hundred ms). A servo that stays silent longer than that - seen on
+        // joint 2 under load at a low, extended pose - needs a longer pause with
         // the bus released so polling and the torque heartbeat keep running.
         // Re-sending a move is idempotent, so retrying here is safe.
         const MAX_TRIES = 3;
@@ -662,7 +662,7 @@ class RobotArmClient {
 
     /**
      * Reads the full raw EEPROM (0x00-0x27) and SRAM (0x28-0x45) blocks from
-     * a joint's servo, for the Calibration page — decoding against the
+     * a joint's servo, for the Calibration page - decoding against the
      * STS3215 memory table happens client-side (see stsMemoryTable.js).
      * Resolves to { joint, eepromBytes, sramBytes }.
      * @param {number} jointNumber
@@ -676,7 +676,7 @@ class RobotArmClient {
     /**
      * Writes a single raw EEPROM register from the Calibration page.
      * Requires the control-lock password on top of holding the control
-     * session — this can reach registers outside the curated commissioning
+     * session - this can reach registers outside the curated commissioning
      * set, so the server gates it separately.
      * @param {number} jointNumber
      * @param {number} address - decimal EEPROM address
@@ -819,7 +819,7 @@ class RobotArmClient {
     }
 
     /**
-     * Read Pi server bus tick / queue diagnostics (instant — does not use servo bus).
+     * Read Pi server bus tick / queue diagnostics (instant - does not use servo bus).
      */
     getServerDiagnostics() {
         return this.sendRequest('getServerDiagnostics', {}, 3000);
@@ -1039,7 +1039,7 @@ class RobotArmClient {
                     this._linearTimeout = null;
                     reject(new Error(response.message || 'Linear move failed'));
                 }
-                // type === 'linearPathStarted' — now wait for unsolicited linearPathComplete
+                // type === 'linearPathStarted' - now wait for unsolicited linearPathComplete
             } catch (e) {
                 clearTimeout(this._linearTimeout);
                 this._linearResolve = null;

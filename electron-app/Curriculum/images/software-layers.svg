@@ -8,11 +8,11 @@
     </marker>
   </defs>
   <rect width="540" height="400" fill="#f8fafc" rx="8"/>
-  <text x="270" y="26" text-anchor="middle" font-size="15" font-weight="700" fill="#1e293b">Software Architecture — System Layers</text>
+  <text x="270" y="26" text-anchor="middle" font-size="15" font-weight="700" fill="#1e293b">Software Architecture - System Layers</text>
 
   <!-- Layer 1: HMI / Electron App -->
   <rect x="40" y="45" width="460" height="56" rx="8" fill="#eff6ff" stroke="#3b82f6" stroke-width="2"/>
-  <text x="270" y="68" text-anchor="middle" font-size="13" font-weight="700" fill="#1d4ed8">Layer 1 — HMI / Electron App</text>
+  <text x="270" y="68" text-anchor="middle" font-size="13" font-weight="700" fill="#1d4ed8">Layer 1 - HMI / Electron App</text>
   <text x="270" y="85" text-anchor="middle" font-size="10" fill="#3b82f6">Tabs: Joint Control · Pendant · G-Code · Blockly · 3D View · Kinematics · Settings</text>
   <text x="50" y="68" font-size="10" fill="#3b82f6">JavaScript / HTML</text>
 
@@ -23,7 +23,7 @@
 
   <!-- Layer 2: Network -->
   <rect x="40" y="122" width="460" height="44" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
-  <text x="270" y="142" text-anchor="middle" font-size="13" font-weight="700" fill="#166534">Layer 2 — Network Transport</text>
+  <text x="270" y="142" text-anchor="middle" font-size="13" font-weight="700" fill="#166534">Layer 2 - Network Transport</text>
   <text x="270" y="157" text-anchor="middle" font-size="10" fill="#16a34a">Wi-Fi / Ethernet · TCP/IP · Latency ~1–10 ms · JSON command packets</text>
 
   <!-- Arrow -->
@@ -33,7 +33,7 @@
 
   <!-- Layer 3: Python Server -->
   <rect x="40" y="187" width="460" height="56" rx="8" fill="#faf5ff" stroke="#7c3aed" stroke-width="2"/>
-  <text x="270" y="210" text-anchor="middle" font-size="13" font-weight="700" fill="#6d28d9">Layer 3 — Controller (Raspberry Pi)</text>
+  <text x="270" y="210" text-anchor="middle" font-size="13" font-weight="700" fill="#6d28d9">Layer 3 - Controller (Raspberry Pi)</text>
   <text x="270" y="227" text-anchor="middle" font-size="10" fill="#7c3aed">Python · Motion planning · Safety checks · Unit conversion (° → encoder counts)</text>
   <text x="50" y="210" font-size="10" fill="#7c3aed">Python asyncio</text>
 
@@ -44,7 +44,7 @@
 
   <!-- Layer 4: Serial Protocol -->
   <rect x="40" y="264" width="460" height="44" rx="8" fill="#fff7ed" stroke="#ea580c" stroke-width="2"/>
-  <text x="270" y="284" text-anchor="middle" font-size="13" font-weight="700" fill="#c2410c">Layer 4 — Serial Protocol</text>
+  <text x="270" y="284" text-anchor="middle" font-size="13" font-weight="700" fill="#c2410c">Layer 4 - Serial Protocol</text>
   <text x="270" y="299" text-anchor="middle" font-size="10" fill="#ea580c">Feetech SCServo protocol · Addressed packets · ID 1–N · CRC checksum</text>
 
   <!-- Arrow -->
@@ -54,7 +54,7 @@
 
   <!-- Layer 5: Hardware -->
   <rect x="40" y="329" width="460" height="44" rx="8" fill="#fef2f2" stroke="#dc2626" stroke-width="2"/>
-  <text x="270" y="349" text-anchor="middle" font-size="13" font-weight="700" fill="#dc2626">Layer 5 — Actuators &amp; Sensors</text>
+  <text x="270" y="349" text-anchor="middle" font-size="13" font-weight="700" fill="#dc2626">Layer 5 - Actuators &amp; Sensors</text>
   <text x="270" y="364" text-anchor="middle" font-size="10" fill="#ef4444">ST3215 servo motors · AS5600 magnetic encoders · PID control runs here</text>
 
   <!-- Side label -->

@@ -63,7 +63,7 @@
   <polygon points="542,154 534,150 534,158" fill="#dc2626"/>
   <text x="465" y="96" text-anchor="middle" font-size="9" fill="#7c3aed">Shear plane</text>
   <text x="465" y="200" text-anchor="middle" font-size="9" fill="#64748b">Force exceeds material</text>
-  <text x="465" y="213" text-anchor="middle" font-size="9" fill="#64748b">shear strength — joint</text>
+  <text x="465" y="213" text-anchor="middle" font-size="9" fill="#64748b">shear strength - joint</text>
   <text x="465" y="226" text-anchor="middle" font-size="9" fill="#64748b">slides and fails rapidly.</text>
   <rect x="394" y="252" width="142" height="20" rx="4" fill="#faf5ff" stroke="#c4b5fd" stroke-width="1"/>
   <text x="465" y="265" text-anchor="middle" font-size="9" fill="#7c3aed">Robot arm: seized servo bolt</text>

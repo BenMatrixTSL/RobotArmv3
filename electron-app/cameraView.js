@@ -82,11 +82,11 @@ function updateCameraStatusFromVision() {
 
             var msg;
             if (parts.length > 0) {
-                msg = 'Camera live — ' + parts.join(', ');
+                msg = 'Camera live - ' + parts.join(', ');
             } else if (data.dictionary) {
-                msg = 'Camera live — vision on, no markers in view';
+                msg = 'Camera live - vision on, no markers in view';
             } else {
-                msg = 'Camera live — no markers or blocks detected';
+                msg = 'Camera live - no markers or blocks detected';
             }
             cameraVisionStatus = msg;
             setCameraStatus(msg, '#27ae60');
@@ -122,9 +122,9 @@ function renderCameraDetectionsTable(blocks) {
     tbody.innerHTML = blocks.map(function (block) {
         var swatchColor = CAMERA_DETECTION_SWATCH_COLORS[block.color] || '#999';
         var hasWorld = typeof block.world_x_mm === 'number' && typeof block.world_y_mm === 'number';
-        var xText = hasWorld ? block.world_x_mm.toFixed(1) : '—';
-        var yText = hasWorld ? block.world_y_mm.toFixed(1) : '—';
-        var rotationText = typeof block.rotation_deg === 'number' ? block.rotation_deg.toFixed(1) + '°' : '—';
+        var xText = hasWorld ? block.world_x_mm.toFixed(1) : ' - ';
+        var yText = hasWorld ? block.world_y_mm.toFixed(1) : ' - ';
+        var rotationText = typeof block.rotation_deg === 'number' ? block.rotation_deg.toFixed(1) + '°' : ' - ';
         return '<tr>'
             + '<td>' + block.index + '</td>'
             + '<td><span class="camera-detections-swatch" style="background-color:' + swatchColor + '"></span>' + block.color + '</td>'
@@ -139,7 +139,7 @@ function renderCameraDetectionsTable(blocks) {
 // Shared by the G-code (M780/M781), RAPID (GetBlockCount/SaveBlockToPos) and
 // Blockly (Vision category) programming modes, so "how many blocks / what is
 // at index N" behaves identically no matter which language calls it. Blocks
-// are sorted by image Y ascending — the block nearest the top of what the
+// are sorted by image Y ascending - the block nearest the top of what the
 // camera sees gets index 0, so a block "below" another (further down in the
 // camera's view) always gets a higher index. This works even when no ArUco
 // markers are visible (pixel coordinates are always present); world_x_mm/
@@ -199,21 +199,21 @@ function getDetectedBlockAt(index) {
 }
 
 /**
- * Convenience getters for Blockly's value blocks — throw (rather than
+ * Convenience getters for Blockly's value blocks - throw (rather than
  * return null/NaN) so a bad index surfaces as a clear error in the Blockly
  * output log instead of silently sending the arm somewhere wrong.
  */
 async function getDetectedBlockXAt(index) {
     var block = await getDetectedBlockAt(index);
     if (!block) throw new Error('No detected block at index ' + index);
-    if (!block.hasWorldCoords) throw new Error('Block ' + index + ' has no world coordinates — ArUco markers must be visible first');
+    if (!block.hasWorldCoords) throw new Error('Block ' + index + ' has no world coordinates - ArUco markers must be visible first');
     return block.worldX;
 }
 
 async function getDetectedBlockYAt(index) {
     var block = await getDetectedBlockAt(index);
     if (!block) throw new Error('No detected block at index ' + index);
-    if (!block.hasWorldCoords) throw new Error('Block ' + index + ' has no world coordinates — ArUco markers must be visible first');
+    if (!block.hasWorldCoords) throw new Error('Block ' + index + ' has no world coordinates - ArUco markers must be visible first');
     return block.worldY;
 }
 

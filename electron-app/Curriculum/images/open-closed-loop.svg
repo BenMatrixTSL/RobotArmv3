@@ -85,7 +85,7 @@
      text-anchor="middle"
      font-size="10"
      fill="#64748b"
-     id="text16">No feedback — output is not measured or corrected</text>
+     id="text16">No feedback - output is not measured or corrected</text>
   <!-- Input -->
   <rect
      x="30"
@@ -286,7 +286,7 @@
      text-anchor="middle"
      font-size="10"
      fill="#64748b"
-     id="text58">Feedback — output is measured and compared to the input</text>
+     id="text58">Feedback - output is measured and compared to the input</text>
   <!-- Sum/Compare circle -->
   <circle
      cx="75"

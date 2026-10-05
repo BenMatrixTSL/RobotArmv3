@@ -56,7 +56,7 @@
 
   <!-- Iteration arrow (below) -->
   <path d="M 520,130 Q 520,160 290,160 Q 60,160 50,130" stroke="#3b82f6" stroke-width="2" fill="none" marker-end="url(#arr)" stroke-dasharray="5,3"/>
-  <text x="290" y="178" text-anchor="middle" font-size="10" fill="#3b82f6">Iteration — findings from Test &amp; Evaluate may send you back to Design or Build</text>
+  <text x="290" y="178" text-anchor="middle" font-size="10" fill="#3b82f6">Iteration - findings from Test &amp; Evaluate may send you back to Design or Build</text>
 
   <!-- Key deliverables below each phase -->
   <text x="50"  y="148" text-anchor="middle" font-size="8" fill="#64748b">Client brief</text>

@@ -6,7 +6,7 @@ Captures at high resolution for accurate ArUco detection, then serves a
 lower-resolution annotated image to the web UI.
 
 Detection is intentionally slow (5 fps default) to keep CPU load low on the Pi.
-Colour block detection is off by default — enable it only if needed.
+Colour block detection is off by default - enable it only if needed.
 
 Endpoints:
   /snapshot  - latest JPEG with overlays (for the Camera tab)
@@ -32,18 +32,18 @@ Environment:
                                   manual exposure value (V4L2 driver units,
                                   try 100-300) to stop glare off the mat from
                                   clipping the sensor to solid white near
-                                  markers/blocks — see camera-vision.py's
+                                  markers/blocks - see camera-vision.py's
                                   CAMERA_MANUAL_EXPOSURE comment.
   ROBOT_ARM_CAMERA_BRIGHTNESS    unset by default. Hardware brightness
                                   (V4L2 units) to compensate for a low
-                                  manual exposure — preferred over the
+                                  manual exposure - preferred over the
                                   software fallback below (no colour cast).
   ROBOT_ARM_CAMERA_GAMMA         unset by default. Hardware gamma (V4L2
                                   units), same purpose as brightness above.
   ROBOT_ARM_DISPLAY_TARGET_BRIGHTNESS  default 0 (disabled). Software
                                   fallback: adaptive gamma on the served
                                   feed only (not detection) up to this mean
-                                  brightness (0-255) — use only if hardware
+                                  brightness (0-255) - use only if hardware
                                   brightness/gamma aren't enough.
 """
 
@@ -81,12 +81,12 @@ MARKER_SPACING_Y_MM = float(os.environ.get("ROBOT_ARM_MARKER_SPACING_Y_MM", "230
 # marker-defined mat (0..MARKER_SPACING_X_MM, 0..MARKER_SPACING_Y_MM), plus
 # this margin. Keeps the arm itself (or anything else outside the mat) from
 # being picked up as a false-positive block. Requires at least 3 markers
-# visible (a homography) — with fewer, no world position can be computed and
+# visible (a homography) - with fewer, no world position can be computed and
 # every colour blob is discarded rather than reported unfiltered.
 BLOCK_WORKSPACE_MARGIN_MM = float(os.environ.get("ROBOT_ARM_BLOCK_WORKSPACE_MARGIN_MM", "15"))
 JPEG_QUALITY = 80
 MIN_BLOCK_AREA = 300
-# Upper area bound (px² on the 640x480 detection frame) — a real block is
+# Upper area bound (px² on the 640x480 detection frame) - a real block is
 # small and close to the camera's ground plane; anything bigger is more
 # likely an arm part or a large patch of background matching by colour.
 MAX_BLOCK_AREA = float(os.environ.get("ROBOT_ARM_MAX_BLOCK_AREA", "6000"))
@@ -99,13 +99,13 @@ BLOCK_MAX_ASPECT_RATIO = float(os.environ.get("ROBOT_ARM_BLOCK_MAX_ASPECT_RATIO"
 # between parts) leave a lot of the rect empty and score low here.
 BLOCK_MIN_SOLIDITY = float(os.environ.get("ROBOT_ARM_BLOCK_MIN_SOLIDITY", "0.65"))
 # A marker/block must be detected (or absent) this many consecutive frames
-# before it is added to (or removed from) the output — smooths out one-off
+# before it is added to (or removed from) the output - smooths out one-off
 # missed detections instead of letting overlays flicker on and off.
 TRACK_STABILITY_FRAMES = max(1, int(os.environ.get("ROBOT_ARM_TRACK_STABILITY_FRAMES", "5")))
 # Max centroid distance (normalised 0-1 image coords) for matching a colour
 # block detection to an existing track between frames.
 BLOCK_MATCH_MAX_DIST = float(os.environ.get("ROBOT_ARM_BLOCK_MATCH_MAX_DIST", "0.08"))
-# Manual exposure, in the V4L2 driver's own units (often 100us steps — try
+# Manual exposure, in the V4L2 driver's own units (often 100us steps - try
 # small integers like 100-300 first). Unset by default (camera stays on
 # auto-exposure). Auto-exposure can let glare off a glossy mat surface
 # clip the sensor to solid white, permanently losing detail CLAHE/contrast
@@ -114,25 +114,25 @@ BLOCK_MATCH_MAX_DIST = float(os.environ.get("ROBOT_ARM_BLOCK_MATCH_MAX_DIST", "0
 # brightness normalisation above is there to compensate for).
 CAMERA_MANUAL_EXPOSURE = os.environ.get("ROBOT_ARM_CAMERA_EXPOSURE", "").strip()
 # Hardware brightness/gamma (V4L2 driver units) to compensate for a low
-# manual exposure — applied at the camera/ISP level, before any software
+# manual exposure - applied at the camera/ISP level, before any software
 # processing, so it doesn't introduce the colour-cast risk a software
 # brightness boost has (see DISPLAY_TARGET_BRIGHTNESS below). This is the
 # preferred way to make a low-exposure capture look normal again; tune with:
 #   v4l2-ctl -d /dev/video0 --set-ctrl=brightness=<value>,gamma=<value>
 CAMERA_MANUAL_BRIGHTNESS = os.environ.get("ROBOT_ARM_CAMERA_BRIGHTNESS", "").strip()
 CAMERA_MANUAL_GAMMA = os.environ.get("ROBOT_ARM_CAMERA_GAMMA", "").strip()
-# Software fallback display brightening — applied to the served snapshot/
+# Software fallback display brightening - applied to the served snapshot/
 # stream only, never to the frame detection runs on. Off by default (0):
 # the hardware brightness/gamma controls above do this job with better
 # colour fidelity when the camera supports them. Only enable this on a
-# camera where they don't help enough — it works in the HSV V channel
+# camera where they don't help enough - it works in the HSV V channel
 # (not raw BGR) to avoid a colour-cast, but is still a coarser tool.
 DISPLAY_TARGET_BRIGHTNESS = float(os.environ.get("ROBOT_ARM_DISPLAY_TARGET_BRIGHTNESS", "0"))
 DISPLAY_GAMMA_MAX = 2.2
 BOUNDARY = b"--jpgboundary"
 
 # Try these dictionaries in order (most common first).
-# Markers must match one of these — see chev.me/arucogen or generate-aruco-markers.py
+# Markers must match one of these - see chev.me/arucogen or generate-aruco-markers.py
 ARUCO_DICTIONARIES = [
     ("DICT_4X4_50", "DICT_4X4_50"),
     ("DICT_4X4_100", "DICT_4X4_100"),
@@ -145,7 +145,7 @@ ARUCO_DICTIONARIES = [
 
 # HSV colour ranges for simple block detection (tune under your lighting).
 # OpenCV hue is 0-179 (half of the 0-360° standard scale).
-# Saturation/value lower bounds are deliberately a bit loose — the frame's V
+# Saturation/value lower bounds are deliberately a bit loose - the frame's V
 # channel is brightness-normalised (see normalize_brightness()) before
 # thresholding, so shadowed blocks no longer need as strict a cutoff.
 COLOR_RANGES = {
@@ -157,7 +157,7 @@ COLOR_RANGES = {
     # background has a natural olive/green tint (hue ~48, S ~65 in testing)
     # that the general shadow-tolerant floor let through, merging with any
     # real green block into one background-sized blob that failed the max-
-    # area check — i.e. the block silently vanished. Real block pixels ran
+    # area check - i.e. the block silently vanished. Real block pixels ran
     # S ~140-200, V ~140+, well clear of the background's ~S65/V65.
     "green": [
         ((40, 110, 70), (85, 255, 255)),
@@ -282,27 +282,27 @@ def create_aruco_parameters():
 
     parameters.adaptiveThreshWinSizeMin = 3
     parameters.adaptiveThreshWinSizeMax = 23
-    # Lower than the OpenCV default (7) — makes the adaptive threshold more
+    # Lower than the OpenCV default (7) - makes the adaptive threshold more
     # sensitive so low-contrast markers in shadowed areas still separate
     # from the background. Low false-positive risk: a candidate still has
     # to decode a valid marker ID (with error correction) to be reported.
     parameters.adaptiveThreshConstant = 5
     parameters.minMarkerPerimeterRate = 0.02
     parameters.maxMarkerPerimeterRate = 4.0
-    # Slightly higher than the OpenCV default (0.03) — a marker near the
+    # Slightly higher than the OpenCV default (0.03) - a marker near the
     # edge of a wide-angle lens's field of view gets warped from a square
     # into a trapezoid by lens distortion, and the default tolerance can
     # reject that shape before it ever reaches ID decoding. Only a small
     # increase: this is the epsilon for approxPolyDP, so too large a value
     # over-simplifies the contour and loses the required 4-corner count
-    # entirely (tested 0.10 — broke detection for every marker, not just
+    # entirely (tested 0.10 - broke detection for every marker, not just
     # the distorted one). A candidate still has to decode a valid ID (with
     # error correction) to be reported either way.
     parameters.polygonalApproxAccuracyRate = 0.04
     parameters.minCornerDistanceRate = 0.03
     parameters.minDistanceToBorder = 1
     parameters.minMarkerDistanceRate = 0.03
-    # Default is 0.35 — a bit more tolerance for bit-sampling errors along
+    # Default is 0.35 - a bit more tolerance for bit-sampling errors along
     # the border once perspective correction has already had to stretch a
     # heavily distorted (edge-of-frame) marker back into a square.
     parameters.maxErroneousBitsInBorderRate = 0.5
@@ -474,7 +474,7 @@ def get_homography_from_markers(markers):
             "left" if pt[0] < centroid[0] else "right",
         )
         if key in corner_map:
-            return None  # two markers in the same quadrant — degenerate
+            return None  # two markers in the same quadrant - degenerate
         corner_map[key] = pt
 
     wx = MARKER_SPACING_X_MM
@@ -541,14 +541,14 @@ def apply_display_gamma(frame, gamma):
 
 def auto_brighten_for_display(frame):
     """
-    Brighten the frame actually shown to the user — entirely separate from
+    Brighten the frame actually shown to the user - entirely separate from
     (and applied after) the detection pipeline above, which always runs on
     its own copy of the raw capture. Computes the gamma needed to lift this
     specific frame's current mean brightness up to DISPLAY_TARGET_BRIGHTNESS,
     instead of using one fixed gamma constant, so the feed reads as roughly
     the same brightness no matter how low ROBOT_ARM_CAMERA_EXPOSURE is set.
 
-    Applied to the HSV V channel only, not the raw BGR channels — gamma on
+    Applied to the HSV V channel only, not the raw BGR channels - gamma on
     BGR directly amplifies any per-channel imbalance into a colour cast
     (got a strong green/magenta tint doing it that way at higher gamma).
     Working in V preserves hue/saturation, so brightening doesn't distort
@@ -620,7 +620,7 @@ def draw_coordinate_frame(frame, markers, frame_width, frame_height):
     # Closed polygon if all 4 present, open polyline if only 3
     cv2.polylines(frame, [pixel_corners], n_found == 4, (255, 255, 0), 2)
 
-    # X axis (red) from TL→TR, Y axis (green) from TL→BL — only when TL is visible
+    # X axis (red) from TL→TR, Y axis (green) from TL→BL - only when TL is visible
     tl = corner_map.get(("top", "left"))
     tr = corner_map.get(("top", "right"))
     bl = corner_map.get(("bottom", "left"))
@@ -693,7 +693,7 @@ def update_block_tracks(detections):
     update_marker_tracks: a block only appears after TRACK_STABILITY_FRAMES
     consecutive detections, and only disappears after that many consecutive
     misses. Each confirmed block is then given a index, globally unique
-    across all colours (not per-colour — X/Y positions are looked up by
+    across all colours (not per-colour - X/Y positions are looked up by
     this index elsewhere, so two blocks can never share one), ordered
     top-to-bottom then left-to-right (row-major over centre position).
     Since this is recomputed from current position every frame rather than
@@ -752,7 +752,7 @@ def update_block_tracks(detections):
 
 def normalize_brightness(hsv):
     """
-    Equalise the V (brightness) channel with CLAHE before HSV thresholding —
+    Equalise the V (brightness) channel with CLAHE before HSV thresholding -
     the same contrast trick used for ArUco detection. Shadowed and evenly-lit
     parts of the mat score closer together afterwards, so a block sitting in
     a shadow is less likely to fall below the colour thresholds entirely.
@@ -768,7 +768,7 @@ def normalize_brightness(hsv):
 
 def detect_color_blocks(frame):
     """Detect coloured blocks using HSV thresholds. Returns list of block dicts.
-    Does NOT draw on the frame — call draw_color_blocks() separately."""
+    Does NOT draw on the frame - call draw_color_blocks() separately."""
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
     hsv = normalize_brightness(hsv)
     frame_height, frame_width = frame.shape[:2]
@@ -829,7 +829,7 @@ def draw_color_blocks(frame, blocks):
     """
     Draw a border box per block with its index centered inside. Colour name
     and world position are left out of the overlay (they cluttered the feed
-    when several blocks sat close together) — the UI shows them in a table
+    when several blocks sat close together) - the UI shows them in a table
     built from the /vision JSON instead.
     """
     fh, fw = frame.shape[:2]
@@ -922,7 +922,7 @@ def prepare_gray_for_aruco(frame):
     Improve contrast so printed markers are easier to detect, including in
     shadowed areas of the mat. A smaller tile grid than the colour-block
     normalisation (see normalize_brightness()) adapts more locally, and a
-    higher clip limit pushes shadowed regions harder — markers are small
+    higher clip limit pushes shadowed regions harder - markers are small
     and high-contrast (black/white) to begin with, so this tolerates more
     aggressive equalisation than colour thresholding does.
     """
@@ -977,7 +977,7 @@ def process_frame(frame, detectors):
                 frame, (STREAM_WIDTH, STREAM_HEIGHT), interpolation=cv2.INTER_AREA
             )
             raw_blocks = detect_color_blocks(clean_small)
-            # Drop anything overlapping a detected marker's own footprint —
+            # Drop anything overlapping a detected marker's own footprint -
             # see marker_exclusion_boxes() for why (JPEG colour fringing at
             # the marker's edges getting mistaken for a small block).
             exclusion_boxes = marker_exclusion_boxes(corners, ids, frame_width, frame_height)
@@ -987,7 +987,7 @@ def process_frame(frame, detectors):
                     if not point_in_any_box(b["center_x"], b["center_y"], exclusion_boxes)
                 ]
             # Annotate each block with its world position, then drop anything
-            # outside the marker-defined mat — without this, HSV colour
+            # outside the marker-defined mat - without this, HSV colour
             # matches on the arm itself (or the background) get reported as
             # blocks just like a real one on the mat. With fewer than 3
             # markers visible there's no homography to check against, so
@@ -1009,7 +1009,7 @@ def process_frame(frame, detectors):
         except Exception as exc:
             print(f"Colour detection error: {exc}", file=sys.stderr)
 
-    # Brighten for display only — detection above already ran on the darker
+    # Brighten for display only - detection above already ran on the darker
     # capture (see ROBOT_ARM_CAMERA_EXPOSURE), so this has no effect on
     # accuracy, only on how the feed looks to the operator.
     stream_frame = auto_brighten_for_display(stream_frame)
@@ -1038,12 +1038,12 @@ def capture_loop():
     try:
         detectors = create_aruco_detectors()
         print(
-            f"OpenCV {cv2.__version__} — ArUco dictionaries: {len(detectors)}",
+            f"OpenCV {cv2.__version__} - ArUco dictionaries: {len(detectors)}",
             file=sys.stderr,
         )
     except Exception as exc:
         detectors = []
-        print(f"ArUco disabled ({exc}) — streaming video only", file=sys.stderr)
+        print(f"ArUco disabled ({exc}) - streaming video only", file=sys.stderr)
 
     while True:
         camera = None

@@ -2,7 +2,7 @@
 
 Run the robot arm **web UI** in Chromium fullscreen on the Pi touchscreen. This is much lighter than running the full Electron app on the Pi.
 
-The ST3215 server (`raspberry-pi-control-st3215`) must still run separately — install that first with `install-service.sh`.
+The ST3215 server (`raspberry-pi-control-st3215`) must still run separately - install that first with `install-service.sh`.
 
 ## What it does
 
@@ -14,7 +14,7 @@ At boot, a **desktop autostart** entry runs the kiosk script after you log into 
 
 ### Two displays (HDMI-1 and HDMI-2)
 
-By default the installer sets `ROBOT_ARM_KIOSK_SCREENS=1` (one fullscreen window — most reliable at boot). For **two monitors**, set `ROBOT_ARM_KIOSK_SCREENS=all` when installing. When two monitors are connected, the script:
+By default the installer sets `ROBOT_ARM_KIOSK_SCREENS=1` (one fullscreen window - most reliable at boot). For **two monitors**, set `ROBOT_ARM_KIOSK_SCREENS=all` when installing. When two monitors are connected, the script:
 
 - Reads their position and size with `xrandr`
 - Starts **one separate Chromium instance per screen** (each with its own profile folder)
@@ -88,7 +88,7 @@ sudo ./install-kiosk-service.sh /opt/RobotArm/electron-app
 sudo reboot
 ```
 
-**Git pull on the Pi:** use your SSH user (`mxadmin`) — **never** `sudo git pull`:
+**Git pull on the Pi:** use your SSH user (`mxadmin`) - **never** `sudo git pull`:
 
 ```bash
 cd /opt/RobotArm
@@ -110,7 +110,7 @@ sudo bash fix-repo-permissions.sh /opt/RobotArm mxadmin
 git pull origin main
 ```
 
-**Never** run `sudo git pull` — that breaks ownership again.
+**Never** run `sudo git pull` - that breaks ownership again.
 
 ## Stop the kiosk
 
@@ -174,7 +174,7 @@ cat ~/.config/labwc/autostart
 ### Do NOT use the old system service
 
 ```bash
-# WRONG — this was the old broken approach:
+# WRONG - this was the old broken approach:
 sudo systemctl status robot-arm-kiosk.service
 ```
 
@@ -196,7 +196,7 @@ sudo ./uninstall-kiosk-service.sh
 ## Watchdog (auto-recover from a hung/crashed browser)
 
 `start-kiosk.sh`'s own monitor loop only checks whether *any* Chromium-related
-process exists (zygote, GPU, utility, ...) — if a renderer or GPU process
+process exists (zygote, GPU, utility, ...) - if a renderer or GPU process
 crashes but sibling processes stay alive, the loop never notices and the
 touchscreen is left frozen indefinitely.
 
@@ -204,7 +204,7 @@ The watchdog is a systemd timer that runs every 30s and restarts the kiosk
 when it detects either:
 - no kiosk processes running at all, or
 - a defunct (`<defunct>`) Chromium child process that persists more than 45s
-  — the signature of a crash the browser failed to recover from.
+  - the signature of a crash the browser failed to recover from.
 
 Install after the kiosk itself is installed:
 
@@ -225,21 +225,21 @@ journalctl -t robot-arm-kiosk-watchdog -n 50
 | Problem | What to try |
 |--------|-------------|
 | No browser at all after reboot | Enable desktop **auto-login** for your user, then reboot |
-| Black screen / no browser | `tail -50 ~/.robot-arm-kiosk/kiosk.log` — look for display or Chromium errors |
-| UI loads but “Disconnected” | `sudo systemctl status st3215-server.service` — server must be running on port 8080 |
-| `DISPLAY` errors in log | You are not booting to the desktop — enable **auto-login** and reboot |
-| `MIT-MAGIC-COOKIE-1` / `Missing X server` | Old **system** service still enabled — run `sudo ./install-kiosk-service.sh` again and reboot |
+| Black screen / no browser | `tail -50 ~/.robot-arm-kiosk/kiosk.log` - look for display or Chromium errors |
+| UI loads but “Disconnected” | `sudo systemctl status st3215-server.service` - server must be running on port 8080 |
+| `DISPLAY` errors in log | You are not booting to the desktop - enable **auto-login** and reboot |
+| `MIT-MAGIC-COOKIE-1` / `Missing X server` | Old **system** service still enabled - run `sudo ./install-kiosk-service.sh` again and reboot |
 | Browser opens but not fullscreen | Check URL includes `?kiosk=1`; reinstall autostart with `install-kiosk-service.sh` |
 | Chromium missing | `sudo apt install -y chromium` |
-| Port 80 not responding | `sudo systemctl status robot-arm-web-server.service` — install with `install-web-server-service.sh` |
-| White screen | `tail -50 ~/.robot-arm-kiosk/kiosk.log` — check web server; try `curl http://127.0.0.1/index.html` on the Pi |
-| "Unlock keyring" popup | Re-run installer after `git pull` — Chromium uses `--password-store=basic` to suppress this |
-| `DEPRECATED_ENDPOINT` / `QUOTA_EXCEEDED` in log | Harmless — Chromium trying to reach Google push services; safe to ignore |
-| `Kiosk: already running — exit` | Normal — two autostart entries tried to start at once; one exits, one keeps running |
-| Port 3080 already in use | Only if using `ROBOT_ARM_KIOSK_PORT=3080` — reboot or `fuser -k 3080/tcp` |
-| `command not found` (file exists) | `chmod +x install-kiosk-service.sh` then `sed -i 's/\r$//' install-kiosk-service.sh` — or run `sudo bash install-kiosk-service.sh /opt/RobotArm/electron-app` |
-| `bad interpreter` / `/bin/bash^M` | Windows line endings — run `sed -i 's/\r$//' *.sh` in `electron-app`, then try again |
-| Touchscreen unresponsive, browser looks frozen | Chromium renderer/GPU crash the monitor loop can't see — install the [watchdog](#watchdog-auto-recover-from-a-hungcrashed-browser) to auto-restart, or manually: `sudo pkill -u <kiosk-user> -f chromium` then `sudo -u <kiosk-user> ./start-kiosk.sh` |
+| Port 80 not responding | `sudo systemctl status robot-arm-web-server.service` - install with `install-web-server-service.sh` |
+| White screen | `tail -50 ~/.robot-arm-kiosk/kiosk.log` - check web server; try `curl http://127.0.0.1/index.html` on the Pi |
+| "Unlock keyring" popup | Re-run installer after `git pull` - Chromium uses `--password-store=basic` to suppress this |
+| `DEPRECATED_ENDPOINT` / `QUOTA_EXCEEDED` in log | Harmless - Chromium trying to reach Google push services; safe to ignore |
+| `Kiosk: already running - exit` | Normal - two autostart entries tried to start at once; one exits, one keeps running |
+| Port 3080 already in use | Only if using `ROBOT_ARM_KIOSK_PORT=3080` - reboot or `fuser -k 3080/tcp` |
+| `command not found` (file exists) | `chmod +x install-kiosk-service.sh` then `sed -i 's/\r$//' install-kiosk-service.sh` - or run `sudo bash install-kiosk-service.sh /opt/RobotArm/electron-app` |
+| `bad interpreter` / `/bin/bash^M` | Windows line endings - run `sed -i 's/\r$//' *.sh` in `electron-app`, then try again |
+| Touchscreen unresponsive, browser looks frozen | Chromium renderer/GPU crash the monitor loop can't see - install the [watchdog](#watchdog-auto-recover-from-a-hungcrashed-browser) to auto-restart, or manually: `sudo pkill -u <kiosk-user> -f chromium` then `sudo -u <kiosk-user> ./start-kiosk.sh` |
 
 ## Differences from Electron on a PC
 

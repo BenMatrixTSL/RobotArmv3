@@ -68,7 +68,7 @@ class GCodeProcessor {
             const command = this.parseLine(line) || { code: 'UNKNOWN', line: line, params: {} };
             if (command.label !== undefined) {
                 if (this.labels[command.label] !== undefined) {
-                    console.warn(`Duplicate label N${command.label} — first one wins`);
+                    console.warn(`Duplicate label N${command.label} - first one wins`);
                 } else {
                     this.labels[command.label] = this.commands.length;
                 }
@@ -131,7 +131,7 @@ class GCodeProcessor {
 
     /**
      * Parses an ordinary G/M/J command line (no labels, variables or
-     * expressions — those are stripped/substituted before this is called).
+     * expressions - those are stripped/substituted before this is called).
      * @param {string} line
      * @returns {Object|null}
      */
@@ -307,7 +307,7 @@ class GCodeProcessor {
      */
     evaluateCondition(condition) {
         const m = condition.match(/^(.+?)\s*(EQ|NE|GT|GE|LT|LE|==|=|!=|<>|>=|<=|>|<)\s*(.+)$/i);
-        if (!m) throw new Error(`Bad IF condition "${condition}" — expected e.g. [#1 LT 10]`);
+        if (!m) throw new Error(`Bad IF condition "${condition}" - expected e.g. [#1 LT 10]`);
         const a = this.evaluateExpression(m[1]);
         const b = this.evaluateExpression(m[3]);
         switch (m[2].toUpperCase()) {
@@ -419,7 +419,7 @@ class GCodeProcessor {
             try {
                 switch (command.code) {
                     case 'N':
-                        // Label only — nothing to do
+                        // Label only - nothing to do
                         break;
                     case 'GOTO':
                         next = this.jumpTargetIndex(command.target);

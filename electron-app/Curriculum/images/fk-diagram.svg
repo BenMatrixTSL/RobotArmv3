@@ -5,7 +5,7 @@
     </marker>
   </defs>
   <rect width="560" height="420" fill="#f8fafc" rx="8"/>
-  <text x="280" y="26" text-anchor="middle" font-size="15" font-weight="700" fill="#1e293b">Forward Kinematics — 2-Link Planar Arm</text>
+  <text x="280" y="26" text-anchor="middle" font-size="15" font-weight="700" fill="#1e293b">Forward Kinematics - 2-Link Planar Arm</text>
 
   <!-- Coordinate origin marker -->
   <circle cx="120" cy="330" r="6" fill="#1e293b"/>

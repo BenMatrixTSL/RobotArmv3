@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Module 15 — Technical Documentation</title>
+<title>Module 15 - Technical Documentation</title>
 <style>
   :root {
     --bg: #f8fafc; --card: #ffffff; --border: #e2e8f0;
@@ -85,7 +85,7 @@
 <div class="hero">
   <div class="module-num">Module 15 of 16</div>
   <h1>Technical Documentation</h1>
-  <p>Writing clear, complete, and useful engineering documentation — circuit diagrams, annotated code, test records, and user guides.</p>
+  <p>Writing clear, complete, and useful engineering documentation - circuit diagrams, annotated code, test records, and user guides.</p>
 </div>
 <div class="meta-bar">
   <span>&#128340; 75–90 min</span>
@@ -111,7 +111,7 @@
       </div>
       <div class="mini-card">
         <h4>&#9878;&#65039; Compliance</h4>
-        <p>Regulatory approvals (CE marking, ISO certification) require evidence — test records, risk assessments, drawings.</p>
+        <p>Regulatory approvals (CE marking, ISO certification) require evidence - test records, risk assessments, drawings.</p>
       </div>
     </div>
   </div>
@@ -124,10 +124,10 @@
     <table>
       <tr><th>Document type</th><th>Purpose</th><th>Audience</th></tr>
       <tr><td>Circuit / wiring diagram</td><td>Shows electrical connections and component values</td><td>Technicians, engineers</td></tr>
-      <tr><td>Block diagram</td><td>System overview — how subsystems connect</td><td>Engineers, managers</td></tr>
+      <tr><td>Block diagram</td><td>System overview - how subsystems connect</td><td>Engineers, managers</td></tr>
       <tr><td>Annotated code</td><td>Explains why key sections of code work as they do</td><td>Developers, future maintainers</td></tr>
       <tr><td>Test record</td><td>Documents what was tested, how, and the results</td><td>Engineers, quality assurance</td></tr>
-      <tr><td>Risk assessment</td><td>Identifies hazards and controls — legal requirement</td><td>Health &amp; safety, operators</td></tr>
+      <tr><td>Risk assessment</td><td>Identifies hazards and controls - legal requirement</td><td>Health &amp; safety, operators</td></tr>
       <tr><td>User guide / SOP</td><td>How to operate the system safely and correctly</td><td>Operators, students</td></tr>
       <tr><td>Project report</td><td>Narrative of decisions made, evidence of process</td><td>Assessors, clients</td></tr>
     </table>
@@ -135,7 +135,7 @@
     <div class="callout callout-info">
       <span class="callout-icon">📐</span>
       <div class="callout-body">
-        <strong>System Block Diagram — Required Components</strong></br>
+        <strong>System Block Diagram - Required Components</strong></br>
         A complete system block diagram for this arm must include ALL of the following, with the communication protocol labelled at each boundary:
         <ul style="margin:0.4rem 0 0;padding-left:1.2rem;">
           <li><strong>Electron App</strong> (PC/laptop) → <strong>WebSocket / JSON TCP:8080</strong> → <strong>Server on Raspberry Pi</strong></li>
@@ -154,7 +154,7 @@
   <div class="section-card">
     <span class="pill pill-theory">Theory</span>
     <h2>What Makes Good Documentation?</h2>
-    <p>Good documentation is not about length — it is about clarity and completeness for the intended audience. Key principles:</p>
+    <p>Good documentation is not about length - it is about clarity and completeness for the intended audience. Key principles:</p>
     <div class="grid-2">
       <div class="mini-card">
         <h4>&#127919; Audience-appropriate</h4>
@@ -176,10 +176,10 @@
 
     <h3>Example: Test Record Entry</h3>
     <div class="doc-example">
-      <div class="doc-title">Test Record — Robot Arm Project</div>
+      <div class="doc-title">Test Record - Robot Arm Project</div>
       <div class="doc-meta">Author: [Name] | Date: [Date] | Firmware version: 1.2.3</div>
       <div class="doc-section">
-        <strong>Test ID: T03 — Repeat Position Accuracy</strong>
+        <strong>Test ID: T03 - Repeat Position Accuracy</strong>
         Specification: Joint 2 shall return to 45° within ±2° after 10 consecutive cycles.<br>
         Method: Commanded J2 to 45° × 10 cycles. Read position from Joint Control tab after each.<br>
         Results: 44.8°, 45.1°, 44.9°, 45.0°, 45.2°, 44.7°, 45.1°, 45.0°, 44.9°, 45.1°<br>
@@ -193,16 +193,16 @@
     <div class="callout callout-info">
       <span class="callout-icon">📋</span>
       <div class="callout-body">
-        <strong>Test Records — Specific Data Sources for This Arm</strong></br>
+        <strong>Test Records - Specific Data Sources for This Arm</strong></br>
         When writing test records, always cite the specific data source in the app:
         <ul style="margin:0.4rem 0 0;padding-left:1.2rem;">
-          <li><strong>Joint temperature</strong>: read from the Temperature (°C) field in the <span class="ui-ref">Joint Control</span> tab — not estimated</li>
-          <li><strong>Joint position / repeatability</strong>: read from the Angle (°) field in Joint Control — record 10 consecutive readings</li>
+          <li><strong>Joint temperature</strong>: read from the Temperature (°C) field in the <span class="ui-ref">Joint Control</span> tab - not estimated</li>
+          <li><strong>Joint position / repeatability</strong>: read from the Angle (°) field in Joint Control - record 10 consecutive readings</li>
           <li><strong>Load (%)</strong>: read from the Load field in Joint Control at three different poses</li>
           <li><strong>Cycle time</strong>: measure with a stopwatch, or compare the execution log timestamps in the <span class="ui-ref">G-Code Control</span> tab</li>
           <li><strong>Connection time</strong>: time from pressing Connect to "you have control" in the <span class="ui-ref">Connection</span> tab diagnostics</li>
         </ul>
-        Results must show the <em>actual measured value</em>, the specification threshold, and a clear pass/fail verdict. "Temperature stayed acceptable" is not a test record — "Temperature peaked at 43°C against a 50°C threshold — PASS" is.
+        Results must show the <em>actual measured value</em>, the specification threshold, and a clear pass/fail verdict. "Temperature stayed acceptable" is not a test record - "Temperature peaked at 43°C against a 50°C threshold - PASS" is.
       </div>
     </div>
   </div>
@@ -210,11 +210,11 @@
   <!-- WORKSHEET -->
   <div class="section-card worksheet-card">
     <span class="pill pill-worksheet">Worksheet</span>
-    <h2>Activity — Document Your Project</h2>
+    <h2>Activity - Document Your Project</h2>
     <p>Produce a documentation pack for your robot arm project. Use the checklist below to ensure nothing is missing.</p>
     <ul class="steps">
       <li><strong>Block diagram:</strong> Draw a system block diagram showing all hardware components (Pi, servos, sensors, PSU, app) and how they connect. Label each connection with the protocol used (UART, WebSocket, I²C, etc.).</li>
-      <li><strong>Annotated program:</strong> Take your G-code or Blockly program from Module 12 and add annotations explaining each section — what it does and why (not line-by-line, just the important parts).</li>
+      <li><strong>Annotated program:</strong> Take your G-code or Blockly program from Module 12 and add annotations explaining each section - what it does and why (not line-by-line, just the important parts).</li>
       <li><strong>Test record:</strong> Design three tests against your specification points (from Module 14). Run each test, record actual results, and state pass/fail against the specification.</li>
       <li><strong>User guide:</strong> Write a one-page user guide for operating your arm program. Assume the reader has never used the app. Include: how to connect, how to run the program, what to do if it does not work, how to shut down safely.</li>
       <li><strong>Revision log:</strong> Add a short revision history table to each document: date, version number, and what changed.</li>
@@ -230,7 +230,7 @@
 
     <h3>Documentation Pack Checklist</h3>
     <ul class="checklist">
-      <li><label><input type="checkbox"> System block diagram — all components, all connections labelled</label></li>
+      <li><label><input type="checkbox"> System block diagram - all components, all connections labelled</label></li>
       <li><label><input type="checkbox"> Annotated G-code, Blockly, or RAPID program</label></li>
       <li><label><input type="checkbox"> Three completed test records with actual measurements</label></li>
       <li><label><input type="checkbox"> One-page user guide / SOP</label></li>
@@ -240,15 +240,15 @@
     </ul>
 
     <div class="ws-field">
-      <label>Test 1 — description, result, pass/fail</label>
+      <label>Test 1 - description, result, pass/fail</label>
       <textarea placeholder="Spec point: ...&#10;Method: ...&#10;Result: ...&#10;Pass / Fail:"></textarea>
     </div>
     <div class="ws-field">
-      <label>Test 2 — description, result, pass/fail</label>
+      <label>Test 2 - description, result, pass/fail</label>
       <textarea placeholder="Spec point: ...&#10;Method: ...&#10;Result: ...&#10;Pass / Fail:"></textarea>
     </div>
     <div class="ws-field">
-      <label>Test 3 — description, result, pass/fail</label>
+      <label>Test 3 - description, result, pass/fail</label>
       <textarea placeholder="Spec point: ...&#10;Method: ...&#10;Result: ...&#10;Pass / Fail:"></textarea>
     </div>
     <div class="ws-field">
@@ -261,7 +261,7 @@
   <div class="section-card">
     <span class="pill pill-sowhat">So What?</span>
     <h2>Documentation as a Professional Skill</h2>
-    <p>In a survey of engineering employers, poor written communication consistently ranks in the top three skill gaps in new graduates. The ability to document a system clearly — so that someone else can understand, operate, and maintain it — is as valuable as the ability to build it.</p>
+    <p>In a survey of engineering employers, poor written communication consistently ranks in the top three skill gaps in new graduates. The ability to document a system clearly - so that someone else can understand, operate, and maintain it - is as valuable as the ability to build it.</p>
     <p>The documentation pack you produce in this module is direct evidence of your engineering process. An assessor marking your project can tell, from your test records alone, whether you actually tested the system or just claimed it worked.</p>
     <p><strong>Think about:</strong> Could a student who was not in your class pick up your documentation pack and successfully operate your arm program? If not, what is missing?</p>
   </div>
@@ -314,7 +314,7 @@ const answers = { q1: 'b', q2: 'c', q3: 'c' };
 const feedback = {
   q1: { b: 'Correct! A useful test record includes actual measured results, the spec point being tested, and a clear pass/fail against that spec.', wrong: 'Not quite. A test record needs actual measured results, the specification point it is testing, and a pass/fail verdict.' },
   q2: { c: 'Correct! Risk assessments are a legal requirement under PUWER 1998 and the Health and Safety at Work Act 1974.', wrong: 'Not quite. Risk assessments are the document specifically required by law (PUWER 1998) for machinery in the workplace.' },
-  q3: { c: 'Correct! Good documentation is clear, complete, and pitched at the right level for its intended audience.', wrong: 'Not quite. Good documentation is clear, complete, and appropriate for its intended audience — not necessarily long.' }
+  q3: { c: 'Correct! Good documentation is clear, complete, and pitched at the right level for its intended audience.', wrong: 'Not quite. Good documentation is clear, complete, and appropriate for its intended audience - not necessarily long.' }
 };
 function checkMCQ() {
   let score = 0;

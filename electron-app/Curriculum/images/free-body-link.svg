@@ -80,7 +80,7 @@
      font-size="14"
      font-weight="700"
      fill="#1e293b"
-     id="text3">Free Body Diagram — Single Link</text>
+     id="text3">Free Body Diagram - Single Link</text>
   <text
      x="240"
      y="38"
@@ -190,7 +190,7 @@
      font-size="11px"
      font-weight="700"
      fill="#1d4ed8"
-     id="text12">Link — mass m, length L</text>
+     id="text12">Link - mass m, length L</text>
   <!-- Pivot label -->
   <text
      x="130"

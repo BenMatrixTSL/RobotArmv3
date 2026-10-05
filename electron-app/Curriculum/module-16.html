@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Module 16 — Evaluation, Reflection &amp; Communication</title>
+<title>Module 16 - Evaluation, Reflection &amp; Communication</title>
 <style>
   :root {
     --bg: #f8fafc; --card: #ffffff; --border: #e2e8f0;
@@ -84,7 +84,7 @@
 <body>
 
 <div class="hero">
-  <div class="module-num">Module 16 of 16 — Final Module</div>
+  <div class="module-num">Module 16 of 16 - Final Module</div>
   <h1>Evaluation, Reflection &amp; Communication</h1>
   <p>Critically evaluating your project outcomes, reflecting on what you learned, and communicating your work to different audiences.</p>
 </div>
@@ -101,7 +101,7 @@
     <span class="pill pill-theory">Theory</span>
     <h2>What is Critical Evaluation?</h2>
     <img src="images/design-cycle.svg" alt="Engineering design cycle" style="width:100%;height:auto;display:block;border-radius:8px;margin:12px 0;">
-    <p><strong>Evaluation</strong> means comparing your outcomes against your original specification and asking: did I succeed? <strong>Critical</strong> evaluation means being honest about where you fell short and explaining why — not just listing what went well.</p>
+    <p><strong>Evaluation</strong> means comparing your outcomes against your original specification and asking: did I succeed? <strong>Critical</strong> evaluation means being honest about where you fell short and explaining why - not just listing what went well.</p>
     <p>Engineers who can accurately evaluate their own work are more valuable than those who can only report success. Identifying failure modes, understanding root causes, and proposing improvements is the core of engineering iteration.</p>
     <div class="cycle">
       <div class="cycle-step">Design</div>
@@ -116,7 +116,7 @@
       <div class="cycle-arrow">&#8594;</div>
       <div class="cycle-step">Design</div>
     </div>
-    <p>This iterative cycle — design, build, test, evaluate, improve — never truly ends in a living engineering project. Each iteration narrows the gap between the current state and the ideal.</p>
+    <p>This iterative cycle - design, build, test, evaluate, improve - never truly ends in a living engineering project. Each iteration narrows the gap between the current state and the ideal.</p>
   </div>
 
   <!-- THEORY 2 -->
@@ -151,7 +151,7 @@
   <div class="section-card">
     <span class="pill pill-theory">Theory</span>
     <h2>Communicating to Different Audiences</h2>
-    <p>The same project needs to be communicated differently depending on who is listening. This is a professional skill — engineers must explain complex technical work to non-technical managers, clients, and the public.</p>
+    <p>The same project needs to be communicated differently depending on who is listening. This is a professional skill - engineers must explain complex technical work to non-technical managers, clients, and the public.</p>
     <div class="grid-3">
       <div class="mini-card">
         <h4>&#128203; Technical report</h4>
@@ -163,18 +163,18 @@
       </div>
       <div class="mini-card">
         <h4>&#127760; Non-technical summary</h4>
-        <p>One page, plain English. Explain what the system does and why it matters — no jargon.</p>
+        <p>One page, plain English. Explain what the system does and why it matters - no jargon.</p>
       </div>
     </div>
     <div class="gold-box">
-      <strong>&#127942; BTEC assessment note:</strong> For merit and distinction criteria, your evaluation must be <em>critical</em> — it must identify weaknesses and suggest specific, justified improvements. Simply listing what worked will not achieve higher grades.
+      <strong>&#127942; BTEC assessment note:</strong> For merit and distinction criteria, your evaluation must be <em>critical</em> - it must identify weaknesses and suggest specific, justified improvements. Simply listing what worked will not achieve higher grades.
     </div>
   </div>
 
   <!-- WORKSHEET -->
   <div class="section-card worksheet-card">
     <span class="pill pill-worksheet">Worksheet</span>
-    <h2>Activity — Evaluate and Present Your Project</h2>
+    <h2>Activity - Evaluate and Present Your Project</h2>
     <p>Complete these tasks to finalise your project and prepare for assessment.</p>
     <ul class="steps">
       <li><strong>Specification review:</strong> Return to the specification you wrote in Module 14. For each point, record the actual outcome (your test results from Module 15) and state pass or fail.</li>
@@ -188,7 +188,7 @@
     <div class="callout callout-tip no-print">
       <span class="callout-icon">💭</span>
       <div class="callout-body">
-        <strong>Evaluation Prompt — Programming Mode Choice</strong></br>
+        <strong>Evaluation Prompt - Programming Mode Choice</strong></br>
         Write a paragraph addressing this question: <em>"Which programming mode (Blockly, G-Code, or RAPID) was most effective for your project, and why? If you were building a pick-and-place system that needed to respond to the camera (pick the block the camera detects, not a pre-taught position), which mode would you use and what would need to change in either the app or the server to support it?"</em>
         <br><br>
         A strong answer names specific advantages and limitations of the chosen mode, references actual observations from the project (e.g. "G-code was faster to edit when I needed to adjust a single position"), and proposes a technically plausible change for the camera-reactive scenario.
@@ -198,26 +198,26 @@
     <div class="callout callout-tip no-print">
       <span class="callout-icon">📐</span>
       <div class="callout-body">
-        <strong>Improvement Topic — 3D Model Calibration</strong></br>
+        <strong>Improvement Topic - 3D Model Calibration</strong></br>
         Evaluate how accurately the 3D Visualisation model matched the physical arm's end-effector position during your project. Consider: did the model diverge from the physical arm at extreme joint configurations? Possible causes: joint flex under load, mechanical backlash, or inaccurate link lengths in the URDF.
         <br><br>
         A strong improvement proposal would be: <em>"The URDF link lengths could be refined by commanding 10 known positions, measuring the actual end-effector XYZ with a ruler and reference frame, comparing to the FK-computed values, and adjusting the URDF until the error is below ±5 mm. The AS5600 encoders provide a second angle reference that could also be used to detect systematic backlash errors."</em>
-        This demonstrates understanding of the URDF (Settings tab), the Kinematics tab, and the AS5600 hardware — an engineering improvement rooted in the specific system.
+        This demonstrates understanding of the URDF (Settings tab), the Kinematics tab, and the AS5600 hardware - an engineering improvement rooted in the specific system.
       </div>
     </div>
 
     <div class="callout callout-tip no-print">
       <span class="callout-icon">🎯</span>
       <div class="callout-body">
-        <strong>Live Demo Suggestion — Control Session Handover</strong></br>
+        <strong>Live Demo Suggestion - Control Session Handover</strong></br>
         For a memorable and technically impressive demonstration, show the <strong>control session handover</strong>:
         <ol style="margin:0.4rem 0 0;padding-left:1.2rem;">
-          <li>Your computer has control — run a short automated sequence</li>
-          <li>A second student connects on a second laptop — show the "another client has control" status message on their screen</li>
-          <li>Demonstrate <strong>Force Take Control</strong> from the second laptop — your session is displaced and you are notified</li>
+          <li>Your computer has control - run a short automated sequence</li>
+          <li>A second student connects on a second laptop - show the "another client has control" status message on their screen</li>
+          <li>Demonstrate <strong>Force Take Control</strong> from the second laptop - your session is displaced and you are notified</li>
           <li>The second student now commands the arm</li>
         </ol>
-        This demonstrates a real distributed-system concept (mutual exclusion over a network) to examiners — not just "the arm moves to a position". It directly showcases knowledge from Module 9 (WebSocket architecture) and Module 13 (control session as an engineering control), and is unique to this specific system.
+        This demonstrates a real distributed-system concept (mutual exclusion over a network) to examiners - not just "the arm moves to a position". It directly showcases knowledge from Module 9 (WebSocket architecture) and Module 13 (control session as an engineering control), and is unique to this specific system.
       </div>
     </div>
 
@@ -273,7 +273,7 @@
       <textarea style="min-height:120px;" placeholder="Two most significant technical challenges and how you overcame them..."></textarea>
     </div>
     <div class="ws-field">
-      <label>Future development — three justified improvements</label>
+      <label>Future development - three justified improvements</label>
       <textarea style="min-height:120px;" placeholder="1. ...&#10;2. ...&#10;3. ..."></textarea>
     </div>
     <div class="ws-field">
@@ -290,8 +290,8 @@
   <div class="section-card">
     <span class="pill pill-sowhat">So What?</span>
     <h2>Reflection as an Engineering Habit</h2>
-    <p>The best engineers are those who treat every project — successful or not — as a learning opportunity. The practice of structured reflection (what worked, what did not, and why) is what separates engineers who improve continuously from those who repeat the same mistakes.</p>
-    <p>Professional engineering bodies (IMechE, IET, BCS) require evidence of <em>continuing professional development</em> (CPD) — ongoing learning and reflection — as a condition of membership. The habit starts here.</p>
+    <p>The best engineers are those who treat every project - successful or not - as a learning opportunity. The practice of structured reflection (what worked, what did not, and why) is what separates engineers who improve continuously from those who repeat the same mistakes.</p>
+    <p>Professional engineering bodies (IMechE, IET, BCS) require evidence of <em>continuing professional development</em> (CPD) - ongoing learning and reflection - as a condition of membership. The habit starts here.</p>
     <p><strong>Final thought:</strong> When you started Module 1, you may not have known what a serial bus, a kinematic chain, or a PID controller was. Look at your project now. That distance is what engineering education is for.</p>
   </div>
 
@@ -299,7 +299,7 @@
   <div class="completion-badge">
     <div class="badge-icon">&#127941;</div>
     <h3>Curriculum Complete</h3>
-    <p>You have worked through all 16 modules — Foundation, Intermediate, Advanced, and Project. Well done.</p>
+    <p>You have worked through all 16 modules - Foundation, Intermediate, Advanced, and Project. Well done.</p>
   </div>
 
   <!-- MCQ -->
@@ -348,9 +348,9 @@
 <script>
 const answers = { q1: 'b', q2: 'b', q3: 'b' };
 const feedback = {
-  q1: { b: 'Correct! Critical evaluation honestly identifies weaknesses and proposes specific, justified improvements — not just a list of successes.', wrong: 'Not quite. Critical evaluation means honestly identifying weaknesses and proposing specific, justified improvements.' },
+  q1: { b: 'Correct! Critical evaluation honestly identifies weaknesses and proposes specific, justified improvements - not just a list of successes.', wrong: 'Not quite. Critical evaluation means honestly identifying weaknesses and proposing specific, justified improvements.' },
   q2: { b: 'Correct! For a non-technical audience, plain language and clear explanation of purpose matters far more than technical detail.', wrong: 'Not quite. For a non-technical audience, plain language and explaining what the system does and why it matters is most important.' },
-  q3: { b: 'Correct! The engineering design cycle is an iterative loop — design, build, test, evaluate, improve — that repeats with each iteration.', wrong: 'Not quite. The design cycle is an iterative loop: design → build → test → evaluate → improve, repeated to converge on the best solution.' }
+  q3: { b: 'Correct! The engineering design cycle is an iterative loop - design, build, test, evaluate, improve - that repeats with each iteration.', wrong: 'Not quite. The design cycle is an iterative loop: design → build → test → evaluate → improve, repeated to converge on the best solution.' }
 };
 function checkMCQ() {
   let score = 0;

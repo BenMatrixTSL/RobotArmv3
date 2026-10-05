@@ -473,7 +473,7 @@ function defineCustomBlocks() {
             this.setPreviousStatement(true, null);
             this.setNextStatement(true, null);
             this.setColour(230);
-            this.setTooltip('Set the tool orientation vector and spin rotation, and turn the tool to it now, in place, at the given joint speed. Rotation spins the tool around its pointing axis — 0° keeps a consistent world-aligned reference regardless of position. Later Move TCP blocks keep this orientation.');
+            this.setTooltip('Set the tool orientation vector and spin rotation, and turn the tool to it now, in place, at the given joint speed. Rotation spins the tool around its pointing axis - 0° keeps a consistent world-aligned reference regardless of position. Later Move TCP blocks keep this orientation.');
         }
     };
 
@@ -781,7 +781,7 @@ function defineCustomBlocks() {
     };
 
     // Vision: how many blocks the camera currently sees. Blocks are indexed
-    // 0, 1, 2… by position in the camera's view, nearest the top first — a
+    // 0, 1, 2… by position in the camera's view, nearest the top first - a
     // block lower down in view always gets a higher index.
     Blockly.Blocks['block_count'] = {
         init: function() {
@@ -1452,7 +1452,7 @@ async function applyToolOrientationInPlace(speedStepsPerSecond, log) {
     appendOutput('Tool orientation applied (joint 6 to ' + targetAngles[targetAngles.length - 1].toFixed(1) + '\u00b0' + spinStr + ')');
 }
 
-/** Blockly wrapper — kept so generated block code keeps working. */
+/** Blockly wrapper - kept so generated block code keeps working. */
 async function blocklyApplyToolOrientationInPlace(speedStepsPerSecond) {
     return applyToolOrientationInPlace(speedStepsPerSecond, appendBlocklyOutput);
 }
@@ -1465,7 +1465,7 @@ function appendBlocklyOutput(text) {
     if (typeof appendCappedLog === 'function') {
         appendCappedLog(output, line);
     } else if (output) {
-        // app.js not loaded (shouldn't happen in the real app) — fall back
+        // app.js not loaded (shouldn't happen in the real app) - fall back
         // to the old unbounded behavior rather than throwing.
         output.textContent += line + '\n';
         output.scrollTop = output.scrollHeight;
@@ -1799,13 +1799,13 @@ function registerBlocklyGenerators() {
         const sanitizedId = blockId.replace(/[^a-zA-Z0-9_]/g, '_');
         const positionNumber = block.getFieldValue('POSITION');
         const speedDegreesPerSecond = block.getFieldValue('SPEED') || 40;
-        // Best-effort label for the log message only — resolved fresh again at
+        // Best-effort label for the log message only - resolved fresh again at
         // runtime below via resolveStoredPositionAngles(), so this doesn't need
         // to be accurate if the position is edited/added after this block was built.
         const positionLabel = (typeof getPosition === 'function' && getPosition(parseInt(positionNumber)) &&
             getPosition(parseInt(positionNumber)).label) || `Position ${positionNumber}`;
 
-        // Target angles are resolved at RUN TIME, not baked in here — a stored
+        // Target angles are resolved at RUN TIME, not baked in here - a stored
         // position saved as XYZ needs IK against whichever tool is attached when
         // the program actually runs (which may differ from build time), and this
         // also means an angles-type position edited after building the blocks
@@ -1830,7 +1830,7 @@ function registerBlocklyGenerators() {
         // and XYZ-type positions alike).
         const targetAngles_pos_${sanitizedId} = resolveStoredPositionAngles(${positionNumber});
         if (!targetAngles_pos_${sanitizedId}) {
-            appendBlocklyOutput('Could not move to Position ${positionNumber} ("${positionLabel}") — it could not be resolved to joint angles (missing, or XYZ target unreachable with the current tool).');
+            appendBlocklyOutput('Could not move to Position ${positionNumber} ("${positionLabel}") - it could not be resolved to joint angles (missing, or XYZ target unreachable with the current tool).');
         } else {
             appendBlocklyOutput('Moving to ${positionLabel} at speed ${speedDegreesPerSecond} degrees/s (scaled speeds for synchronized arrival)');
             // Coordinated joint move; a descent is approached from 30 mm above at a
@@ -2409,7 +2409,7 @@ function convertBlocklyToGCode(workspace) {
                     if (v === null) { bad.push(`joint ${j} (${describeValue(b, 'JOINT' + j)})`); continue; }
                     parts.push(`J${j}=${v}`);
                 }
-                if (bad.length) { skip(`Move All Joints — can't convert ${bad.join(', ')}`); break; }
+                if (bad.length) { skip(`Move All Joints - can't convert ${bad.join(', ')}`); break; }
                 if (parts.length === 0) { emit('; Move All Joints with no joint values'); break; }
                 const speed = parseFloat(b.getFieldValue('SPEED')) || 40;
                 emit(`G1 ${parts.join(' ')} F${gcodeNum(speed)}`);
@@ -2431,7 +2431,7 @@ function convertBlocklyToGCode(workspace) {
                 const z = inputToGCode(b, 'Z');
                 if (x === null || y === null || z === null) {
                     const bad = ['X', 'Y', 'Z'].filter((n, i) => [x, y, z][i] === null).map(n => `${n} (${describeValue(b, n)})`);
-                    skip(`Move TCP to XYZ — can't convert ${bad.join(', ')}`);
+                    skip(`Move TCP to XYZ - can't convert ${bad.join(', ')}`);
                     break;
                 }
                 // G-code F for Cartesian moves is mm/min; the block is mm/s.
@@ -2442,7 +2442,7 @@ function convertBlocklyToGCode(workspace) {
             case 'move_xyz_offset': {
                 const dx = inputToGCode(b, 'DX'), dy = inputToGCode(b, 'DY'), dz = inputToGCode(b, 'DZ');
                 const desc = (dx === null || dy === null || dz === null) ? 'values can\'t be converted' : `dX${dx} dY${dy} dZ${dz}`;
-                skip(`Move TCP by offset (${desc}) — G-code moves are absolute only; use Move TCP to X/Y/Z`);
+                skip(`Move TCP by offset (${desc}) - G-code moves are absolute only; use Move TCP to X/Y/Z`);
                 break;
             }
             case 'set_tool_orientation': {
@@ -2474,10 +2474,10 @@ function convertBlocklyToGCode(workspace) {
                 break;
             }
             case 'stop_joint':
-                emit(`; Stop Joint ${b.getFieldValue('JOINT')} — not needed, G-code moves run to completion`);
+                emit(`; Stop Joint ${b.getFieldValue('JOINT')} - not needed, G-code moves run to completion`);
                 break;
             case 'stop_all':
-                emit('; Stop All Joints — not needed, G-code moves run to completion');
+                emit('; Stop All Joints - not needed, G-code moves run to completion');
                 break;
             case 'set_servo':
                 skip(`Set Servo on Joint ${b.getFieldValue('JOINT')} has no G-code equivalent`);
@@ -2502,7 +2502,7 @@ function convertBlocklyToGCode(workspace) {
                 const slot = inputToGCode(b, 'SLOT');
                 const z    = inputToGCode(b, 'Z');
                 if (idx === null || slot === null) {
-                    skip('Save block to position — index and slot can\'t be converted');
+                    skip('Save block to position - index and slot can\'t be converted');
                     break;
                 }
                 emit(`M781 P${idx} L${slot}${z === null ? '' : ' Z' + z}`);
@@ -2513,14 +2513,14 @@ function convertBlocklyToGCode(workspace) {
             case 'variables_set': {
                 const name = blockVarName(b);
                 const v = inputToGCode(b, 'VALUE');
-                if (v === null) { skip(`set ${name} — value (${describeValue(b, 'VALUE')}) can't be converted`); break; }
+                if (v === null) { skip(`set ${name} - value (${describeValue(b, 'VALUE')}) can't be converted`); break; }
                 emit(`#${varFor(name)} = ${v} ; ${name}`);
                 break;
             }
             case 'math_change': {
                 const name = blockVarName(b);
                 const v = inputToGCode(b, 'DELTA');
-                if (v === null) { skip(`change ${name} — amount (${describeValue(b, 'DELTA')}) can't be converted`); break; }
+                if (v === null) { skip(`change ${name} - amount (${describeValue(b, 'DELTA')}) can't be converted`); break; }
                 emit(`#${varFor(name)} = #${varFor(name)} + ${v} ; ${name}`);
                 break;
             }
@@ -2533,7 +2533,7 @@ function convertBlocklyToGCode(workspace) {
                     ? gcodeNum(parseInt(b.getFieldValue('TIMES'), 10) || 0, 0)
                     : inputToGCode(b, 'TIMES');
                 if (count === null) {
-                    warn(`repeat count (${describeValue(b, 'TIMES')}) can't be converted — using ${GCODE_FALLBACK_LOOP_COUNT} passes`);
+                    warn(`repeat count (${describeValue(b, 'TIMES')}) can't be converted - using ${GCODE_FALLBACK_LOOP_COUNT} passes`);
                     count = String(GCODE_FALLBACK_LOOP_COUNT);
                 }
                 emitCountedLoop(count, body, `Repeat ${count} times`);
@@ -2550,21 +2550,21 @@ function convertBlocklyToGCode(workspace) {
                         : { cond: condition.negated, negated: condition.cond };
                 }
                 if (!condition) {
-                    warn(`${until ? 'repeat until' : 'repeat while'} condition (${condBlock ? `"${condBlock.type}" block` : 'empty'}) can't be converted — looping ${GCODE_FALLBACK_LOOP_COUNT} times instead`);
+                    warn(`${until ? 'repeat until' : 'repeat while'} condition (${condBlock ? `"${condBlock.type}" block` : 'empty'}) can't be converted - looping ${GCODE_FALLBACK_LOOP_COUNT} times instead`);
                     emitCountedLoop(String(GCODE_FALLBACK_LOOP_COUNT), body, `Loop ${GCODE_FALLBACK_LOOP_COUNT} times (was a conditional loop)`);
                     break;
                 }
                 if (condition.always === true) {
-                    // "repeat while true" — an endless loop. Run a fixed number of
+                    // "repeat while true" - an endless loop. Run a fixed number of
                     // passes so the program finishes, and say how to change that.
                     emit(`; Blockly "${until ? 'repeat until false' : 'repeat while true'}" is an endless loop.`);
-                    emit(`; Converted to ${GCODE_FALLBACK_LOOP_COUNT} passes — change the number in the IF line below,`);
+                    emit(`; Converted to ${GCODE_FALLBACK_LOOP_COUNT} passes - change the number in the IF line below,`);
                     emit('; or delete that IF line to loop forever (use Stop to end the program).');
                     emitCountedLoop(String(GCODE_FALLBACK_LOOP_COUNT), body, `Loop ${GCODE_FALLBACK_LOOP_COUNT} times`);
                     break;
                 }
                 if (condition.always === false) {
-                    emit(`; ${until ? 'repeat until true' : 'repeat while false'} — body never runs, skipped`);
+                    emit(`; ${until ? 'repeat until true' : 'repeat while false'} - body never runs, skipped`);
                     break;
                 }
                 const top = newLabel(), end = newLabel();
@@ -2586,14 +2586,14 @@ function convertBlocklyToGCode(workspace) {
                 const by   = inputToGCode(b, 'BY');
                 const body = b.getInputTargetBlock('DO');
                 if (from === null || to === null || by === null) {
-                    warn(`count with ${name} — from/to/by can't all be converted — looping ${GCODE_FALLBACK_LOOP_COUNT} times instead`);
+                    warn(`count with ${name} - from/to/by can't all be converted - looping ${GCODE_FALLBACK_LOOP_COUNT} times instead`);
                     emitCountedLoop(String(GCODE_FALLBACK_LOOP_COUNT), body, `Loop ${GCODE_FALLBACK_LOOP_COUNT} times (was count with ${name})`);
                     break;
                 }
                 // Blockly counts downwards if "by" is negative; G-code can only
                 // check one direction, so pick it from the sign when it's a constant.
                 const descending = parseFloat(by) < 0;
-                if (isNaN(parseFloat(by))) warn(`count with ${name} — step "${by}" isn't a plain number, assuming it counts upwards`);
+                if (isNaN(parseFloat(by))) warn(`count with ${name} - step "${by}" isn't a plain number, assuming it counts upwards`);
                 const top = newLabel(), cont = newLabel(), end = newLabel();
                 emit(`; Count with ${name} from ${from} to ${to} by ${by}`);
                 emit(`#${v} = ${from}`);
@@ -2609,7 +2609,7 @@ function convertBlocklyToGCode(workspace) {
                 break;
             }
             case 'controls_forEach':
-                skip('for each item in list — G-code has no lists; its contents were skipped');
+                skip('for each item in list - G-code has no lists; its contents were skipped');
                 break;
             case 'controls_flow_statements': {
                 const flow = b.getFieldValue('FLOW');
@@ -2630,7 +2630,7 @@ function convertBlocklyToGCode(workspace) {
                     const next = newLabel();
                     emit(`; ${n === 0 ? 'if' : 'else if'} ${condition && condition.cond ? `[${condition.cond}]` : ''}`);
                     if (!condition) {
-                        skip(`${n === 0 ? 'if' : 'else if'} condition (${condBlock ? `"${condBlock.type}" block` : 'empty'}) can't be converted — this branch was skipped`);
+                        skip(`${n === 0 ? 'if' : 'else if'} condition (${condBlock ? `"${condBlock.type}" block` : 'empty'}) can't be converted - this branch was skipped`);
                         emit(`GOTO ${next}`);
                     } else {
                         emitJumpUnless(condition, next);
@@ -2674,10 +2674,10 @@ function convertBlocklyToGCode(workspace) {
         gcode += `; Variables: ${userVars.map(k => `${k} = #${varNumbers[k]}`).join(', ')}\n`;
     }
     if (warnings.length) {
-        gcode += `; ${warnings.length} WARNING(S) — search for "WARNING"\n`;
+        gcode += `; ${warnings.length} WARNING(S) - search for "WARNING"\n`;
     }
     if (notConverted.length) {
-        gcode += `; ${notConverted.length} block(s) could not be converted — search for "NOT CONVERTED"\n`;
+        gcode += `; ${notConverted.length} block(s) could not be converted - search for "NOT CONVERTED"\n`;
     }
     gcode += '\n' + out.join('\n') + '\n\nM30\n';
     return gcode;
@@ -2877,13 +2877,13 @@ function convertBlocklyToRapid(workspace) {
                     if (v === null) bad.push(`joint ${j} (${describeValue(b, 'JOINT' + j)})`);
                     values.push(v);
                 }
-                if (bad.length) { skip(`Move All Joints — can't convert ${bad.join(', ')}`); break; }
+                if (bad.length) { skip(`Move All Joints - can't convert ${bad.join(', ')}`); break; }
                 if (missing === 6) { emit('! Move All Joints with no joint values'); break; }
                 if (missing === 0) {
                     emit(`MoveAbsJ [[${values.join(', ')}]]${speedSuffix(b, 'SPEED', 40)};`);
                 } else {
                     // MoveAbsJ needs all six angles; move the given joints one at a time instead
-                    emit(`! Move All Joints with ${6 - missing} joint(s) set — moved one joint at a time`);
+                    emit(`! Move All Joints with ${6 - missing} joint(s) set - moved one joint at a time`);
                     values.forEach((v, i) => { if (v !== null) emit(`MoveJoint ${i + 1}, ${v}${speedSuffix(b, 'SPEED', 40)};`); });
                 }
                 break;
@@ -2902,7 +2902,7 @@ function convertBlocklyToRapid(workspace) {
                 const vals = names.map(n => inputToRapid(b, n));
                 if (vals.some(v => v === null)) {
                     const bad = names.filter((n, i) => vals[i] === null).map(n => `${n} (${describeValue(b, n)})`);
-                    skip(`${b.type === 'move_xyz' ? 'Move TCP to XYZ' : 'Move TCP by offset'} — can't convert ${bad.join(', ')}`);
+                    skip(`${b.type === 'move_xyz' ? 'Move TCP to XYZ' : 'Move TCP by offset'} - can't convert ${bad.join(', ')}`);
                     break;
                 }
                 emit(`${b.type === 'move_xyz' ? 'MoveLXYZ' : 'MoveLOffs'} [[${vals.join(', ')}]]${speedSuffix(b, 'SPEED', 40)};`);
@@ -2931,10 +2931,10 @@ function convertBlocklyToRapid(workspace) {
                 emit(`SetAcc ${b.getFieldValue('JOINT')}, ${parseInt(b.getFieldValue('ACCELERATION'), 10) || 5};`);
                 break;
             case 'stop_joint':
-                emit(`! Stop Joint ${b.getFieldValue('JOINT')} — not needed, RAPID moves run to completion`);
+                emit(`! Stop Joint ${b.getFieldValue('JOINT')} - not needed, RAPID moves run to completion`);
                 break;
             case 'stop_all':
-                emit('! Stop All Joints — not needed, RAPID moves run to completion');
+                emit('! Stop All Joints - not needed, RAPID moves run to completion');
                 break;
             case 'set_servo':
                 skip(`Set Servo on Joint ${b.getFieldValue('JOINT')} has no RAPID equivalent`);
@@ -2956,7 +2956,7 @@ function convertBlocklyToRapid(workspace) {
                 const idx  = inputToRapid(b, 'INDEX');
                 const slot = inputToRapid(b, 'SLOT');
                 const z    = inputToRapid(b, 'Z');
-                if (idx === null || slot === null) { skip('Save block to position — index and slot can\'t be converted'); break; }
+                if (idx === null || slot === null) { skip('Save block to position - index and slot can\'t be converted'); break; }
                 emit(`SaveBlockToPos ${idx}, ${slot}${z === null ? '' : ', ' + z};`);
                 break;
             }
@@ -2965,14 +2965,14 @@ function convertBlocklyToRapid(workspace) {
             case 'variables_set': {
                 const name = blockVarName(b);
                 const v = inputToRapid(b, 'VALUE');
-                if (v === null) { skip(`set ${name} — value (${describeValue(b, 'VALUE')}) can't be converted`); break; }
+                if (v === null) { skip(`set ${name} - value (${describeValue(b, 'VALUE')}) can't be converted`); break; }
                 emit(`${rapidName(name)} := ${v};`);
                 break;
             }
             case 'math_change': {
                 const name = blockVarName(b);
                 const v = inputToRapid(b, 'DELTA');
-                if (v === null) { skip(`change ${name} — amount (${describeValue(b, 'DELTA')}) can't be converted`); break; }
+                if (v === null) { skip(`change ${name} - amount (${describeValue(b, 'DELTA')}) can't be converted`); break; }
                 emit(`${rapidName(name)} := ${rapidName(name)} + ${v};`);
                 break;
             }
@@ -2984,7 +2984,7 @@ function convertBlocklyToRapid(workspace) {
                     ? String(parseInt(b.getFieldValue('TIMES'), 10) || 0)
                     : inputToRapid(b, 'TIMES');
                 if (count === null) {
-                    warn(`repeat count (${describeValue(b, 'TIMES')}) can't be converted — using 10`);
+                    warn(`repeat count (${describeValue(b, 'TIMES')}) can't be converted - using 10`);
                     count = '10';
                 }
                 const counter = tempName('rep');
@@ -2996,13 +2996,13 @@ function convertBlocklyToRapid(workspace) {
                 const condBlock = b.getInputTargetBlock('BOOL');
                 let cond = conditionToRapid(condBlock);
                 if (cond === null) {
-                    warn(`${until ? 'repeat until' : 'repeat while'} condition (${condBlock ? `"${condBlock.type}" block` : 'empty'}) can't be converted — looping 10 times instead`);
+                    warn(`${until ? 'repeat until' : 'repeat while'} condition (${condBlock ? `"${condBlock.type}" block` : 'empty'}) can't be converted - looping 10 times instead`);
                     emitLoop(`FOR ${tempName('rep')} FROM 1 TO 10 DO`, b.getInputTargetBlock('DO'), 'ENDFOR');
                     break;
                 }
                 if (until) cond = cond === 'TRUE' ? 'FALSE' : cond === 'FALSE' ? 'TRUE' : `NOT (${cond})`;
                 if (cond === 'TRUE') {
-                    emit('! Endless loop (Blockly "repeat while true") — press Stop to end it,');
+                    emit('! Endless loop (Blockly "repeat while true") - press Stop to end it,');
                     emit('! or change TRUE to a condition such as count < 10.');
                 }
                 emitLoop(`WHILE ${cond} DO`, b.getInputTargetBlock('DO'), 'ENDWHILE');
@@ -3014,7 +3014,7 @@ function convertBlocklyToRapid(workspace) {
                 const to   = inputToRapid(b, 'TO');
                 const by   = inputToRapid(b, 'BY');
                 if (from === null || to === null || by === null) {
-                    warn(`count with ${name} — from/to/by can't all be converted — looping 10 times instead`);
+                    warn(`count with ${name} - from/to/by can't all be converted - looping 10 times instead`);
                     emitLoop(`FOR ${name} FROM 1 TO 10 DO`, b.getInputTargetBlock('DO'), 'ENDFOR');
                     break;
                 }
@@ -3023,7 +3023,7 @@ function convertBlocklyToRapid(workspace) {
                 break;
             }
             case 'controls_forEach':
-                skip('for each item in list — RAPID subset has no lists; its contents were skipped');
+                skip('for each item in list - RAPID subset has no lists; its contents were skipped');
                 break;
             case 'controls_flow_statements': {
                 const flow = b.getFieldValue('FLOW');
@@ -3043,7 +3043,7 @@ function convertBlocklyToRapid(workspace) {
                     const condBlock = b.getInputTargetBlock('IF' + n);
                     const cond = conditionToRapid(condBlock);
                     if (cond === null) {
-                        skip(`${n === 0 ? 'if' : 'else if'} condition (${condBlock ? `"${condBlock.type}" block` : 'empty'}) can't be converted — this branch was skipped`);
+                        skip(`${n === 0 ? 'if' : 'else if'} condition (${condBlock ? `"${condBlock.type}" block` : 'empty'}) can't be converted - this branch was skipped`);
                     } else {
                         emit(`${opened ? 'ELSEIF' : 'IF'} ${cond} THEN`);
                         opened = true;
@@ -3053,7 +3053,7 @@ function convertBlocklyToRapid(workspace) {
                 }
                 if (b.getInput('ELSE')) {
                     if (opened) { emit('ELSE'); walkBody(b.getInputTargetBlock('ELSE')); }
-                    else { emit('! else (no convertible condition before it — runs unconditionally)'); walkChain(b.getInputTargetBlock('ELSE')); }
+                    else { emit('! else (no convertible condition before it - runs unconditionally)'); walkChain(b.getInputTargetBlock('ELSE')); }
                 }
                 if (opened) emit('ENDIF');
                 break;
@@ -3064,7 +3064,7 @@ function convertBlocklyToRapid(workspace) {
                 if (t && t.type === 'text') emit(`TPWrite "${t.getFieldValue('TEXT').replace(/"/g, '\'')}";`);
                 else {
                     const v = valueToRapid(t);
-                    if (v === null) skip('print — value can\'t be converted');
+                    if (v === null) skip('print - value can\'t be converted');
                     else emit(`TPWrite "" \\Num:=${v};`);
                 }
                 break;
@@ -3083,8 +3083,8 @@ function convertBlocklyToRapid(workspace) {
 
     let rapid = '! RAPID program converted from Blockly\n';
     rapid += '! Generated automatically - review before running\n';
-    if (warnings.length) rapid += `! ${warnings.length} WARNING(S) — search for "WARNING"\n`;
-    if (notConverted.length) rapid += `! ${notConverted.length} block(s) could not be converted — search for "NOT CONVERTED"\n`;
+    if (warnings.length) rapid += `! ${warnings.length} WARNING(S) - search for "WARNING"\n`;
+    if (notConverted.length) rapid += `! ${notConverted.length} block(s) could not be converted - search for "NOT CONVERTED"\n`;
 
     // Declare every Blockly variable up front (RAPID needs VAR before use).
     // Loop counters are declared by their FOR statements.
@@ -3131,7 +3131,7 @@ function convertBlocklyToGCodeAndOpen() {
             // Apply changes to processor
             applyGCodeChanges();
             showAppMessage(notConverted
-                ? `Converted to G-code — ${notConverted} block(s) could not be converted, see "NOT CONVERTED" comments`
+                ? `Converted to G-code - ${notConverted} block(s) could not be converted, see "NOT CONVERTED" comments`
                 : 'Blockly program converted to G-code and loaded');
         }
     }, 100);
@@ -3164,7 +3164,7 @@ function convertBlocklyToRapidAndOpen() {
         if (rapidTextarea) {
             rapidTextarea.value = rapid;
             showAppMessage(notConverted
-                ? `Converted to RAPID — ${notConverted} block(s) could not be converted, see "NOT CONVERTED" comments`
+                ? `Converted to RAPID - ${notConverted} block(s) could not be converted, see "NOT CONVERTED" comments`
                 : 'Blockly program converted to RAPID and loaded');
         }
     }, 100);

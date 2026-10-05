@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Module 12 — Automation Cell Design</title>
+<title>Module 12 - Automation Cell Design</title>
 <style>
   :root {
     --bg: #f8fafc; --card: #ffffff; --border: #e2e8f0;
@@ -80,7 +80,7 @@
 <div class="hero">
   <div class="module-num">Module 12 of 16</div>
   <h1>Automation Cell Design</h1>
-  <p>Designing a complete robot work cell — workspace boundaries, stored positions, programs, and safe operating procedures.</p>
+  <p>Designing a complete robot work cell - workspace boundaries, stored positions, programs, and safe operating procedures.</p>
 </div>
 <div class="meta-bar">
   <span>&#128340; 75–90 min</span>
@@ -100,15 +100,15 @@
     <div class="grid-3">
       <div class="mini-card">
         <h4>&#128506;&#65039; Workspace</h4>
-        <p>The volume the robot can physically reach — and the subset where it is allowed to move (the <em>operating envelope</em>).</p>
+        <p>The volume the robot can physically reach - and the subset where it is allowed to move (the <em>operating envelope</em>).</p>
       </div>
       <div class="mini-card">
         <h4>&#128274; Interlocks</h4>
-        <p>Safety mechanisms that stop the robot if a human enters the cell — light curtains, door switches, pressure mats.</p>
+        <p>Safety mechanisms that stop the robot if a human enters the cell - light curtains, door switches, pressure mats.</p>
       </div>
       <div class="mini-card">
         <h4>&#128203; Program</h4>
-        <p>The sequence of moves the robot follows — stored positions, G-code files, or teach-pendant recordings.</p>
+        <p>The sequence of moves the robot follows - stored positions, G-code files, or teach-pendant recordings.</p>
       </div>
     </div>
     <p>Even a small educational arm needs these elements defined. Without a clear operating envelope, the arm may strike fixtures, cables, or people.</p>
@@ -117,18 +117,18 @@
   <!-- THEORY 2 -->
   <div class="section-card">
     <span class="pill pill-theory">Theory</span>
-    <h2>Dead Zones — Software Limits</h2>
+    <h2>Dead Zones - Software Limits</h2>
     <p>In the absence of physical guards, software <strong>dead zones</strong> (also called <em>joint limits</em> or <em>software stops</em>) restrict the range of motion to a safe subset. The app's Dead Zones tab lets you configure minimum and maximum joint angles for each axis.</p>
     <div class="highlight-box">
       <strong>Why this matters:</strong> The ST3215 servos can rotate beyond the mechanical clearance of the arm structure. Without software limits, you risk stripping gears, snapping cables, or causing the arm to fold back on itself.
     </div>
     <table>
       <tr><th>Limit type</th><th>Where set</th><th>Priority</th></tr>
-      <tr><td>Hardware end-stops</td><td>Physical mechanical stops on the joint</td><td>Highest — cannot be overridden</td></tr>
-      <tr><td>Software dead zones</td><td>Dead Zones tab in the app</td><td>Medium — enforced by Python server</td></tr>
-      <tr><td>Program limits</td><td>Bounds in G-code / Blockly</td><td>Lowest — only applies to that program</td></tr>
+      <tr><td>Hardware end-stops</td><td>Physical mechanical stops on the joint</td><td>Highest - cannot be overridden</td></tr>
+      <tr><td>Software dead zones</td><td>Dead Zones tab in the app</td><td>Medium - enforced by Python server</td></tr>
+      <tr><td>Program limits</td><td>Bounds in G-code / Blockly</td><td>Lowest - only applies to that program</td></tr>
     </table>
-    <p>A well-designed cell uses all three layers — defence in depth.</p>
+    <p>A well-designed cell uses all three layers - defence in depth.</p>
   </div>
 
   <!-- THEORY 3 -->
@@ -152,14 +152,14 @@ M30                               ; End program</div>
     <div class="callout callout-info">
       <span class="callout-icon">📍</span>
       <div class="callout-body">
-        <strong>Stored Positions Tab — Confirmed Parameters</strong></br>
+        <strong>Stored Positions Tab - Confirmed Parameters</strong></br>
         The Stored Positions tab manages up to <strong>100 named positions</strong> in slots 0–99. Each position has:
         <ul style="margin:0.4rem 0 0;padding-left:1.2rem;">
           <li>A <strong>slot number</strong> (0–99)</li>
           <li>A <strong>user-defined name string</strong> (e.g. "Home", "PickAbove", "Pick", "PlaceAbove")</li>
           <li>The <strong>joint angle set</strong> for all joints at that position</li>
         </ul>
-        Use the <strong>Save from Robot</strong> button to capture the arm's current pose. Use <strong>Export JSON</strong> / <strong>Import JSON</strong> to save and restore a complete position set — this is the cell program backup workflow. Name positions descriptively rather than using slot numbers; the names appear in G-code and Blockly programs.
+        Use the <strong>Save from Robot</strong> button to capture the arm's current pose. Use <strong>Export JSON</strong> / <strong>Import JSON</strong> to save and restore a complete position set - this is the cell program backup workflow. Name positions descriptively rather than using slot numbers; the names appear in G-code and Blockly programs.
       </div>
     </div>
   </div>
@@ -167,7 +167,7 @@ M30                               ; End program</div>
   <!-- WORKSHEET -->
   <div class="section-card worksheet-card">
     <span class="pill pill-worksheet">Worksheet</span>
-    <h2>Activity — Design Your Own Work Cell</h2>
+    <h2>Activity - Design Your Own Work Cell</h2>
     <p>You will define a safe operating envelope, store key positions, and write a G-code program to run a repeating cycle.</p>
     <ul class="steps">
       <li>Open the <span class="tab-ref">Dead Zones</span> tab. Review the current joint limits. Sketch the physical workspace on paper and identify any areas to avoid (cables, bench edges, other equipment). Adjust limits if needed.</li>
@@ -176,15 +176,15 @@ M30                               ; End program</div>
       <li>Open the <span class="tab-ref">G-Code Control</span> tab. Write a program using the joint angles you recorded to perform one complete pick-and-place cycle. Use G04 with a dwell time at the pick and place points to simulate gripper action.</li>
       <li>Run the program at 25% speed first. Check for any joint limit warnings or unexpected motion. Gradually increase to 75%.</li>
       <li>Time the cycle at 50% and 75% speed. Calculate the <strong>cycle time</strong> (time for one complete pick-and-place).</li>
-      <li><p>In <span class="ui-ref">Settings</span>, switch <strong>Movement Mode</strong> between <strong>PTP</strong> and <strong>Linear Cartesian</strong> and repeat the cycle time test at 50% speed in both modes. Record both times. Linear Cartesian mode will typically be slower — the server computes Cartesian waypoints to keep the tool moving in a straight line. Note this in your cycle time table alongside the path quality (use the End-Effector Trace in 3D Visualisation to compare path straightness).</p></li>
+      <li><p>In <span class="ui-ref">Settings</span>, switch <strong>Movement Mode</strong> between <strong>PTP</strong> and <strong>Linear Cartesian</strong> and repeat the cycle time test at 50% speed in both modes. Record both times. Linear Cartesian mode will typically be slower - the server computes Cartesian waypoints to keep the tool moving in a straight line. Note this in your cycle time table alongside the path quality (use the End-Effector Trace in 3D Visualisation to compare path straightness).</p></li>
     </ul>
     <div class="callout callout-info no-print">
       <span class="callout-icon">🔢</span>
       <div class="callout-body">
-        <strong>Speed Units — G-code vs Blockly</strong></br>
+        <strong>Speed Units - G-code vs Blockly</strong></br>
         Speed is expressed differently depending on which programming mode you use:
         <ul style="margin:0.4rem 0 0;padding-left:1.2rem;">
-          <li><strong>G-Code</strong>: the F parameter is in <strong>steps per second</strong> (e.g. <code>G1 J2=45 F500</code> — 500 steps/sec ≈ 44°/sec)</li>
+          <li><strong>G-Code</strong>: the F parameter is in <strong>steps per second</strong> (e.g. <code>G1 J2=45 F500</code> - 500 steps/sec ≈ 44°/sec)</li>
           <li><strong>Blockly</strong>: speed is set in <strong>degrees per second</strong> (automatically converted to steps/sec using the ratio 11.37 steps/degree)</li>
         </ul>
         To convert: multiply degrees/sec by 11.37 to get steps/sec. For example, 100°/sec = F1137 in G-code.
@@ -212,12 +212,12 @@ M30                               ; End program</div>
     <div class="callout callout-info no-print">
       <span class="callout-icon">🚫</span>
       <div class="callout-body">
-        <strong>Dead Zones Tab — Confirmed Parameters</strong></br>
+        <strong>Dead Zones Tab - Confirmed Parameters</strong></br>
         Dead zones are defined as <strong>named rectangular XYZ exclusion volumes</strong>. Each zone has:
         <ul style="margin:0.4rem 0 0;padding-left:1.2rem;">
           <li>A user-defined <strong>name</strong> (e.g. "TableEdge", "CableRun")</li>
           <li><strong>X min/max, Y min/max, Z min/max</strong> bounds in millimetres (Cartesian coordinates)</li>
-          <li>An <strong>enable/disable toggle</strong> per zone — disabled zones are ignored during path planning</li>
+          <li>An <strong>enable/disable toggle</strong> per zone - disabled zones are ignored during path planning</li>
         </ul>
         When a planned move would pass through an active dead zone, the server automatically routes the path over the zone via a safe Z height. Enable the <strong>Dead Zones</strong> overlay in 3D Visualisation to see the defined volumes as coloured boxes in the 3D model.
       </div>
@@ -229,7 +229,7 @@ M30                               ; End program</div>
     <span class="pill pill-sowhat">So What?</span>
     <h2>Cell Design in the Real World</h2>
     <p>In a factory, designing a robot cell is an engineering project in its own right. It involves layout drawings (often 2D floor plans and 3D models), risk assessments (ISO 10218-2), cycle time analysis for production planning, and sign-off from safety engineers before any operator enters the cell.</p>
-    <p>The concepts you applied here — define the envelope, teach positions, write a program, time the cycle — are exactly the steps a robotics engineer follows, just with larger, faster, and more dangerous machinery.</p>
+    <p>The concepts you applied here - define the envelope, teach positions, write a program, time the cycle - are exactly the steps a robotics engineer follows, just with larger, faster, and more dangerous machinery.</p>
     <p><strong>Think about:</strong> If this arm was producing 500 parts per day, and each pick-and-place cycle takes 8 seconds, how many cycles per hour would you need? What speed setting would achieve that? Could you redesign the path to shorten the cycle time?</p>
   </div>
 
@@ -279,9 +279,9 @@ M30                               ; End program</div>
 <script>
 const answers = { q1: 'b', q2: 'b', q3: 'c' };
 const feedback = {
-  q1: { b: 'Correct! Physical mechanical end-stops cannot be overridden by software — they are the final safety barrier.', wrong: 'Not quite. Physical mechanical end-stops are the highest priority — they cannot be overridden by software.' },
+  q1: { b: 'Correct! Physical mechanical end-stops cannot be overridden by software - they are the final safety barrier.', wrong: 'Not quite. Physical mechanical end-stops are the highest priority - they cannot be overridden by software.' },
   q2: { b: 'Correct! Teach-and-playback means jogging the robot to key positions and saving them, then replaying the sequence.', wrong: 'Not quite. Teach-and-playback starts by manually jogging the robot to each key position and saving it.' },
-  q3: { c: 'Correct! G04 is a dwell command — it pauses execution for a specified time (e.g. G04 P500 = 500 ms).', wrong: 'Not quite. G04 is a dwell/pause command used to wait at a position (e.g. while a gripper operates).' }
+  q3: { c: 'Correct! G04 is a dwell command - it pauses execution for a specified time (e.g. G04 P500 = 500 ms).', wrong: 'Not quite. G04 is a dwell/pause command used to wait at a position (e.g. while a gripper operates).' }
 };
 function checkMCQ() {
   let score = 0;

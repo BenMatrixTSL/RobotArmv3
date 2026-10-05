@@ -6,7 +6,7 @@
     <marker id="arr-p" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 Z" fill="#7c3aed"/></marker>
   </defs>
   <rect width="540" height="400" fill="#f8fafc" rx="8"/>
-  <text x="270" y="24" text-anchor="middle" font-size="15" font-weight="700" fill="#1e293b">Coordinate Frames — Robot Arm</text>
+  <text x="270" y="24" text-anchor="middle" font-size="15" font-weight="700" fill="#1e293b">Coordinate Frames - Robot Arm</text>
   <text x="270" y="40" text-anchor="middle" font-size="11" fill="#64748b">Each joint has its own local frame. FK chains them together to find the end-effector in the world frame.</text>
 
   <!-- World / Base frame at bottom -->
@@ -82,7 +82,7 @@
 
   <text x="340" y="234" font-size="10" fill="#64748b">Key insight: rotating Frame 1</text>
   <text x="340" y="248" font-size="10" fill="#64748b">by θ₁ moves ALL frames</text>
-  <text x="340" y="262" font-size="10" fill="#64748b">downstream with it — just</text>
+  <text x="340" y="262" font-size="10" fill="#64748b">downstream with it - just</text>
   <text x="340" y="276" font-size="10" fill="#64748b">like a real robot arm joint.</text>
 
   <text x="270" y="392" text-anchor="middle" font-size="10" fill="#64748b">The Kinematics tab in the app shows the result of this chain calculation for any set of joint angles</text>

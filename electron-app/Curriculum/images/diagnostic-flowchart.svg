@@ -73,5 +73,5 @@
   <text x="240" y="475" text-anchor="middle" font-size="10" fill="#166534">Record fix, test again to confirm</text>
   <text x="240" y="488" text-anchor="middle" font-size="10" fill="#16a34a">fault is fully resolved</text>
 
-  <text x="240" y="512" text-anchor="middle" font-size="10" fill="#64748b">Change one variable per test — multiple changes make it impossible to identify the cause</text>
+  <text x="240" y="512" text-anchor="middle" font-size="10" fill="#64748b">Change one variable per test - multiple changes make it impossible to identify the cause</text>
 </svg>

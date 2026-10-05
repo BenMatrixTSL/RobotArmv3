@@ -11,7 +11,7 @@
 
   <!-- Title / instruction area -->
   <text x="280" y="22" text-anchor="middle" font-size="14" font-weight="700" fill="#1e293b">System Block Diagram Template</text>
-  <text x="280" y="38" text-anchor="middle" font-size="10" fill="#64748b">Add your components in the boxes — draw arrows to show signal and data flow</text>
+  <text x="280" y="38" text-anchor="middle" font-size="10" fill="#64748b">Add your components in the boxes - draw arrows to show signal and data flow</text>
 
   <!-- Grid guide lines (light) -->
   <line x1="20"  y1="55"  x2="540" y2="55"  stroke="#e2e8f0" stroke-width="1" stroke-dasharray="4,4"/>

@@ -76,6 +76,6 @@ const api = {
 try {
     contextBridge.exposeInMainWorld('electronAPI', api);
 } catch (e) {
-    // contextIsolation is disabled — preload shares the renderer's global scope
+    // contextIsolation is disabled - preload shares the renderer's global scope
     window.electronAPI = api;
 }

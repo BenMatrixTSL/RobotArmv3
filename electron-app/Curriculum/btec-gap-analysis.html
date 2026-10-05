@@ -1,0 +1,1312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Robot Arm - BTEC Robotics Specification Gap Analysis</title>
+  <style>
+    :root {
+      --bg:           #F4F6FA;
+      --card:         #FFFFFF;
+      --border:       #D0D8E6;
+      --text:         #1C2333;
+      --muted:        #566080;
+      --primary:      #1B3F6E;
+      --primary-lt:   #E6EEF8;
+      --accent:       #C84A1E;
+      --l3:           #1D5BB5;
+      --l3-bg:        #EAF1FC;
+      --l3-bdr:       #A8C4EE;
+      --l45:          #6B2FA0;
+      --l45-bg:       #F0E9F9;
+      --l45-bdr:      #C4A4E4;
+      --mod:          #1B3F6E;
+      --ok-txt:       #146B3C;
+      --ok-bg:        #E2F2EA;
+      --ok-bdr:       #9FCDB5;
+      --part-txt:     #8A5200;
+      --part-bg:      #FDF1DC;
+      --part-bdr:     #E8C489;
+      --gap-txt:      #A82018;
+      --gap-bg:       #FCE8E6;
+      --gap-bdr:      #EFAEA8;
+      --na-txt:       #566080;
+      --na-bg:        #ECEFF5;
+      --na-bdr:       #C7CFDE;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --bg:         #111722;
+        --card:       #192030;
+        --border:     #2A3448;
+        --text:       #DCE4F0;
+        --muted:      #8090B0;
+        --primary:    #5A9ADE;
+        --primary-lt: #162035;
+        --accent:     #E0703A;
+        --l3:         #5A98E8;
+        --l3-bg:      #131E30;
+        --l3-bdr:     #244070;
+        --l45:        #A880D8;
+        --l45-bg:     #1A0F28;
+        --l45-bdr:    #4A2878;
+        --mod:        #3870B8;
+        --ok-txt:     #74CC9A;
+        --ok-bg:      #0E2018;
+        --ok-bdr:     #2A5A40;
+        --part-txt:   #E3B063;
+        --part-bg:    #241A08;
+        --part-bdr:   #5E4518;
+        --gap-txt:    #F09088;
+        --gap-bg:     #2A1210;
+        --gap-bdr:    #6B2820;
+        --na-txt:     #8090B0;
+        --na-bg:      #1B2130;
+        --na-bdr:     #303B50;
+      }
+    }
+    :root[data-theme="dark"] {
+      --bg:         #111722;
+      --card:       #192030;
+      --border:     #2A3448;
+      --text:       #DCE4F0;
+      --muted:      #8090B0;
+      --primary:    #5A9ADE;
+      --primary-lt: #162035;
+      --accent:     #E0703A;
+      --l3:         #5A98E8;
+      --l3-bg:      #131E30;
+      --l3-bdr:     #244070;
+      --l45:        #A880D8;
+      --l45-bg:     #1A0F28;
+      --l45-bdr:    #4A2878;
+      --mod:        #3870B8;
+      --ok-txt:     #74CC9A;
+      --ok-bg:      #0E2018;
+      --ok-bdr:     #2A5A40;
+      --part-txt:   #E3B063;
+      --part-bg:    #241A08;
+      --part-bdr:   #5E4518;
+      --gap-txt:    #F09088;
+      --gap-bg:     #2A1210;
+      --gap-bdr:    #6B2820;
+      --na-txt:     #8090B0;
+      --na-bg:      #1B2130;
+      --na-bdr:     #303B50;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+      font-size: 15px;
+      line-height: 1.6;
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    /* ── Header ── */
+    .doc-header { background: var(--primary); color: #fff; padding: 2.25rem 2rem 1.75rem; }
+    .doc-header-inner { max-width: 1000px; margin: 0 auto; }
+    .eyebrow {
+      font-size: 0.68rem; font-weight: 700; letter-spacing: 0.14em;
+      text-transform: uppercase; color: rgba(255,255,255,0.5); margin-bottom: 0.5rem;
+    }
+    .doc-header h1 {
+      font-family: Georgia, 'Times New Roman', serif; font-size: 1.85rem; font-weight: 400;
+      margin: 0 0 0.6rem; line-height: 1.25; text-wrap: balance;
+    }
+    .doc-header p { margin: 0; color: rgba(255,255,255,0.72); font-size: 0.875rem; max-width: 70ch; line-height: 1.6; }
+    .doc-meta { display: flex; gap: 2rem; margin-top: 1.25rem; flex-wrap: wrap; }
+    .doc-meta-item { font-size: 0.78rem; color: rgba(255,255,255,0.55); }
+    .doc-meta-item strong { color: rgba(255,255,255,0.88); font-weight: 600; }
+
+    /* ── Legend ── */
+    .legend-bar { background: var(--card); border-bottom: 1px solid var(--border); padding: 0.7rem 2rem; }
+    .legend-inner { max-width: 1000px; margin: 0 auto; display: flex; align-items: center; gap: 1.25rem; flex-wrap: wrap; }
+    .legend-label { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); }
+    .legend-items { display: flex; gap: 0.9rem; flex-wrap: wrap; align-items: center; }
+    .legend-item { display: flex; align-items: center; gap: 0.4rem; font-size: 0.76rem; color: var(--muted); }
+
+    .wrap { max-width: 1000px; margin: 0 auto; padding: 1.75rem 1.5rem 4rem; }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+      padding: 1.25rem 1.5rem; margin-bottom: 1.75rem;
+    }
+    .card h2 {
+      font-family: Georgia, serif; font-size: 1rem; font-weight: 400;
+      color: var(--primary); margin: 0 0 0.875rem;
+    }
+    .card h3 {
+      font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em;
+      color: var(--muted); margin: 1.25rem 0 0.5rem;
+    }
+    .card h3:first-child { margin-top: 0; }
+
+    /* ── Status pills ── */
+    .pill {
+      display: inline-block; font-size: 0.63rem; font-weight: 800; letter-spacing: 0.05em;
+      text-transform: uppercase; padding: 0.18em 0.5em; border-radius: 3px;
+      line-height: 1.4; white-space: nowrap; border: 1px solid;
+    }
+    .p-ok   { background: var(--ok-bg);   color: var(--ok-txt);   border-color: var(--ok-bdr);   }
+    .p-part { background: var(--part-bg); color: var(--part-txt); border-color: var(--part-bdr); }
+    .p-gap  { background: var(--gap-bg);  color: var(--gap-txt);  border-color: var(--gap-bdr);  }
+    .p-na   { background: var(--na-bg);   color: var(--na-txt);   border-color: var(--na-bdr);   }
+
+    /* ── Spec source list ── */
+    .spec-list { list-style: none; margin: 0; padding: 0; }
+    .spec-list li {
+      display: flex; gap: 0.85rem; align-items: baseline;
+      padding: 0.55rem 0; border-top: 1px solid var(--border); font-size: 0.82rem;
+    }
+    .spec-list li:first-child { border-top: none; }
+    .spec-code {
+      font-family: 'Courier New', Courier, monospace; font-size: 0.7rem; font-weight: 700;
+      color: var(--accent); flex-shrink: 0; min-width: 6.5rem;
+    }
+    .spec-name { font-weight: 600; color: var(--text); }
+    .spec-detail { color: var(--muted); font-size: 0.76rem; }
+
+    /* ── Scorecard ── */
+    .score-row { margin-bottom: 1rem; }
+    .score-row:last-child { margin-bottom: 0; }
+    .score-head { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; margin-bottom: 0.3rem; flex-wrap: wrap; }
+    .score-name { font-size: 0.82rem; font-weight: 600; }
+    .score-fig { font-size: 0.72rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+    .bar { display: flex; height: 16px; border-radius: 3px; overflow: hidden; border: 1px solid var(--border); }
+    .bar span { display: block; }
+    .b-ok   { background: var(--ok-bdr);   }
+    .b-part { background: var(--part-bdr); }
+    .b-gap  { background: var(--gap-bdr);  }
+    .b-na   { background: var(--na-bdr);   }
+
+    /* ── Sections ── */
+    .spec-section { margin-bottom: 2.5rem; }
+    .section-hd {
+      display: flex; align-items: baseline; gap: 0.8rem;
+      padding-bottom: 0.55rem; border-bottom: 2px solid var(--primary); margin-bottom: 0.5rem; flex-wrap: wrap;
+    }
+    .section-num {
+      font-family: 'Courier New', Courier, monospace; font-size: 0.68rem; font-weight: 700;
+      letter-spacing: 0.08em; color: var(--accent); text-transform: uppercase; flex-shrink: 0;
+    }
+    .section-title {
+      font-family: Georgia, 'Times New Roman', serif; font-size: 1.18rem; font-weight: 400;
+      color: var(--primary); margin: 0; text-wrap: balance;
+    }
+    .lvl-badge {
+      font-size: 0.6rem; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase;
+      padding: 0.14em 0.5em; border-radius: 3px; flex-shrink: 0; color: #fff;
+    }
+    .lvl-l3  { background: var(--l3);  }
+    .lvl-l45 { background: var(--l45); }
+    .section-intro { font-size: 0.8rem; color: var(--muted); margin: 0 0 1rem; max-width: 78ch; }
+
+    /* ── LO blocks ── */
+    .lo-block { border: 1px solid var(--border); border-radius: 8px; overflow: hidden; margin-bottom: 0.75rem; background: var(--card); }
+    .lo-hd {
+      background: var(--primary-lt); border-bottom: 1px solid var(--border);
+      padding: 0.5rem 1rem; display: flex; align-items: baseline; gap: 0.6rem; flex-wrap: wrap;
+    }
+    .lo-tag {
+      font-family: 'Courier New', Courier, monospace; font-size: 0.68rem; font-weight: 700;
+      color: var(--primary); flex-shrink: 0;
+    }
+    .lo-name { font-size: 0.79rem; font-weight: 600; color: var(--text); }
+
+    /* ── Tables ── */
+    table.gap-tbl { width: 100%; border-collapse: collapse; }
+    .gap-tbl tr { border-top: 1px solid var(--border); }
+    .gap-tbl tr:first-child { border-top: none; }
+    .gap-tbl td { padding: 0.6rem 1rem; vertical-align: top; }
+    .td-item { width: 38%; }
+    .td-stat { width: 8.5rem; }
+    .td-note { width: auto; }
+    .item-name { font-size: 0.8rem; font-weight: 600; color: var(--text); margin: 0 0 0.15rem; }
+    .item-sub { font-size: 0.73rem; color: var(--muted); margin: 0; line-height: 1.5; }
+    .note { font-size: 0.76rem; color: var(--muted); margin: 0; line-height: 1.55; }
+    .note strong { color: var(--text); font-weight: 600; }
+    .chip-mod {
+      display: inline-block; font-size: 0.66rem; font-weight: 700; padding: 0.1em 0.45em;
+      border-radius: 3px; background: var(--mod); color: #fff; text-decoration: none; line-height: 1.5;
+      white-space: nowrap;
+    }
+    .chip-mod:hover { opacity: 0.85; }
+
+    /* ── Priority gaps ── */
+    .prio { border: 1px solid var(--border); border-radius: 8px; overflow: hidden; margin-bottom: 0.7rem; background: var(--card); }
+    .prio-hd { padding: 0.65rem 1rem; display: flex; align-items: baseline; gap: 0.7rem; flex-wrap: wrap; border-bottom: 1px solid var(--border); }
+    .prio-rank {
+      font-family: 'Courier New', Courier, monospace; font-size: 0.72rem; font-weight: 700;
+      color: #fff; background: var(--accent); border-radius: 3px; padding: 0.1em 0.45em; flex-shrink: 0;
+    }
+    .prio-title { font-size: 0.86rem; font-weight: 700; color: var(--text); }
+    .prio-body { padding: 0.7rem 1rem; }
+    .prio-body p { margin: 0 0 0.5rem; font-size: 0.78rem; color: var(--muted); line-height: 1.6; }
+    .prio-body p:last-child { margin-bottom: 0; }
+    .prio-body strong { color: var(--text); }
+    .blocks {
+      font-size: 0.72rem; color: var(--gap-txt); background: var(--gap-bg);
+      border: 1px solid var(--gap-bdr); border-radius: 4px; padding: 0.4rem 0.6rem;
+      margin: 0.5rem 0 0; font-family: 'Courier New', Courier, monospace;
+    }
+    .fix {
+      font-size: 0.75rem; color: var(--ok-txt); background: var(--ok-bg);
+      border: 1px solid var(--ok-bdr); border-radius: 4px; padding: 0.45rem 0.65rem; margin: 0.5rem 0 0;
+    }
+    .fix strong { color: var(--ok-txt); }
+
+    /* ── Footnote ── */
+    .footnote {
+      background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+      padding: 1rem 1.25rem; font-size: 0.78rem; color: var(--muted); line-height: 1.65; margin-top: 2rem;
+    }
+    .footnote strong { color: var(--text); }
+    .footnote ul { margin: 0.5rem 0 0; padding-left: 1.2rem; }
+    .footnote li { margin-bottom: 0.3rem; }
+    .footnote a { color: var(--primary); }
+
+    @media (max-width: 700px) {
+      .doc-header { padding: 1.5rem 1.25rem; }
+      .doc-header h1 { font-size: 1.4rem; }
+      .legend-bar { padding: 0.6rem 1.25rem; }
+      .wrap { padding: 1.25rem 1rem 3rem; }
+      .gap-tbl, .gap-tbl tbody, .gap-tbl tr, .gap-tbl td { display: block; width: 100%; }
+      .gap-tbl tr { padding: 0.7rem 1rem; }
+      .gap-tbl td { padding: 0.15rem 0; }
+      .td-stat { margin: 0.3rem 0; }
+      .section-title { font-size: 1.05rem; }
+      .spec-list li { flex-direction: column; gap: 0.15rem; }
+    }
+  </style>
+</head>
+<body>
+
+<header class="doc-header">
+  <div class="doc-header-inner">
+    <p class="eyebrow">Pearson BTEC - Robotics Specification Audit</p>
+    <h1>Robot Arm - BTEC Robotics Specification Gap Analysis</h1>
+    <p>A line-by-line audit of the 16-module robot arm curriculum against the four Pearson BTEC qualifications that
+    explicitly specify <em>robotics</em> as their subject matter. Where the companion
+    <a href="btec-objectives.html" style="color:#fff;">Learning Objectives Mapping</a> asks
+    &ldquo;which module delivers this theme?&rdquo;, this document asks the harder question:
+    &ldquo;for every item of published unit content, can a learner actually evidence it on this platform?&rdquo;</p>
+    <div class="doc-meta">
+      <div class="doc-meta-item"><strong>Specifications audited</strong> 4 (7 units, 2 levels)</div>
+      <div class="doc-meta-item"><strong>Content items assessed</strong> 88</div>
+      <div class="doc-meta-item"><strong>Curriculum audited</strong> Modules 01&ndash;16</div>
+      <div class="doc-meta-item"><strong>Compiled</strong> August 2026</div>
+    </div>
+  </div>
+</header>
+
+<div class="legend-bar">
+  <div class="legend-inner">
+    <span class="legend-label">Status key</span>
+    <div class="legend-items">
+      <span class="legend-item"><span class="pill p-ok">Covered</span> Taught with an activity; a learner can evidence it</span>
+      <span class="legend-item"><span class="pill p-part">Partial</span> Present but below the depth the criteria demand</span>
+      <span class="legend-item"><span class="pill p-gap">Gap</span> Absent from all 16 modules</span>
+      <span class="legend-item"><span class="pill p-na">Platform</span> Not demonstrable on this hardware - theory delivery only</span>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <!-- ══════════ SPECIFICATIONS AUDITED ══════════ -->
+  <div class="card">
+    <h2>Specifications audited</h2>
+    <ul class="spec-list">
+      <li>
+        <span class="spec-code">Unit 56</span>
+        <span>
+          <span class="spec-name">Industrial Robotics</span> - Pearson BTEC Level 3 National Diploma / Extended Diploma in Engineering<br>
+          <span class="spec-detail">Level 3 &middot; Internal &middot; 60 GLH &middot; Specification Issue 10, June 2026 &middot; Learning aims A&ndash;D, content A1&ndash;D2</span>
+        </span>
+      </li>
+      <li>
+        <span class="spec-code">Unit 4068</span>
+        <span>
+          <span class="spec-name">Industrial Robots</span> - Pearson BTEC Higher Nationals in Engineering
+          <span class="spec-detail">(unit code L/617/3940)</span><br>
+          <span class="spec-detail">Level 4 &middot; 15 credits &middot; Unit Descriptors Issue 6, October 2025 &middot; LO1&ndash;LO4</span>
+        </span>
+      </li>
+      <li>
+        <span class="spec-code">Unit 4015</span>
+        <span>
+          <span class="spec-name">Automation, Robotics and Programmable Logic Controllers (PLCs)</span> - Pearson BTEC Higher Nationals in Engineering
+          <span class="spec-detail">(unit code M/651/0731)</span><br>
+          <span class="spec-detail">Level 4 &middot; 15 credits &middot; Specialist unit on the HNC in Automation and Control Engineering &middot; LO1&ndash;LO4</span>
+        </span>
+      </li>
+      <li>
+        <span class="spec-code">Units 1&ndash;4</span>
+        <span>
+          <span class="spec-name">Pearson BTEC International Level 3 Specialist Award in Robotic Operations</span><br>
+          <span class="spec-detail">Level 3 &middot; 55 GLH total &middot; Specification Issue 2, May 2023 &middot; Robotics Systems &amp; Basic Procedures; Fieldbus &amp; Reference Systems; Motion Programming; Further Robot Programming</span>
+        </span>
+      </li>
+    </ul>
+    <p class="note" style="margin-top:1rem;padding-top:0.85rem;border-top:1px solid var(--border);">
+      <strong>Why these four.</strong> The companion mapping document correctly notes that the general BTEC Engineering
+      specifications never name &ldquo;robotics&rdquo;. These four do - they are the only Pearson units whose published
+      content is robot-specific rather than robot-adjacent, so they are the only ones against which a genuine
+      coverage claim can be tested. Unit 56 and the HN units are the realistic delivery targets;
+      the Specialist Award is included because it is the most granular published statement of what a
+      robot-operations learner is expected to do, even though its content is written around a specific vendor
+      controller (Comau C5G / PDL2 / WinC5G).
+    </p>
+  </div>
+
+  <!-- ══════════ SCORECARD ══════════ -->
+  <div class="card">
+    <h2>Coverage scorecard</h2>
+    <p class="note" style="margin-bottom:1.1rem;">
+      Each row of the tables below is one item - a bullet of published unit content, or a tight group of related
+      bullets. Percentages are indicative rather than exact, and a raw item count does not weight items by how many
+      assessment criteria hang off them (the PLC gap in Unit 4015 is far heavier than its row count suggests).
+      The shape of each bar is the finding: the curriculum is strong where the arm itself is the teaching object,
+      and weak wherever the specification assumes an industrial cell around it.
+    </p>
+
+    <div class="score-row">
+      <div class="score-head">
+        <span class="score-name">Unit 56 - Industrial Robotics <span class="lvl-badge lvl-l3">L3</span></span>
+        <span class="score-fig">32 items &middot; 7 covered &middot; 16 partial &middot; 9 gap</span>
+      </div>
+      <div class="bar">
+        <span class="b-ok" style="width:22%"></span><span class="b-part" style="width:50%"></span><span class="b-gap" style="width:28%"></span>
+      </div>
+    </div>
+
+    <div class="score-row">
+      <div class="score-head">
+        <span class="score-name">Unit 4068 - Industrial Robots <span class="lvl-badge lvl-l45">L4</span></span>
+        <span class="score-fig">22 items &middot; 5 covered &middot; 11 partial &middot; 5 gap &middot; 1 platform</span>
+      </div>
+      <div class="bar">
+        <span class="b-ok" style="width:23%"></span><span class="b-part" style="width:50%"></span><span class="b-gap" style="width:22%"></span><span class="b-na" style="width:5%"></span>
+      </div>
+    </div>
+
+    <div class="score-row">
+      <div class="score-head">
+        <span class="score-name">Unit 4015 - Automation, Robotics and PLCs <span class="lvl-badge lvl-l45">L4</span></span>
+        <span class="score-fig">15 items &middot; 4 covered &middot; 4 partial &middot; 7 gap</span>
+      </div>
+      <div class="bar">
+        <span class="b-ok" style="width:27%"></span><span class="b-part" style="width:26%"></span><span class="b-gap" style="width:47%"></span>
+      </div>
+      <p class="note" style="margin-top:0.35rem;font-size:0.73rem;">
+        Item count understates this one. The gaps sit in LO1 and LO2, which between them carry
+        <strong>9 of the unit&rsquo;s 16 assessment criteria</strong> (P1&ndash;P5, M1, M2, D1, D2) - so roughly
+        <strong>56% of the unit is currently unevidenceable</strong>, not 47%.
+      </p>
+    </div>
+
+    <div class="score-row">
+      <div class="score-head">
+        <span class="score-name">Robotic Operations Units 1–4 <span class="lvl-badge lvl-l3">L3</span></span>
+        <span class="score-fig">19 items &middot; 4 covered &middot; 5 partial &middot; 9 gap &middot; 1 vendor-specific</span>
+      </div>
+      <div class="bar">
+        <span class="b-ok" style="width:21%"></span><span class="b-part" style="width:26%"></span><span class="b-gap" style="width:48%"></span><span class="b-na" style="width:5%"></span>
+      </div>
+    </div>
+
+    <h3>The one-paragraph verdict</h3>
+    <p class="note">
+      The curriculum is a <strong>strong and near-complete vehicle for the robot half</strong> of these
+      specifications - kinematics, coordinate frames, closed-loop servo control, motion profiles, safety
+      standards, cell design, diagnostics and project skills are all genuinely taught with hands-on activities,
+      and in several places (PID depth, live telemetry, software architecture) they exceed what the specs ask for.
+      The gaps cluster into <strong>four blind spots</strong>, all of which share a cause: the curriculum teaches
+      the <em>arm</em>, whereas the specifications describe an <em>industrial installation</em>.
+      Those blind spots are <strong>maintenance</strong>, <strong>discrete sensors and industrial I/O</strong>,
+      <strong>PLCs and fieldbus</strong>, and <strong>the commercial/Industry 4.0 context</strong>.
+      Three of the four are fixable with new written modules and no hardware change.
+    </p>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════
+       SECTION 1 - UNIT 56
+  ══════════════════════════════════════════════════ -->
+  <div class="spec-section">
+    <div class="section-hd">
+      <span class="section-num">Spec 01</span>
+      <h2 class="section-title">Unit 56: Industrial Robotics</h2>
+      <span class="lvl-badge lvl-l3">L3</span>
+    </div>
+    <p class="section-intro">
+      BTEC Level 3 National, 60 GLH, internally assessed across a maximum of three assignments:
+      <strong>A</strong> (A.P1, A.P2, A.M1, A.D1) &middot; <strong>B and C combined</strong>
+      (B.P3, B.P4, C.P5, C.P6, B.M2, C.M3, BC.D2) &middot; <strong>D</strong> (D.P7, D.P8, D.M4, D.D3).
+      This is the single most important target: it is the unit a UK centre would actually register learners on.
+    </p>
+
+    <!-- A1 -->
+    <div class="lo-block">
+      <div class="lo-hd">
+        <span class="lo-tag">A1</span>
+        <span class="lo-name">Health and safety requirements</span>
+      </div>
+      <table class="gap-tbl"><tbody>
+        <tr>
+          <td class="td-item">
+            <p class="item-name">Defining industrial robotics</p>
+            <p class="item-sub">Standalone robots; manufacturing work cells / robot installations</p>
+          </td>
+          <td class="td-stat"><span class="pill p-ok">Covered</span></td>
+          <td class="td-note"><p class="note"><a class="chip-mod" href="module-06.html">MOD 06</a> distinguishes robot types and applications; <a class="chip-mod" href="module-12.html">MOD 12</a> defines the work cell explicitly and has learners design one.</p></td>
+        </tr>
+        <tr>
+          <td class="td-item">
+            <p class="item-name">Relevant regulations</p>
+            <p class="item-sub">Health &amp; safety at work legislation; Electricity at Work Regulations / PAT; HSE publications; MTA Safeguarding Codes of Practice - Industrial Robots parts 1–3</p>
+          </td>
+          <td class="td-stat"><span class="pill p-part">Partial</span></td>
+          <td class="td-note"><p class="note"><a class="chip-mod" href="module-13.html">MOD 13</a> covers HASAWA 1974, PUWER 1998, ISO 10218-1/-2 and ISO/TS 15066 well. <strong>Missing:</strong> the Electricity at Work Regulations and portable appliance testing, HSE guidance publications, and the <strong>MTA Safeguarding Codes of Practice</strong>, which the spec names explicitly.</p></td>
+        </tr>
+        <tr>
+          <td class="td-item">
+            <p class="item-name">Human dangers</p>
+            <p class="item-sub">During programming, during maintenance, and as a result of system faults</p>
+          </td>
+          <td class="td-stat"><span class="pill p-part">Partial</span></td>
+          <td class="td-note"><p class="note"><a class="chip-mod" href="module-01.html">MOD 01</a> covers pinch/crush and unexpected motion; <a class="chip-mod" href="module-13.html">MOD 13</a> covers kinetic energy and speed. <strong>The spec's three-phase framing is not used:</strong> danger <em>during programming</em> (the highest-risk phase in industry, because the operator is inside the envelope) and <em>during maintenance</em> are not treated as distinct hazard categories.</p></td>
+        </tr>
+        <tr>
+          <td class="td-item">
+            <p class="item-name">Safety systems and their effectiveness</p>
+            <p class="item-sub">Dead man's handle; hold and emergency stop buttons; pressure pads / matting; laser light guards; electromagnetic field barriers</p>
+          </td>
+          <td class="td-stat"><span class="pill p-part">Partial</span></td>
+          <td class="td-note"><p class="note">Light curtains, interlocks, guarding, e-stop and pressure matting all appear in <a class="chip-mod" href="module-13.html">MOD 13</a>. <strong>Missing:</strong> the <em>dead man's handle / three-position enabling device</em> - a core industrial concept and one the arm's torque-enable control is a natural analogue for - plus hold buttons and EMF barriers. The spec also wants effectiveness <em>evaluated</em>, not just listed.</p></td>
+        </tr>
+      </tbody></table>
+    </div>
+
+    <!-- A2 -->
+    <div class="lo-block">
+      <div class="lo-hd">
+        <span class="lo-tag">A2</span>
+        <span class="lo-name">Maintenance</span>
+      </div>
+      <table class="gap-tbl"><tbody>
+        <tr>
+          <td class="td-item">
+            <p class="item-name">Inspection routines</p>
+            <p class="item-sub">Mechanical condition of all parts; environmental conditions - particulate matter, temperature, ventilation, shock, vibration, electrical noise</p>
+          </td>
+          <td class="td-stat"><span class="pill p-gap">Gap</span></td>
+          <td class="td-note"><p class="note">No module teaches an inspection routine. <a class="chip-mod" href="module-10.html">MOD 10</a> reads temperature and load telemetry, which is adjacent but is framed as <em>diagnostics</em>, not scheduled preventive inspection.</p></td>
+        </tr>
+        <tr>
+          <td class="td-item">
+            <p class="item-name">Spare parts to sustain continuous operation</p>
+            <p class="item-sub">Seals, bearings, motors, pneumatic and hydraulic lines and connectors, end effector parts</p>
+          </td>
+          <td class="td-stat"><span class="pill p-gap">Gap</span></td>
+          <td class="td-note"><p class="note">Not covered anywhere. The ST3215 servos, bus cabling, and end-tool parts are a perfectly good basis for a consumables/spares discussion.</p></td>
+        </tr>
+        <tr>
+          <td class="td-item">
+            <p class="item-name">Maintenance tools and test equipment</p>
+            <p class="item-sub">Safe isolation kit, grease gun, allen keys, spanners, socket sets, multimeter, mastering gauges, tool and base reference points</p>
+          </td>
+          <td class="td-stat"><span class="pill p-gap">Gap</span></td>
+          <td class="td-note"><p class="note">Not covered. <strong>Mastering gauges and tool/base reference points</strong> are especially notable - the arm <em>does</em> have a calibration jig (the ESP32S3 calibration hardware in this repository), which is exactly a mastering fixture, but the curriculum never introduces it.</p></td>
+        </tr>
+        <tr>
+          <td class="td-item">
+            <p class="item-name">Set-up, maintenance procedures, and their overall effectiveness</p>
+            <p class="item-sub">Standard operating procedures; evaluating whether the maintenance regime works</p>
+          </td>
+          <td class="td-stat"><span class="pill p-gap">Gap</span></td>
+          <td class="td-note"><p class="note">No maintenance procedure is written or performed. <strong>This is the most consequential single gap in the document:</strong> A2 underpins A.P2, A.M1 and A.D1, so one of the unit's three assignments cannot currently be evidenced at any grade.</p></td>
+        </tr>
+      </tbody></table>
+    </div>
+
+    <!-- B1 -->
+    <div class="lo-block">
+      <div class="lo-hd">
+        <span class="lo-tag">B1</span>
+        <span class="lo-name">Principles of operation and their applications</span>
+      </div>
+      <table class="gap-tbl"><tbody>
+        <tr>
+          <td class="td-item"><p class="item-name">Operational characteristics</p><p class="item-sub">Automated, repeatable, tireless, replaces human effort</p></td>
+          <td class="td-stat"><span class="pill p-ok">Covered</span></td>
+          <td class="td-note"><p class="note"><a class="chip-mod" href="module-06.html">MOD 06</a> levels of automation; repeatability quantified in <a class="chip-mod" href="module-12.html">MOD 12</a> cycle-time work.</p></td>
+        </tr>
+        <tr>
+          <td class="td-item"><p class="item-name">Specifications</p><p class="item-sub">Number of axes, payload, size and shape of working envelope</p></td>
+          <td class="td-stat"><span class="pill p-ok">Covered</span></td>
+          <td class="td-note"><p class="note"><a class="chip-mod" href="module-02.html">MOD 02</a> range of motion, <a class="chip-mod" href="module-05.html">MOD 05</a> payload vs reach, <a class="chip-mod" href="module-12.html">MOD 12</a> envelope and dead zones.</p></td>
+        </tr>
+        <tr>
+          <td class="td-item"><p class="item-name">Types of controller, manipulator, end effector / tooling</p><p class="item-sub">Pneumatic suction cup; hydraulic; electrical and mechanical grippers</p></td>
+          <td class="td-stat"><span class="pill p-part">Partial</span></td>
+          <td class="td-note"><p class="note">Electrical/mechanical grippers are well covered. <strong>Pneumatic and hydraulic tooling receive no coverage at all</strong> - no mention of suction cups, vacuum generators or hydraulic actuation anywhere in the 16 modules.</p></td>
+        </tr>
+        <tr>
+          <td class="td-item"><p class="item-name">Workspace organisation</p><p class="item-sub">Feed of work, robot-to-robot work, material flow and logistics</p></td>
+          <td class="td-stat"><span class="pill p-part">Partial</span></td>
+          <td class="td-note"><p class="note"><a class="chip-mod" href="module-12.html">MOD 12</a> covers part presentation, operator access and layout. <strong>Missing:</strong> robot-to-robot working and material flow / logistics through a line.</p></td>
+        </tr>
+        <tr>
+          <td class="td-item"><p class="item-name">Applications of robots and their impact</p><p class="item-sub">Manufacturing, inspection, palletising, working alongside humans, replacing human workers</p></td>
+          <td class="td-stat"><span class="pill p-part">Partial</span></td>
+          <td class="td-note"><p class="note"><a class="chip-mod" href="module-06.html">MOD 06</a> covers most application types and cobots. <strong>Palletising is never named</strong> (a staple industrial application), and <em>impact</em> - the displacement-of-workers question - is raised only as an optional extension question.</p></td>
+        </tr>
+      </tbody></table>
+    </div>
+
+    <!-- B2 -->
+    <div class="lo-block">
+      <div class="lo-hd">
+        <span class="lo-tag">B2</span>
+        <span class="lo-name">Design principles</span>
+      </div>
+      <table class="gap-tbl"><tbody>
+        <tr>
+          <td class="td-item"><p class="item-name">Types of robotic system with associated working envelope</p><p class="item-sub">Cylindrical, spherical, jointed, Cartesian, SCARA</p></td>
+          <td class="td-stat"><span class="pill p-part">Partial</span></td>
+          <td class="td-note"><p class="note"><a class="chip-mod" href="module-06.html">MOD 06</a> teaches Articulated, SCARA, Delta and Cobot. <strong>Three of the five named configurations are absent:</strong> cylindrical, spherical, and Cartesian/gantry. (Delta and cobot are good additions but are not substitutes - the spec names the five it wants.) Working envelope <em>shape</em> per configuration is also not drawn.</p></td>
+        </tr>
+        <tr>
+          <td class="td-item"><p class="item-name">Reference frames</p><p class="item-sub">World, joint, tool</p></td>
+          <td class="td-stat"><span class="pill p-ok">Covered</span></td>
+          <td class="td-note"><p class="note"><a class="chip-mod" href="module-07.html">MOD 07</a> is strong here - right-hand rule, base/world frame, tool frame, and reading orientation out of the homogeneous transformation matrix.</p></td>
+        </tr>
+        <tr>
+          <td class="td-item"><p class="item-name">Wrist articulations</p><p class="item-sub">Yaw, pitch and roll; degrees of freedom as translations and rotations</p></td>
+          <td class="td-stat"><span class="pill p-gap">Gap</span></td>
+          <td class="td-note"><p class="note">Degrees of freedom are covered, but <strong>the terms yaw and pitch never appear in the curriculum</strong> and wrist articulation is not analysed as a roll–pitch–roll (or yaw/pitch/roll) chain. This is core L3 vocabulary and the arm has the wrist axes to demonstrate it.</p></td>
+        </tr>
+        <tr>
+          <td class="td-item"><p class="item-name">Drive mechanisms</p><p class="item-sub">Mechanical (ball screws, chain/belt, gears), pneumatic, hydraulic, electrical</p></td>
+          <td class="td-stat"><span class="pill p-part">Partial</span></td>
+          <td class="td-note"><p class="note">Gears and gear reduction are covered well in <a class="chip-mod" href="module-02.html">MOD 02</a>, and electrical drive is thoroughly covered. <strong>Missing:</strong> ball screws, chain and belt drives, and all pneumatic/hydraulic actuation. B.M2 explicitly asks learners to <em>compare drive systems</em> across two robots, which is not currently possible.</p></td>
+        </tr>
+      </tbody></table>
+    </div>
+
+    <!-- B3 -->
+    <div class="lo-block">
+      <div class="lo-hd">
+        <span class="lo-tag">B3</span>
+        <span class="lo-name">Control systems</span>
+      </div>
+      <table class="gap-tbl"><tbody>
+        <tr>
+          <td class="td-item"><p class="item-name">Closed-loop servo controlled systems</p><p class="item-sub">e.g. for driving one axis of a robot</p></td>
+          <td class="td-stat"><span class="pill p-ok">Covered</span></td>
+          <td class="td-note"><p class="note"><strong>Exceeds the requirement.</strong> <a class="chip-mod" href="module-03.html">MOD 03</a> covers open- vs closed-loop and magnetic position sensing; <a class="chip-mod" href="module-08.html">MOD 08</a> goes into PID in depth, well beyond L3 expectations.</p></td>
+        </tr>
+        <tr>
+          <td class="td-item"><p class="item-name">Input, output and feedback signals</p><p class="item-sub">The sequence that takes place to perform a task</p></td>
+          <td class="td-stat"><span class="pill p-ok">Covered</span></td>
+          <td class="td-note"><p class="note"><a class="chip-mod" href="module-03.html">MOD 03</a> live status data, <a class="chip-mod" href="module-10.html">MOD 10</a> telemetry, <a class="chip-mod" href="module-11.html">MOD 11</a> full-system signal trace.</p></td>
+        </tr>
+      </tbody></table>
+    </div>
+
+    <!-- C1 -->
+    <div class="lo-block">
+      <div class="lo-hd">
+        <span class="lo-tag">C1</span>
+        <span class="lo-name">Sensors</span>
+      </div>
+      <table class="gap-tbl"><tbody>
+        <tr>
+          <td class="td-item">
+            <p class="item-name">Sensor types</p>
+            <p class="item-sub">Tactile (microswitch / piezoelectric / strain gauge / pressure); non-tactile (capacitive / inductive / light / laser); vision (inspection, identification, navigation)</p>
+          </td>
+          <td class="td-stat"><span class="pill p-gap">Gap</span></td>
+          <td class="td-note"><p class="note">The curriculum covers the servos' <em>internal</em> magnetic encoders and the ArUco camera, and nothing else. <strong>Not one of the named tactile or non-tactile sensor types appears anywhere</strong> - no microswitch, piezoelectric, strain gauge, pressure, capacitive, inductive, photoelectric or laser sensing. C.P5 requires the operating principles of <strong>three different sensor types</strong>, so this Pass criterion currently fails.</p></td>
+        </tr>
+        <tr>
+          <td class="td-item"><p class="item-name">Sensor applications</p><p class="item-sub">Safety, work-cell control, component / part inspection</p></td>
+          <td class="td-stat"><span class="pill p-part">Partial</span></td>
+          <td class="td-note"><p class="note">The Camera tab and ArUco detection give a genuine <em>identification</em> application, referenced in <a class="chip-mod" href="module-06.html">MOD 06</a> and <a class="chip-mod" href="module-11.html">MOD 11</a>. But vision is treated as an integration example, not taught as a sensor; and safety-rated and work-cell-control sensing are not covered.</p></td>
+        </tr>
+      </tbody></table>
+    </div>
+
+    <!-- C2 -->
+    <div class="lo-block">
+      <div class="lo-hd">
+        <span class="lo-tag">C2</span>
+        <span class="lo-name">End effectors</span>
+      </div>
+      <table class="gap-tbl"><tbody>
+        <tr>
+          <td class="td-item"><p class="item-name">Grippers and tools</p><p class="item-sub">Parts handling / transfer, assembly, welding, paint spraying, testing</p></td>
+          <td class="td-stat"><span class="pill p-part">Partial</span></td>
+          <td class="td-note"><p class="note">Handling and transfer are covered thoroughly through pick-and-place; welding and painting are named in <a class="chip-mod" href="module-06.html">MOD 06</a> as applications but their <em>tooling</em> is not described. C.P6 needs two end effector types explained by operating principle - currently only the servo gripper is.</p></td>
+        </tr>
+        <tr>
+          <td class="td-item"><p class="item-name">Tool centre point</p><p class="item-sub">Tool calibration for different applications</p></td>
+          <td class="td-stat"><span class="pill p-part">Partial</span></td>
+          <td class="td-note"><p class="note">TCP appears in <a class="chip-mod" href="module-07.html">MOD 07</a> as a coordinate concept. <strong>Missing: TCP calibration as a procedure</strong> - measuring a tool, re-declaring the TCP when tooling changes, and verifying it. This is one of the highest-value additions available, because it is both examinable here and central to the Robotic Operations award.</p></td>
+        </tr>
+      </tbody></table>
+    </div>
+
+    <!-- D1 / D2 -->
+    <div class="lo-block">
+      <div class="lo-hd">
+        <span class="lo-tag">D1 · D2</span>
+        <span class="lo-name">IDE, programming principles and implementation</span>
+      </div>
+      <table class="gap-tbl"><tbody>
+        <tr>
+          <td class="td-item"><p class="item-name">Overview of the functions of an IDE</p><p class="item-sub">Simulator, pure code, available tools</p></td>
+          <td class="td-stat"><span class="pill p-part">Partial</span></td>
+          <td class="td-note"><p class="note">The app provides a genuine dual environment - Blockly (visual) and the G-code editor (pure code) - covered in <a class="chip-mod" href="module-04.html">MOD 04</a> and <a class="chip-mod" href="module-09.html">MOD 09</a>. <strong>The missing piece is the simulator</strong>, and it matters: <strong>D.P8 is a Pass criterion that requires a program &ldquo;tested in simulation mode&rdquo;.</strong> The 3D view and the non-moving FK/IK tester are the raw material for this but are never framed or taught as a simulation mode.</p></td>
+        </tr>
+        <tr>
+          <td class="td-item"><p class="item-name">Types of programming</p><p class="item-sub">Online, lead through, offline</p></td>
+          <td class="td-stat"><span class="pill p-part">Partial</span></td>
+          <td class="td-note"><p class="note">Online programming is covered thoroughly (pendant, jogging, teach-and-playback in <a class="chip-mod" href="module-12.html">MOD 12</a>). <strong>Lead-through is absent despite the hardware supporting it perfectly</strong> - disabling torque lets a learner physically hand-guide the arm and record points, which <em>is</em> lead-through programming. Offline programming is absent.</p></td>
+        </tr>
+        <tr>
+          <td class="td-item"><p class="item-name">Subroutines and subprograms</p><p class="item-sub">Used to streamline programming methods</p></td>
+          <td class="td-stat"><span class="pill p-gap">Gap</span></td>
+          <td class="td-note"><p class="note">Program structure is never taught. No module introduces subroutines, reusable blocks or program decomposition, in either Blockly or G-code. The same gap appears in the Robotic Operations award (MAIN + ROUTINES) - fixing it once serves both.</p></td>
+        </tr>
+        <tr>
+          <td class="td-item"><p class="item-name">Design of programs from a brief</p><p class="item-sub">Design specification, flowchart, structured English, safety considerations</p></td>
+          <td class="td-stat"><span class="pill p-gap">Gap</span></td>
+          <td class="td-note"><p class="note">Learners write programs, but never <em>design</em> one first. Flowcharting appears once in passing and <strong>structured English (pseudocode) never appears at all</strong>. D.P7 is &ldquo;<em>Design</em> an industrial robot program&rdquo; - the design artefact is the evidence, and there is currently no activity that produces it.</p></td>
+        </tr>
+        <tr>
+          <td class="td-item"><p class="item-name">Motion commands</p><p class="item-sub">Point to point, linear, circular</p></td>
+          <td class="td-stat"><span class="pill p-part">Partial</span></td>
+          <td class="td-note"><p class="note"><strong>Point-to-point (G0) and linear (G1) are taught excellently</strong> in <a class="chip-mod" href="module-09.html">MOD 09</a> and contrasted in <a class="chip-mod" href="module-12.html">MOD 12</a> including the path-quality and cycle-time trade-off. <strong>Circular / arc interpolation is the missing third</strong> - not supported by the G-code processor and not taught.</p></td>
+        </tr>
+        <tr>
+          <td class="td-item"><p class="item-name">The importance of avoiding singularities</p><p class="item-sub">During programming</p></td>
+          <td class="td-stat"><span class="pill p-gap">Gap</span></td>
+          <td class="td-note"><p class="note"><strong>The word &ldquo;singularity&rdquo; does not appear in any of the 16 modules.</strong> Note that the companion <a href="btec-objectives.html">objectives mapping</a> currently claims MOD 07 delivers &ldquo;explain joint limits and singularities&rdquo; - that claim is not supported by the module content and should be corrected or the content added. Named explicitly in both Unit 56 D2 and the L4 units.</p></td>
+        </tr>
+        <tr>
+          <td class="td-item"><p class="item-name">Work-cell commands</p><p class="item-sub">Wait, signal, delay</p></td>
+          <td class="td-stat"><span class="pill p-part">Partial</span></td>
+          <td class="td-note"><p class="note">Delay/dwell is taught (G04) and used well. <strong>&ldquo;Signal&rdquo; and &ldquo;wait-on-input&rdquo; - handshaking with other cell equipment - are absent</strong>, which is the same underlying gap as the missing discrete I/O. The ESP32 end tool's digital and PWM outputs are an available hook for this.</p></td>
+        </tr>
+        <tr>
+          <td class="td-item"><p class="item-name">Program selection, start-up, test, alterations and operation</p><p class="item-sub">Full operational lifecycle of a stored program</p></td>
+          <td class="td-stat"><span class="pill p-ok">Covered</span></td>
+          <td class="td-note"><p class="note">Covered across <a class="chip-mod" href="module-04.html">MOD 04</a>, <a class="chip-mod" href="module-09.html">MOD 09</a> and <a class="chip-mod" href="module-12.html">MOD 12</a> via stored positions, G-code files and run/stop control.</p></td>
+        </tr>
+        <tr>
+          <td class="td-item"><p class="item-name">Testing</p><p class="item-sub">Simulator; code debugging; running live with no workpieces; incrementing operating speeds; decreasing operator input</p></td>
+          <td class="td-stat"><span class="pill p-part">Partial</span></td>
+          <td class="td-note"><p class="note"><strong>Speed ramping is done properly</strong> - <a class="chip-mod" href="module-12.html">MOD 12</a> has learners time cycles at 50% and 75%, which is exactly the spec's intent. Dry-running without workpieces and progressive reduction of operator input are not formalised, and systematic debugging is not taught as a method.</p></td>
+        </tr>
+      </tbody></table>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════
+       SECTION 2 - UNIT 4068
+  ══════════════════════════════════════════════════ -->
+  <div class="spec-section">
+    <div class="section-hd">
+      <span class="section-num">Spec 02</span>
+      <h2 class="section-title">Unit 4068: Industrial Robots</h2>
+      <span class="lvl-badge lvl-l45">L4</span>
+    </div>
+    <p class="section-intro">
+      Higher National, 15 credits. The natural progression unit from Unit 56 and the closest HN match to this platform.
+      LO1 and LO2 are well served; LO3 is served in substance but not in industrial tooling; LO4 is essentially unaddressed.
+    </p>
+
+    <div class="lo-block">
+      <div class="lo-hd"><span class="lo-tag">LO1</span><span class="lo-name">Operational characteristics, selection criteria and applications</span></div>
+      <table class="gap-tbl"><tbody>
+        <tr>
+          <td class="td-item"><p class="item-name">Configurations</p><p class="item-sub">Cartesian, cylindrical, spherical, toroidal, SCARA</p></td>
+          <td class="td-stat"><span class="pill p-part">Partial</span></td>
+          <td class="td-note"><p class="note">Same gap as Unit 56 B2, one configuration wider - <strong>toroidal</strong> is also named here. <a class="chip-mod" href="module-06.html">MOD 06</a> currently delivers SCARA plus articulated, delta and cobot.</p></td>
+        </tr>
+        <tr>
+          <td class="td-item"><p class="item-name">Selection criteria - LOSTPED</p><p class="item-sub">Load, orientation, speed, travel, precision, environment, duty cycle; number of axes; anthropomorphic robots</p></td>
+          <td class="td-stat"><span class="pill p-gap">Gap</span></td>
+          <td class="td-note"><p class="note"><strong>The LOSTPED framework is never introduced.</strong> This directly blocks P2 (&ldquo;Describe selection criteria for industrial robot applications&rdquo;) and feeds D1. Individually the curriculum teaches load (<a class="chip-mod" href="module-05.html">MOD 05</a>), speed and precision (<a class="chip-mod" href="module-08.html">MOD 08</a>) and travel/envelope (<a class="chip-mod" href="module-12.html">MOD 12</a>) - <strong>it is the named framework that is missing, not the underlying physics</strong>, which makes this a cheap fix.</p></td>
+        </tr>
+        <tr>
+          <td class="td-item"><p class="item-name">Common brands</p><p class="item-sub">Fanuc, Yaskawa, ABB</p></td>
+          <td class="td-stat"><span class="pill p-part">Partial</span></td>
+          <td class="td-note"><p class="note">ABB and Fanuc get passing mentions; Yaskawa none. No comparison of vendor ecosystems.</p></td>
+        </tr>
+        <tr>
+          <td class="td-item"><p class="item-name">Applications</p><p class="item-sub">Welding, painting, material handling, packaging, assembly, inspection, hazardous environments, repetitive tasks</p></td>
+          <td class="td-stat"><span class="pill p-ok">Covered</span></td>
+          <td class="td-note"><p class="note"><a class="chip-mod" href="module-06.html">MOD 06</a> covers the application landscape well, including the commercial reasoning behind robot selection.</p></td>
+        </tr>
+        <tr>
+          <td class="td-item"><p class="item-name">Controller architecture</p><p class="item-sub">Motion controller, motor drives, power supplies, HMI</p></td>
+          <td class="td-stat"><span class="pill p-ok">Covered</span></td>
+          <td class="td-note"><p class="note"><strong>A genuine strength.</strong> <a class="chip-mod" href="module-03.html">MOD 03</a> and <a class="chip-mod" href="module-09.html">MOD 09</a> map the real stack; <a class="chip-mod" href="module-11.html">MOD 11</a> traces a command through every layer. Deeper than most centres can offer, because the source is open.</p></td>
+        </tr>
+        <tr>
+          <td class="td-item"><p class="item-name">Manipulator</p><p class="item-sub">Sensing, brakes, axis motor, effector motor, environment sensing</p></td>
+          <td class="td-stat"><span class="pill p-part">Partial</span></td>
+          <td class="td-note"><p class="note">Axis and effector motors and internal sensing are covered. <strong>Brakes are absent</strong> - including the safety-critical question of what holds a loaded arm up when power is removed, which the arm demonstrates negatively every time torque is disabled. Environment sensing is limited to the camera.</p></td>
+        </tr>
+        <tr>
+          <td class="td-item"><p class="item-name">Axis operation</p><p class="item-sub">Purpose of each axis, work area, reach, wrist roll/pitch/yaw, rotation, home position and calibration</p></td>
+          <td class="td-stat"><span class="pill p-part">Partial</span></td>
+          <td class="td-note"><p class="note">Axis purpose, work area, reach and home position are covered. <strong>Wrist roll/pitch/yaw and axis calibration are not</strong> - the same gaps as Unit 56 B2 and C2.</p></td>
+        </tr>
+        <tr>
+          <td class="td-item"><p class="item-name">End effectors</p><p class="item-sub">Two-jaw, vacuum and magnetic grippers; tooling interfaces</p></td>
+          <td class="td-stat"><span class="pill p-part">Partial</span></td>
+          <td class="td-note"><p class="note">Two-jaw is the platform's own gripper. Vacuum and magnetic are named only in passing; tooling <em>interfaces</em> (mechanical and electrical coupling, tool changers) are not covered.</p></td>
+        </tr>
+      </tbody></table>
+    </div>
+
+    <div class="lo-block">
+      <div class="lo-hd"><span class="lo-tag">LO2</span><span class="lo-name">Safety standards associated with industrial robots</span></div>
+      <table class="gap-tbl"><tbody>
+        <tr>
+          <td class="td-item"><p class="item-name">Functional safety</p><p class="item-sub">IEC 61508; hazard and risk assessment</p></td>
+          <td class="td-stat"><span class="pill p-part">Partial</span></td>
+          <td class="td-note"><p class="note">Hazard identification and risk assessment are taught well in <a class="chip-mod" href="module-01.html">MOD 01</a> and <a class="chip-mod" href="module-13.html">MOD 13</a>. <strong>Functional safety as a discipline is missing</strong> - no IEC 61508, no SIL or performance-level concept. P3 asks for &ldquo;the principles and methods of functional safety analysis&rdquo;, which needs this vocabulary.</p></td>
+        </tr>
+        <tr>
+          <td class="td-item"><p class="item-name">Robot system safety standards</p><p class="item-sub">ANSI/RIA R15.06-2012; BS EN ISO 10218:2011</p></td>
+          <td class="td-stat"><span class="pill p-part">Partial</span></td>
+          <td class="td-note"><p class="note">ISO 10218-1/-2 and ISO/TS 15066 are covered properly in <a class="chip-mod" href="module-13.html">MOD 13</a>. ANSI/RIA R15.06 (the US counterpart) is not mentioned - a small addition.</p></td>
+        </tr>
+        <tr>
+          <td class="td-item"><p class="item-name">Cell safety features</p><p class="item-sub">Operating envelope, space restrictions, safeguards, e-stops, guarding, barriers, interlocks, light curtains, laser scanners, two-hand controls, floor mats; barrier sizing (around, under, through, over)</p></td>
+          <td class="td-stat"><span class="pill p-part">Partial</span></td>
+          <td class="td-note"><p class="note">Most items are present in <a class="chip-mod" href="module-13.html">MOD 13</a>, and software dead zones in <a class="chip-mod" href="module-12.html">MOD 12</a> are a strong practical treatment of envelope restriction. <strong>Missing:</strong> two-hand controls, area scanners, and <strong>barrier sizing / safety distance calculation</strong> - the quantitative part, and the part that distinguishes L4 from L3.</p></td>
+        </tr>
+        <tr>
+          <td class="td-item"><p class="item-name">Operational modes and user interfaces</p><p class="item-sub">Auto / manual / teach mode and their differing safety rules</p></td>
+          <td class="td-stat"><span class="pill p-part">Partial</span></td>
+          <td class="td-note"><p class="note">The app has torque enable/disable and control-session locking, but <strong>the industrial mode model (automatic vs manual reduced-speed vs teach, and the different protections active in each) is not taught.</strong> Appears in three of the four specifications audited.</p></td>
+        </tr>
+        <tr>
+          <td class="td-item"><p class="item-name">Safety-first culture</p><p class="item-sub">Policies, procedures, regulations, compliance, risk management and mitigation</p></td>
+          <td class="td-stat"><span class="pill p-ok">Covered</span></td>
+          <td class="td-note"><p class="note"><a class="chip-mod" href="module-13.html">MOD 13</a> handles the hierarchy of controls and engineering responsibility thoughtfully, including the legal and ethical framing.</p></td>
+        </tr>
+      </tbody></table>
+    </div>
+
+    <div class="lo-block">
+      <div class="lo-hd"><span class="lo-tag">LO3</span><span class="lo-name">Program an industrial robot for automated process application</span></div>
+      <table class="gap-tbl"><tbody>
+        <tr>
+          <td class="td-item"><p class="item-name">Programming levels</p><p class="item-sub">Joint-level, robot-level and high-level programming</p></td>
+          <td class="td-stat"><span class="pill p-ok">Covered</span></td>
+          <td class="td-note"><p class="note"><strong>Unusually well served.</strong> Joint Control is joint-level, G-code Cartesian moves are robot-level, and Blockly/Python are high-level - all three exist as real interfaces to the same machine, which few teaching platforms can offer.</p></td>
+        </tr>
+        <tr>
+          <td class="td-item"><p class="item-name">Tasking and command-and-control methods</p><p class="item-sub">Drag-and-drop, scripted language, point-n-click GUIs, lead by the nose</p></td>
+          <td class="td-stat"><span class="pill p-part">Partial</span></td>
+          <td class="td-note"><p class="note">Drag-and-drop (Blockly), scripted (G-code, Python) and GUI methods all covered. <strong>&ldquo;Lead by the nose&rdquo; is missing</strong> though the hardware supports it - see the lead-through note under Unit 56 D2.</p></td>
+        </tr>
+        <tr>
+          <td class="td-item"><p class="item-name">Online programming</p><p class="item-sub">Joysticks, pendants, jogging, modifying existing positions</p></td>
+          <td class="td-stat"><span class="pill p-ok">Covered</span></td>
+          <td class="td-note"><p class="note">Pendant tab, jogging and stored-position editing across <a class="chip-mod" href="module-04.html">MOD 04</a> and <a class="chip-mod" href="module-12.html">MOD 12</a>.</p></td>
+        </tr>
+        <tr>
+          <td class="td-item"><p class="item-name">Computer simulation / offline programming</p><p class="item-sub">Programming without the physical robot, then deploying</p></td>
+          <td class="td-stat"><span class="pill p-gap">Gap</span></td>
+          <td class="td-note"><p class="note">Not taught. As with Unit 56 D1, the 3D view is the obvious basis for a simulate-then-deploy workflow, and building that would close a criterion in <em>three</em> of the four audited specs at once.</p></td>
+        </tr>
+        <tr>
+          <td class="td-item"><p class="item-name">Controlling robots with PLCs</p><p class="item-sub">Cross-referenced to the PLC unit</p></td>
+          <td class="td-stat"><span class="pill p-gap">Gap</span></td>
+          <td class="td-note"><p class="note">Not covered - see Spec 03, where this is the dominant finding.</p></td>
+        </tr>
+        <tr>
+          <td class="td-item"><p class="item-name">Robot commands</p><p class="item-sub">Motion, interlock and sensor commands</p></td>
+          <td class="td-stat"><span class="pill p-part">Partial</span></td>
+          <td class="td-note"><p class="note">Motion commands are strong. <strong>Interlock and sensor commands are absent</strong> - the arm cannot currently wait on an external input, which is the atom of all cell integration.</p></td>
+        </tr>
+        <tr>
+          <td class="td-item"><p class="item-name">Manufacturers' languages and toolchains</p><p class="item-sub">ABB RAPID, KUKA KRL, Yaskawa Inform; RobotStudio, Roboguide, MotoSim, WinCaps</p></td>
+          <td class="td-stat"><span class="pill p-na">Platform</span></td>
+          <td class="td-note"><p class="note">Vendor toolchains cannot run against this arm. However, <strong>a comparison exercise is entirely deliverable</strong> - set the same pick-and-place task in G-code and show the RAPID and KRL equivalents side by side. P5 asks learners to <em>investigate the range</em> of languages, not to use them all.</p></td>
+        </tr>
+      </tbody></table>
+    </div>
+
+    <div class="lo-block">
+      <div class="lo-hd"><span class="lo-tag">LO4</span><span class="lo-name">Global economic scope and integration into smart factories</span></div>
+      <table class="gap-tbl"><tbody>
+        <tr>
+          <td class="td-item"><p class="item-name">Economic scope</p><p class="item-sub">Major markets (Japan, USA, China, South Korea, Germany); application demand by sector; robot density; impact on and training of the workforce</p></td>
+          <td class="td-stat"><span class="pill p-gap">Gap</span></td>
+          <td class="td-note"><p class="note"><strong>Not covered.</strong> &ldquo;Robot density&rdquo; - the defining metric of this LO - never appears. The only trace is an optional extension question in <a class="chip-mod" href="module-06.html">MOD 06</a> pointing at IFR statistics. P7 and D3 both sit here. This is <strong>desk-based content requiring no hardware</strong>, making it among the cheapest gaps to close.</p></td>
+        </tr>
+        <tr>
+          <td class="td-item"><p class="item-name">Advances in robot technology</p><p class="item-sub">Machine vision, AI, cobots, IoT, edge computing, networked and cloud robotics, VR, robot training, role in Industry 4.0</p></td>
+          <td class="td-stat"><span class="pill p-gap">Gap</span></td>
+          <td class="td-note"><p class="note">Cobots are covered in <a class="chip-mod" href="module-06.html">MOD 06</a> and the camera gives a vision foothold. <strong>Everything else is absent - the phrase &ldquo;Industry 4.0&rdquo; does not appear once in the curriculum</strong>, despite being the framing concept for this LO, for Unit 4015's LO3, and for Unit 56's own introduction. M4 and P8 are unevidenced.</p></td>
+        </tr>
+      </tbody></table>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════
+       SECTION 3 - UNIT 4015
+  ══════════════════════════════════════════════════ -->
+  <div class="spec-section">
+    <div class="section-hd">
+      <span class="section-num">Spec 03</span>
+      <h2 class="section-title">Unit 4015: Automation, Robotics and PLCs</h2>
+      <span class="lvl-badge lvl-l45">L4</span>
+    </div>
+    <p class="section-intro">
+      Higher National, 15 credits, and the specialist unit on the HNC in Automation and Control Engineering.
+      <strong>This is the starkest result in the audit, and it is structural rather than incidental:</strong>
+      two of the four learning outcomes - LO1 and LO2, carrying P1–P5, M1, M2, D1 and D2 - are about
+      Programmable Logic Controllers, and the curriculum contains no PLC content whatsoever.
+    </p>
+
+    <div class="lo-block">
+      <div class="lo-hd"><span class="lo-tag">LO1</span><span class="lo-name">Design and operational characteristics of a PLC system</span></div>
+      <table class="gap-tbl"><tbody>
+        <tr>
+          <td class="td-item"><p class="item-name">PLC system types and characteristics</p><p class="item-sub">Modular, unitary and rack-mounted; speed, memory, scan time, voltage and current limits; internal architecture</p></td>
+          <td class="td-stat"><span class="pill p-gap">Gap</span></td>
+          <td class="td-note"><p class="note">No coverage. The word &ldquo;PLC&rdquo; appears nowhere in the 16 modules. Blocks P1 and D1.</p></td>
+        </tr>
+        <tr>
+          <td class="td-item"><p class="item-name">I/O devices and interface requirements</p><p class="item-sub">Digital and analogue input and output devices</p></td>
+          <td class="td-stat"><span class="pill p-gap">Gap</span></td>
+          <td class="td-note"><p class="note">No coverage of discrete industrial I/O. Blocks P2. The ESP32 end-tool's digital and PWM outputs are the nearest available hardware and are documented in the repository's register map, but the curriculum does not use them this way.</p></td>
+        </tr>
+        <tr>
+          <td class="td-item"><p class="item-name">Communication standards and industrial networks</p><p class="item-sub">RS-232/422/485, Ethernet; supervisory / cell / field-level networks; PROFINET, PROFIBUS, AS-Interface, EtherNet/IP, Powerlink; configuration and commissioning</p></td>
+          <td class="td-stat"><span class="pill p-part">Partial</span></td>
+          <td class="td-note"><p class="note"><strong>A near miss worth acting on.</strong> <a class="chip-mod" href="module-08.html">MOD 08</a> teaches a real half-duplex multi-drop serial bus - frame structure, addressing, checksums, baud rate, latency, timeouts - which is <em>conceptually exactly</em> a field-level industrial network, and teaches it with more rigour than most PLC courses manage. What is missing is only the naming and the hierarchy: the ST3215 bus is never positioned against RS-485, PROFIBUS or AS-Interface, so learners cannot transfer the understanding they already have.</p></td>
+        </tr>
+        <tr>
+          <td class="td-item"><p class="item-name">Programming languages and the wider control estate</p><p class="item-sub">IEC 61131-3 languages; PLC, VSD, HMI and SCADA</p></td>
+          <td class="td-stat"><span class="pill p-gap">Gap</span></td>
+          <td class="td-note"><p class="note">IEC 61131-3 (ladder, function block, structured text, instruction list, SFC) is absent. <strong>HMI is a genuine strength</strong> - <a class="chip-mod" href="module-04.html">MOD 04</a> covers HMI design principles properly - but VSDs and SCADA are not covered, and SCADA appears only once in passing.</p></td>
+        </tr>
+      </tbody></table>
+    </div>
+
+    <div class="lo-block">
+      <div class="lo-hd"><span class="lo-tag">LO2</span><span class="lo-name">Design a PLC program</span></div>
+      <table class="gap-tbl"><tbody>
+        <tr>
+          <td class="td-item"><p class="item-name">Programming fundamentals</p><p class="item-sub">Signal types; number systems (binary, octal, hex); I/O allocation lists; logic functions AND/OR/XOR; timers, counters, latches</p></td>
+          <td class="td-stat"><span class="pill p-gap">Gap</span></td>
+          <td class="td-note"><p class="note">No coverage. Blocks P4. Note that Blockly already exposes logic and loop constructs, so <strong>the conceptual bridge from Blockly logic to ladder logic is short</strong> - a comparison module would carry real weight here.</p></td>
+        </tr>
+        <tr>
+          <td class="td-item"><p class="item-name">Communication techniques and network methods</p><p class="item-sub">PLC, HMI and SCADA configuration and programming; modern context of PLC programming and automation</p></td>
+          <td class="td-stat"><span class="pill p-gap">Gap</span></td>
+          <td class="td-note"><p class="note">No coverage. Blocks P5 and D2.</p></td>
+        </tr>
+        <tr>
+          <td class="td-item"><p class="item-name">Test and debug methods</p><p class="item-sub">Systematic testing and debugging, appropriately applied</p></td>
+          <td class="td-stat"><span class="pill p-part">Partial</span></td>
+          <td class="td-note"><p class="note"><strong>Transferable content already exists.</strong> <a class="chip-mod" href="module-10.html">MOD 10</a> teaches symptom&rarr;cause diagnostic reasoning with live telemetry - a genuinely systematic debugging method. It is not framed as a general technique, and it is not applied to program logic, but the teaching is there to be generalised (M2).</p></td>
+        </tr>
+      </tbody></table>
+    </div>
+
+    <div class="lo-block">
+      <div class="lo-hd"><span class="lo-tag">LO3</span><span class="lo-name">Program industrial robots - elements and functions</span></div>
+      <table class="gap-tbl"><tbody>
+        <tr>
+          <td class="td-item"><p class="item-name">Element considerations</p><p class="item-sub">Types of robots; sensors, tools and end effectors; programming methods; key commands; configuration, calibration and fault finding</p></td>
+          <td class="td-stat"><span class="pill p-ok">Covered</span></td>
+          <td class="td-note"><p class="note">Well served across <a class="chip-mod" href="module-06.html">MOD 06</a>, <a class="chip-mod" href="module-09.html">MOD 09</a> and <a class="chip-mod" href="module-10.html">MOD 10</a>, with fault finding a particular strength. Calibration is the weak element (see Unit 56 C2).</p></td>
+        </tr>
+        <tr>
+          <td class="td-item"><p class="item-name">Mobile robotics</p><p class="item-sub">AGVs, AMRs and mobile manipulators</p></td>
+          <td class="td-stat"><span class="pill p-gap">Gap</span></td>
+          <td class="td-note"><p class="note">Not covered. Purely theoretical content; no hardware implication.</p></td>
+        </tr>
+        <tr>
+          <td class="td-item"><p class="item-name">Robot manipulators</p><p class="item-sub">Kinematics, design, dynamics and control; vision systems; user interfaces; instrumentation configuration and calibration</p></td>
+          <td class="td-stat"><span class="pill p-part">Partial</span></td>
+          <td class="td-note"><p class="note">Kinematics (<a class="chip-mod" href="module-07.html">MOD 07</a>), design, control (<a class="chip-mod" href="module-08.html">MOD 08</a>) and user interfaces are all strong. <strong>Dynamics is absent</strong> - <a class="chip-mod" href="module-05.html">MOD 05</a> stops at statics, so inertia, acceleration torque and payload dynamics are untreated. Inverse kinematics is described conceptually but never derived or worked.</p></td>
+        </tr>
+        <tr>
+          <td class="td-item"><p class="item-name">Data collection tools and formats</p><p class="item-sub">Effective use of data collection systems; input/output data formats</p></td>
+          <td class="td-stat"><span class="pill p-ok">Covered</span></td>
+          <td class="td-note"><p class="note"><a class="chip-mod" href="module-10.html">MOD 10</a> logging and telemetry, with structured recording tables.</p></td>
+        </tr>
+        <tr>
+          <td class="td-item"><p class="item-name">Impact of Industry 4.0</p><p class="item-sub">Smart factories; data and digital technologies; performance optimisation; documentation control processes; integration and organisational impact</p></td>
+          <td class="td-stat"><span class="pill p-gap">Gap</span></td>
+          <td class="td-note"><p class="note">As at Unit 4068 LO4 - Industry 4.0 is never named. Performance optimisation is partly served by cycle-time work in <a class="chip-mod" href="module-12.html">MOD 12</a>, and documentation practice by <a class="chip-mod" href="module-15.html">MOD 15</a>, but <strong>documentation <em>control</em> - version, access, authorisation, location - is not covered</strong>.</p></td>
+        </tr>
+      </tbody></table>
+    </div>
+
+    <div class="lo-block">
+      <div class="lo-hd"><span class="lo-tag">LO4</span><span class="lo-name">Design and safe operation of a robot in an industrial application</span></div>
+      <table class="gap-tbl"><tbody>
+        <tr>
+          <td class="td-item"><p class="item-name">Health and safety policies, hazards, risk assessment and mitigation</p><p class="item-sub">Policies, procedures and regulations</p></td>
+          <td class="td-stat"><span class="pill p-ok">Covered</span></td>
+          <td class="td-note"><p class="note"><strong>The strongest area in the whole audit.</strong> <a class="chip-mod" href="module-01.html">MOD 01</a> risk assessment and <a class="chip-mod" href="module-13.html">MOD 13</a> hazard register and hierarchy of controls meet P8 and M4 comfortably.</p></td>
+        </tr>
+        <tr>
+          <td class="td-item"><p class="item-name">Cell safety features and operating envelope</p><p class="item-sub">Guarding, restriction, safe working plan</p></td>
+          <td class="td-stat"><span class="pill p-ok">Covered</span></td>
+          <td class="td-note"><p class="note"><a class="chip-mod" href="module-12.html">MOD 12</a> cell design with dead zones plus <a class="chip-mod" href="module-13.html">MOD 13</a> safety audit; D4 (&ldquo;design a safe working plan &hellip; including a full risk assessment&rdquo;) is achievable today.</p></td>
+        </tr>
+        <tr>
+          <td class="td-item"><p class="item-name">Operational modes and user interfaces</p><p class="item-sub">Automatic, manual reduced-speed, teach</p></td>
+          <td class="td-stat"><span class="pill p-part">Partial</span></td>
+          <td class="td-note"><p class="note">Same gap as Unit 4068 LO2 - the industrial mode model is not taught, though the interfaces themselves are covered thoroughly.</p></td>
+        </tr>
+      </tbody></table>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════
+       SECTION 4 - ROBOTIC OPERATIONS
+  ══════════════════════════════════════════════════ -->
+  <div class="spec-section">
+    <div class="section-hd">
+      <span class="section-num">Spec 04</span>
+      <h2 class="section-title">BTEC International Specialist Award in Robotic Operations</h2>
+      <span class="lvl-badge lvl-l3">L3</span>
+    </div>
+    <p class="section-intro">
+      Four mandatory units, 55 GLH. Read this section as a <strong>source of specific, examinable procedures</strong> rather than
+      as a delivery target: the content is written around a particular vendor controller, so some items
+      (WinC5G, PDL2 keywords) are not portable. The underlying operations, however, are exactly what
+      industry expects of a robot technician - and several of them are absent here while being cheap to add.
+    </p>
+
+    <div class="lo-block">
+      <div class="lo-hd"><span class="lo-tag">U1</span><span class="lo-name">Robotics Systems and Basic Procedures</span></div>
+      <table class="gap-tbl"><tbody>
+        <tr>
+          <td class="td-item"><p class="item-name">Main components of the arm</p><p class="item-sub">Motors, gearboxes, mechanical structure, basic wiring</p></td>
+          <td class="td-stat"><span class="pill p-ok">Covered</span></td>
+          <td class="td-note"><p class="note"><a class="chip-mod" href="module-02.html">MOD 02</a> structure and gear reduction; <a class="chip-mod" href="module-03.html">MOD 03</a> wiring, power and servo internals.</p></td>
+        </tr>
+        <tr>
+          <td class="td-item"><p class="item-name">Main components of the control unit</p><p class="item-sub">Operator panel, power modules, CPU, battery, connections panel, power supplies, safety boards, electromechanical parts</p></td>
+          <td class="td-stat"><span class="pill p-part">Partial</span></td>
+          <td class="td-note"><p class="note">The Pi controller, power system and connections are covered. <strong>Missing:</strong> dedicated safety boards/relays, backup battery for position retention, and the concept of a separate controller cabinet - the platform genuinely lacks these, so theory delivery is needed.</p></td>
+        </tr>
+        <tr>
+          <td class="td-item"><p class="item-name">Teach pendant operating modes and layout</p><p class="item-sub">Program / local / remote modes; mode selector, emergency stop, enabling device, key colour conventions; JOG movement; GUI page structure</p></td>
+          <td class="td-stat"><span class="pill p-part">Partial</span></td>
+          <td class="td-note"><p class="note">Jogging and GUI navigation are covered well in <a class="chip-mod" href="module-04.html">MOD 04</a>. <strong>Missing: the mode selector and the three-position enabling device</strong> - the two controls that define industrial pendant safety. This is the third specification in this audit to name operating modes.</p></td>
+        </tr>
+        <tr>
+          <td class="td-item"><p class="item-name">Degrees of protection and IP ratings</p><p class="item-sub">Need for protection; IP0x to IP6x; minimum four ratings, including two IP6x cases</p></td>
+          <td class="td-stat"><span class="pill p-gap">Gap</span></td>
+          <td class="td-note"><p class="note"><strong>Entirely absent</strong> - IP ratings appear nowhere in the curriculum. An entire learning outcome (U1 LO C) rests on this, and it is pure theory: a one-page table and three scenario questions would close it.</p></td>
+        </tr>
+        <tr>
+          <td class="td-item"><p class="item-name">Control unit procedures</p><p class="item-sub">Power up, restart, shutdown; drive on/off; login; creating users with different privileges</p></td>
+          <td class="td-stat"><span class="pill p-gap">Gap</span></td>
+          <td class="td-note"><p class="note">Startup and connection are covered in <a class="chip-mod" href="module-03.html">MOD 03</a>, but <strong>there is no user-account or privilege model</strong> in the app or curriculum - the control-session lock is the closest analogue and is a different concept. Operator/programmer/maintainer privilege separation is standard on industrial controllers.</p></td>
+        </tr>
+      </tbody></table>
+    </div>
+
+    <div class="lo-block">
+      <div class="lo-hd"><span class="lo-tag">U2</span><span class="lo-name">Fieldbus and Reference Systems</span></div>
+      <table class="gap-tbl"><tbody>
+        <tr>
+          <td class="td-item"><p class="item-name">Fieldbus and distributed control systems</p><p class="item-sub">MODBUS, PROFIBUS, INTERBUS, CAN; PROFIBUS-PA, Foundation Fieldbus; BACnet, LonWorks</p></td>
+          <td class="td-stat"><span class="pill p-gap">Gap</span></td>
+          <td class="td-note"><p class="note">No named fieldbus is covered. As noted at Unit 4015 LO1, <a class="chip-mod" href="module-08.html">MOD 08</a> already teaches the underlying principles thoroughly on the ST3215 bus - <strong>this is a labelling and context gap, not a conceptual one.</strong></p></td>
+        </tr>
+        <tr>
+          <td class="td-item"><p class="item-name">Distributed I/O types</p><p class="item-sub">Digital (single-bit Boolean), analogue (16-bit), and flexible (1–32 bit) inputs and outputs</p></td>
+          <td class="td-stat"><span class="pill p-gap">Gap</span></td>
+          <td class="td-note"><p class="note">Not covered. The ESP32 end tool (bus ID 64) exposes exactly this kind of register-mapped digital and analogue I/O and is documented in the repository - <strong>available hardware that the curriculum does not yet exploit.</strong></p></td>
+        </tr>
+        <tr>
+          <td class="td-item"><p class="item-name">3D reference systems</p><p class="item-sub">Base/World and the right-hand rule; user frames / work objects; tool coordinate system and TCP</p></td>
+          <td class="td-stat"><span class="pill p-part">Partial</span></td>
+          <td class="td-note"><p class="note">World/base, right-hand rule and tool frame are taught properly in <a class="chip-mod" href="module-07.html">MOD 07</a>. <strong>User frames / work objects are entirely absent</strong> - the idea that a program can be written relative to a fixture and then re-based when the fixture moves. This is the single most useful industrial concept missing from the kinematics teaching.</p></td>
+        </tr>
+        <tr>
+          <td class="td-item"><p class="item-name">Tool setup calculations</p><p class="item-sub">Standard method (measuring a tool against a known tool); four-point method (jogging about the TCP through P1–P4)</p></td>
+          <td class="td-stat"><span class="pill p-gap">Gap</span></td>
+          <td class="td-note"><p class="note"><strong>Not covered, and highly recommended.</strong> The four-point TCP calibration is the defining practical skill of robot setup, it is directly assessable, it needs no new hardware, and it simultaneously serves Unit 56 C2 and Unit 4068 LO1.</p></td>
+        </tr>
+        <tr>
+          <td class="td-item"><p class="item-name">Payload declaration and calibration checks</p><p class="item-sub">Consequences of incorrect payload; base/tool/robot calibration and validation; automatic payload identification</p></td>
+          <td class="td-stat"><span class="pill p-part">Partial</span></td>
+          <td class="td-note"><p class="note"><a class="chip-mod" href="module-05.html">MOD 05</a> handles payload <em>physics</em> very well - load vs pose, torque limits, effect of reach. <strong>What is missing is payload as a declared parameter</strong>: telling the controller what it is carrying, and what goes wrong when that declaration is absent or wrong.</p></td>
+        </tr>
+      </tbody></table>
+    </div>
+
+    <div class="lo-block">
+      <div class="lo-hd"><span class="lo-tag">U3</span><span class="lo-name">Motion Programming</span></div>
+      <table class="gap-tbl"><tbody>
+        <tr>
+          <td class="td-item"><p class="item-name">JOINT vs LINEAR trajectories</p><p class="item-sub">Recognising and justifying the appropriate trajectory for a movement command</p></td>
+          <td class="td-stat"><span class="pill p-ok">Covered</span></td>
+          <td class="td-note"><p class="note"><strong>Exemplary.</strong> <a class="chip-mod" href="module-09.html">MOD 09</a> teaches G0 (PTP) vs G1 (linear interpolated) with the real mechanism explained, and <a class="chip-mod" href="module-12.html">MOD 12</a> has learners measure the cycle-time and path-quality consequences of the choice. This meets A.2 and A.3 fully.</p></td>
+        </tr>
+        <tr>
+          <td class="td-item"><p class="item-name">Creating, checking, editing and saving a program</p><p class="item-sub">Full program lifecycle, recording positions</p></td>
+          <td class="td-stat"><span class="pill p-ok">Covered</span></td>
+          <td class="td-note"><p class="note">Stored positions, G-code files and Blockly programs across <a class="chip-mod" href="module-04.html">MOD 04</a>, <a class="chip-mod" href="module-09.html">MOD 09</a>, <a class="chip-mod" href="module-12.html">MOD 12</a>.</p></td>
+        </tr>
+        <tr>
+          <td class="td-item"><p class="item-name">Continuous / blended movement</p><p class="item-sub">Fly-by motion and the blend-percentage variable; termination types</p></td>
+          <td class="td-stat"><span class="pill p-gap">Gap</span></td>
+          <td class="td-note"><p class="note">Not covered. Motion blending - passing near a waypoint without stopping - is how real cycle times are cut, and it is the natural next step after the existing speed/acceleration work in <a class="chip-mod" href="module-08.html">MOD 08</a>. Requires controller support as well as teaching.</p></td>
+        </tr>
+        <tr>
+          <td class="td-item"><p class="item-name">Circular trajectories</p><p class="item-sub">Creating and checking a circular move; orientation control through the arc</p></td>
+          <td class="td-stat"><span class="pill p-gap">Gap</span></td>
+          <td class="td-note"><p class="note">Not covered; the G-code processor supports G0 and G1 but no arc command. Named in Unit 56 D2 as well, so this gap is double-counted against two specifications.</p></td>
+        </tr>
+        <tr>
+          <td class="td-item"><p class="item-name">Structured programs</p><p class="item-sub">A MAIN program with subprograms; ROUTINES; collision detection</p></td>
+          <td class="td-stat"><span class="pill p-gap">Gap</span></td>
+          <td class="td-note"><p class="note">Program structure is not taught in any form - the same gap as Unit 56 D2. Collision detection gets brief mention in the cell-design context but not as a programmable controller function.</p></td>
+        </tr>
+      </tbody></table>
+    </div>
+
+    <div class="lo-block">
+      <div class="lo-hd"><span class="lo-tag">U4</span><span class="lo-name">Further Robot Programming</span></div>
+      <table class="gap-tbl"><tbody>
+        <tr>
+          <td class="td-item"><p class="item-name">System memory and backup / restore</p><p class="item-sub">Execution, storage and external memory; program and configuration files; backup, restore and reload procedures; turn-set and calibration procedures</p></td>
+          <td class="td-stat"><span class="pill p-gap">Gap</span></td>
+          <td class="td-note"><p class="note">Not covered. <strong>Backup and restore of programs and configuration is a real technician competence</strong> and is trivially demonstrable here - positions are persisted locally and the servo configuration is readable over the bus. Pairs naturally with the missing maintenance module.</p></td>
+        </tr>
+        <tr>
+          <td class="td-item"><p class="item-name">Vendor software (WinC5G)</p><p class="item-sub">Cooperative motion, joint soft servo, sensor tracking, palletising, conveyor tracking</p></td>
+          <td class="td-stat"><span class="pill p-na">Platform</span></td>
+          <td class="td-note"><p class="note">Vendor-specific and not portable. The <em>capabilities</em> it lists (conveyor tracking, palletising motion, sensor tracking) are worth naming in the industrial-context module as things advanced controllers do.</p></td>
+        </tr>
+        <tr>
+          <td class="td-item"><p class="item-name">Program efficiency</p><p class="item-sub">Identifying repeated operations; debugging with cause-and-remedy; incremental jog</p></td>
+          <td class="td-stat"><span class="pill p-part">Partial</span></td>
+          <td class="td-note"><p class="note">Cycle-time optimisation is done well in <a class="chip-mod" href="module-12.html">MOD 12</a> and diagnostic reasoning in <a class="chip-mod" href="module-10.html">MOD 10</a>. <strong>Missing:</strong> refactoring repeated operations into reusable routines - which depends on the subroutine gap above.</p></td>
+        </tr>
+        <tr>
+          <td class="td-item"><p class="item-name">Planning and implementing an automated solution</p><p class="item-sub">Automation opportunity analysis, robot and end-effector selection, timescale, safety requirements; programming, testing, backup, efficiency</p></td>
+          <td class="td-stat"><span class="pill p-ok">Covered</span></td>
+          <td class="td-note"><p class="note"><strong>Well served.</strong> <a class="chip-mod" href="module-12.html">MOD 12</a> cell design, <a class="chip-mod" href="module-14.html">MOD 14</a> planning and Gantt, <a class="chip-mod" href="module-16.html">MOD 16</a> evaluation. Only the backup step is missing.</p></td>
+        </tr>
+      </tbody></table>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════
+       PRIORITY GAPS
+  ══════════════════════════════════════════════════ -->
+  <div class="spec-section">
+    <div class="section-hd">
+      <span class="section-num">Action</span>
+      <h2 class="section-title">Priority gaps, ranked</h2>
+    </div>
+    <p class="section-intro">
+      Ranked by assessment consequence first (does a Pass criterion currently fail?), then by how many of the four
+      specifications the gap appears in, then by cost to close. The first six are written content and require
+      no hardware change.
+    </p>
+
+    <div class="prio">
+      <div class="prio-hd"><span class="prio-rank">01</span><span class="prio-title">Maintenance - an entire assignment cannot be evidenced</span></div>
+      <div class="prio-body">
+        <p>Unit 56 learning aim A is half safety and half maintenance, and the maintenance half is completely absent:
+        inspection routines, environmental conditions, spare parts, maintenance tools and test equipment, and the
+        procedures themselves. Nothing in the 16 modules addresses preventive maintenance.</p>
+        <p class="blocks">Blocks: Unit 56 A.P2, A.M1, A.D1 - one of three assignments, at every grade</p>
+        <p class="fix"><strong>Fix:</strong> a new module - <em>Maintenance &amp; Servicing</em>. Write a standard operating procedure for
+        inspecting the arm; carry it out and record it on a standard form; identify the consumables and spares
+        (servos, bus cabling, gripper parts); list the tools required. <strong>Fold in the existing ESP32S3 calibration jig
+        as the mastering fixture</strong> - the spec explicitly names mastering gauges and tool/base reference points,
+        and that hardware already exists in this project.</p>
+      </div>
+    </div>
+
+    <div class="prio">
+      <div class="prio-hd"><span class="prio-rank">02</span><span class="prio-title">Discrete sensors - a Pass criterion needs three types, the arm teaches none</span></div>
+      <div class="prio-body">
+        <p>C.P5 requires the operating principles of three different robotic sensor types. The curriculum covers the
+        servos' internal encoders and the ArUco camera. No microswitch, piezoelectric, strain gauge, pressure,
+        capacitive, inductive, photoelectric or laser sensing appears anywhere.</p>
+        <p class="blocks">Blocks: Unit 56 C.P5, C.M3, BC.D2 &middot; weakens Unit 4068 LO1, Unit 4015 LO3</p>
+        <p class="fix"><strong>Fix:</strong> teach sensor principles as theory with a small practical hook. Even without new
+        hardware, the magnetic encoder is a real non-tactile sensor worth analysing properly, and the camera gives
+        vision. Adding one inductive and one microswitch input to the ESP32 end tool would convert this from a
+        theory gap into a full practical.</p>
+      </div>
+    </div>
+
+    <div class="prio">
+      <div class="prio-hd"><span class="prio-rank">03</span><span class="prio-title">Program design and structure - no design artefact, no subroutines</span></div>
+      <div class="prio-body">
+        <p>Learners write programs but never design them first. Flowcharting appears once; structured English never.
+        Subroutines and program decomposition are untaught in both Blockly and G-code. D.P7 asks learners to
+        <em>design</em> a program, and the design document is the evidence.</p>
+        <p class="blocks">Blocks: Unit 56 D.P7, D.M4, D.D3 &middot; Robotic Ops U3 LO C, U4 LO C</p>
+        <p class="fix"><strong>Fix:</strong> extend <a class="chip-mod" href="module-09.html">MOD 09</a> with a design-before-code stage -
+        brief &rarr; flowchart &rarr; structured English &rarr; code &rarr; test. Introduce Blockly functions and G-code
+        subprogram calls as the refactoring step. Cheap, and it lifts the whole programming strand.</p>
+      </div>
+    </div>
+
+    <div class="prio">
+      <div class="prio-hd"><span class="prio-rank">04</span><span class="prio-title">Simulation mode - required by a Pass criterion, and nearly built already</span></div>
+      <div class="prio-body">
+        <p>D.P8 requires a program &ldquo;tested in simulation mode&rdquo;. The app has a 3D view and a kinematics tester that
+        deliberately does not move the arm - the raw material for a simulate-then-deploy workflow - but it is never
+        framed or taught as one, and there is no dry-run mode for a whole program.</p>
+        <p class="blocks">Blocks: Unit 56 D.P8, D1 &middot; Unit 4068 LO3 (offline programming) &middot; Unit 4015 LO2 (test methods)</p>
+        <p class="fix"><strong>Fix:</strong> the highest-leverage app change in this document. A &ldquo;dry run&rdquo; toggle that executes a
+        G-code or Blockly program against the 3D view with the bus writes suppressed would close a criterion in
+        three of the four specifications at once.</p>
+      </div>
+    </div>
+
+    <div class="prio">
+      <div class="prio-hd"><span class="prio-rank">05</span><span class="prio-title">Industry 4.0 and the commercial context - pure theory, entirely absent</span></div>
+      <div class="prio-body">
+        <p>The phrase &ldquo;Industry 4.0&rdquo; does not appear once in the curriculum, despite framing an entire HN learning
+        outcome and appearing in Unit 56's own introduction. Robot density, major markets, workforce impact, AI,
+        IoT, edge and cloud robotics are all unaddressed.</p>
+        <p class="blocks">Blocks: Unit 4068 P7, P8, M4, D3 (all of LO4) &middot; Unit 4015 LO3</p>
+        <p class="fix"><strong>Fix:</strong> a new desk-based module - <em>Robotics in the Global Economy</em>. IFR robot-density data,
+        market and sector analysis, workforce displacement and reskilling, and the technology-advances survey.
+        No hardware, no lab time, and it closes the largest single block of L4 criteria in the audit.</p>
+      </div>
+    </div>
+
+    <div class="prio">
+      <div class="prio-hd"><span class="prio-rank">06</span><span class="prio-title">TCP calibration, user frames and payload declaration</span></div>
+      <div class="prio-body">
+        <p>Three related setup skills that industry treats as the core of robot technician competence, and that the
+        curriculum touches conceptually but never as procedures: four-point TCP calibration, user frames / work
+        objects, and declaring payload to the controller.</p>
+        <p class="blocks">Blocks: Unit 56 C2 &middot; Unit 4068 LO1 &middot; Robotic Ops U2 LO B, LO C</p>
+        <p class="fix"><strong>Fix:</strong> extend <a class="chip-mod" href="module-07.html">MOD 07</a> with a practical calibration session.
+        Four-point TCP calibration needs only a fixed pointer and careful jogging. User frames follow naturally
+        from the existing transformation-matrix teaching.</p>
+      </div>
+    </div>
+
+    <div class="prio">
+      <div class="prio-hd"><span class="prio-rank">07</span><span class="prio-title">PLCs and fieldbus - 50% of Unit 4015, and a labelling gap away from half-solved</span></div>
+      <div class="prio-body">
+        <p>Unit 4015's LO1 and LO2 are entirely PLC content and are entirely absent, taking P1–P5, M1, M2, D1 and D2
+        with them. No named fieldbus appears either.</p>
+        <p class="blocks">Blocks: Unit 4015 LO1 and LO2 in full &middot; Unit 4068 LO3 &middot; Robotic Ops U2 LO A</p>
+        <p class="fix"><strong>Fix, in two parts.</strong> The cheap half first: <a class="chip-mod" href="module-08.html">MOD 08</a> already
+        teaches a real multi-drop serial bus with framing, addressing, checksums and timing - <strong>position it explicitly
+        against RS-485, PROFIBUS and AS-Interface</strong> and the fieldbus gap largely closes on existing content.
+        The PLC half genuinely needs new material (and, for full delivery, a PLC trainer); a
+        Blockly-logic-to-ladder-logic comparison module would bridge a useful part of it without hardware.
+        <strong>Alternatively, treat Unit 4015 as out of scope and target Unit 4068 instead</strong> - it is the better fit
+        for this platform by a wide margin.</p>
+      </div>
+    </div>
+
+    <div class="prio">
+      <div class="prio-hd"><span class="prio-rank">08</span><span class="prio-title">Smaller named items, cheap to close</span></div>
+      <div class="prio-body">
+        <p>Each of these is absent, appears by name in at least one specification, and needs a paragraph to a page:</p>
+        <p><strong>Singularities</strong> (Unit 56 D2 - and note the companion objectives document currently <em>claims</em> this is
+        covered in MOD 07; that claim should be corrected or the content added) &middot;
+        <strong>Wrist yaw/pitch/roll</strong> &middot;
+        <strong>Cylindrical, spherical, toroidal and Cartesian configurations</strong> &middot;
+        <strong>LOSTPED selection criteria</strong> &middot;
+        <strong>IP ratings</strong> (an entire Robotic Operations learning outcome) &middot;
+        <strong>Operational modes</strong> - auto / manual reduced-speed / teach (named in three of the four specs) &middot;
+        <strong>Dead man's handle / three-position enabling device</strong> &middot;
+        <strong>Lead-through programming</strong> (the hardware already supports it - torque off and hand-guide) &middot;
+        <strong>Pneumatic and hydraulic drives and tooling</strong> &middot;
+        <strong>Ball screw, chain and belt drives</strong> &middot;
+        <strong>Circular / arc interpolation</strong> &middot;
+        <strong>Motion blending</strong> &middot;
+        <strong>Program backup and restore</strong> &middot;
+        <strong>Robot brakes</strong> &middot;
+        <strong>Palletising</strong> &middot;
+        <strong>MTA Safeguarding Codes of Practice, IEC 61508, ANSI/RIA R15.06</strong> &middot;
+        <strong>Barrier sizing and safety distance calculation</strong> &middot;
+        <strong>Mobile robotics</strong> &middot;
+        <strong>Manipulator dynamics</strong> (MOD 05 stops at statics).</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════
+       WHAT THE PLATFORM CANNOT DELIVER
+  ══════════════════════════════════════════════════ -->
+  <div class="card">
+    <h2>Where the platform sets a genuine limit</h2>
+    <p class="note">
+      A small number of items cannot be demonstrated on this hardware at any level of curriculum effort. These
+      should be planned as theory delivery with secondary evidence (video, site visit, guest speaker, case study) -
+      which all four specifications permit - rather than treated as curriculum failures:
+    </p>
+    <ul class="footnote" style="margin-top:0.8rem;border:none;padding:0;background:none;">
+      <li><strong>Hydraulic and pneumatic robot drives</strong> - a syringe or bench rig demonstration, as Pearson's own delivery guide for Unit 56 suggests, is the recognised workaround.</li>
+      <li><strong>Vendor toolchains and languages</strong> - RobotStudio, Roboguide, MotoSim, RAPID, KRL, Inform. A side-by-side code comparison satisfies &ldquo;investigate the range&rdquo; without a licence.</li>
+      <li><strong>Physical guarding, light curtains, safety relays and area scanners</strong> - the arm has no cell hardware; software dead zones in <a class="chip-mod" href="module-12.html">MOD 12</a> are the available substitute and are used well.</li>
+      <li><strong>IP66-rated equipment and real ingress testing</strong> - theory and scenario-based assessment only, which is exactly what the Robotic Operations spec asks for.</li>
+      <li><strong>Industrial PLC hardware</strong> - closing Unit 4015 LO1/LO2 properly needs a PLC trainer alongside the arm.</li>
+      <li><strong>Payload-scale forces and industrial cycle rates</strong> - the physics is faithfully taught in <a class="chip-mod" href="module-05.html">MOD 05</a>; only the magnitudes differ.</li>
+    </ul>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════
+       METHOD & SOURCES
+  ══════════════════════════════════════════════════ -->
+  <div class="footnote">
+    <strong>Method.</strong> Each specification's published unit content was taken bullet by bullet and searched against the
+    full text of all 16 curriculum modules - teaching text, activities, worksheets and quiz questions. A topic was
+    marked <em>Covered</em> only where a learner could produce evidence from a module activity; <em>Partial</em> where the
+    idea is present but below the depth the assessment criteria demand, or where the content is named without being
+    taught; <em>Gap</em> where the term and concept are absent from all 16 modules. Item counts are at sub-topic
+    granularity and are indicative - the intent is to show where effort is best spent, not to produce an audit figure.
+    <br><br>
+    <strong>Note on the companion document.</strong> The
+    <a href="btec-objectives.html">BTEC Learning Objectives Mapping</a> maps <em>themes</em> to modules and remains accurate
+    as a delivery overview. One claim in it is not supported by the module content - that MOD 07 delivers
+    &ldquo;joint limits and singularities&rdquo; - and should be corrected or the content written.
+    <br><br>
+    <strong>Sources.</strong>
+    <ul>
+      <li>Pearson BTEC Level 3 National Extended Diploma in Engineering, Specification Issue 10 (June 2026) - Unit 56: Industrial Robotics, pp. 659–664</li>
+      <li>Pearson BTEC Level 3 Qualifications in Engineering - Delivery Guide, Unit 56: Industrial Robotics (Issue 1, December 2019)</li>
+      <li>Unit Descriptors for the Pearson BTEC Higher Nationals Engineering Suite (2024), Issue 6 (October 2025) - Unit 4068: Industrial Robots, pp. 522–528; Unit 4015: Automation, Robotics and PLCs, pp. 113–119</li>
+      <li>Pearson BTEC Level 4 Higher National Certificate in Automation and Control Engineering (2022) - programme structure</li>
+      <li>Pearson BTEC International Level 3 Specialist Award in Robotic Operations, Specification Issue 2 (May 2023) - Units 1–4</li>
+    </ul>
+    Unit numbering and content vary between qualification sizes and issues; confirm against the current
+    specification for the exact programme a centre is registered on before using this document for
+    assessment planning.
+  </div>
+
+</div>
+
+</body>
+</html>

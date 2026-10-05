@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Module 10 — Data Logging & Diagnostics</title>
+<title>Module 10 - Data Logging & Diagnostics</title>
 <style>
   :root {
     --bg: #f8fafc; --card: #ffffff; --border: #e2e8f0;
@@ -98,7 +98,7 @@
     <span class="pill pill-theory">Theory</span>
     <h2>Why Log Data?</h2>
     <img src="images/telemetry-graph.svg" alt="Live telemetry data graph" style="width:100%;height:auto;display:block;border-radius:8px;margin:12px 0;">
-    <p>A robot arm in operation generates a continuous stream of sensor data — joint positions, temperatures, supply voltages, and load readings. Capturing this data over time is called <strong>data logging</strong>. Engineers use logged data to:</p>
+    <p>A robot arm in operation generates a continuous stream of sensor data - joint positions, temperatures, supply voltages, and load readings. Capturing this data over time is called <strong>data logging</strong>. Engineers use logged data to:</p>
     <div class="grid-3">
       <div class="mini-card">
         <h4>&#128200; Trend Analysis</h4>
@@ -113,7 +113,7 @@
         <p>Confirm the arm meets speed and accuracy specifications.</p>
       </div>
     </div>
-    <p>In safety-critical systems (ISO 10218), logs are a legal requirement — they prove the system operated within defined limits.</p>
+    <p>In safety-critical systems (ISO 10218), logs are a legal requirement - they prove the system operated within defined limits.</p>
   </div>
 
   <!-- THEORY 2 -->
@@ -123,11 +123,11 @@
     <p>The ST3215 servos used in this arm report several parameters over the serial bus. The app reads these and displays them in real time:</p>
     <table>
       <tr><th>Parameter</th><th>Units</th><th>What it tells you</th></tr>
-      <tr><td>Position</td><td>degrees (°)</td><td>Current joint angle — compare to commanded angle to check accuracy</td></tr>
-      <tr><td>Velocity</td><td>rpm</td><td>How fast the joint is moving — high values near limits risk overshoot</td></tr>
-      <tr><td>Load</td><td>% of stall torque</td><td>Mechanical load on the motor — sustained high load = overheating risk</td></tr>
-      <tr><td>Voltage</td><td>V</td><td>Supply rail health — drop under load indicates wiring or PSU issues</td></tr>
-      <tr><td>Temperature</td><td>°C</td><td>Motor winding temperature — above ~70 °C the servo will self-limit</td></tr>
+      <tr><td>Position</td><td>degrees (°)</td><td>Current joint angle - compare to commanded angle to check accuracy</td></tr>
+      <tr><td>Velocity</td><td>rpm</td><td>How fast the joint is moving - high values near limits risk overshoot</td></tr>
+      <tr><td>Load</td><td>% of stall torque</td><td>Mechanical load on the motor - sustained high load = overheating risk</td></tr>
+      <tr><td>Voltage</td><td>V</td><td>Supply rail health - drop under load indicates wiring or PSU issues</td></tr>
+      <tr><td>Temperature</td><td>°C</td><td>Motor winding temperature - above ~70 °C the servo will self-limit</td></tr>
     </table>
     <div class="highlight-box">
       <strong>Key point:</strong> Load is a proxy for current. Since <em>torque = K<sub>t</sub> × I</em>, high load% means high current, which means high heat. Monitoring load is the earliest warning of an overload condition.
@@ -135,8 +135,8 @@
     <div class="callout callout-info">
       <span class="callout-icon">🔌</span>
       <div class="callout-body">
-        <strong>Connection Tab — Server Diagnostics Panel</strong></br>
-        The <span class="ui-ref">Connection</span> tab includes a <strong>server bus diagnostics panel</strong> that shows: serial bus health, number of connected WebSocket clients, server uptime, and build ID. Use this alongside the Joint Control telemetry during diagnostics — the diagnostics panel gives you the <em>infrastructure</em> view (is the bus healthy? how many clients are connected?) while Joint Control gives you the <em>sensor</em> view (what are the joints doing?). Both together give a complete diagnostic picture.
+        <strong>Connection Tab - Server Diagnostics Panel</strong></br>
+        The <span class="ui-ref">Connection</span> tab includes a <strong>server bus diagnostics panel</strong> that shows: serial bus health, number of connected WebSocket clients, server uptime, and build ID. Use this alongside the Joint Control telemetry during diagnostics - the diagnostics panel gives you the <em>infrastructure</em> view (is the bus healthy? how many clients are connected?) while Joint Control gives you the <em>sensor</em> view (what are the joints doing?). Both together give a complete diagnostic picture.
       </div>
     </div>
   </div>
@@ -146,7 +146,7 @@
     <span class="pill pill-theory">Theory</span>
     <h2>Diagnostic Thinking: Symptoms → Causes</h2>
     <img src="images/diagnostic-flowchart.svg" alt="Diagnostic thinking flowchart" style="width:100%;height:auto;display:block;border-radius:8px;margin:12px 0;">
-    <p>Good diagnostics follow a structured process — not guesswork. A common framework is <strong>Symptom → Hypothesis → Test → Conclusion</strong>.</p>
+    <p>Good diagnostics follow a structured process - not guesswork. A common framework is <strong>Symptom → Hypothesis → Test → Conclusion</strong>.</p>
     <table>
       <tr><th>Symptom</th><th>Possible causes</th><th>Test</th></tr>
       <tr><td>Joint overshoots target</td><td>Speed too high, PID gains wrong</td><td>Reduce speed, observe position trace</td></tr>
@@ -180,11 +180,11 @@
   <!-- WORKSHEET / ACTIVITY -->
   <div class="section-card worksheet-card">
     <span class="pill pill-worksheet">Worksheet</span>
-    <h2>Activity — Live Data Monitoring</h2>
+    <h2>Activity - Live Data Monitoring</h2>
     <p>You will observe live servo telemetry while the arm performs a repeating motion, and record what you see.</p>
     <ul class="steps">
       <li>Connect to the arm using the <span class="tab-ref">Connection</span> tab. Confirm the status indicator is green.</li>
-      <li>Open the <span class="tab-ref">Joint Control</span> tab. Note the servo status panel — locate the live position, load, voltage and temperature readouts for each joint.</li>
+      <li>Open the <span class="tab-ref">Joint Control</span> tab. Note the servo status panel - locate the live position, load, voltage and temperature readouts for each joint.</li>
       <li>With the arm at its home/zero position, record the <strong>idle readings</strong> in the table below.</li>
       <li>Command Joint 2 (shoulder) to move slowly between 0° and 60°, repeatedly. Observe how the load value changes at the extremes of the motion.</li>
       <li>Now hold the end-effector gently (add a small manual load) and observe load % again. Record the difference.</li>
@@ -202,23 +202,23 @@
     </table>
 
     <div class="ws-field">
-      <label>Observations — load change, temperature trend, and Settings notes</label>
+      <label>Observations - load change, temperature trend, and Settings notes</label>
       <textarea placeholder="Describe what you observed for load %, temperature, and any Settings values..."></textarea>
     </div>
 
     <div class="callout callout-info no-print">
       <span class="callout-icon">📊</span>
       <div class="callout-body">
-        <strong>Joint Control Tab — Confirmed Layout</strong></br>
+        <strong>Joint Control Tab - Confirmed Layout</strong></br>
         The <span class="ui-ref">Joint Control</span> tab shows six joint status cards (one per joint). Each card displays live data updated approximately every 20 ms from the servo bus:
         <ul style="margin:0.4rem 0 0;padding-left:1.2rem;">
-          <li><strong>Angle (°)</strong> — current joint position</li>
-          <li><strong>Velocity</strong> — current speed</li>
-          <li><strong>Load (%)</strong> — current draw as a percentage of stall torque</li>
-          <li><strong>Voltage (V)</strong> — servo supply voltage</li>
-          <li><strong>Temperature (°C)</strong> — servo motor temperature</li>
+          <li><strong>Angle (°)</strong> - current joint position</li>
+          <li><strong>Velocity</strong> - current speed</li>
+          <li><strong>Load (%)</strong> - current draw as a percentage of stall torque</li>
+          <li><strong>Voltage (V)</strong> - servo supply voltage</li>
+          <li><strong>Temperature (°C)</strong> - servo motor temperature</li>
         </ul>
-        Note: the <span class="ui-ref">Settings</span> tab does <em>not</em> have alarm threshold sliders for temperature or load — the configurable value is the <strong>status watchdog interval</strong> (the fallback poll period if the server stops pushing). The servos have hardware thermal protection built in.
+        Note: the <span class="ui-ref">Settings</span> tab does <em>not</em> have alarm threshold sliders for temperature or load - the configurable value is the <strong>status watchdog interval</strong> (the fallback poll period if the server stops pushing). The servos have hardware thermal protection built in.
       </div>
     </div>
   </div>
@@ -227,7 +227,7 @@
   <div class="section-card">
     <span class="pill pill-sowhat">So What?</span>
     <h2>Why Does This Matter in Industry?</h2>
-    <p>Industrial robots in factories run 24/7. A sudden failure mid-cycle can damage tooling, injure workers, or halt an entire production line. <strong>Predictive maintenance</strong> uses logged data — temperature trends, vibration signatures, load drift — to schedule servicing <em>before</em> failure, not after.</p>
+    <p>Industrial robots in factories run 24/7. A sudden failure mid-cycle can damage tooling, injure workers, or halt an entire production line. <strong>Predictive maintenance</strong> uses logged data - temperature trends, vibration signatures, load drift - to schedule servicing <em>before</em> failure, not after.</p>
     <p>The techniques you practised here (monitoring load, watching temperature, noting voltage sag) are the same principles behind industrial SCADA (Supervisory Control and Data Acquisition) systems, just at a smaller scale.</p>
     <p><strong>Think about:</strong> If you were deploying this arm in a school workshop that runs 6 hours a day, what logging strategy would you design? What thresholds would you alarm on?</p>
   </div>
@@ -258,7 +258,7 @@
     <div class="mcq-question" id="q3-block">
       <p>3. A servo's temperature rises steadily over 30 minutes of continuous operation. The most likely first action is:</p>
       <label class="mcq-option"><input type="radio" name="q3" value="a"> Increase supply voltage</label>
-      <label class="mcq-option"><input type="radio" name="q3" value="b"> Ignore it — servos always run hot</label>
+      <label class="mcq-option"><input type="radio" name="q3" value="b"> Ignore it - servos always run hot</label>
       <label class="mcq-option"><input type="radio" name="q3" value="c"> Reduce duty cycle or payload, check load %</label>
       <label class="mcq-option"><input type="radio" name="q3" value="d"> Replace the servo immediately</label>
       <div class="feedback-msg" id="q3-fb"></div>
@@ -288,7 +288,7 @@ const feedback = {
   },
   q3: {
     c: 'Correct! Rising temperature means excessive load. Reduce duty cycle or payload and check load % first.',
-    wrong: 'Not quite. Rising temperature signals overload — reduce duty cycle or payload and inspect load %.'
+    wrong: 'Not quite. Rising temperature signals overload - reduce duty cycle or payload and inspect load %.'
   }
 };
 function checkMCQ() {

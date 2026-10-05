@@ -398,5 +398,5 @@
      text-anchor="middle"
      font-size="10"
      fill="#64748b"
-     id="text85">Servos draw peak current on startup or under heavy load — ensure PSU is adequately rated</text>
+     id="text85">Servos draw peak current on startup or under heavy load - ensure PSU is adequately rated</text>
 </svg>

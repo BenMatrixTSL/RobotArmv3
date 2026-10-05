@@ -865,7 +865,7 @@ header h1 {
     background: #fff;
 }
 
-/* End tool button active-state colouring — ON=green, OFF=red */
+/* End tool button active-state colouring - ON=green, OFF=red */
 .end-tool-on-btn.active {
     background-color: #27ae60 !important;
     border-color: #27ae60 !important;
@@ -981,7 +981,7 @@ header h1 {
     }
 }
 
-/* Joint Status Grid — 6 joints on one row on wide screens */
+/* Joint Status Grid - 6 joints on one row on wide screens */
 .joint-status-grid {
     display: grid;
     grid-template-columns: repeat(6, minmax(0, 1fr));
@@ -1351,7 +1351,7 @@ header h1 {
     margin-bottom: 15px;
 }
 
-/* Joint jog buttons — blue for minus, green for plus */
+/* Joint jog buttons - blue for minus, green for plus */
 .joint-jog-minus {
     background: #2980b9 !important;
     color: #fff !important;
@@ -2978,7 +2978,7 @@ body.touch-mode .kinematics-angle-input {
     color: #333;
 }
 
-/* Colour key — what drives which entries */
+/* Colour key - what drives which entries */
 .kin-key {
     display: inline-block;
     padding: 1px 6px;
@@ -3271,10 +3271,10 @@ body.kiosk-mode .camera-toolbar .btn {
    Target screen: 800×480 touchscreen
    ================================================================ */
 
-/* Base font override — undo small-display 12px, use readable 14px.
+/* Base font override - undo small-display 12px, use readable 14px.
    height + overflow:hidden pins the page to exactly the viewport, so the
    only scrollbars are the ones deliberately added below (.tabs and
-   .tab-content-container) — without this, the outer page (sized by
+   .tab-content-container) - without this, the outer page (sized by
    min-height:100vh in the base body rule) could still grow taller than the
    screen and pick up its own native scrollbar alongside the inner one,
    showing two side-by-side on the touchscreen. */
@@ -3293,7 +3293,7 @@ body.kiosk-mode .container {
     padding: 3px 5px;
 }
 
-/* Compact header — hide the long title text to save ~16 px of vertical space */
+/* Compact header - hide the long title text to save ~16 px of vertical space */
 body.kiosk-mode header {
     padding: 3px 8px;
     margin-bottom: 3px;
@@ -3341,7 +3341,7 @@ body.kiosk-mode .tabs {
     overflow-y: auto;
 }
 
-/* Sidebar collapse in kiosk mode — explicit overrides needed because
+/* Sidebar collapse in kiosk mode - explicit overrides needed because
    body.kiosk-mode .tabs (specificity 0,2,1) beats .tabs.collapsed (0,2,0),
    so min-width/gap would not collapse without these higher-specificity rules. */
 body.kiosk-mode .tabs.collapsed {
@@ -3423,7 +3423,7 @@ body.kiosk-mode .tab-content > h2 ~ p.info-text {
 
 /* ---- Joint Control tab ---- */
 
-/* The h2 "Joint Control" is redundant with the sidebar label — hide it */
+/* The h2 "Joint Control" is redundant with the sidebar label - hide it */
 body.kiosk-mode #pendant-tab > h2 {
     display: none;
 }
@@ -3469,7 +3469,7 @@ body.kiosk-mode .joint-card-title {
     font-weight: 700;
 }
 
-/* Shrink the expand toggle — it still works but takes minimal space */
+/* Shrink the expand toggle - it still works but takes minimal space */
 body.kiosk-mode .joint-details-toggle {
     font-size: 11px;
     padding: 1px 4px;
@@ -3494,7 +3494,7 @@ body.kiosk-mode .status-value.compact {
     margin-bottom: 0;
 }
 
-/* Hide the per-card angle input + Go button — Quick Movement replaces them */
+/* Hide the per-card angle input + Go button - Quick Movement replaces them */
 body.kiosk-mode .joint-control-fields {
     display: none;
 }
@@ -3509,7 +3509,7 @@ body.kiosk-mode .control-panel {
     margin-bottom: 5px;
 }
 
-/* E-Stop / Home / Torque — stacked vertically in the left column */
+/* E-Stop / Home / Torque - stacked vertically in the left column */
 body.kiosk-mode .kiosk-joints-left .control-buttons {
     display: flex;
     flex-direction: column;
@@ -3523,7 +3523,7 @@ body.kiosk-mode .kiosk-joints-left .control-buttons .btn {
     min-height: 44px;
 }
 
-/* Quick Joint Movement area (right column) — flush, no card background */
+/* Quick Joint Movement area (right column) - flush, no card background */
 body.kiosk-mode .kiosk-joints-right .joystick-area {
     padding: 0;
     background: none;
@@ -3644,7 +3644,7 @@ body.kiosk-mode #connection-tab input[type="text"] {
     width: 100%;
 }
 
-/* Very narrow Pi displays — 2-col joint grid, single-col pendant */
+/* Very narrow Pi displays - 2-col joint grid, single-col pendant */
 @media (max-width: 900px) {
     body.kiosk-mode .joint-status-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -3718,10 +3718,10 @@ body.osk-open .container {
    ================================================================
    Applies app-wide instead of tab by tab. Two layers:
 
-   1. Press feedback, tap-delay removal and focus rings — always on,
+   1. Press feedback, tap-delay removal and focus rings - always on,
       because they cost nothing with a mouse and a finger never
       triggers :hover.
-   2. Minimum target sizes — only under body.touch-mode, which app.js
+   2. Minimum target sizes - only under body.touch-mode, which app.js
       sets for a real touchscreen, a coarse pointer, ?kiosk=1, or the
       manual override.
 
@@ -3824,7 +3824,7 @@ body.touch-mode .joint-details-toggle {
     font-size: 16px;
 }
 
-/* btn-small stays visually quieter — it just stops being a smaller
+/* btn-small stays visually quieter - it just stops being a smaller
    target. This one rule lifts 41 buttons across the app. */
 body.touch-mode .btn-small {
     padding: 6px 14px;
@@ -4237,7 +4237,7 @@ body.touch-mode .positions-list-item .btn-danger {
 /* ---- Touch-mode adjustments ---- */
 
 /* The joint card expand toggle was 24x24 in the corner. Under touch it
-   becomes a strip across the bottom of the card — same footprint, far
+   becomes a strip across the bottom of the card - same footprint, far
    more target. Absolute positioning keeps the markup, and the desktop
    layout, exactly as they were. */
 body.touch-mode .joint-card-compact {

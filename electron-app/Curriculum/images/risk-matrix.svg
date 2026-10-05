@@ -190,7 +190,7 @@
      font-size="10px"
      fill="#64748b"
      id="text21">Rare (1)</text>
-  <!-- Grid cells — colours based on L×S score -->
+  <!-- Grid cells - colours based on L×S score -->
   <!-- Colours: ≤4 green, 5-9 yellow, 10-14 orange, 15-25 red -->
   <!-- Row 5 (Almost Certain, L=5): scores 5,10,15,20,25 -->
   <rect

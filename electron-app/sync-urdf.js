@@ -72,7 +72,7 @@ function main() {
             }
         }
     } else {
-        console.warn('sync-urdf: no Pi copy at ' + PI_URDF + ' — skipped');
+        console.warn('sync-urdf: no Pi copy at ' + PI_URDF + ' - skipped');
     }
 
     // ---- 2. the fallback embedded in app.js ----

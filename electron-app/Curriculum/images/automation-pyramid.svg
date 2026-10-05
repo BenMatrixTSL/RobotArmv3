@@ -50,8 +50,8 @@
      text-anchor="middle"
      font-size="11"
      fill="#64748b"
-     id="text2">From fully manual to fully adaptive — each level increases productivity and reduces human error</text>
-  <!-- Level 4 — Adaptive / AI (tip) -->
+     id="text2">From fully manual to fully adaptive - each level increases productivity and reduces human error</text>
+  <!-- Level 4 - Adaptive / AI (tip) -->
   <polygon
      points="250,58 178,118 322,118"
      fill="#7c3aed"
@@ -66,7 +66,7 @@
      font-weight="700"
      fill="#ffffff"
      id="text3">4. Adaptive / AI</text>
-  <!-- Level 3 — Full automation -->
+  <!-- Level 3 - Full automation -->
   <polygon
      points="178,122 134,182 366,182 322,122"
      fill="#3b82f6"
@@ -88,7 +88,7 @@
      font-size="9"
      fill="#bfdbfe"
      id="text5">Robot operates independently, monitors itself</text>
-  <!-- Level 2 — Partial automation -->
+  <!-- Level 2 - Partial automation -->
   <polygon
      points="134,186 88,246 412,246 366,186"
      fill="#16a34a"
@@ -110,7 +110,7 @@
      font-size="9"
      fill="#bbf7d0"
      id="text7">Robot does tasks; human supervises and loads parts</text>
-  <!-- Level 1 — Assisted manual -->
+  <!-- Level 1 - Assisted manual -->
   <polygon
      points="88,250 40,310 460,310 412,250"
      fill="#ea580c"
@@ -132,7 +132,7 @@
      font-size="9"
      fill="#fed7aa"
      id="text9">Human works with tools/jigs; no autonomous robot motion</text>
-  <!-- Level 0 — Manual (base) -->
+  <!-- Level 0 - Manual (base) -->
   <polygon
      points="40,314 20,362 480,362 460,314"
      fill="#94a3b8"
@@ -153,7 +153,7 @@
      text-anchor="middle"
      font-size="9px"
      fill="#f1f5f9"
-     id="text11">All tasks done by hand — no automation</text>
+     id="text11">All tasks done by hand - no automation</text>
   <!-- Right side annotation -->
   <text
      x="490"

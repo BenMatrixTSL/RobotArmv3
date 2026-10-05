@@ -22,7 +22,7 @@
   <line x1="55"  y1="218" x2="295" y2="218" stroke="#e2e8f0" stroke-width="1"/>
   <line x1="223" y1="58"  x2="223" y2="258" stroke="#e2e8f0" stroke-width="1"/>
 
-  <!-- Matrix values — Row 1 -->
+  <!-- Matrix values - Row 1 -->
   <text x="90"  y="84" text-anchor="middle" font-size="15" font-weight="700" fill="#1d4ed8">r₁₁</text>
   <text x="140" y="84" text-anchor="middle" font-size="15" font-weight="700" fill="#1d4ed8">r₁₂</text>
   <text x="190" y="84" text-anchor="middle" font-size="15" font-weight="700" fill="#1d4ed8">r₁₃</text>
@@ -59,7 +59,7 @@
   <!-- Bottom row label -->
   <text x="157" y="276" text-anchor="middle" font-size="0" fill="none"/>
   <rect x="56" y="220" width="230" height="36" rx="0" fill="none" stroke="#7c3aed" stroke-width="1.5" stroke-dasharray="5,3"/>
-  <text x="157" y="340" text-anchor="middle" font-size="11" font-weight="700" fill="#7c3aed">Bottom row [0 0 0 1] — perspective row (always fixed)</text>
+  <text x="157" y="340" text-anchor="middle" font-size="11" font-weight="700" fill="#7c3aed">Bottom row [0 0 0 1] - perspective row (always fixed)</text>
 
   <!-- Right-side formula box -->
   <rect x="312" y="58" width="220" height="240" rx="8" fill="white" stroke="#e2e8f0" stroke-width="1.5"/>

@@ -54,7 +54,7 @@ let lastGoodJointStatus = [];
 let jogCommandedAngles = [];
 // Whether the Accel field defaults have been pushed to the servos for the
 // current control session (reset when control is lost, so a later takeControl
-// re-syncs — the servo's STS_ACC register otherwise keeps whatever value it
+// re-syncs - the servo's STS_ACC register otherwise keeps whatever value it
 // last had, which is not necessarily what the UI shows).
 let accelerationDefaultsSynced = false;
 // Servo acceleration sent to every joint on connect (ST3215 register 0x29,
@@ -73,7 +73,7 @@ const PI_SERVER_PORT = 8080; // ST3215 server port is fixed
 /**
  * Formats a number for display, guarding against null/Infinity. IK
  * refinement reports Infinity when it can't find a solution (e.g. an
- * unreachable target) — that value becomes null after a JSON round-trip
+ * unreachable target) - that value becomes null after a JSON round-trip
  * over the WebSocket (JSON has no Infinity), so accuracy figures can
  * arrive as null even though the server never intended to send one.
  * @param {*} value
@@ -84,13 +84,13 @@ function formatFiniteNumber(value, decimals) {
     return (typeof value === 'number' && isFinite(value)) ? value.toFixed(decimals) : 'unreachable';
 }
 
-// Movement mode — 'ptp' (point-to-point, all joints simultaneously) or
+// Movement mode - 'ptp' (point-to-point, all joints simultaneously) or
 // 'linear' (Cartesian straight-line interpolation computed on the server).
 let movementMode         = 'ptp';
 let linearSpeedMmPerSec  = 50;
 let linearStepMm         = 2.0;
 
-// Cached raw URDF text — stored when loaded locally so it can be sent to the
+// Cached raw URDF text - stored when loaded locally so it can be sent to the
 // server after a WebSocket connection is established (the server needs it too).
 let cachedUrdfText = null;
 
@@ -177,7 +177,7 @@ const GRIPPER_CLOSED_ANGLE = 0;
 function openGripper() { moveEndToolServo(GRIPPER_OPEN_ANGLE); }
 function closeGripper() { moveEndToolServo(GRIPPER_CLOSED_ANGLE); }
 
-// Exact commanded XYZ for jog moves — updated with precise step sizes so errors
+// Exact commanded XYZ for jog moves - updated with precise step sizes so errors
 // do not accumulate across sequential jogs. Reset to null after any non-jog move
 // so the next jog sequence re-initialises from the actual arm position.
 let jogCommandedPose = null;
@@ -206,7 +206,7 @@ function update3DStoredPositionsIfAvailable() {
             const pos = positions[num];
             if (!pos) continue;
 
-            // XYZ-type positions already have their tool-tip coordinates —
+            // XYZ-type positions already have their tool-tip coordinates -
             // no FK needed (and no dependence on the currently active tool).
             if (pos.type === 'xyz') {
                 if (!pos.xyz) continue;
@@ -244,9 +244,9 @@ function update3DStoredPositionsIfAvailable() {
  * For an XYZ-type position, this runs inverse kinematics AT CALL TIME against
  * whichever end tool is currently active (robotKinematics.getActiveEndTool()),
  * so the same stored XYZ point produces different joint angles depending on
- * which tool is attached — that's the whole point of storing it as XYZ rather
+ * which tool is attached - that's the whole point of storing it as XYZ rather
  * than as angles. Orientation is intentionally NOT part of the stored
- * position (per design) — it comes from whatever the caller's current
+ * position (per design) - it comes from whatever the caller's current
  * orientation context is (currentToolOrientation, same as manual XYZ jogging).
  *
  * @param {object} position - A stored position object from getPosition()/getPositionByName().
@@ -304,7 +304,7 @@ function resolveStoredPositionAngles(positionNumber) {
 }
 
 /**
- * Moves the arm to a stored position object — dead-zone aware and approaching
+ * Moves the arm to a stored position object - dead-zone aware and approaching
  * descents from above, exactly as the programming modes do (they all share
  * moveToStoredAnglesWithApproach). Works for both angles-type and XYZ-type
  * positions (see resolvePositionToAngles).
@@ -319,7 +319,7 @@ async function moveToStoredPositionEntry(position, speedDegreesPerSecond = 40) {
         const reason = position && position.type === 'xyz'
             ? 'its XYZ target is unreachable with the current tool'
             : 'it has no joint angles saved';
-        showAppMessage(`Could not move to ${label} — ${reason}.`);
+        showAppMessage(`Could not move to ${label} - ${reason}.`);
         return false;
     }
     return moveToStoredAnglesWithApproach(null, targetAngles, speedDegreesPerSecond, showAppMessage);
@@ -426,7 +426,7 @@ function updateKinematicsMatrices(jointAnglesOverride) {
 /**
  * Builds the step cards for the Kinematics tab (structure only; values are
  * filled in by updateKinematicsMatrices). Revolute-joint cards carry that
- * joint's angle — a text box when simulating, a live read-out otherwise —
+ * joint's angle - a text box when simulating, a live read-out otherwise -
  * so the angles can be worked with right next to their matrices. The last
  * (tool) card's title carries the fitted-tool status and a Re-check button.
  * @param {HTMLElement} display
@@ -476,11 +476,11 @@ function buildKinematicsStepCards(display, steps, revoluteCount) {
 
         html += `<div class="kinematics-step" id="kinStep${s}">`;
         if (s === steps.length - 1) {
-            html += `<h4 class="kin-tool-title"><span>${isJoint ? `Joint ${s + 1}` : 'Tool'} — ${name} (step ${step.index})</span>` +
+            html += `<h4 class="kin-tool-title"><span>${isJoint ? `Joint ${s + 1}` : 'Tool'} - ${name} (step ${step.index})</span>` +
                 `<span class="end-tool-state" id="endToolState" title="">–</span>` +
                 `<button class="btn btn-small btn-secondary" onclick="refreshEndTool()">Re-check tool</button></h4>`;
         } else {
-            html += `<h4>${isJoint ? `Joint ${s + 1}` : 'Tool'} — ${name} (step ${step.index})</h4>`;
+            html += `<h4>${isJoint ? `Joint ${s + 1}` : 'Tool'} - ${name} (step ${step.index})</h4>`;
         }
         html += '<table class="kinematics-step-info"><tbody>';
         if (isJoint) {
@@ -495,7 +495,7 @@ function buildKinematicsStepCards(display, steps, revoluteCount) {
             (hasRpy ? ` &nbsp; rpy (rad) (${(origin.roll || 0).toFixed(3)}, ${(origin.pitch || 0).toFixed(3)}, ${(origin.yaw || 0).toFixed(3)})` : '') + '</td></tr>';
         if (isJoint) {
             html += `<tr><td>${swatch('kin-hl-axis', 'Axis')}</td><td>(${(axis.x || 0).toFixed(3)}, ${(axis.y || 0).toFixed(3)}, ${(axis.z || 0).toFixed(3)})` +
-                (nonZero === 1 ? ` — turns about ${['X', 'Y', 'Z'][k]}` : '') + '</td></tr>';
+                (nonZero === 1 ? ` - turns about ${['X', 'Y', 'Z'][k]}` : '') + '</td></tr>';
         }
         html += `<tr><td>${swatch('kin-hl-position', 'Position')} (mm)</td><td id="kinStep${s}Pos">–</td></tr>`;
         html += '</tbody></table>';
@@ -531,7 +531,7 @@ function buildKinematicsStepCards(display, steps, revoluteCount) {
     html += '</div>';
     display.innerHTML = html;
 
-    // The status span was just re-created — fill it in
+    // The status span was just re-created - fill it in
     if (typeof renderEndToolPanel === 'function') renderEndToolPanel();
 }
 
@@ -576,7 +576,7 @@ function kinematicsRotationDerivationHtml(s, axis, nonZero, k, rotationClass) {
     }
 
     let html = '<div class="kin-derivation">';
-    html += `<div class="kin-derivation-label">${about} — the 9 rotation entries come from θ:</div>`;
+    html += `<div class="kin-derivation-label">${about} - the 9 rotation entries come from θ:</div>`;
     html += '<table class="kinematics-matrix kin-symbolic"><tbody>';
     for (let r = 0; r < 3; r++) {
         html += '<tr>';
@@ -948,7 +948,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeFileInput();
     initializeStatusUpdates();
     // 3D visualization is initialised lazily when the user first opens the
-    // visualization tab — by then the container has real dimensions and the
+    // visualization tab - by then the container has real dimensions and the
     // Three.js renderer can size itself correctly.
     initializePositions();
     initializeGCodeEditor();
@@ -1077,7 +1077,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // which loads index.html via file://, and not the kiosk build above).
         // This page is always served by the same Pi that runs the WebSocket
         // control server, so the controller address is just this page's own
-        // host — skip the manual "enter the address, click Connect" step.
+        // host - skip the manual "enter the address, click Connect" step.
         const addrInput = document.getElementById('piAddress');
         if (addrInput && window.location.hostname) {
             addrInput.value = window.location.hostname;
@@ -1180,7 +1180,7 @@ function applyEndToolControlVisibility() {
         note = 'Tool type ' + s.toolTypeId + ' is not described in kinematics.urdf, ' +
                'so every control is shown.';
     } else if (!s.tool.controls) {
-        // Tool is known but does not say what it has — do not hide anything
+        // Tool is known but does not say what it has - do not hide anything
         allowed = null;
     } else {
         allowed = s.tool.controls;
@@ -1226,20 +1226,20 @@ function renderEndToolPanel() {
         detailEl.textContent = 'Positions are measured to the bare mount face.' +
             (s.lastError ? ' (' + s.lastError + ')' : '');
     } else if (!s.known) {
-        stateEl.textContent = 'Tool type ' + s.toolTypeId + ' — not in the URDF';
+        stateEl.textContent = 'Tool type ' + s.toolTypeId + ' - not in the URDF';
         stateEl.className = 'end-tool-state end-tool-state-unknown';
         detailEl.textContent = 'The tool reports type ' + s.toolTypeId + ', which kinematics.urdf ' +
             'does not describe. Add an <end_tool id="' + s.toolTypeId + '"/> joint to it. ' +
             'Until then positions are measured to the bare mount face.';
     } else {
         const t = s.tool;
-        stateEl.textContent = t.label + (t.provisional ? ' — length not measured' : '');
+        stateEl.textContent = t.label + (t.provisional ? ' - length not measured' : '');
         stateEl.className = 'end-tool-state ' +
             (t.provisional ? 'end-tool-state-unknown' : 'end-tool-state-known');
         detailEl.textContent = 'Type ' + t.id + ' · ' + t.lengthMm.toFixed(1) + ' mm from the mount face' +
             ' · frame "' + t.jointName + '"' +
             (t.provisional
-                ? ' — this length is a placeholder, so the tip position is only as good as the guess. ' +
+                ? ' - this length is a placeholder, so the tip position is only as good as the guess. ' +
                   'Measure the tool and correct kinematics.urdf.'
                 : '');
     }
@@ -1312,7 +1312,7 @@ function downloadTextFile(filename, text, mimeType) {
  * Appends a line to a log <pre>/<div>, trimming from the front once it
  * passes maxChars. G-code and Blockly programs can log for a long-running
  * or looping job with no natural end, and textContent += with no cap grows
- * without bound — each append also gets slower as the string grows, since
+ * without bound - each append also gets slower as the string grows, since
  * the whole text node is rebuilt every time.
  * @param {HTMLElement} element - Log container (uses textContent)
  * @param {string} line - Text to append (newline added automatically)
@@ -1363,7 +1363,7 @@ function saveProgramFromEditor(options) {
 
     const content = textarea.value;
     if (!content.trim()) {
-        showAppMessage('Nothing to save — the ' + options.label + ' editor is empty.');
+        showAppMessage('Nothing to save - the ' + options.label + ' editor is empty.');
         return;
     }
 
@@ -1396,13 +1396,13 @@ const DEFAULT_BLOCK_PICK_Z_MM = 0;
 /**
  * Saves a detected block's position into a Stored Position slot (0-99).
  * G-code and RAPID have no variables in this app, so a command can't hand a
- * value to a later line — writing to a position slot is the one mechanism
+ * value to a later line - writing to a position slot is the one mechanism
  * all three programming modes (G-code, RAPID, Blockly) can already read
  * from, so it's the common path for all of them here too.
  *
  * Assumes the camera's calibrated world frame (from ArUco corner markers,
  * see camera-vision.py) shares its origin/axes with the robot's own
- * kinematic frame — nothing in this app cross-checks that independently.
+ * kinematic frame - nothing in this app cross-checks that independently.
  * Jog to a known block once and confirm before trusting this for
  * unattended picking.
  *
@@ -1420,14 +1420,14 @@ async function saveDetectedBlockToPositionSlot(blockIndex, slotNumber, zMm) {
         throw new Error('No detected block at index ' + blockIndex);
     }
     if (!block.hasWorldCoords) {
-        throw new Error('Block ' + blockIndex + ' has no world coordinates — ArUco markers must be visible first');
+        throw new Error('Block ' + blockIndex + ' has no world coordinates - ArUco markers must be visible first');
     }
 
     const z = (typeof zMm === 'number' && !isNaN(zMm)) ? zMm : DEFAULT_BLOCK_PICK_Z_MM;
     const xyz = { x: block.worldX, y: block.worldY, z: z };
 
     if (typeof robotKinematics === 'undefined' || !robotKinematics.isConfigured()) {
-        throw new Error('Kinematics not configured — cannot convert block position to joint angles');
+        throw new Error('Kinematics not configured - cannot convert block position to joint angles');
     }
     const currentAngles = lastGoodJointStatus.map(function (j) {
         return (j && typeof j.angleDegrees === 'number') ? j.angleDegrees : 0;
@@ -1847,8 +1847,8 @@ function applyTouchMode() {
     const status = document.getElementById('touchModeStatus');
     if (status) {
         status.textContent = on
-            ? 'Touch sizing is on — controls are at least 44 px.'
-            : 'Touch sizing is off — desktop control sizes.';
+            ? 'Touch sizing is on - controls are at least 44 px.'
+            : 'Touch sizing is off - desktop control sizes.';
     }
 
     return on;
@@ -1959,7 +1959,7 @@ function initializeTabs() {
                 }, 100);
             }
             
-            // Camera tab — start or stop MJPEG stream
+            // Camera tab - start or stop MJPEG stream
             if (targetTab === 'camera') {
                 if (typeof startCameraView === 'function') {
                     setTimeout(startCameraView, 100);
@@ -2195,7 +2195,7 @@ function initializeDeadZones() {
 
 /**
  * Initialises the Kinematics tab (first matrices view; the step cards carry
- * the angle controls — see buildKinematicsStepCards)
+ * the angle controls - see buildKinematicsStepCards)
  */
 function initializeKinematicsTab() {
     refreshKinematicsSourceUi();
@@ -2213,7 +2213,7 @@ function refreshKinematicsSourceUi() {
     if (text) {
         text.textContent = useSimulatedAngles
             ? 'Simulating: type an angle into any step card below and the matrices, XYZ positions and 3D view follow it.'
-            : 'Showing the arm\'s live joint angles — each step below updates in real time as the arm moves. Tick to type your own angles into the step cards instead (shared with the 3D view\'s simulation mode).';
+            : 'Showing the arm\'s live joint angles - each step below updates in real time as the arm moves. Tick to type your own angles into the step cards instead (shared with the 3D view\'s simulation mode).';
     }
     const buttons = document.getElementById('kinematicsSimButtons');
     if (buttons) buttons.style.display = useSimulatedAngles ? '' : 'none';
@@ -2545,7 +2545,7 @@ function initializeConnection() {
                 try {
                     const control = await robotArmClient.takeControl('electron', true);
                     updateArmControlDisplay(control);
-                    showAppMessage('Reconnected — arm control restored');
+                    showAppMessage('Reconnected - arm control restored');
                 } catch (reconnectControlError) {
                     console.warn('Reconnect: could not take arm control:', reconnectControlError.message);
                     await refreshArmControlStatus();
@@ -2571,7 +2571,7 @@ function initializeConnection() {
                     await refreshArmControlStatus();
                 }
             } else {
-                console.log('Kiosk view: read-only — not taking arm control');
+                console.log('Kiosk view: read-only - not taking arm control');
                 await refreshArmControlStatus();
                 showAppMessage('Connected (read-only): kiosk view does not take arm control');
             }
@@ -2726,11 +2726,11 @@ function formatServerDiagnosticsText(diag) {
 
     const lines = [];
     lines.push('Bus tick target period: ' + (diag.busTickIntervalMs || '?') + ' ms');
-    lines.push('Cache age (oldest joint): ' + (diag.cacheAgeMs != null ? diag.cacheAgeMs + ' ms' : '—'));
+    lines.push('Cache age (oldest joint): ' + (diag.cacheAgeMs != null ? diag.cacheAgeMs + ' ms' : ' - '));
     lines.push('Write queue depth: ' + (diag.busWriteQueueLength != null ? diag.busWriteQueueLength : 0));
-    lines.push('Last tick duration: ' + (diag.lastBusTickDurationMs != null ? diag.lastBusTickDurationMs + ' ms' : '—'));
-    lines.push('Last joint read: ' + (diag.lastStatusPollDurationMs != null ? diag.lastStatusPollDurationMs + ' ms' : '—'));
-    lines.push('Status round-robin index: ' + (diag.statusPollJointIndex != null ? diag.statusPollJointIndex : '—'));
+    lines.push('Last tick duration: ' + (diag.lastBusTickDurationMs != null ? diag.lastBusTickDurationMs + ' ms' : ' - '));
+    lines.push('Last joint read: ' + (diag.lastStatusPollDurationMs != null ? diag.lastStatusPollDurationMs + ' ms' : ' - '));
+    lines.push('Status round-robin index: ' + (diag.statusPollJointIndex != null ? diag.statusPollJointIndex : ' - '));
     lines.push('Ticks: ' + (diag.busTicks || 0) + ' (skipped ' + (diag.busTicksSkipped || 0) + ')');
     lines.push('Server build: ' + (diag.buildId || 'unknown'));
     if (robotArmClient.lastStatusPushAt > 0) {
@@ -2739,9 +2739,9 @@ function formatServerDiagnosticsText(diag) {
         lines.push('Last status push from server: never');
     }
     lines.push('Server push mode: ' + (robotArmClient.serverPushesStatus ? 'yes' : 'no (fallback poll)'));
-    lines.push('Moves completed: ' + (diag.busMovesCompleted != null ? diag.busMovesCompleted : '—'));
-    lines.push('Immediate bus commands: ' + (diag.immediateBusCommands != null ? diag.immediateBusCommands : '—'));
-    lines.push('Write timeouts: ' + (diag.writeTimeouts != null ? diag.writeTimeouts : '—'));
+    lines.push('Moves completed: ' + (diag.busMovesCompleted != null ? diag.busMovesCompleted : ' - '));
+    lines.push('Immediate bus commands: ' + (diag.immediateBusCommands != null ? diag.immediateBusCommands : ' - '));
+    lines.push('Write timeouts: ' + (diag.writeTimeouts != null ? diag.writeTimeouts : ' - '));
     lines.push('Bus commands done / failed / rejected: ' +
         (diag.busWritesCompleted || 0) + ' / ' +
         (diag.busWritesFailed || 0) + ' / ' +
@@ -2887,7 +2887,7 @@ function updateArmControlDisplay(controlInfo) {
     );
 
     if (!robotArmClient.isConnected) {
-        text.textContent = 'Control: —';
+        text.textContent = 'Control: - ';
         indicator.classList.add('control-unknown');
         if (releaseButton) {
             releaseButton.style.display = 'none';
@@ -2961,7 +2961,7 @@ function updateTakeControlButtonState() {
         }
     }
 
-    // Commissioning writes/reads are bus commands like moves — they need this
+    // Commissioning writes/reads are bus commands like moves - they need this
     // app to hold arm control, same requirement as the buttons above.
     const commissionButtonIds = ['commissionAllButton', 'calibrationReadButton', 'posCorrectionUpButton', 'posCorrectionDownButton'];
     const commissionEnabled = robotArmClient.isConnected && robotArmClient.hasArmControl;
@@ -3029,7 +3029,7 @@ async function requestArmControl() {
                 showAppMessage('You have arm control.');
             }
         } else {
-            showAppMessage(info && info.message ? info.message : ('Could not take control — held by ' + formatControlHolderLabel(info)));
+            showAppMessage(info && info.message ? info.message : ('Could not take control - held by ' + formatControlHolderLabel(info)));
         }
     } catch (error) {
         showAppMessage('Take control failed: ' + error.message);
@@ -3037,7 +3037,7 @@ async function requestArmControl() {
 }
 
 /**
- * Take control (if free) and lock it exclusively — see index.html "Lock control".
+ * Take control (if free) and lock it exclusively - see index.html "Lock control".
  */
 async function lockArmControl() {
     if (!robotArmClient.isConnected) {
@@ -3305,7 +3305,7 @@ function updateJointStatus(joints) {
         const torqueElement = document.getElementById(`joint${jointNumber}Torque`);
         if (torqueElement) {
             if (readUnknown) {
-                // Servo not responding to reads and no cached data — show '?' in amber
+                // Servo not responding to reads and no cached data - show '?' in amber
                 // so the user knows it's a communication problem, not that torque is off.
                 torqueElement.textContent = '?';
                 torqueElement.style.color = '#f39c12';
@@ -3386,7 +3386,7 @@ function moveJoint(jointNumber) {
     }
 
     if (!robotArmClient.hasArmControl) {
-        showAppMessage('Read-only — use Take control on the Connection tab first');
+        showAppMessage('Read-only - use Take control on the Connection tab first');
         return;
     }
     
@@ -3503,7 +3503,7 @@ function applyJointAcceleration(jointNumber) {
         return;
     }
     if (!robotArmClient.hasArmControl) {
-        showAppMessage('Read-only — use Take control on the Connection tab first');
+        showAppMessage('Read-only - use Take control on the Connection tab first');
         return;
     }
     const accelerationInputElement = document.getElementById(`joint${jointNumber}Acceleration`);
@@ -3515,7 +3515,7 @@ function applyJointAcceleration(jointNumber) {
         return;
     }
 
-    // setAcceleration is fire-and-forget (sendCommand), not a Promise — no .catch to chain.
+    // setAcceleration is fire-and-forget (sendCommand), not a Promise - no .catch to chain.
     robotArmClient.setAcceleration(jointNumber, acc);
 }
 
@@ -3524,7 +3524,7 @@ function applyJointAcceleration(jointNumber) {
  * register is sticky (survives independently of what the UI shows) and is
  * otherwise only written when a user manually edits an Accel field, so a
  * servo that has never had it touched runs with whatever acceleration it last
- * had — including 0, which some Feetech firmware treats as no ramp at all,
+ * had - including 0, which some Feetech firmware treats as no ramp at all,
  * jumping straight to goal speed. Called once per control session (see
  * accelerationDefaultsSynced in updateArmControlDisplay) so jog/moves always
  * start from a known acceleration rather than leftover servo state.
@@ -3569,12 +3569,12 @@ async function homeAllJoints() {
     }
 
     if (!robotArmClient.hasArmControl) {
-        showAppMessage('Read-only — use Take control on the Connection tab first');
+        showAppMessage('Read-only - use Take control on the Connection tab first');
         return;
     }
 
     if (homingInProgress) {
-        showAppMessage('Homing already in progress — please wait');
+        showAppMessage('Homing already in progress - please wait');
         return;
     }
     homingInProgress = true;
@@ -3631,7 +3631,7 @@ async function homeAllJoints() {
     if (homedCount > 0) parts.push('Homed ' + homedCount + ' joint(s)');
     if (skippedJoints.length > 0) parts.push('unavailable: ' + skippedJoints.join(', '));
     if (faultedJoints.length > 0) parts.push('faulted: ' + faultedJoints.join('; '));
-    showAppMessage(parts.join(' — ') || 'No joints homed');
+    showAppMessage(parts.join(' - ') || 'No joints homed');
 }
 
 /**
@@ -3882,7 +3882,7 @@ function quickMove(jointNumber, direction) {
     }
 
     if (!robotArmClient.hasArmControl) {
-        showAppMessage('Read-only — use Take control on the Connection tab first');
+        showAppMessage('Read-only - use Take control on the Connection tab first');
         return;
     }
     
@@ -4104,7 +4104,7 @@ function getCurrentDisplayXYZ() {
  * Moves the end effector to the specified XYZ position.
  * When called with no arguments the target is read from the #targetX/Y/Z inputs.
  * Pass explicit x, y, z numbers to bypass the DOM reads (used by quickMoveXYZ).
- * orientationOverride: optional {x,y,z} unit vector — if provided, overrides currentToolOrientation for this move only.
+ * orientationOverride: optional {x,y,z} unit vector - if provided, overrides currentToolOrientation for this move only.
  * skipRefinement: if true, skip refineOrientationWithAccuracy and use IK base result directly (better for jogging).
  */
 async function moveToXYZ(xArg, yArg, zArg, orientationOverride, skipRefinement) {
@@ -4207,7 +4207,7 @@ async function moveToXYZ(xArg, yArg, zArg, orientationOverride, skipRefinement) 
             baseAngles = robotKinematics.inverseKinematics(
                 // Jog moves: position-only (orientation preserved by warm-start from current angles).
                 // Deliberate moves: pass orientation so the IK gradient converges on both.
-                // refineOrientationWithAccuracy is NOT called — diagnostic showed it consistently
+                // refineOrientationWithAccuracy is NOT called - diagnostic showed it consistently
                 // produces worse results by forcing J5 to its limit.
                 skipRefinement
                     ? { x: wp.x, y: wp.y, z: wp.z }
@@ -4230,7 +4230,7 @@ async function moveToXYZ(xArg, yArg, zArg, orientationOverride, skipRefinement) 
             console.log(`IK commanded angles: ${jointAngles.map((a, i) => `J${i+1}:${a.toFixed(2)}°`).join(', ')}`);
             // Verify what position the IK thinks those angles achieve
             const ikFkCheck = robotKinematics.forwardKinematics(jointAngles);
-            console.log(`IK FK verify — target: X:${wp.x.toFixed(2)} Y:${wp.y.toFixed(2)} Z:${wp.z.toFixed(2)} | IK result: X:${ikFkCheck.position.x.toFixed(2)} Y:${ikFkCheck.position.y.toFixed(2)} Z:${ikFkCheck.position.z.toFixed(2)}`);
+            console.log(`IK FK verify - target: X:${wp.x.toFixed(2)} Y:${wp.y.toFixed(2)} Z:${wp.z.toFixed(2)} | IK result: X:${ikFkCheck.position.x.toFixed(2)} Y:${ikFkCheck.position.y.toFixed(2)} Z:${ikFkCheck.position.z.toFixed(2)}`);
 
             // Dispatch all joints simultaneously with proportional speeds so they arrive together.
             const defaultStepsPerSec = typeof degreesPerSecondToStepsPerSecond === 'function'
@@ -4243,7 +4243,7 @@ async function moveToXYZ(xArg, yArg, zArg, orientationOverride, skipRefinement) 
             await Promise.allSettled(xyzMovePromises);
             await robotArmClient.waitForMotionComplete(30000);
 
-            // Log actual servo angles vs commanded — reveals whether servos reached target
+            // Log actual servo angles vs commanded - reveals whether servos reached target
             if (Array.isArray(lastGoodJointStatus) && lastGoodJointStatus.length > 0) {
                 const actualAngles = lastGoodJointStatus.map(j => (j && typeof j.angleDegrees === 'number') ? j.angleDegrees : 0);
                 const actualFk = robotKinematics.forwardKinematics(actualAngles);
@@ -4295,7 +4295,7 @@ async function quickMoveXYZ(axis, direction) {
     const stepSizeInput = document.getElementById('xyzStepSize');
     const stepSize = parseFloat(stepSizeInput?.value || '5');
 
-    // Step the commanded pose exactly — no readback drift.
+    // Step the commanded pose exactly - no readback drift.
     jogCommandedPose = {
         x: jogCommandedPose.x + (axis === 'X' ? direction * stepSize : 0),
         y: jogCommandedPose.y + (axis === 'Y' ? direction * stepSize : 0),
@@ -4335,7 +4335,7 @@ function pendantSetOrientation(mode) {
     const updateDisplay = () => {
         if (!display) return;
         if (!currentToolOrientation) {
-            display.textContent = 'Free — all 6 joints used for positioning; spin drives joint 6 directly';
+            display.textContent = 'Free - all 6 joints used for positioning; spin drives joint 6 directly';
             display.style.color = '';
             display.style.fontStyle = 'italic';
             display.style.fontWeight = '';
@@ -4352,7 +4352,7 @@ function pendantSetOrientation(mode) {
         currentToolOrientation = null;
         updateButtonStates('free');
         updateDisplay();
-        showAppMessage('Orientation unlocked — all joints free for XYZ positioning');
+        showAppMessage('Orientation unlocked - all joints free for XYZ positioning');
     } else if (mode === 'down') {
         const rot = getRotation();
         currentToolOrientation = { x: 0, y: 0, z: -1, rotation: rot };
@@ -4907,7 +4907,7 @@ function computeCoordinatedSpeeds(currentAngles, targetAngles, baseStepsPerSecon
         return [];
     }
     // If current position is unknown, scaling would use wrong reference angles and produce
-    // wildly incorrect speed ratios — fall back to uniform speed so all joints move
+    // wildly incorrect speed ratios - fall back to uniform speed so all joints move
     // independently at the same rate rather than desynchronising.
     if (!Array.isArray(currentAngles) || currentAngles.length === 0) {
         return targetAngles.map(() => Math.max(baseStepsPerSecond, 50));
@@ -5012,7 +5012,7 @@ function insertApproachWaypoints(waypoints, startPose) {
 
 /**
  * Moves to a taught set of joint angles (a stored position). This is THE
- * stored-position move — the pendant, Blockly, G-code and RAPID all call it,
+ * stored-position move - the pendant, Blockly, G-code and RAPID all call it,
  * so they behave identically:
  *
  *  - Dead zones: every leg travels via moveJointsToAnglesWithDeadZones, which
@@ -5020,7 +5020,7 @@ function insertApproachWaypoints(waypoints, startPose) {
  *    re-routes up-and-over as a Cartesian path (see planSafePathAroundDeadZones).
  *    A target whose tool tip sits inside a dead zone is refused.
  *  - Approach from above: if the target tip is lower than the current tip by
- *    at least APPROACH_MIN_DESCENT_MM, the move is split — travel at
+ *    at least APPROACH_MIN_DESCENT_MM, the move is split - travel at
  *    speedDegreesPerSecond to a point APPROACH_HEIGHT_MM above the target
  *    (solved by IK, same tool direction and spin, seeded from the target so
  *    the arm keeps its configuration), a settle pause, then the last stretch
@@ -5202,7 +5202,7 @@ async function moveJointsToAnglesWithDeadZones(targetAngles, speedDegreesPerSeco
     const intersects = await jointPathIntersectsDeadZone(currentAngles, tgt, deadZones, 40);
 
     if (!intersects) {
-        // Straight joint-space move is safe — scale speeds so all joints arrive together
+        // Straight joint-space move is safe - scale speeds so all joints arrive together
         const safeSpeeds = computeCoordinatedSpeeds(currentAngles, tgt, speedStepsPerSecond);
         const safePromises = [];
         for (let i = 0; i < numJoints; i++) {
@@ -5665,13 +5665,13 @@ async function executeGCodeCommand(command) {
             // Get speed from F parameter (feed rate) - F parameter is in degrees/s
             const speedDegreesPerSecond = command.params.F || 40; // Default speed in degrees/s
 
-            // Resolve to joint angles — works whether the position was saved as
+            // Resolve to joint angles - works whether the position was saved as
             // angles or as an XYZ tool-tip target (resolved via IK for the
             // currently active tool in the latter case).
             const targetAngles = resolvePositionToAngles(position);
             if (!targetAngles) {
                 gcodeProcessor.log(`Error: Stored position ${positionNumber} (${positionLabel}) could not be resolved to joint angles` +
-                    (position.type === 'xyz' ? ' — XYZ target may be unreachable with the current tool.' : ' — no joint angles saved.'));
+                    (position.type === 'xyz' ? ' - XYZ target may be unreachable with the current tool.' : ' - no joint angles saved.'));
                 return;
             }
 
@@ -5732,7 +5732,7 @@ async function executeGCodeCommand(command) {
         // Optional orientation vector (I, J, K) for the tool's Z-axis, plus an
         // optional spin rotation R in degrees. Combined with X/Y/Z it applies
         // to that move; on its own it turns the tool in place right now (F in
-        // deg/s, default 90) — the same behaviour as the Blockly block and
+        // deg/s, default 90) - the same behaviour as the Blockly block and
         // RAPID's SetToolOri.
         const hasOrientation = typeof command.params.I === 'number' ||
             typeof command.params.J === 'number' ||
@@ -5745,7 +5745,7 @@ async function executeGCodeCommand(command) {
             setToolOrientationVector(oriX, oriY, oriZ, rot);
             if (command.params.X === undefined && command.params.Y === undefined && command.params.Z === undefined) {
                 const degPerSec = (typeof command.params.F === 'number' && command.params.F > 0) ? command.params.F : 90;
-                gcodeProcessor.log(`Tool orientation (${oriX}, ${oriY}, ${oriZ})${rot !== undefined ? ` rotation ${rot}°` : ''} — turning tool in place at ${degPerSec} deg/s`);
+                gcodeProcessor.log(`Tool orientation (${oriX}, ${oriY}, ${oriZ})${rot !== undefined ? ` rotation ${rot}°` : ''} - turning tool in place at ${degPerSec} deg/s`);
                 await applyToolOrientationInPlace(degreesPerSecondToStepsPerSecond(degPerSec), (m) => gcodeProcessor.log(m));
                 return;
             }
@@ -6053,7 +6053,7 @@ async function executeGCodeCommand(command) {
                     gcodeProcessor.log(`M780: ${count} block(s) detected`);
                 }
             } catch (e) {
-                gcodeProcessor.log(`M780: vision error — ${e.message}`);
+                gcodeProcessor.log(`M780: vision error - ${e.message}`);
             }
         } else if (command.code === 'M782' || command.code === 'M783') {
             // M782 P<block index> V<n> = store detected block's world X (mm) in #n
@@ -6071,7 +6071,7 @@ async function executeGCodeCommand(command) {
                     gcodeProcessor.log(`${command.code}: block ${Math.round(idx)} ${command.code === 'M782' ? 'X' : 'Y'} = ${value.toFixed(1)} mm → #${Math.round(varNumber)}`);
                 } catch (e) {
                     gcodeProcessor.log(`${command.code}: ${e.message}`);
-                    throw e; // stop the program — a move using this value would go somewhere wrong
+                    throw e; // stop the program - a move using this value would go somewhere wrong
                 }
             }
         } else if (command.code === 'M781') {
@@ -6086,7 +6086,7 @@ async function executeGCodeCommand(command) {
             } else {
                 try {
                     const result = await saveDetectedBlockToPositionSlot(idx, slot, z);
-                    gcodeProcessor.log(`M781: block ${idx} (${result.block.color}) saved to position ${slot} — X${result.xyz.x} Y${result.xyz.y} Z${result.xyz.z}`);
+                    gcodeProcessor.log(`M781: block ${idx} (${result.block.color}) saved to position ${slot} - X${result.xyz.x} Y${result.xyz.y} Z${result.xyz.z}`);
                 } catch (e) {
                     gcodeProcessor.log(`M781: ${e.message}`);
                 }
@@ -6158,7 +6158,7 @@ async function parseRapidMoveJ(line) {
         return null;
     }
 
-    // Basic format: MoveJ [[a,b,c,d,e]];  — each entry may be an expression
+    // Basic format: MoveJ [[a,b,c,d,e]]; - each entry may be an expression
     const moveMatch = line.match(/MoveJ\s*\[\s*\[\s*([^\]]+)\s*\]\s*\]/i);
     if (!moveMatch) {
         return null;
@@ -6269,7 +6269,7 @@ async function runRapidProgram() {
     }
 
     if (rapidProcessor.isRunning) {
-        showAppMessage('A RAPID program is already running — press Stop first.');
+        showAppMessage('A RAPID program is already running - press Stop first.');
         return;
     }
 
@@ -6441,7 +6441,7 @@ async function executeRapidCommand(stmt) {
             return;
         }
 
-        // MoveLXYZ — linear Cartesian if mode is 'linear' and we have control
+        // MoveLXYZ - linear Cartesian if mode is 'linear' and we have control
         if (movementMode === 'linear' && robotArmClient.hasArmControl) {
             let prevRapidAngles = null;
             try {
@@ -6505,7 +6505,7 @@ async function executeRapidCommand(stmt) {
                 break;
             }
 
-            // `jointAngles` now contains the final IK solution — dispatch at the
+            // `jointAngles` now contains the final IK solution - dispatch at the
             // requested tool-tip speed (mm/s) with all joints arriving together.
             const segStart = w === 0 ? startPose : waypointsRapid[w - 1];
             const segMm = Math.hypot(wp.x - segStart.x, wp.y - segStart.y, wp.z - segStart.z);
@@ -6605,7 +6605,7 @@ async function executeRapidCommand(stmt) {
                 break;
             }
 
-            // `jointAngles2` now contains the final IK solution — dispatch at the
+            // `jointAngles2` now contains the final IK solution - dispatch at the
             // requested tool-tip speed (mm/s) with all joints arriving together.
             const segStart2 = w === 0 ? startPoseRapid : waypointsRapidOffs[w - 1];
             const segMm2 = Math.hypot(wp.x - segStart2.x, wp.y - segStart2.y, wp.z - segStart2.z);
@@ -6674,7 +6674,7 @@ async function executeRapidCommand(stmt) {
             console.warn('RAPID: Could not parse SetDO on line', lineNumber, ':', line);
         }
     } else if (/^Home\b/i.test(line)) {
-        // Home; is a MoveAbsJ to all zeros — dead-zone aware like every other move
+        // Home; is a MoveAbsJ to all zeros - dead-zone aware like every other move
         console.log('RAPID: Home on line', lineNumber);
         await moveJointsToAnglesWithDeadZones(new Array(numJoints).fill(0), speedDegreesPerSecond);
     } else if (/^GripperOpen\b/i.test(line)) {
@@ -6707,7 +6707,7 @@ async function executeRapidCommand(stmt) {
             const count = await getDetectedBlockCount();
             rapidProcessor.log(`${count} block(s) detected`);
         } catch (e) {
-            rapidProcessor.log('GetBlockCount failed — ' + e.message);
+            rapidProcessor.log('GetBlockCount failed - ' + e.message);
         }
     } else if (/^SaveBlockToPos\b/i.test(line)) {
         // SaveBlockToPos <index>, <slot>[, <zmm>];  (arguments may be expressions)
@@ -6722,7 +6722,7 @@ async function executeRapidCommand(stmt) {
                 const result = await saveDetectedBlockToPositionSlot(idx, slot, z);
                 rapidProcessor.log(`block ${idx} (${result.block.color}) saved to position ${slot}`);
             } catch (e) {
-                throw new Error(`Line ${lineNumber}: SaveBlockToPos failed — ${e.message}`);
+                throw new Error(`Line ${lineNumber}: SaveBlockToPos failed - ${e.message}`);
             }
         } else {
             throw new Error(`Line ${lineNumber}: SaveBlockToPos needs "SaveBlockToPos <index>, <slot>[, <z mm>]"`);
@@ -6741,18 +6741,18 @@ async function executeRapidCommand(stmt) {
             console.warn('RAPID: ServoTo missing angle on line', lineNumber);
         }
     } else if (/^MoveToPos\b/i.test(line)) {
-        // MoveToPos <slot>[, v<deg/s>];  — move to a Stored Position (0-99)
+        // MoveToPos <slot>[, v<deg/s>]; - move to a Stored Position (0-99)
         const m = line.match(/^MoveToPos\s+(.+?)(?:\s*,\s*v\s*\d+(?:\.\d+)?)?\s*$/i);
         const slot = m ? Math.round(await rapidProcessor.evaluate(m[1])) : NaN;
         const speedMatch = line.match(/,\s*v\s*(\d+(?:\.\d+)?)\s*$/i);
         const posSpeed = speedMatch ? parseFloat(speedMatch[1]) : RAPID_DEFAULT_JOINT_DEG_PER_SEC;
         const position = (isFinite(slot) && typeof getPosition === 'function') ? getPosition(slot) : null;
         if (!position) {
-            throw new Error(`Line ${lineNumber}: MoveToPos — stored position ${isFinite(slot) ? slot : '?'} not found`);
+            throw new Error(`Line ${lineNumber}: MoveToPos - stored position ${isFinite(slot) ? slot : '?'} not found`);
         }
         const targetAngles = resolvePositionToAngles(position);
         if (!targetAngles) {
-            throw new Error(`Line ${lineNumber}: MoveToPos — stored position ${slot} could not be resolved to joint angles`);
+            throw new Error(`Line ${lineNumber}: MoveToPos - stored position ${slot} could not be resolved to joint angles`);
         }
         console.log('RAPID: MoveToPos', slot, 'on line', lineNumber, 'at', posSpeed, 'deg/s');
         let currentAnglesForApproach = null;
@@ -6762,12 +6762,12 @@ async function executeRapidCommand(stmt) {
         } catch (e) { currentAnglesForApproach = null; }
         await moveToStoredAnglesWithApproach(currentAnglesForApproach, targetAngles, posSpeed, function (m) { rapidProcessor.log(m); });
     } else if (/^MoveJoint\b/i.test(line)) {
-        // MoveJoint <joint>, <angle>[, v<deg/s>];  — move one joint, leave the rest
+        // MoveJoint <joint>, <angle>[, v<deg/s>]; - move one joint, leave the rest
         const m = line.match(/^MoveJoint\s+(.+?)\s*,\s*(.+?)(?:\s*,\s*v\s*\d+(?:\.\d+)?)?\s*$/i);
         if (!m) throw new Error(`Line ${lineNumber}: MoveJoint needs "MoveJoint <joint>, <angle>[, v<deg/s>]"`);
         const joint = Math.round(await rapidProcessor.evaluate(m[1]));
         const angle = await rapidProcessor.evaluate(m[2]);
-        if (joint < 1 || joint > numJoints) throw new Error(`Line ${lineNumber}: MoveJoint — joint ${joint} is out of range`);
+        if (joint < 1 || joint > numJoints) throw new Error(`Line ${lineNumber}: MoveJoint - joint ${joint} is out of range`);
         const speedMatch = line.match(/,\s*v\s*(\d+(?:\.\d+)?)\s*$/i);
         const jointSpeed = speedMatch ? parseFloat(speedMatch[1]) : RAPID_DEFAULT_JOINT_DEG_PER_SEC;
         console.log('RAPID: MoveJoint', joint, 'to', angle, 'at', jointSpeed, 'deg/s on line', lineNumber);
@@ -6784,11 +6784,11 @@ async function executeRapidCommand(stmt) {
         if (!m) throw new Error(`Line ${lineNumber}: SetAcc needs "SetAcc <joint>, <0-254>"`);
         const joint = Math.round(await rapidProcessor.evaluate(m[1]));
         const accel = Math.max(0, Math.min(254, Math.round(await rapidProcessor.evaluate(m[2]))));
-        if (joint < 1 || joint > numJoints) throw new Error(`Line ${lineNumber}: SetAcc — joint ${joint} is out of range`);
+        if (joint < 1 || joint > numJoints) throw new Error(`Line ${lineNumber}: SetAcc - joint ${joint} is out of range`);
         console.log('RAPID: SetAcc joint', joint, 'to', accel, 'on line', lineNumber);
         robotArmClient.setAcceleration(joint, accel);
     } else {
-        throw new Error(`Line ${lineNumber}: unsupported command "${stmt.keyword}" — see the RAPID cheat sheet`);
+        throw new Error(`Line ${lineNumber}: unsupported command "${stmt.keyword}" - see the RAPID cheat sheet`);
     }
 }
 
@@ -7413,7 +7413,7 @@ const DEFAULT_URDF = `<?xml version="1.0"?>
   <!-- ================= END TOOLS =================
        One fixed joint per end tool, from tool_link (the mount face) to that
        tool's own TCP frame. The id on <end_tool> is the value the ESP32 end
-       tool reports in register 3 (servo ID 64) — the Pi reads that register
+       tool reports in register 3 (servo ID 64) - the Pi reads that register
        and applies the matching joint below, so the reported tool tip and the
        IK target are the real working point of whatever is fitted.
 
@@ -7439,7 +7439,7 @@ const DEFAULT_URDF = `<?xml version="1.0"?>
   <link name="tcp_servo"/>
   <link name="tcp_pen"/>
 
-  <!-- 0 — nothing fitted: the TCP is the mount face itself -->
+  <!-- 0 - nothing fitted: the TCP is the mount face itself -->
   <joint name="tool_unassigned" type="fixed">
     <parent link="tool_link"/>
     <child link="tcp_unassigned"/>
@@ -7447,7 +7447,7 @@ const DEFAULT_URDF = `<?xml version="1.0"?>
     <end_tool id="0" label="Unassigned" controls=""/>
   </joint>
 
-  <!-- 1 — pneumatic vacuum and valve: TCP is the face of the suction cup.
+  <!-- 1 - pneumatic vacuum and valve: TCP is the face of the suction cup.
        140.62 mm, measured. -->
   <joint name="tool_vacuum" type="fixed">
     <parent link="tool_link"/>
@@ -7456,7 +7456,7 @@ const DEFAULT_URDF = `<?xml version="1.0"?>
     <end_tool id="1" label="Pneumatic vacuum and valve" controls="pump,solenoid"/>
   </joint>
 
-  <!-- 2 — servo gripper: TCP is the midpoint between the closed fingers.
+  <!-- 2 - servo gripper: TCP is the midpoint between the closed fingers.
        152.19 mm, measured. -->
   <joint name="tool_servo" type="fixed">
     <parent link="tool_link"/>
@@ -7465,7 +7465,7 @@ const DEFAULT_URDF = `<?xml version="1.0"?>
     <end_tool id="2" label="Servo motor" controls="servo"/>
   </joint>
 
-  <!-- 3 — pen: TCP is the writing tip, with the pen retracted.
+  <!-- 3 - pen: TCP is the writing tip, with the pen retracted.
        NOT MEASURED. 155 mm is a deliberate overestimate: a tool set longer
        than it really is stops short of the work, while one set too short
        drives the tip into it. provisional="true" makes the app say so.
@@ -7617,7 +7617,7 @@ async function applyLoadedUrdf(urdfText, source) {
 
     // initializeKinematicsTab() runs at startup before this (async) load
     // finishes, so its one-shot updateKinematicsMatrices() call shows
-    // "Kinematics not configured" and nothing refreshes it afterward —
+    // "Kinematics not configured" and nothing refreshes it afterward -
     // refresh it now that kinematics is actually configured.
     if (typeof updateKinematicsMatrices === 'function') {
         updateKinematicsMatrices(Array(robotKinematics.getJointCount()).fill(0));
@@ -8912,19 +8912,19 @@ function moveEndToolServoTo(angle) {
 
 function moveEndToolServo(angle) {
     if (!robotArmClient.isConnected) { showAppMessage('Not connected'); return; }
-    if (!robotArmClient.hasArmControl) { showAppMessage('Read-only — use Take control on the Connection tab first'); return; }
+    if (!robotArmClient.hasArmControl) { showAppMessage('Read-only - use Take control on the Connection tab first'); return; }
     const a = Math.round(Number(angle));
     robotArmClient.sendRequest('toolSetServoEnabledAndAngle', { angle: a })
         .then(() => {
             const stateEl = document.getElementById('endToolServoStateText');
-            if (stateEl) stateEl.textContent = 'Enabled — ' + a + '°';
+            if (stateEl) stateEl.textContent = 'Enabled - ' + a + '°';
         })
         .catch(err => showAppMessage('End tool servo: ' + err.message));
 }
 
 function setEndToolServoEnabled(enabled) {
     if (!robotArmClient.isConnected) { showAppMessage('Not connected'); return; }
-    if (!robotArmClient.hasArmControl) { showAppMessage('Read-only — use Take control on the Connection tab first'); return; }
+    if (!robotArmClient.hasArmControl) { showAppMessage('Read-only - use Take control on the Connection tab first'); return; }
     robotArmClient.sendCommand('toolSetServoEnabled', { enabled });
     const stateEl = document.getElementById('endToolServoStateText');
     if (stateEl) stateEl.textContent = enabled ? 'Enabled' : 'Disabled';
@@ -8949,7 +8949,7 @@ function readEndToolServoState() {
     robotArmClient.sendRequest('toolGetServoState', {})
         .then(resp => {
             const stateEl = document.getElementById('endToolServoStateText');
-            if (stateEl) stateEl.textContent = (resp.enabled ? 'Enabled' : 'Disabled') + ' — ' + (resp.currentAngle || 0) + '°';
+            if (stateEl) stateEl.textContent = (resp.enabled ? 'Enabled' : 'Disabled') + ' - ' + (resp.currentAngle || 0) + '°';
             const slider = document.getElementById('endToolServoSlider');
             if (slider && resp.currentAngle !== undefined) {
                 slider.value = resp.currentAngle;
@@ -8983,7 +8983,7 @@ function updateEndToolPneumaticButtonsState() {
 
 function setEndToolPumpEnabled(enabled) {
     if (!robotArmClient.isConnected) { showAppMessage('Not connected'); return; }
-    if (!robotArmClient.hasArmControl) { showAppMessage('Read-only — use Take control on the Connection tab first'); return; }
+    if (!robotArmClient.hasArmControl) { showAppMessage('Read-only - use Take control on the Connection tab first'); return; }
     endToolPwmState.pwm1Duty = enabled ? 80 : 0;
     endToolPwmState.enable1 = enabled;
     sendEndToolPwm();
@@ -8997,7 +8997,7 @@ function setEndToolPumpEnabled(enabled) {
 
 function setEndToolSolenoidEnabled(enabled) {
     if (!robotArmClient.isConnected) { showAppMessage('Not connected'); return; }
-    if (!robotArmClient.hasArmControl) { showAppMessage('Read-only — use Take control on the Connection tab first'); return; }
+    if (!robotArmClient.hasArmControl) { showAppMessage('Read-only - use Take control on the Connection tab first'); return; }
     endToolPwmState.pwm2Duty = enabled ? 255 : 0;
     endToolPwmState.enable2 = enabled;
     sendEndToolPwm();
@@ -9053,7 +9053,7 @@ function pollEndToolCurrents() {
         .catch(() => {
             endToolCurrentPollFailures++;
             if (endToolCurrentPollFailures >= END_TOOL_POLL_MAX_FAILURES) {
-                // End tool not responding — stop the 1 Hz poll to avoid flooding the bus queue.
+                // End tool not responding - stop the 1 Hz poll to avoid flooding the bus queue.
                 // Retry after a longer delay.
                 clearInterval(endToolCurrentPollInterval);
                 endToolCurrentPollInterval = null;

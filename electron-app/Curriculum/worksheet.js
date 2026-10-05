@@ -5,7 +5,7 @@
  *   worksheets without making any network requests (works for file:// too)
  * - Adds a "Print worksheet" button to each worksheet card
  *
- * Keep this file simple and readable — no advanced patterns.
+ * Keep this file simple and readable - no advanced patterns.
  */
 (function () {
   // Find every worksheet on this page
@@ -79,7 +79,7 @@
     }
   });
 
-  // Save an HTML snapshot now that fields are populated — the index page reads
+  // Save an HTML snapshot now that fields are populated - the index page reads
   // these snapshots for "Print All Worksheets" without needing any network requests.
   updateHtmlSnapshot();
 

@@ -5,7 +5,7 @@
     </marker>
   </defs>
   <rect width="580" height="380" fill="#f8fafc" rx="8"/>
-  <text x="290" y="24" text-anchor="middle" font-size="15" font-weight="700" fill="#1e293b">Servo Telemetry — Example Data Log</text>
+  <text x="290" y="24" text-anchor="middle" font-size="15" font-weight="700" fill="#1e293b">Servo Telemetry - Example Data Log</text>
   <text x="290" y="40" text-anchor="middle" font-size="11" fill="#64748b">Temperature and Load % vs time during a 30-minute continuous run</text>
 
   <!-- Chart area -->
@@ -82,5 +82,5 @@
   <text x="358" y="132" font-size="9" fill="#ef4444">Approaching</text>
   <text x="358" y="143" font-size="9" fill="#ef4444">warning temp</text>
 
-  <text x="290" y="350" text-anchor="middle" font-size="10" fill="#64748b">Above ~70°C the ST3215 servo begins current-limiting to protect itself — plan duty cycles accordingly</text>
+  <text x="290" y="350" text-anchor="middle" font-size="10" fill="#64748b">Above ~70°C the ST3215 servo begins current-limiting to protect itself - plan duty cycles accordingly</text>
 </svg>

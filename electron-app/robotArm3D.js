@@ -14,7 +14,7 @@ class RobotArm3D {
         this.scene = null;
         this.camera = null;
         this.renderer = null;
-        // 'perspective' or 'orthographic' — see setCameraProjection()
+        // 'perspective' or 'orthographic' - see setCameraProjection()
         this.cameraMode = 'perspective';
         // Orthographic camera's half-height (world units), kept so
         // onWindowResize() can recompute left/right on an aspect change
@@ -87,7 +87,7 @@ class RobotArm3D {
         if (width === 0 || height === 0) {
             this._initRetries = (this._initRetries || 0) + 1;
             if (this._initRetries > 60) {
-                // Give up after ~6 s — container never became visible
+                // Give up after ~6 s - container never became visible
                 console.warn('3D visualization: container never became visible, giving up');
                 return;
             }
@@ -112,7 +112,7 @@ class RobotArm3D {
         this.camera.position.set(300, 300, 300);
         this.camera.lookAt(this.cameraTarget);
 
-        // Create renderer — try with antialias first, fall back if context creation fails
+        // Create renderer - try with antialias first, fall back if context creation fails
         let rendererCreated = false;
         const rendererOptions = [
             { antialias: true },
@@ -125,7 +125,7 @@ class RobotArm3D {
                 rendererCreated = true;
                 break;
             } catch (e) {
-                console.warn('WebGL renderer failed with options', JSON.stringify(opts), '—', e.message);
+                console.warn('WebGL renderer failed with options', JSON.stringify(opts), ' - ', e.message);
             }
         }
         if (!rendererCreated) {
@@ -212,7 +212,7 @@ class RobotArm3D {
                     this.scene.add(robot);
                     // NOTE: this bundled URDFLoader never implements setJointValue()
                     // on the parsed robot, and kinematics.urdf has no <visual> tags
-                    // to render anyway — so the URDF-driven path in update() (which
+                    // to render anyway - so the URDF-driven path in update() (which
                     // checks this.urdfRobot.setJointValue) never actually runs.
                     // updateArmGeometry()'s manual fallback is the only thing that
                     // ever draws the arm; hiding this.robotArm here left the whole
@@ -225,7 +225,7 @@ class RobotArm3D {
         } else if (attempt < MAX_ATTEMPTS) {
             setTimeout(() => this._loadURDFWithRetry(attempt + 1), RETRY_MS);
         } else {
-            console.warn('URDFLoader not available after retries — using placeholder arm.');
+            console.warn('URDFLoader not available after retries - using placeholder arm.');
         }
     }
 
@@ -304,7 +304,7 @@ class RobotArm3D {
             if (this.camera.isOrthographicCamera) {
                 // Moving the camera has no visual effect on an orthographic
                 // projection (objects don't get bigger/smaller with distance
-                // — that's the point of it), so "zoom" is done via the
+                // - that's the point of it), so "zoom" is done via the
                 // camera's own zoom factor instead.
                 const zoomFactor = Math.exp(-event.deltaY * 0.001);
                 this.camera.zoom = Math.max(0.1, Math.min(20, this.camera.zoom * zoomFactor));
@@ -393,7 +393,7 @@ class RobotArm3D {
     /**
      * Converts a URDF-frame position (millimetres) to Three.js scene coordinates,
      * including the lift onto the top of the drawn base cylinder that
-     * updateArmGeometry() applies to every joint — without it, anything drawn
+     * updateArmGeometry() applies to every joint - without it, anything drawn
      * from kinematics output (the tool mount / tip) sits BASE_TOP_Y_MM below the
      * joints it's supposed to connect to.
      * @param {{ x: number, y: number, z: number }} posMm
@@ -423,7 +423,7 @@ class RobotArm3D {
      * Removes every child from a Three.js group, disposing each one's
      * geometry and material first. Several groups here (joint spheres/links,
      * tool mount markers, the workspace envelope, ...) get fully rebuilt on
-     * every live status update — as often as 10x/second — so failing to
+     * every live status update - as often as 10x/second - so failing to
      * dispose leaks GPU buffer memory every single call: removing a mesh
      * from the scene graph only drops the JS-side reference, it does not
      * free the WebGL buffers/textures the renderer allocated for it.
@@ -449,7 +449,7 @@ class RobotArm3D {
      * Draws the one continuous segment updateArmGeometry() deliberately
      * leaves out: joint 6 -> tool mounting flange (orange, "coordinate 7")
      * -> tool tip (red), with connecting links between each. This is the
-     * single source of truth for anything past the last revolute joint —
+     * single source of truth for anything past the last revolute joint -
      * updateArmGeometry() only draws the 6 revolute joints (+ base) so
      * there is exactly one line from the arm's end to the tool's tip,
      * not two overlapping ones. Uses forward kinematics so it works for
@@ -538,7 +538,7 @@ class RobotArm3D {
         // links (updateArmGeometry()), so this reads as one continuous chain.
         addLink(joint6Three, flangeThree);
 
-        // Mounting flange (coordinate 7) — where the tool attaches to link 6.
+        // Mounting flange (coordinate 7) - where the tool attaches to link 6.
         // Same radius as the joint spheres in updateArmGeometry() so the
         // whole chain (joints, mount, tip) reads as one consistent style.
         const mountGeometry = new THREE.SphereGeometry(RobotArm3D.JOINT_SPHERE_RADIUS, 16, 16);
@@ -550,7 +550,7 @@ class RobotArm3D {
         // Tool mount -> tool tip (the fitted tool's own physical length)
         addLink(flangeThree, tipThree);
 
-        // Tool tip (the working point IK/the position readout actually use) —
+        // Tool tip (the working point IK/the position readout actually use) -
         // same radius as the joint spheres, for the same reason as the mount.
         const tipGeometry = new THREE.SphereGeometry(RobotArm3D.JOINT_SPHERE_RADIUS, 16, 16);
         const tipMaterial = new THREE.MeshStandardMaterial({ color: 0xe74c3c });
@@ -712,7 +712,7 @@ class RobotArm3D {
 
         // This gets called on every live status update (10x/second) but
         // maxReachMm only actually changes when the URDF/kinematics config
-        // does — rebuilding an identical 32x24-segment sphere every single
+        // does - rebuilding an identical 32x24-segment sphere every single
         // call was the single biggest contributor to a GPU memory leak that
         // could exhaust a Pi's RAM+swap within a few hours. Skip the rebuild
         // (and the leak) when nothing has actually changed.
@@ -888,7 +888,7 @@ class RobotArm3D {
             };
             
             // Map position: URDF (X,Y,Z) -> Three.js (Y, Z, X) in millimeters
-            // (proper rotation — see urdfDirToThree()).
+            // (proper rotation - see urdfDirToThree()).
             const threePos = new THREE.Vector3(
                 urdfPos.y * 1000,   // URDF Y -> Three.js X (mm)
                 urdfPos.z * 1000,   // URDF Z -> Three.js Y (mm)
@@ -929,7 +929,7 @@ class RobotArm3D {
             const jointPosition = new THREE.Vector3();
             jointPosition.setFromMatrixPosition(currentTransform);
             
-            // Store this position — kept unconditionally (even for fixed
+            // Store this position - kept unconditionally (even for fixed
             // joints we don't draw below) since later joints' positions are
             // computed relative to this chain of transforms.
             positions.push(jointPosition.clone());
@@ -939,7 +939,7 @@ class RobotArm3D {
             const currentPosition = positions[i + 1];
 
             // Fixed joints (tool_mount, the active end tool) aren't drawn
-            // here — updateToolMountVisual() draws the joint-6 -> mount ->
+            // here - updateToolMountVisual() draws the joint-6 -> mount ->
             // tip chain on its own, so there's exactly one line from the
             // arm's end to the tool's tip instead of two overlapping ones.
             if (joint.type === 'fixed') {
@@ -1397,7 +1397,7 @@ class RobotArm3D {
         const aspect = width / height;
 
         const oldPosition = this.camera.position.clone();
-        // How far the camera currently is from what it's looking at — used
+        // How far the camera currently is from what it's looking at - used
         // to size the orthographic frustum so the scene appears roughly the
         // same size at the moment of switching, rather than jumping to some
         // arbitrary default zoom level.

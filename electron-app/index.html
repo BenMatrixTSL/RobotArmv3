@@ -96,7 +96,7 @@
             }
             attempts = attempts + 1;
             sessionStorage.setItem(reloadKey, String(attempts));
-            setStatus(reason + ' — retry ' + attempts + ' of ' + maxAttempts);
+            setStatus(reason + ' - retry ' + attempts + ' of ' + maxAttempts);
             setTimeout(function () {
                 window.location.reload();
             }, 2000);
@@ -162,7 +162,7 @@
                 </div>
                 <div class="control-status" id="armControlStatus">
                     <span class="status-indicator" id="controlIndicator"></span>
-                    <span id="controlText">Control: —</span>
+                    <span id="controlText">Control: - </span>
                     <button type="button" id="releaseControlButton" class="btn btn-small btn-secondary" style="display: none;">Release control</button>
                 </div>
             </div>
@@ -222,7 +222,7 @@
 
                 <h4 class="control-lock-title">Lock control</h4>
                 <p class="info-text">
-                    Take control and keep it exclusively — no other app can take over, even with "Take control" —
+                    Take control and keep it exclusively - no other app can take over, even with "Take control" -
                     until you release it or the lock times out. Requires a password to set.
                 </p>
                 <div class="control-lock-row">
@@ -304,11 +304,11 @@
                 </div><!-- .kiosk-joints-right -->
             </div><!-- .kiosk-joints-row -->
 
-            <!-- End Tool Controls — pendant-style cards -->
+            <!-- End Tool Controls - pendant-style cards -->
             <div class="pendant2-end-tools-row">
 
                 <div class="pendant2-card pendant2-end-tool-card" id="endToolServoPanel" data-end-tool-control="servo">
-                    <div class="pendant2-card-title">End Tool — Servo</div>
+                    <div class="pendant2-card-title">End Tool - Servo</div>
                     <div class="pendant2-end-tool-btns">
                         <button class="btn btn-secondary pendant2-tool-btn end-tool-on-btn" id="endToolServoEnableBtn" data-end-tool-action="servo-enable" onclick="setEndToolServoEnabled(true)">Enable</button>
                         <button class="btn btn-secondary pendant2-tool-btn end-tool-off-btn" id="endToolServoDisableBtn" data-end-tool-action="servo-disable" onclick="setEndToolServoEnabled(false)">Disable</button>
@@ -323,7 +323,7 @@
                 </div>
 
                 <div class="pendant2-card pendant2-end-tool-card" id="endToolPneumaticPanel" data-end-tool-control="pump">
-                    <div class="pendant2-card-title">End Tool — Pump</div>
+                    <div class="pendant2-card-title">End Tool - Pump</div>
                     <div class="pendant2-end-tool-btns">
                         <button class="btn btn-secondary pendant2-tool-btn end-tool-on-btn" id="endToolPumpEnableBtn" data-end-tool-action="pump-enable" onclick="setEndToolPumpEnabled(true)">Pump ON</button>
                         <button class="btn btn-secondary pendant2-tool-btn end-tool-off-btn" id="endToolPumpDisableBtn" data-end-tool-action="pump-disable" onclick="setEndToolPumpEnabled(false)">Pump OFF</button>
@@ -331,7 +331,7 @@
                 </div>
 
                 <div class="pendant2-card pendant2-end-tool-card" data-end-tool-control="solenoid">
-                    <div class="pendant2-card-title">End Tool — Solenoid Valve</div>
+                    <div class="pendant2-card-title">End Tool - Solenoid Valve</div>
                     <div class="pendant2-end-tool-btns">
                         <button class="btn btn-secondary pendant2-tool-btn end-tool-on-btn" id="endToolSolenoidEnableBtn" data-end-tool-action="solenoid-enable" onclick="setEndToolSolenoidEnabled(true)">Valve ON</button>
                         <button class="btn btn-secondary pendant2-tool-btn end-tool-off-btn" id="endToolSolenoidDisableBtn" data-end-tool-action="solenoid-disable" onclick="setEndToolSolenoidEnabled(false)">Valve OFF</button>
@@ -410,7 +410,7 @@
                             <input id="pendantOrientationRotation" type="number" value="0" step="5"
                                 style="width:70px;" oninput="pendantSetOrientation('rotation')">
                         </div>
-                        <div class="pendant2-orientation-info" id="pendantOrientationDisplay">Free — all 6 joints used for positioning; spin drives joint 6 directly</div>
+                        <div class="pendant2-orientation-info" id="pendantOrientationDisplay">Free - all 6 joints used for positioning; spin drives joint 6 directly</div>
                     </div>
 
                     <div class="pendant2-card">
@@ -428,7 +428,7 @@
             <div class="pendant2-end-tools-row">
 
                 <div class="pendant2-card pendant2-end-tool-card" data-end-tool-control="servo">
-                    <div class="pendant2-card-title">End Tool — Servo</div>
+                    <div class="pendant2-card-title">End Tool - Servo</div>
                     <div class="pendant2-end-tool-btns">
                         <button class="btn btn-secondary pendant2-tool-btn end-tool-on-btn" data-end-tool-action="servo-enable" onclick="setEndToolServoEnabled(true)">Enable</button>
                         <button class="btn btn-secondary pendant2-tool-btn end-tool-off-btn" data-end-tool-action="servo-disable" onclick="setEndToolServoEnabled(false)">Disable</button>
@@ -443,7 +443,7 @@
                 </div>
 
                 <div class="pendant2-card pendant2-end-tool-card" data-end-tool-control="pump">
-                    <div class="pendant2-card-title">End Tool — Pump</div>
+                    <div class="pendant2-card-title">End Tool - Pump</div>
                     <div class="pendant2-end-tool-btns">
                         <button class="btn btn-secondary pendant2-tool-btn end-tool-on-btn" data-end-tool-action="pump-enable" onclick="setEndToolPumpEnabled(true)">Pump ON</button>
                         <button class="btn btn-secondary pendant2-tool-btn end-tool-off-btn" data-end-tool-action="pump-disable" onclick="setEndToolPumpEnabled(false)">Pump OFF</button>
@@ -451,7 +451,7 @@
                 </div>
 
                 <div class="pendant2-card pendant2-end-tool-card" data-end-tool-control="solenoid">
-                    <div class="pendant2-card-title">End Tool — Solenoid Valve</div>
+                    <div class="pendant2-card-title">End Tool - Solenoid Valve</div>
                     <div class="pendant2-end-tool-btns">
                         <button class="btn btn-secondary pendant2-tool-btn end-tool-on-btn" data-end-tool-action="solenoid-enable" onclick="setEndToolSolenoidEnabled(true)">Valve ON</button>
                         <button class="btn btn-secondary pendant2-tool-btn end-tool-off-btn" data-end-tool-action="solenoid-disable" onclick="setEndToolSolenoidEnabled(false)">Valve OFF</button>
@@ -584,7 +584,7 @@
                         <tr>
                             <td><strong>M62</strong>, <strong>M63</strong></td>
                             <td>
-                                Vacuum on/off — controls pump <em>and</em> solenoid valve together.<br>
+                                Vacuum on/off - controls pump <em>and</em> solenoid valve together.<br>
                                 <code>M62</code> → vacuum on (pump + solenoid).<br>
                                 <code>M63</code> → vacuum off (pump + solenoid).
                             </td>
@@ -634,7 +634,7 @@
                                 <code>&nbsp;&nbsp;#1 = #1 + 1</code><br>
                                 <code>GOTO 100</code><br>
                                 <code>N110</code><br>
-                                A plain <code>GOTO</code> back to an earlier label loops forever — use <strong>Stop</strong> to end it. The Blockly → G-Code converter generates this form for repeat / while / count loops and if blocks.
+                                A plain <code>GOTO</code> back to an earlier label loops forever - use <strong>Stop</strong> to end it. The Blockly → G-Code converter generates this form for repeat / while / count loops and if blocks.
                             </td>
                         </tr>
                         <tr>
@@ -722,7 +722,7 @@
                             <td>
                                 <code>WHILE count &lt; 3 DO</code> … <code>ENDWHILE</code> → repeat while the condition holds. Compare with <code>= &lt;&gt; &lt; &lt;= &gt; &gt;=</code>, combine with <code>AND OR NOT</code>, or use <code>TRUE</code> / <code>FALSE</code>.<br>
                                 <code>FOR i FROM 1 TO 5 DO</code> … <code>ENDFOR</code> → counted loop (optional <code>STEP 2</code> before <code>DO</code>).<br>
-                                <code>WHILE TRUE DO</code> … <code>ENDWHILE</code> loops forever — use <strong>Stop</strong> or <code>EXIT;</code> to end.
+                                <code>WHILE TRUE DO</code> … <code>ENDWHILE</code> loops forever - use <strong>Stop</strong> or <code>EXIT;</code> to end.
                             </td>
                         </tr>
                         <tr>
@@ -958,7 +958,7 @@
                         <span>Simulate joint angles</span>
                     </label>
                     <p class="info-text" id="kinematicsSourceText">
-                        Showing the arm's live joint angles — each step below updates in real time as the arm moves.
+                        Showing the arm's live joint angles - each step below updates in real time as the arm moves.
                         Tick to type your own angles into the step cards instead (shared with the 3D view's simulation mode).
                     </p>
                 </div>
@@ -1056,7 +1056,7 @@
                 </div>
 
                 <div class="positions-xyz">
-                    <h3>Tool Position — XYZ (mm)</h3>
+                    <h3>Tool Position - XYZ (mm)</h3>
                     <div class="positions-xyz-row">
                         <div class="xyz-item">
                             <label>X:</label>
@@ -1101,7 +1101,7 @@
             <h2>Calibration</h2>
             <p class="info-text">
                 Every EEPROM (persistent configuration) and SRAM (live/runtime state) register on a servo, read
-                directly from the hardware and decoded against the ST3215 datasheet's memory table &mdash; raw byte
+                directly from the hardware and decoded against the ST3215 datasheet's memory table - raw byte
                 value alongside its real-world meaning. EEPROM shows the factory default so anything that's been
                 changed stands out; SRAM is live telemetry (position, speed, current draw, fault flags, etc.) shown
                 read-only.
@@ -1160,7 +1160,7 @@
                 </table>
             </div>
 
-            <h3 class="calibration-section-heading">SRAM (live/runtime state — resets on power-off, read-only here)</h3>
+            <h3 class="calibration-section-heading">SRAM (live/runtime state - resets on power-off, read-only here)</h3>
             <div class="table-wrap">
                 <table class="calibration-table" id="calibrationSramTable">
                     <thead>
@@ -1185,17 +1185,17 @@
                     Nudges the selected joint's zero-point offset (EEPROM 0x1F, Position Correction) up or down
                     by the step size below, then commands the servo to its mechanical center (SRAM address 0x2A,
                     Target Location, set to 2048) so the change is visible immediately, without a power cycle.
-                    <strong>This physically moves the joint</strong> — make sure it's clear to travel before
+                    <strong>This physically moves the joint</strong> - make sure it's clear to travel before
                     pressing Up or Down.
                 </p>
                 <p class="info-text">
-                    Steps are 1/4096th of a full turn (0.088&deg; each) — roughly:
+                    Steps are 1/4096th of a full turn (0.088&deg; each) - roughly:
                     0.5&deg; &asymp; 6 steps, 1&deg; &asymp; 11 steps, 5&deg; &asymp; 57 steps, 10&deg; &asymp; 114 steps.
                 </p>
                 <div class="connection-form">
                     <label>Step (steps) <input type="number" id="posCorrectionStep" min="1" max="2047" step="1" value="1"></label>
                     <button id="posCorrectionDownButton" class="btn btn-secondary" disabled onclick="adjustPositionCorrection(-1)">&minus; Down</button>
-                    <span id="posCorrectionValue">Position Correction: —</span>
+                    <span id="posCorrectionValue">Position Correction: - </span>
                     <button id="posCorrectionUpButton" class="btn btn-secondary" disabled onclick="adjustPositionCorrection(1)">+ Up</button>
                 </div>
             </div>
@@ -1204,14 +1204,14 @@
                 <h3>Commissioning</h3>
                 <p class="info-text">
                     Reads each servo on the bus (joints 1-6), then writes every EEPROM register from 0x07 to 0x27
-                    that isn't already at its target value — for bringing a freshly replaced or factory-reset
+                    that isn't already at its target value - for bringing a freshly replaced or factory-reset
                     servo back to the arm's known-good configuration, and doing so quickly on a re-run since only
                     what's actually changed gets written. Most registers get their factory default, except: 0x0E
                     (Max input voltage) &rarr; 140, 0x17 (I coefficient) &rarr; 10, 0x1C (Protection current)
                     &rarr; 100, 0x22 (Protective torque) &rarr; 10, 0x23 (Protection time) &rarr; 50, and 0x24
                     (Overload torque) &rarr; 40 on every joint, plus 0x09/0x0B (Min/Max angle limit) &rarr; that
                     joint's own travel range, read live from the currently loaded kinematics.urdf. ID, Baud rate,
-                    Phase, and Position Correction (0x1F — handled separately, as it's per-servo zero-point
+                    Phase, and Position Correction (0x1F - handled separately, as it's per-servo zero-point
                     calibration, not a generic default) are never touched.
                 </p>
                 <button id="commissionAllButton" class="btn btn-warning" disabled onclick="commissionAllServos()">Write Default Values to All Servos</button>

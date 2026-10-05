@@ -259,7 +259,7 @@ def build_index(entries: list[tuple[int, str]]) -> None:
     <pre><code>python Curriculum/build_curriculum.py</code></pre>
   </div>
 </section>"""
-    html = page_shell("Robot Arm Curriculum — Index", body, None)
+    html = page_shell("Robot Arm Curriculum - Index", body, None)
     (OUT_DIR / "index.html").write_text(html, encoding="utf-8")
 
 
@@ -281,7 +281,7 @@ def main() -> None:
         parts.append(nav_html(n, title))
         parts.append(f'<h1 class="page-title">Module {n}: {html_module.escape(title)}</h1>')
         parts.append(
-            '<p class="lead">BTEC robot arm curriculum — one page per module. Work through sections in order.</p>'
+            '<p class="lead">BTEC robot arm curriculum - one page per module. Work through sections in order.</p>'
         )
 
         sections = [

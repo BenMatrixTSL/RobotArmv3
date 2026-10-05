@@ -1,7 +1,7 @@
 <svg viewBox="0 0 620 400" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, sans-serif">
   <rect width="620" height="400" fill="#f8fafc" rx="8"/>
-  <text x="310" y="24" text-anchor="middle" font-size="15" font-weight="700" fill="#1e293b">Project Gantt Chart — Template</text>
-  <text x="310" y="40" text-anchor="middle" font-size="11" fill="#64748b">Fill in your task bars — shade cells for the weeks each task is active</text>
+  <text x="310" y="24" text-anchor="middle" font-size="15" font-weight="700" fill="#1e293b">Project Gantt Chart - Template</text>
+  <text x="310" y="40" text-anchor="middle" font-size="11" fill="#64748b">Fill in your task bars - shade cells for the weeks each task is active</text>
 
   <!-- Column widths: task name=160, then 8 week cols=56 each, total=160+448=608 -->
   <!-- Header row -->
@@ -82,5 +82,5 @@
   <text x="348" y="48" text-anchor="middle" font-size="9" fill="#ef4444" font-weight="700">Today</text>
 
   <!-- Legend -->
-  <text x="310" y="388" text-anchor="middle" font-size="10" fill="#64748b">Overlapping bars (rows 4+5) show parallel tasks — efficient project scheduling. Adapt this template for your own project.</text>
+  <text x="310" y="388" text-anchor="middle" font-size="10" fill="#64748b">Overlapping bars (rows 4+5) show parallel tasks - efficient project scheduling. Adapt this template for your own project.</text>
 </svg>

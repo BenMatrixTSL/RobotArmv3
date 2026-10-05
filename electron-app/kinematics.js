@@ -207,7 +207,7 @@ function matVec3(M, v) {
 
 /**
  * Projects vector g (length N) into the null space of J_pos (3×N).
- * (I - J_pos_pinv * J_pos) * g  — computed without forming the N×N matrix:
+ * (I - J_pos_pinv * J_pos) * g - computed without forming the N×N matrix:
  *   result = g - J_pos_pinv * (J_pos * g)
  *
  * @param {number[][]} Jpos     - 3×N position Jacobian
@@ -364,7 +364,7 @@ class RobotKinematics {
         if (previous !== id) {
             console.log('Kinematics: end tool ' + (active
                 ? ('#' + active.id + ' "' + active.label + '" (' + active.lengthMm.toFixed(1) + ' mm)')
-                : ('#' + id + ' — not described in the URDF, using the bare mount')));
+                : ('#' + id + ' - not described in the URDF, using the bare mount')));
         }
         return active;
     }
@@ -676,7 +676,7 @@ class RobotKinematics {
             }
         }
 
-        // Capture seed angles as posture reference — used by the null-space posture task
+        // Capture seed angles as posture reference - used by the null-space posture task
         // to keep the arm in its current configuration when no orientation is locked.
         const seedAngles = angles.slice();
 
@@ -783,7 +783,7 @@ class RobotKinematics {
                 // null space of J_pos so position is unaffected.
 
                 const Jpos_pinv = dampedPseudoinverse3xN(Jpos, numJoints, lambda);
-                if (!Jpos_pinv) continue; // degenerate — skip this iteration
+                if (!Jpos_pinv) continue; // degenerate - skip this iteration
 
                 // Primary update: move toward target position
                 const dq_primary = matVec3(Jpos_pinv, [errX, errY, errZ]);
@@ -792,7 +792,7 @@ class RobotKinematics {
                 // the null space of J_pos so the primary position task is unaffected.
                 let dq_null = null;
                 if (hasOrientationTarget && Jori) {
-                    // Orientation is locked — drive tool Z (and optionally X) toward target.
+                    // Orientation is locked - drive tool Z (and optionally X) toward target.
                     // Jori/Jori_x are "unit-vector change per degree" (about pi/180 per
                     // degree), so the raw gradient J^T e is ~0.01 for a 45 deg error and
                     // the joints crept ~0.002 deg per iteration: the spin never arrived
@@ -805,7 +805,7 @@ class RobotKinematics {
                     const g_ori = [];
                     for (let j = 0; j < numJoints; j++) {
                         let g = Jori[0][j]*oriErrX + Jori[1][j]*oriErrY + Jori[2][j]*oriErrZ;
-                        // Add X-axis (spin) gradient with half weight — it has 1 DOF vs 2 for Z
+                        // Add X-axis (spin) gradient with half weight - it has 1 DOF vs 2 for Z
                         if (hasRotationTarget && Jori_x) {
                             g += 0.5 * (Jori_x[0][j]*rotErrX + Jori_x[1][j]*rotErrY + Jori_x[2][j]*rotErrZ);
                         }
@@ -813,7 +813,7 @@ class RobotKinematics {
                     }
                     dq_null = nullSpaceProject(Jpos, Jpos_pinv, g_ori, numJoints);
                 } else {
-                    // No orientation locked — use null space to hold the arm's starting
+                    // No orientation locked - use null space to hold the arm's starting
                     // configuration (posture control). Without this the 3 redundant DOF
                     // drift freely over 800 iterations, causing cross-axis position errors
                     // (e.g. Z shifts when jogging X).
@@ -1269,7 +1269,7 @@ class RobotKinematics {
      * equivalent from the Pi's parsed URDF) down to the joints that form
      * the single kinematic chain to draw or compute forward kinematics
      * through: every revolute joint, ordinary fixed joints (e.g.
-     * tool_mount), and — only if one is fitted — the active end tool's
+     * tool_mount), and - only if one is fitted - the active end tool's
      * fixed joint. The URDF can describe several end tools as sibling
      * branches off the same mount link (only one <end_tool> joint per
      * tool type); passing the raw array straight to code that assumes a
