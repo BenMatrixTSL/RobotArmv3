@@ -11050,7 +11050,7 @@ void FCD_0df41_HobbyServoPwm__SetDutyCycle10Bit(MX_UINT16 FCL_DUTY)
 #define FCVsz_PACKETBUFFER 32
 #define FCVsz_REGISTERS 64
 #define FCV_EE_ADDR_TOOLID (0x0)
-#define FCV_REGFIRMWAREMINOR (0x2) // Register 2: firmware minor version
+#define FCV_REGFIRMWAREMINOR (0x3) // Register 2: firmware minor version (3 = hobby servo slew rate supported)
 #define FCV_FALSE (0)
 #define FCV_ADCREFERENCEMV (0x992) // ADC reference voltage in millivolts
 #define FCV_BUSDEVICEID (0x40) // End-tool node ID on the ST3215 bus
@@ -11131,6 +11131,10 @@ MX_GLOBAL MX_UINT8 FCV_REGCURRENT3MA_L = (0x0);
 MX_GLOBAL MX_UINT8 FCV_PACKETLENGTH = (0x0); // Current packet LENGTH field
 MX_GLOBAL MX_FLOAT FCV_CURRENT1A = (0.0); // Latest current for PWM1 in amps
 MX_GLOBAL MX_UINT8 FCV_REGADC0RAW_H = (0x0); // Register 16: ADC0 raw high byte
+MX_GLOBAL MX_UINT8 FCV_REGSERVOSLEWRATE = (0x0); // Register 57 (0x39): hobby servo slew rate, position steps per main-loop tick (~10 ms). 0 = jump immediately
+MX_GLOBAL MX_UINT8 FCV_SERVOSLEWTARGET = (0x0); // Hobby servo 8-bit position the slew is heading for
+MX_GLOBAL MX_UINT8 FCV_SERVOSLEWCURRENT = (0x0); // Hobby servo 8-bit position currently applied to the output (register 55)
+MX_GLOBAL MX_BOOL FCV_SERVOOUTPUTENABLED = (0); // Mirror of whether the hobby servo output is currently enabled - a move while disabled jumps, a move while enabled slews
 
 /*=----------------------------------------------------------------------=*\
    Use :
@@ -11166,7 +11170,7 @@ void FCM_RefreshRegisterArrayFromVariables()
   FCV_REGISTERS[23] = FCV_REGADC1MV_L;
   FCV_REGISTERS[24] = FCV_REGADC1MV_H;
 
-  // Copy hobby servo registers (addresses 48-56)
+  // Copy hobby servo registers (addresses 48-57)
   FCV_REGISTERS[48] = FCV_REGSERVOENABLE;
   FCV_REGISTERS[49] = FCV_REGSERVOPOSITION8BIT;
   FCV_REGISTERS[50] = FCV_REGSERVOANGLEDEG;
@@ -11174,8 +11178,9 @@ void FCM_RefreshRegisterArrayFromVariables()
   FCV_REGISTERS[52] = FCV_REGSERVOPULSEMIN_H;
   FCV_REGISTERS[53] = FCV_REGSERVOPULSEMAX_L;
   FCV_REGISTERS[54] = FCV_REGSERVOPULSEMAX_H;
-  FCV_REGISTERS[55] = FCV_REGSERVOPOSITION8BIT;
-  FCV_REGISTERS[56] = FCV_REGSERVOANGLEDEG;
+  FCV_REGISTERS[55] = FCV_SERVOSLEWCURRENT;
+  FCV_REGISTERS[56] = FCV_SERVOSLEWCURRENT * 180 / 255;
+  FCV_REGISTERS[57] = FCV_REGSERVOSLEWRATE;
 
 }
 
@@ -11188,9 +11193,12 @@ void FCM_ApplyPendingHobbyServo()
   //Comment:
   //HobbyServoPwm owns CAL PWM ref 1 on A18 (50 Hz). Servo_Controller calls use ref 1. PWM1/PWM2 use refs 2/3.
 
+  //Comment:
+  //Works out the new target position, then either jumps there (slew rate 0, or the output was disabled so its real position is unknown) or hands it to ServoSlewTick in the main loop to approach at RegServoSlewRate steps per tick.
+
   // Hobby servo output enabled
   if (FCV_REGSERVOENABLE > 0)
-  {  
+  {
 
     // Set hobby servo PWM frequency to 50 Hz
     FCD_0df41_HobbyServoPwm__SetFrequency(50);
@@ -11198,36 +11206,36 @@ void FCM_ApplyPendingHobbyServo()
     // Enable hobby servo channel
     FCD_0dd21_Servo_Controller1__EnableServo(FCV_HOBBYSERVOCHANNEL);
 
-    // Last write was angle register (50)
-    if (FCV_LASTADDRESS == 50)
-    {    
-
-      // Map angle 0-180 to position 0-255
-      FCV_REGSERVOPOSITION8BIT = FCV_REGSERVOANGLEDEG * 255 / 180;
-
-      // Jump servo directly to position (fast)
-      FCD_0dd21_Servo_Controller1__SetPosition(FCV_HOBBYSERVOCHANNEL, FCV_REGSERVOPOSITION8BIT);
+    // Last write was position register (49)
+    if (FCV_LASTADDRESS == 49)
+    {
 
     } else {
 
-      // Last write was position register (49)
-      if (FCV_LASTADDRESS == 49)
-      {      
-
-        // Set hobby servo 8-bit position
-        FCD_0dd21_Servo_Controller1__SetPosition(FCV_HOBBYSERVOCHANNEL, FCV_REGSERVOPOSITION8BIT);
-
-      } else {
-
-        // Map stored angle to position for enable-only write
-        FCV_REGSERVOPOSITION8BIT = FCV_REGSERVOANGLEDEG * 255 / 180;
-
-        // Enable write: apply current angle as position
-        FCD_0dd21_Servo_Controller1__SetPosition(FCV_HOBBYSERVOCHANNEL, FCV_REGSERVOPOSITION8BIT);
-
-      }
+      // Angle (50) or enable-only write: map angle 0-180 to position 0-255
+      FCV_REGSERVOPOSITION8BIT = FCV_REGSERVOANGLEDEG * 255 / 180;
 
     }
+
+    // New slew target
+    FCV_SERVOSLEWTARGET = FCV_REGSERVOPOSITION8BIT;
+
+    // Jump: slew rate 0, or output was disabled (position unknown)
+    if ((FCV_REGSERVOSLEWRATE == 0) || (FCV_SERVOOUTPUTENABLED == 0))
+    {
+
+      // Current position = target
+      FCV_SERVOSLEWCURRENT = FCV_SERVOSLEWTARGET;
+
+      // Jump servo directly to position (fast)
+      FCD_0dd21_Servo_Controller1__SetPosition(FCV_HOBBYSERVOCHANNEL, FCV_SERVOSLEWCURRENT);
+
+    // } else {
+
+    }
+
+    // Output is now enabled: later moves slew
+    FCV_SERVOOUTPUTENABLED = 1;
 
   } else {
 
@@ -11236,6 +11244,68 @@ void FCM_ApplyPendingHobbyServo()
 
     // Disable hobby servo PWM output
     FCD_0df41_HobbyServoPwm__Disable();
+
+    // Output disabled: stop any slew in progress
+    FCV_SERVOOUTPUTENABLED = 0;
+    FCV_SERVOSLEWTARGET = FCV_SERVOSLEWCURRENT;
+
+  }
+
+}
+
+/*=----------------------------------------------------------------------=*\
+   Use :
+\*=----------------------------------------------------------------------=*/
+void FCM_ServoSlewTick()
+{
+
+  //Comment:
+  //Called once per main-loop iteration (~10 ms). Moves the hobby servo output one RegServoSlewRate step closer to ServoSlewTarget. Nothing to do while the output is disabled or already at target.
+
+  // Slew in progress
+  if ((FCV_SERVOOUTPUTENABLED == 1) && (FCV_SERVOSLEWCURRENT != FCV_SERVOSLEWTARGET))
+  {
+
+    // Moving up
+    if (FCV_SERVOSLEWCURRENT < FCV_SERVOSLEWTARGET)
+    {
+
+      // Last step (rate 0 or within one step)
+      if ((FCV_REGSERVOSLEWRATE == 0) || ((FCV_SERVOSLEWTARGET - FCV_SERVOSLEWCURRENT) <= FCV_REGSERVOSLEWRATE))
+      {
+
+        // Arrive at target
+        FCV_SERVOSLEWCURRENT = FCV_SERVOSLEWTARGET;
+
+      } else {
+
+        // Step up
+        FCV_SERVOSLEWCURRENT = FCV_SERVOSLEWCURRENT + FCV_REGSERVOSLEWRATE;
+
+      }
+
+    } else {
+
+      // Last step (rate 0 or within one step)
+      if ((FCV_REGSERVOSLEWRATE == 0) || ((FCV_SERVOSLEWCURRENT - FCV_SERVOSLEWTARGET) <= FCV_REGSERVOSLEWRATE))
+      {
+
+        // Arrive at target
+        FCV_SERVOSLEWCURRENT = FCV_SERVOSLEWTARGET;
+
+      } else {
+
+        // Step down
+        FCV_SERVOSLEWCURRENT = FCV_SERVOSLEWCURRENT - FCV_REGSERVOSLEWRATE;
+
+      }
+
+    }
+
+    // Apply the stepped position
+    FCD_0dd21_Servo_Controller1__SetPosition(FCV_HOBBYSERVOCHANNEL, FCV_SERVOSLEWCURRENT);
+
+  // } else {
 
   }
 
@@ -12178,6 +12248,7 @@ void FCM_ApplyWritableRegistersToVariablesAndHardware()
   FCV_REGSERVOPULSEMIN_H = FCV_REGISTERS[52];
   FCV_REGSERVOPULSEMAX_L = FCV_REGISTERS[53];
   FCV_REGSERVOPULSEMAX_H = FCV_REGISTERS[54];
+  FCV_REGSERVOSLEWRATE = FCV_REGISTERS[57];
 
   // Defer hobby servo hardware if this WRITE touched servo registers
   if ((FCV_LASTADDRESS >= 48) && (FCV_LASTADDRESS <= 54))
@@ -12348,6 +12419,9 @@ void app_main()
     // } else {
 
     }
+
+    // Step hobby servo slew toward target (~10 ms tick)
+    FCM_ServoSlewTick();
 
     // Refresh register array from named variables
     FCM_RefreshRegisterArrayFromVariables();

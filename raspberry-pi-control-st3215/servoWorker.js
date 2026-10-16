@@ -133,6 +133,7 @@ const END_TOOL_WRITE_RANGES = {
     50: { bytes: 1, min: 0,   max: 180 },  // Servo angle (deg)
     51: { bytes: 2, min: 500, max: 2500 }, // Servo pulse min (us)
     53: { bytes: 2, min: 500, max: 2500 }, // Servo pulse max (us)
+    57: { bytes: 1, min: 0,   max: 255 },  // Servo slew rate (steps per ~10 ms tick, 0 = jump) - firmware minor >= 3
 };
 
 // Angle limits (9, 11) can let a joint travel somewhere mechanically unsafe —
@@ -1536,6 +1537,14 @@ async function handleBusCommand(clientId, data) {
         case 'toolGetServoState': {
             try { reply({ type: 'toolServoState', ...await requireEndTool().getHobbyServoState() }); }
             catch (e) { reply({ type: 'error', message: 'Failed to read tool servo state: ' + e.message }); }
+            break;
+        }
+        case 'toolSetServoSlewRate': {
+            try {
+                const rate = Number.isFinite(data.rate) ? data.rate : 0;
+                await requireEndTool().setHobbyServoSlewRate(rate);
+                reply({ type: 'success', message: `Tool hobby servo slew rate set to ${rate} steps/tick` });
+            } catch (e) { reply({ type: 'error', message: 'Failed to set tool servo slew rate: ' + e.message }); }
             break;
         }
         case 'toolSetWatchdog': {

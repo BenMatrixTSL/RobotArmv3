@@ -65,5 +65,6 @@ Probe **GPIO 18** for ~50 Hz PWM after enable + set angle.
 | 48 | Enable (`1` = on) |
 | 49 | Position 0–255 |
 | 50 | Angle 0–180° |
+| 57 | Slew rate, steps per ~10 ms tick (`0` = jump) — macro `ServoSlewTick`, called every main-loop pass |
 
 See `REGISTER_MAP.md` for full details.

@@ -71,16 +71,32 @@ Addresses match `ST3215_ESP32_END_TOOL_API.md` (hex) and the Pi server (`robotAr
 | 52 | `SERVO_PULSE_MIN_H` | RW | Min pulse width high byte |
 | 53 (`0x35`) | `SERVO_PULSE_MAX_L` | RW | Max pulse width low byte (default 2000 µs) |
 | 54 | `SERVO_PULSE_MAX_H` | RW | Max pulse width high byte |
-| 55 (`0x37`) | `SERVO_CURRENT_POSITION_8BIT` | R | Last applied 8-bit position |
-| 56 (`0x38`) | `SERVO_CURRENT_ANGLE` | R | Last applied angle (degrees) |
+| 55 (`0x37`) | `SERVO_CURRENT_POSITION_8BIT` | R | 8-bit position currently applied to the output (walks toward the target during a slew) |
+| 56 (`0x38`) | `SERVO_CURRENT_ANGLE` | R | Angle currently applied to the output (derived from 55) |
+| 57 (`0x39`) | `SERVO_SLEW_RATE` | RW | Slew rate: position steps per ~10 ms main-loop tick. `0` = jump immediately (default) |
 
 ### Behaviour
 
 - **READ** supports 1–8 bytes in one command (for example read 3 bytes from address 48).
 - **WRITE** copies every data byte into consecutive registers (for example enable + angle in one packet).
-- If the last write touched register **50**, `MoveToAngle` runs; if **49**, `SetPosition` runs; otherwise the current angle is applied.
+- If the last write touched register **49** the 8-bit position is used as the target; any other servo-register write (50, or an enable/pulse write) maps the stored angle to a position target.
 - Servo is **disabled** at boot until `SERVO_ENABLE = 1`.
-- Firmware minor version is **2** when hobby servo support is present.
+- Firmware minor version is **2** when hobby servo support is present, **3** when `SERVO_SLEW_RATE` is present.
+
+### Slew rate (register 57, firmware minor ≥ 3)
+
+- With `SERVO_SLEW_RATE = 0` every move jumps straight to the target, as before.
+- With a non-zero rate, a new target is approached by `rate` 8-bit position steps once per main-loop
+  iteration (about 10 ms, set by the loop's watchdog delay). Full 0–255 travel therefore takes roughly
+  `255 / rate × 10 ms`: `1` ≈ 2.5 s, `5` ≈ 0.5 s, `25` ≈ 0.1 s.
+- A new target written mid-slew simply redirects the slew from the current position.
+- A move made while the output is **disabled** (enable 0 → 1, or any move after boot) always jumps,
+  because the firmware does not know where the unpowered servo physically is. Once enabled, later
+  moves slew - including the Pi's combined enable+angle write used by the gripper commands.
+- Disabling the output (`SERVO_ENABLE = 0`) stops any slew in progress.
+- Registers 55/56 report the position/angle actually applied so far, so a host can poll them to see
+  when the slew has finished.
+- Pi server: `toolSetServoSlewRate` (`rate: 0-255`), or write address 57 from the Calibration tab.
 
 ### WebSocket commands (Pi server)
 

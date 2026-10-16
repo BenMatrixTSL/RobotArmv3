@@ -67,7 +67,7 @@ const BUS_WRITE_COMMANDS = {
     setJointZeroTrim: true, resetJointZeroTrim: true,
     toolPing: true, toolSetPwm: true, toolSetServoEnabled: true,
     toolSetServoPosition: true, toolSetServoAngle: true,
-    toolSetServoEnabledAndAngle: true,
+    toolSetServoEnabledAndAngle: true, toolSetServoSlewRate: true,
     toolSetWatchdog: true, toolClearFaults: true, toolReset: true
 };
 

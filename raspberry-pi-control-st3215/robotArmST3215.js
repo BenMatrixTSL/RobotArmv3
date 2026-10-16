@@ -293,6 +293,9 @@ const ADC1_MV_L = 23;
 const SERVO_ENABLE = 0x30;
 const SERVO_POSITION_8BIT = 0x31;
 const SERVO_ANGLE_DEG = 0x32;
+// Slew rate for the hobby servo output: 8-bit position steps per ~10 ms
+// firmware tick, 0 = jump straight to the target. Firmware minor >= 3.
+const SERVO_SLEW_RATE = 0x39;
 const SERVO_CURRENT_POSITION_8BIT = 0x37;
 const SERVO_CURRENT_ANGLE = 0x38;
 
@@ -347,6 +350,21 @@ class ServoController {
         this.responseTimeout = null;
         this.currentSpeed = 1500; // Default speed, will be updated when setSpeed is called
         this.rxDrainUntilMs = 0;   // discard all RX bytes until this timestamp (post-timeout drain)
+        // Trainee zero trim (raw steps): a software-only shift of this joint's
+        // 0°, set from the Calibration page's student zero-calibration panel.
+        // Never written to the servo, so resetting it to 0 always restores the
+        // real (EEPROM) calibration. See servoWorker.js "Trainee zero trims".
+        this.zeroTrimSteps = 0;
+    }
+
+    /**
+     * Sets the trainee zero trim - the raw step offset this joint treats as 0°,
+     * relative to the factory centre (2048). Applied in angleToSteps() and
+     * stepsToAngle() only; servo EEPROM is untouched.
+     * @param {number} trimSteps - Offset in raw steps (0 = no trim)
+     */
+    setZeroTrimSteps(trimSteps) {
+        this.zeroTrimSteps = Math.round(trimSteps) || 0;
     }
 
     /**
@@ -1125,8 +1143,8 @@ class ServoController {
         if (angleDegrees < MIN_ANGLE) angleDegrees = MIN_ANGLE;
         if (angleDegrees > MAX_ANGLE) angleDegrees = MAX_ANGLE;
         
-        // Convert: steps = center + (angle * steps_per_degree)
-        const steps = Math.round(CENTER_POSITION + (angleDegrees * STEPS_PER_DEGREE));
+        // Convert: steps = center + trim + (angle * steps_per_degree)
+        const steps = Math.round(CENTER_POSITION + this.zeroTrimSteps + (angleDegrees * STEPS_PER_DEGREE));
         
         // Clamp to valid step range (should be 1024-3072, but add safety check)
         if (steps < MIN_POSITION) return MIN_POSITION;
@@ -1151,8 +1169,8 @@ class ServoController {
         if (steps < MIN_POSITION) steps = MIN_POSITION;
         if (steps > MAX_POSITION) steps = MAX_POSITION;
         
-        // Convert: angle = (steps - center) / steps_per_degree
-        const angle = (steps - CENTER_POSITION) / STEPS_PER_DEGREE;
+        // Convert: angle = (steps - center - trim) / steps_per_degree
+        const angle = (steps - CENTER_POSITION - this.zeroTrimSteps) / STEPS_PER_DEGREE;
         
         // Clamp to valid angle range
         if (angle < MIN_ANGLE) return MIN_ANGLE;
@@ -1502,8 +1520,10 @@ class ServoController {
     }
 
     /**
-     * Read the servo's hard travel limits from EEPROM, in this joint's own degree frame
-     * (via stepsToAngle(), so it accounts for any saved center override).
+     * Read the servo's hard travel limits from EEPROM, in degrees from the factory
+     * centre. Deliberately ignores any trainee zero trim: the limits live in the
+     * servo's EEPROM, so they must not shift (or be re-written shifted) when a
+     * student's temporary trim is active.
      * @returns {{ minAngleDeg, maxAngleDeg }}
      */
     async readAngleLimits() {
@@ -1511,8 +1531,8 @@ class ServoController {
         const minSteps = this.makeWord(data[0], data[1]);
         const maxSteps = this.makeWord(data[2], data[3]);
         return {
-            minAngleDeg: this.stepsToAngle(minSteps),
-            maxAngleDeg: this.stepsToAngle(maxSteps),
+            minAngleDeg: (minSteps - CENTER_POSITION) / STEPS_PER_DEGREE,
+            maxAngleDeg: (maxSteps - CENTER_POSITION) / STEPS_PER_DEGREE,
         };
     }
 
@@ -1524,8 +1544,10 @@ class ServoController {
      * @param {number} maxAngleDeg
      */
     async writeAngleLimits(minAngleDeg, maxAngleDeg) {
-        const minSteps = Math.max(MIN_POSITION, Math.min(MAX_POSITION, Math.round(this.angleToSteps(minAngleDeg))));
-        const maxSteps = Math.max(MIN_POSITION, Math.min(MAX_POSITION, Math.round(this.angleToSteps(maxAngleDeg))));
+        // Factory-centre conversion, not angleToSteps(): a trainee zero trim must
+        // never end up baked into the servo's EEPROM limits (see readAngleLimits)
+        const minSteps = Math.max(MIN_POSITION, Math.min(MAX_POSITION, Math.round(CENTER_POSITION + minAngleDeg * STEPS_PER_DEGREE)));
+        const maxSteps = Math.max(MIN_POSITION, Math.min(MAX_POSITION, Math.round(CENTER_POSITION + maxAngleDeg * STEPS_PER_DEGREE)));
         await this.writeData(STS_EEPROM_LOCK, [0]); // unlock EEPROM
         await new Promise(r => setTimeout(r, 25));
         await this.writeData(STS_MIN_ANGLE_LIMIT, [
@@ -1760,6 +1782,19 @@ class EndToolController extends ServoController {
         if (degrees < 0) degrees = 0;
         if (degrees > 180) degrees = 180;
         await this.writeData(SERVO_ANGLE_DEG, [degrees & 0xFF]);
+    }
+
+    /**
+     * Set how fast the hobby servo output moves to a new position/angle.
+     * @param {number} rate - 8-bit position steps per ~10 ms tick (0-255).
+     *   0 = jump immediately (default). 1 = full travel in ~2.5 s, 25 = ~0.1 s.
+     *   A move made while the output is disabled always jumps.
+     */
+    async setHobbyServoSlewRate(rate) {
+        let value = rate;
+        if (value < 0) value = 0;
+        if (value > 255) value = 255;
+        await this.writeData(SERVO_SLEW_RATE, [value & 0xFF]);
     }
 
     /**

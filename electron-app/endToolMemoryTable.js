@@ -55,6 +55,7 @@ const END_TOOL_UNIT_DECODERS = {
     mV:             (raw) => `${raw} mV`,
     us:             (raw) => `${raw} µs`,
     deg:            (raw) => `${raw}°`,
+    'slew-rate':    (raw) => raw === 0 ? '0 = jump immediately' : `${raw} steps/tick (full travel ≈ ${(255 / raw * 0.01).toFixed(2)} s)`,
 };
 
 /**
@@ -69,7 +70,7 @@ const END_TOOL_EEPROM_REGISTERS = [
     { address: 1, bytes: 1, name: 'Firmware major', access: 'read', default: 0, min: -1, max: -1, unit: ' - ', unitType: 'raw',
       description: 'End-tool firmware major version.' },
     { address: 2, bytes: 1, name: 'Firmware minor', access: 'read', default: 0, min: -1, max: -1, unit: ' - ', unitType: 'raw',
-      description: 'End-tool firmware minor version. 2 or higher means hobby servo support is present.' },
+      description: 'End-tool firmware minor version. 2 or higher means hobby servo support is present; 3 or higher adds the servo slew rate register (57).' },
     { address: 3, bytes: 1, name: 'Tool type ID', access: 'read&write', default: 0, min: 0, max: 255, unit: ' - ', unitType: 'enum-tool',
       description: 'Which tool is fitted: 0 = unassigned, 1 = pneumatic vacuum + valve, 2 = servo motor, 3 = pen. Saved to the tool\'s EEPROM when changed. The Pi reads this every 15 s and applies the matching <end_tool> entry from kinematics.urdf, which sets the tool length used by FK/IK.' },
 ];
@@ -108,9 +109,11 @@ const END_TOOL_RAM_REGISTERS = [
     { address: 53, bytes: 2, name: 'Servo pulse max', access: 'read&write', default: 2000, min: 500, max: 2500, unit: 'µs', unitType: 'us',
       description: 'Pulse width that corresponds to position 255 / angle 180° (default 2000 µs).' },
     { address: 55, bytes: 1, name: 'Servo current position (8-bit)', access: 'read', default: 0, min: -1, max: -1, unit: ' - ', unitType: 'raw',
-      description: 'Last 8-bit position actually applied to the hobby servo.' },
+      description: '8-bit position currently applied to the hobby servo output. While a slew is in progress this walks from the old position to the new target.' },
     { address: 56, bytes: 1, name: 'Servo current angle', access: 'read', default: 0, min: -1, max: -1, unit: '°', unitType: 'deg',
-      description: 'Last angle actually applied to the hobby servo.' },
+      description: 'Angle currently applied to the hobby servo output (derived from register 55).' },
+    { address: 57, bytes: 1, name: 'Servo slew rate', access: 'read&write', default: 0, min: 0, max: 255, unit: 'steps/tick', unitType: 'slew-rate',
+      description: 'How fast the hobby servo output moves toward a new position/angle: 8-bit position steps per ~10 ms firmware tick. 0 = jump straight to the target (original behaviour). 1 = full 0-255 travel in about 2.5 s, 5 = about 0.5 s, 25 = about 0.1 s. A move made while the output is disabled always jumps (its real position is unknown). Needs end-tool firmware minor version 3 or later; older firmware reads 0 and ignores writes.' },
 ];
 
 function decodeEndToolRegisters(registers, bytes) {

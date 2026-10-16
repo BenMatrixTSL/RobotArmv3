@@ -101,7 +101,7 @@
 					<def class_type='variable' name='PacketErrorCount' type='u32' description='Count of parse/checksum errors' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
 				</variable>
 				<variable public='0' >
-					<def class_type='variable' name='RegFirmwareMinor' type='u8' description='Register 2: firmware minor version' isconst='1' isHidden='0' isinit='1' usrinit='2' setinit='2' />
+					<def class_type='variable' name='RegFirmwareMinor' type='u8' description='Register 2: firmware minor version (3 = hobby servo slew rate supported)' isconst='1' isHidden='0' isinit='1' usrinit='3' setinit='3' />
 				</variable>
 				<variable public='0' >
 					<def class_type='variable' name='Current1mA' type='u16' description='Latest current for PWM1 in milliamps (0-2000)' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
@@ -255,6 +255,18 @@
 					<def class_type='variable' name='RegServoPulseMax_L' type='u8' description='Register 53 (0x35): max pulse width low byte (2000 us)' isconst='0' isHidden='0' isinit='1' usrinit='208' setinit='208' />
 				</variable>
 				<variable public='0' >
+					<def class_type='variable' name='RegServoSlewRate' type='u8' description='Register 57 (0x39): hobby servo slew rate, position steps per main-loop tick (~10 ms). 0 = jump immediately' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='ServoSlewTarget' type='u8' description='Hobby servo 8-bit position the slew is heading for' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='ServoSlewCurrent' type='u8' description='Hobby servo 8-bit position currently applied to the output (register 55)' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='ServoOutputEnabled' type='b1' description='Mirror of whether the hobby servo output is currently enabled - a move while disabled jumps, a move while enabled slews' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
+				</variable>
+				<variable public='0' >
 					<def class_type='variable' name='LastDataLength' type='u8' description='Requested/read data length from last valid command' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
 				</variable>
 				<variable public='0' >
@@ -347,7 +359,7 @@
 							<exp exp='Registers[23] = RegAdc1mV_L' />
 							<exp exp='Registers[24] = RegAdc1mV_H' />
 						</command>
-						<command class_type='calculation' title='Copy hobby servo registers (addresses 48-56)' >
+						<command class_type='calculation' title='Copy hobby servo registers (addresses 48-57)' >
 							<exp exp='Registers[48] = RegServoEnable' />
 							<exp exp='Registers[49] = RegServoPosition8bit' />
 							<exp exp='Registers[50] = RegServoAngleDeg' />
@@ -355,8 +367,9 @@
 							<exp exp='Registers[52] = RegServoPulseMin_H' />
 							<exp exp='Registers[53] = RegServoPulseMax_L' />
 							<exp exp='Registers[54] = RegServoPulseMax_H' />
-							<exp exp='Registers[55] = RegServoPosition8bit' />
-							<exp exp='Registers[56] = RegServoAngleDeg' />
+							<exp exp='Registers[55] = ServoSlewCurrent' />
+							<exp exp='Registers[56] = ServoSlewCurrent * 180 / 255' />
+							<exp exp='Registers[57] = RegServoSlewRate' />
 						</command>
 					</flowline>
 				</macro>
@@ -364,6 +377,7 @@
 					<flowline name='ApplyPendingHobbyServo' description='' statediag='0' >
 						<return name='Return' type='v0' description='' isconst='0' isHidden='0' isinit='0' usrinit='' setinit='' />
 						<command class_type='comment' title='' comment='HobbyServoPwm owns CAL PWM ref 1 on A18 (50 Hz). Servo_Controller calls use ref 1. PWM1/PWM2 use refs 2/3.' textarea='12,0,12,0' />
+						<command class_type='comment' title='' comment='Works out the new target position, then either jumps there (slew rate 0, or the output was disabled so its real position is unknown) or hands it to ServoSlewTick in the main loop to approach at RegServoSlewRate steps per tick.' textarea='12,0,12,0' />
 						<command class_type='decision' title='Hobby servo output enabled' exp='RegServoEnable &gt; 0' swap='0' >
 							<flowline >
 								<command class_type='call' title='Set hobby servo PWM frequency to 50 Hz' component='HobbyServoPwm' macro='SetFrequency' >
@@ -372,35 +386,31 @@
 								<command class_type='call' title='Enable hobby servo channel' component='Servo_Controller1' macro='EnableServo' >
 									<argument exp='HobbyServoChannel' />
 								</command>
-								<command class_type='decision' title='Last write was angle register (50)' exp='LastAddress = 50' swap='0' >
+								<command class_type='decision' title='Last write was position register (49)' exp='LastAddress = 49' swap='0' >
+									<flowline />
 									<flowline >
-										<command class_type='calculation' title='Map angle 0-180 to position 0-255' >
+										<command class_type='calculation' title='Angle (50) or enable-only write: map angle 0-180 to position 0-255' >
 											<exp exp='RegServoPosition8bit = RegServoAngleDeg * 255 / 180' />
+										</command>
+									</flowline>
+								</command>
+								<command class_type='calculation' title='New slew target' >
+									<exp exp='ServoSlewTarget = RegServoPosition8bit' />
+								</command>
+								<command class_type='decision' title='Jump: slew rate 0, or output was disabled (position unknown)' exp='(RegServoSlewRate = 0) || (ServoOutputEnabled = 0)' swap='0' >
+									<flowline >
+										<command class_type='calculation' title='Current position = target' >
+											<exp exp='ServoSlewCurrent = ServoSlewTarget' />
 										</command>
 										<command class_type='call' title='Jump servo directly to position (fast)' component='Servo_Controller1' macro='SetPosition' >
 											<argument exp='HobbyServoChannel' />
-											<argument exp='RegServoPosition8bit' />
+											<argument exp='ServoSlewCurrent' />
 										</command>
 									</flowline>
-									<flowline >
-										<command class_type='decision' title='Last write was position register (49)' exp='LastAddress = 49' swap='0' >
-											<flowline >
-												<command class_type='call' title='Set hobby servo 8-bit position' component='Servo_Controller1' macro='SetPosition' >
-													<argument exp='HobbyServoChannel' />
-													<argument exp='RegServoPosition8bit' />
-												</command>
-											</flowline>
-											<flowline >
-												<command class_type='calculation' title='Map stored angle to position for enable-only write' >
-													<exp exp='RegServoPosition8bit = RegServoAngleDeg * 255 / 180' />
-												</command>
-												<command class_type='call' title='Enable write: apply current angle as position' component='Servo_Controller1' macro='SetPosition' >
-													<argument exp='HobbyServoChannel' />
-													<argument exp='RegServoPosition8bit' />
-												</command>
-											</flowline>
-										</command>
-									</flowline>
+									<flowline />
+								</command>
+								<command class_type='calculation' title='Output is now enabled: later moves slew' >
+									<exp exp='ServoOutputEnabled = 1' />
 								</command>
 							</flowline>
 							<flowline >
@@ -408,7 +418,56 @@
 									<argument exp='HobbyServoChannel' />
 								</command>
 								<command class_type='call' title='Disable hobby servo PWM output' component='HobbyServoPwm' macro='Disable' />
+								<command class_type='calculation' title='Output disabled: stop any slew in progress' >
+									<exp exp='ServoOutputEnabled = 0' />
+									<exp exp='ServoSlewTarget = ServoSlewCurrent' />
+								</command>
 							</flowline>
+						</command>
+					</flowline>
+				</macro>
+				<macro >
+					<flowline name='ServoSlewTick' description='' statediag='0' >
+						<return name='Return' type='v0' description='' isconst='0' isHidden='0' isinit='0' usrinit='' setinit='' />
+						<command class_type='comment' title='' comment='Called once per main-loop iteration (~10 ms). Moves the hobby servo output one RegServoSlewRate step closer to ServoSlewTarget. Nothing to do while the output is disabled or already at target.' textarea='12,0,12,0' />
+						<command class_type='decision' title='Slew in progress' exp='(ServoOutputEnabled = 1) &amp;&amp; (ServoSlewCurrent &lt;&gt; ServoSlewTarget)' swap='0' >
+							<flowline >
+								<command class_type='decision' title='Moving up' exp='ServoSlewCurrent &lt; ServoSlewTarget' swap='0' >
+									<flowline >
+										<command class_type='decision' title='Last step (rate 0 or within one step)' exp='(RegServoSlewRate = 0) || ((ServoSlewTarget - ServoSlewCurrent) &lt;= RegServoSlewRate)' swap='0' >
+											<flowline >
+												<command class_type='calculation' title='Arrive at target' >
+													<exp exp='ServoSlewCurrent = ServoSlewTarget' />
+												</command>
+											</flowline>
+											<flowline >
+												<command class_type='calculation' title='Step up' >
+													<exp exp='ServoSlewCurrent = ServoSlewCurrent + RegServoSlewRate' />
+												</command>
+											</flowline>
+										</command>
+									</flowline>
+									<flowline >
+										<command class_type='decision' title='Last step (rate 0 or within one step)' exp='(RegServoSlewRate = 0) || ((ServoSlewCurrent - ServoSlewTarget) &lt;= RegServoSlewRate)' swap='0' >
+											<flowline >
+												<command class_type='calculation' title='Arrive at target' >
+													<exp exp='ServoSlewCurrent = ServoSlewTarget' />
+												</command>
+											</flowline>
+											<flowline >
+												<command class_type='calculation' title='Step down' >
+													<exp exp='ServoSlewCurrent = ServoSlewCurrent - RegServoSlewRate' />
+												</command>
+											</flowline>
+										</command>
+									</flowline>
+								</command>
+								<command class_type='call' title='Apply the stepped position' component='Servo_Controller1' macro='SetPosition' >
+									<argument exp='HobbyServoChannel' />
+									<argument exp='ServoSlewCurrent' />
+								</command>
+							</flowline>
+							<flowline />
 						</command>
 					</flowline>
 				</macro>
@@ -1164,6 +1223,7 @@
 							<exp exp='RegServoPulseMin_H = Registers[52]' />
 							<exp exp='RegServoPulseMax_L = Registers[53]' />
 							<exp exp='RegServoPulseMax_H = Registers[54]' />
+							<exp exp='RegServoSlewRate = Registers[57]' />
 						</command>
 						<command class_type='decision' title='Defer hobby servo hardware if this WRITE touched servo registers' exp='(LastAddress &gt;= 48) &amp;&amp; (LastAddress &lt;= 54)' swap='0' >
 							<flowline >
@@ -1266,6 +1326,7 @@
 									</flowline>
 									<flowline />
 								</command>
+								<command class_type='call' title='Step hobby servo slew toward target (~10 ms tick)' macro='ServoSlewTick' />
 								<command class_type='call' title='Refresh register array from named variables' macro='RefreshRegisterArrayFromVariables' />
 								<command class_type='decision' title='Debug periodic status output enabled' exp='(DebugEnabled = 1) &amp;&amp; (DebugLevel &gt;= 1)' swap='0' >
 									<flowline >
@@ -1801,6 +1862,7 @@
 		<view type='0' name='RefreshRegisterArrayFromVariables' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAABwQAAGMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
 		<view type='0' name='ProcessCommsByte' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAABwQAAGMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
 		<view type='0' name='ApplyWritableRegistersToVariablesAndHardware' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAABwQAAGMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
+		<view type='0' name='ServoSlewTick' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAABwQAAGMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
 		<view type='0' name='ApplyPendingHobbyServo' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAABwQAAGMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
 	</layout>
 </document>

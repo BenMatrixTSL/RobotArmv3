@@ -131,6 +131,7 @@ Control-session enforcement for `executeLinearMove` is checked manually against 
 | `toolSetServoAngle` | Sets the end-tool's hobby servo to an angle in degrees, without changing its enabled state. | yes | `{type:'success'}` | **Dead** |
 | `toolSetServoEnabledAndAngle` | Enables the end-tool's hobby servo and moves it to an angle in one call — the actual gripper open/close command. | yes | `{type:'success'}` | **app.js × 7** (5827, 5834, 5846, 6388, 6394, 6441, 8505) — the actual gripper open/close command used throughout the UI |
 | `toolGetServoState` | Reads the end-tool's hobby servo's current position and angle. | **no** (gap) | `{type:'toolServoState', currentPosition8bit, currentAngle}` | app.js × 1 (8537) |
+| `toolSetServoSlewRate` | Sets how fast the end-tool's hobby servo moves to a new position: `rate` = 8-bit position steps per ~10 ms firmware tick, `0` = jump immediately. Writes register 57 (end-tool firmware minor ≥ 3). | yes | `{type:'success'}` | **Dead** (Calibration tab writes register 57 directly via `writeEndToolRegister`) |
 | `toolSetWatchdog` | Configures the end-tool's watchdog timeout behavior (auto-disable if it stops hearing from the controller). | yes | `{type:'success'}` | **Dead** |
 | `toolClearFaults` | Clears any latched fault flags on the end-tool. | yes | `{type:'success', message:'Tool faults cleared'}` | **Dead** |
 | `toolReset` | Reboots the end-tool's ESP32. | yes | `{type:'success', message:'Tool reset command sent'}` | **Dead** |
