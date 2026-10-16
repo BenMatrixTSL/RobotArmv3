@@ -674,6 +674,29 @@ class RobotArmClient {
     }
 
     /**
+     * Trainee zero calibration: makes the joint's current physical position
+     * read as 0°. Software-only (never written to servo EEPROM), needs the
+     * control session but not the password, and is capped server-side.
+     * The new trim arrives in the next jointConfigs broadcast (zeroTrimDegrees).
+     * @param {number} jointNumber - Joint number (1-6)
+     */
+    setJointZeroTrim(jointNumber) {
+        return this.sendRequest('setJointZeroTrim', {
+            joint: jointNumber
+        });
+    }
+
+    /**
+     * Removes a trainee zero trim, restoring the servo's own calibration.
+     * @param {number|string} jointNumber - Joint number (1-6), or 'all'
+     */
+    resetJointZeroTrim(jointNumber) {
+        return this.sendRequest('resetJointZeroTrim', {
+            joint: jointNumber
+        });
+    }
+
+    /**
      * Writes a single raw EEPROM register from the Calibration page.
      * Requires the control-lock password on top of holding the control
      * session - this can reach registers outside the curated commissioning
@@ -693,15 +716,39 @@ class RobotArmClient {
     }
 
     /**
+     * Reads the ESP32 end tool's (ID 64) whole 64-byte register array for the
+     * Calibration page. Decode with endToolMemoryTable.js.
+     * @returns {Promise<{type:'endToolRegisters', bytes:number[]}>}
+     */
+    readEndToolRegisters() {
+        return this.sendRequest('readEndToolRegisters', {});
+    }
+
+    /**
+     * Writes one raw register on the end tool (Calibration page). Requires
+     * the control password, same as writeServoEepromRaw. Only Tool type ID
+     * (address 3) persists on the tool; everything else is RAM.
+     * @param {number} address - register address (see endToolMemoryTable.js)
+     * @param {number} rawValue - raw integer value (16-bit for 2-byte registers)
+     * @param {string} password - the control password
+     */
+    writeEndToolRegister(address, rawValue, password) {
+        return this.sendRequest('writeEndToolRegister', { address, rawValue, password });
+    }
+
+    /**
      * Writes the given fields directly to a joint's servo EEPROM.
      * @param {number} jointNumber
+     * Requires the control password, like writeServoEepromRaw.
      * @param {object} values - any of: p, d, i, minStartupForce, overloadTorque,
      *   protTorque, protTimeMs, minAngleDeg, maxAngleDeg, maxTorque
+     * @param {string} password - The control password
      */
-    writeServoEeprom(jointNumber, values) {
+    writeServoEeprom(jointNumber, values, password) {
         return this.sendRequest('writeServoEeprom', {
             joint: jointNumber,
-            values
+            values,
+            password
         });
     }
 

@@ -19,6 +19,8 @@
  *     { type: 'shutdown' }
  */
 
+const fs = require('fs');
+const path = require('path');
 const { SerialPort } = require('serialport');
 const RobotArm = require('./robotArmST3215');
 
@@ -108,6 +110,31 @@ const EEPROM_WRITE_RANGES = {
     42: { bytes: 2, min: 0,     max: 4095 }, // Target location (absolute step)
 };
 
+// ESP32 end tool (ID 64): the whole 64-byte register array the firmware
+// exposes, read in one go for the Calibration page. The firmware answers
+// READs of up to 8 bytes per packet (End Tool API ESP32/REGISTER_MAP.md).
+const END_TOOL_REGISTER_COUNT = 64;
+const END_TOOL_READ_CHUNK_BYTES = 8;
+
+// address -> {bytes, min, max} for every end-tool register the Calibration
+// page may write. Mirrors electron-app/endToolMemoryTable.js — keep in sync.
+// Only Tool type ID (3) persists on the tool; the rest is RAM, but writing
+// it is how the tool is driven (PWM outputs, hobby servo), so it's allowed
+// behind the same password gate. Read-only telemetry/identity is absent and
+// so gets rejected as "not writable".
+const END_TOOL_WRITE_RANGES = {
+    3:  { bytes: 1, min: 0,   max: 255 },  // Tool type ID (persisted to tool EEPROM)
+    4:  { bytes: 1, min: 0,   max: 255 },  // Status flags
+    5:  { bytes: 1, min: 0,   max: 255 },  // PWM1 duty
+    6:  { bytes: 1, min: 0,   max: 255 },  // PWM2 duty
+    7:  { bytes: 1, min: 0,   max: 3 },    // PWM control (bit0/bit1 enables)
+    48: { bytes: 1, min: 0,   max: 1 },    // Servo enable
+    49: { bytes: 1, min: 0,   max: 255 },  // Servo position 8-bit
+    50: { bytes: 1, min: 0,   max: 180 },  // Servo angle (deg)
+    51: { bytes: 2, min: 500, max: 2500 }, // Servo pulse min (us)
+    53: { bytes: 2, min: 500, max: 2500 }, // Servo pulse max (us)
+};
+
 // Angle limits (9, 11) can let a joint travel somewhere mechanically unsafe —
 // the UI asks for an extra confirmation before sending those writes, but the
 // server doesn't re-check that here since it can't tell a hasty click from a
@@ -148,6 +175,9 @@ let allServoControllers  = [];
 const jointStatusCache   = [];
 const jointSettingsCache = [];
 let cachedTorqueEnabled  = null;
+// Trainee zero trim per joint (raw steps, 0 = none). Reapplied whenever a
+// servo is (re)created so a comms dropout doesn't silently drop a trim.
+const jointZeroTrimSteps = new Array(JOINT_COUNT).fill(0);
 let busTickTimer         = null;
 let busTickLoopActive    = false;
 let busTickInProgress    = false;
@@ -317,9 +347,10 @@ function rebuildJointConfigsCache() {
     const discovered = servos.filter(s => s !== null).length;
     const joints = [];
     for (let i = 0; i < servos.length; i++) {
+        const zeroTrimDegrees = zeroTrimStepsToDegrees(jointZeroTrimSteps[i]);
         joints.push(servos[i] !== null
-            ? { jointNumber: i + 1, servoId: servos[i].servoIdNumber, available: true }
-            : { jointNumber: i + 1, servoId: SERVO_IDS[i], available: false });
+            ? { jointNumber: i + 1, servoId: servos[i].servoIdNumber, available: true, zeroTrimDegrees }
+            : { jointNumber: i + 1, servoId: SERVO_IDS[i], available: false, zeroTrimDegrees });
     }
     cachedJointConfigs = { count: discovered, total: JOINT_COUNT, joints };
     process.send({ type: 'jointConfigs', count: discovered, total: JOINT_COUNT, joints });
@@ -883,6 +914,7 @@ async function createAndInitializeServo(jointIndex) {
         servos[jointIndex] = null;
         throw new Error(`Servo ${jointIndex + 1} (ID: ${servoId}) did not respond`);
     }
+    servo.setZeroTrimSteps(jointZeroTrimSteps[jointIndex]);
 
     // Match whatever torque state is currently in effect rather than always
     // forcing it on — a servo that drops out while the user has torque
@@ -1195,6 +1227,58 @@ async function handleBusCommand(clientId, data) {
             break;
         }
 
+        // ===== Trainee zero trims (software only, no password) =====
+        case 'setJointZeroTrim': {
+            // Makes the joint's CURRENT physical position read as 0° - the
+            // student lines the joint up with its alignment mark first. No
+            // movement and no servo EEPROM write; undone by resetJointZeroTrim.
+            const idx = data.joint - 1;
+            if (idx < 0 || idx >= servos.length) { reply({ type: 'error', message: `Invalid joint number: ${data.joint}` }); return; }
+            const sv = servos[idx];
+            if (!sv) { reply({ type: 'error', message: `Servo ${data.joint} is not available` }); return; }
+            try {
+                const rawPosition = await sv.getPosition();
+                if (rawPosition < 0) { reply({ type: 'error', message: `Failed to read current position for joint ${data.joint}` }); return; }
+                const trimSteps = rawPosition - RobotArm.CENTER_POSITION;
+                if (Math.abs(trimSteps) > MAX_ZERO_TRIM_STEPS) {
+                    reply({ type: 'error', message: `Joint ${data.joint} is ${zeroTrimStepsToDegrees(trimSteps)}° from its factory zero - more than the ${MAX_ZERO_TRIM_DEGREES}° a trainee trim allows. Check the joint is really at its alignment mark; a bigger error needs a teacher to check the servo's assembly.` });
+                    return;
+                }
+                const saved = applyJointZeroTrim(idx, trimSteps);
+                log(`[ZERO TRIM] Joint ${data.joint}: trim ${trimSteps} steps (${zeroTrimStepsToDegrees(trimSteps)}°)${saved ? '' : ' - WARNING: not saved to disk'}`);
+                reply({
+                    type: saved ? 'success' : 'error',
+                    message: saved
+                        ? `Joint ${data.joint} zero trim set to ${zeroTrimStepsToDegrees(trimSteps)}° - its current position now reads 0°`
+                        : `Joint ${data.joint} zero trim set for this session only - it could not be saved and will be lost when the server restarts. Check server logs.`,
+                    joint: data.joint,
+                    zeroTrimDegrees: zeroTrimStepsToDegrees(trimSteps)
+                });
+            } catch (error) {
+                reply({ type: 'error', message: `Failed to set zero trim: ${error.message}` });
+            }
+            break;
+        }
+
+        case 'resetJointZeroTrim': {
+            // data.joint = 1-6, or 'all'. Restores the servo's own calibration.
+            const indexes = data.joint === 'all'
+                ? jointZeroTrimSteps.map((_, i) => i)
+                : [data.joint - 1];
+            if (indexes.some(i => !(i >= 0 && i < JOINT_COUNT))) { reply({ type: 'error', message: `Invalid joint number: ${data.joint}` }); return; }
+            let saved = true;
+            for (const i of indexes) saved = applyJointZeroTrim(i, 0) && saved;
+            const which = data.joint === 'all' ? 'All joints' : `Joint ${data.joint}`;
+            log(`[ZERO TRIM] ${which}: trim reset to 0${saved ? '' : ' - WARNING: not saved to disk'}`);
+            reply({
+                type: saved ? 'success' : 'error',
+                message: saved
+                    ? `${which} zero trim reset - using the servo's own calibration again`
+                    : `${which} zero trim reset for this session, but could not be saved - an old trim may return when the server restarts. Check server logs.`
+            });
+            break;
+        }
+
         // ===== Commissioning (EEPROM) Commands =====
         case 'readServoEeprom': {
             const idx = data.joint - 1;
@@ -1267,6 +1351,63 @@ async function handleBusCommand(clientId, data) {
                 reply({ type: 'success', message: `Wrote ${rawValue} to address 0x${address.toString(16)} on joint ${data.joint}` });
             } catch (error) {
                 reply({ type: 'error', message: `Failed to write EEPROM: ${error.message}` });
+            }
+            break;
+        }
+
+        case 'readEndToolRegisters': {
+            // Whole 64-byte register array of the ESP32 end tool (ID 64) for
+            // the Calibration page, decoded client-side against
+            // endToolMemoryTable.js. The firmware caps a READ at 8 bytes, so
+            // it's fetched in chunks; addresses it doesn't implement read 0.
+            let tool;
+            try { tool = requireEndTool(); }
+            catch (e) { reply({ type: 'error', message: e.message }); return; }
+            try {
+                const bytes = [];
+                for (let addr = 0; addr < END_TOOL_REGISTER_COUNT; addr += END_TOOL_READ_CHUNK_BYTES) {
+                    const chunk = await tool.readData(addr, END_TOOL_READ_CHUNK_BYTES);
+                    for (let i = 0; i < END_TOOL_READ_CHUNK_BYTES; i++) bytes.push(chunk[i] || 0);
+                }
+                reply({ type: 'endToolRegisters', bytes });
+            } catch (error) {
+                reply({ type: 'error', message: `Failed to read end tool registers: ${error.message}` });
+            }
+            break;
+        }
+
+        case 'writeEndToolRegister': {
+            // Single-register raw write to the end tool from the Calibration
+            // page. Password is checked in server.js (EEPROM_WRITE_COMMANDS);
+            // here only the address/range is validated.
+            let tool;
+            try { tool = requireEndTool(); }
+            catch (e) { reply({ type: 'error', message: e.message }); return; }
+
+            const address = data.address;
+            const range = END_TOOL_WRITE_RANGES[address];
+            if (!range) {
+                reply({ type: 'error', message: `End tool address ${Number(address || 0)} is not writable from the Calibration page` });
+                return;
+            }
+            const rawValue = data.rawValue;
+            if (typeof rawValue !== 'number' || !Number.isFinite(rawValue) || rawValue < range.min || rawValue > range.max) {
+                reply({ type: 'error', message: `Value out of range (${range.min}-${range.max})` });
+                return;
+            }
+
+            try {
+                const bytesToWrite = range.bytes === 2
+                    ? [rawValue & 0xFF, (rawValue >> 8) & 0xFF]
+                    : [rawValue & 0xFF];
+                await tool.writeData(address, bytesToWrite);
+                // Give the firmware time to apply the write (and, for Tool
+                // type ID, commit it to its EEPROM) before the page reads back.
+                await new Promise(r => setTimeout(r, 100));
+                log(`[CALIBRATION] End tool wrote register ${address} = ${rawValue}`);
+                reply({ type: 'success', message: `Wrote ${rawValue} to end tool register ${address}` });
+            } catch (error) {
+                reply({ type: 'error', message: `Failed to write end tool register: ${error.message}` });
             }
             break;
         }
@@ -1479,6 +1620,66 @@ process.on('message', (msg) => {
     }
 });
 
+// ===== Trainee zero trims (persisted across restarts) =====
+// A student zero calibration that never touches servo EEPROM: each joint's
+// trim shifts its 0° in software (ServoController.setZeroTrimSteps), so
+// resetting the trim to 0 always restores the real calibration exactly.
+// Capped so a mis-aligned joint can't be "calibrated" a long way off.
+//
+// Stored outside the git working tree: the service runs as a restricted root
+// while the repo is owned by the deploying user, so a service-written file
+// inside the repo would fail to save with EACCES.
+const MAX_ZERO_TRIM_DEGREES = 10;
+const MAX_ZERO_TRIM_STEPS   = Math.round(MAX_ZERO_TRIM_DEGREES * 2048 / 180);
+const ZERO_TRIM_CONFIG_DIR  = process.env.ROBOT_ARM_STATE_DIR || '/var/lib/robot-arm-st3215';
+const ZERO_TRIM_CONFIG_PATH = path.join(ZERO_TRIM_CONFIG_DIR, 'trainee-zero-trims.json');
+
+function zeroTrimStepsToDegrees(trimSteps) {
+    return Math.round((trimSteps * 180 / 2048) * 100) / 100;
+}
+
+function loadJointZeroTrims() {
+    if (!fs.existsSync(ZERO_TRIM_CONFIG_PATH)) return;
+    let cfg;
+    try {
+        cfg = JSON.parse(fs.readFileSync(ZERO_TRIM_CONFIG_PATH, 'utf8'));
+    } catch (e) {
+        log('trainee-zero-trims.json parse error, ignoring: ' + e.message, true);
+        return;
+    }
+    const joints = (cfg && cfg.joints) || {};
+    for (let i = 0; i < JOINT_COUNT; i++) {
+        const trimSteps = joints[String(i + 1)];
+        if (!Number.isFinite(trimSteps) || trimSteps === 0) continue;
+        if (Math.abs(trimSteps) > MAX_ZERO_TRIM_STEPS) {
+            log(`Joint ${i + 1} trainee zero trim ${trimSteps} is outside ±${MAX_ZERO_TRIM_STEPS} steps, ignoring`, true);
+            continue;
+        }
+        jointZeroTrimSteps[i] = trimSteps;
+        if (servos[i]) servos[i].setZeroTrimSteps(trimSteps);
+        log(`Joint ${i + 1} trainee zero trim loaded: ${trimSteps} steps (${zeroTrimStepsToDegrees(trimSteps)}°)`);
+    }
+}
+
+// Applies the trim live, tells clients, and saves every joint's trim.
+// Returns false if it could not be saved (the trim still applies until restart).
+function applyJointZeroTrim(jointIndex, trimSteps) {
+    jointZeroTrimSteps[jointIndex] = trimSteps;
+    if (servos[jointIndex]) servos[jointIndex].setZeroTrimSteps(trimSteps);
+    rebuildJointConfigsCache();
+
+    const joints = {};
+    jointZeroTrimSteps.forEach((steps, i) => { if (steps !== 0) joints[String(i + 1)] = steps; });
+    try {
+        fs.mkdirSync(ZERO_TRIM_CONFIG_DIR, { recursive: true });
+        fs.writeFileSync(ZERO_TRIM_CONFIG_PATH, JSON.stringify({ joints }, null, 2));
+        return true;
+    } catch (e) {
+        log('Failed to save trainee-zero-trims.json: ' + e.message, true);
+        return false;
+    }
+}
+
 // ===== Start =====
 // EEPROM values (PID, overload protection, angle limits, max torque) are no
 // longer auto-applied at startup — they're configured manually via the
@@ -1486,6 +1687,8 @@ process.on('message', (msg) => {
 // EEPROM, so there's nothing to reapply here.
 log(`Servo worker starting (pid=${process.pid} VERBOSE_LOG=${VERBOSE_LOG} STATUS_POLL_MS=${STATUS_POLL_INTERVAL_MS} MIN_GAP_MS=${MIN_BUS_TICK_GAP_MS} JOINT_GAP_MS=${JOINT_POLL_GAP_MS})`);
 initializeServos().then(async () => {
+    loadJointZeroTrims();
+    rebuildJointConfigsCache();
     await refreshJointStatusCacheFromBus();
     startBusTickLoop();
     process.send({ type: 'ready', jointConfigs: getJointConfigsSnapshot() });

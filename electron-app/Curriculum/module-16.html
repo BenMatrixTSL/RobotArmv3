@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Module 16 - Evaluation, Reflection &amp; Communication</title>
+<title>Module 14 - Project Planning &amp; Management</title>
 <style>
   :root {
     --bg: #f8fafc; --card: #ffffff; --border: #e2e8f0;
@@ -13,11 +13,10 @@
     --purple: #7c3aed; --purple-light: #faf5ff;
     --orange: #ea580c; --orange-light: #fff7ed;
     --red: #dc2626; --red-light: #fef2f2;
-    --gold: #ca8a04; --gold-light: #fefce8;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
-  .hero { background: linear-gradient(135deg, #312e81 0%, #4f46e5 100%); color: white; padding: 3rem 2rem; text-align: center; }
+  .hero { background: linear-gradient(135deg, #1c1917 0%, #44403c 100%); color: white; padding: 3rem 2rem; text-align: center; }
   .hero .module-num { font-size: 0.85rem; opacity: 0.6; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 0.5rem; }
   .hero h1 { font-size: 2rem; font-weight: 700; margin-bottom: 0.75rem; }
   .hero p { font-size: 1.05rem; opacity: 0.85; max-width: 600px; margin: 0 auto; }
@@ -33,7 +32,6 @@
   h3 { font-size: 1.05rem; font-weight: 600; margin: 1.2rem 0 0.5rem; }
   p  { margin-bottom: 0.8rem; }
   .highlight-box { background: var(--accent-light); border-left: 4px solid var(--accent); padding: 1rem 1.2rem; border-radius: 0 8px 8px 0; margin: 1rem 0; }
-  .gold-box { background: var(--gold-light); border-left: 4px solid var(--gold); padding: 1rem 1.2rem; border-radius: 0 8px 8px 0; margin: 1rem 0; color: #713f12; }
   .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1rem 0; }
   .grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 1rem; margin: 1rem 0; }
   .mini-card { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; }
@@ -43,16 +41,17 @@
   th { background: var(--accent-light); color: var(--accent); text-align: left; padding: 0.6rem 0.8rem; font-weight: 600; }
   td { padding: 0.55rem 0.8rem; border-bottom: 1px solid var(--border); }
   tr:last-child td { border-bottom: none; }
-  .cycle { display: flex; align-items: center; justify-content: center; gap: 0.5rem; flex-wrap: wrap; margin: 1.2rem 0; }
-  .cycle-step { background: var(--accent-light); border: 2px solid var(--accent); border-radius: 8px; padding: 0.6rem 1rem; font-size: 0.88rem; font-weight: 600; color: var(--accent); text-align: center; min-width: 100px; }
-  .cycle-arrow { color: var(--muted); font-size: 1.4rem; }
+  .gantt-wrap { overflow-x: auto; margin: 1rem 0; }
+  .gantt { border-collapse: collapse; min-width: 600px; font-size: 0.82rem; }
+  .gantt th { background: #1e293b; color: white; text-align: center; padding: 0.4rem 0.6rem; }
+  .gantt td { border: 1px solid var(--border); padding: 0.35rem 0.6rem; }
+  .gantt .task-name { background: var(--bg); font-weight: 600; min-width: 160px; }
+  .bar { background: var(--accent); border-radius: 3px; height: 16px; }
+  .bar-green { background: var(--green); }
+  .bar-purple { background: var(--purple); }
   .steps { list-style: none; counter-reset: step; padding: 0; }
   .steps li { counter-increment: step; display: flex; gap: 1rem; margin-bottom: 0.9rem; align-items: flex-start; }
   .steps li::before { content: counter(step); min-width: 28px; height: 28px; background: var(--green); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; flex-shrink: 0; }
-  .completion-badge { background: linear-gradient(135deg, #312e81, #4f46e5); color: white; border-radius: 12px; padding: 2rem; text-align: center; margin: 1.5rem 0; }
-  .completion-badge .badge-icon { font-size: 3rem; margin-bottom: 0.5rem; }
-  .completion-badge h3 { font-size: 1.4rem; margin-bottom: 0.5rem; }
-  .completion-badge p { opacity: 0.85; margin: 0; font-size: 0.95rem; }
   .mcq-question { margin-bottom: 1.5rem; }
   .mcq-question p { font-weight: 600; margin-bottom: 0.6rem; }
   .mcq-option { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.35rem; cursor: pointer; font-size: 0.95rem; }
@@ -61,7 +60,7 @@
   .feedback-correct { background: var(--green-light); color: var(--green); }
   .feedback-wrong   { background: var(--red-light);   color: var(--red); }
   .check-btn { background: var(--accent); color: white; border: none; padding: 0.7rem 1.6rem; border-radius: 8px; font-size: 0.95rem; font-weight: 600; cursor: pointer; margin-top: 0.5rem; }
-  .check-btn:hover { background: #4338ca; }
+  .check-btn:hover { background: #2563eb; }
   .score-bar-wrap { height: 8px; background: var(--border); border-radius: 4px; margin: 1rem 0 0.4rem; }
   .score-bar { height: 100%; background: var(--green); border-radius: 4px; transition: width 0.4s; width: 0%; }
   .score-text { font-size: 0.9rem; color: var(--muted); }
@@ -77,21 +76,21 @@
   .callout-body { flex:1; font-size:0.9rem; }
   .callout-body ul, .callout-body ol { padding-left:1.2rem; margin-top:0.3rem; }
   .ui-ref { display:inline-block; background:var(--green); color:#fff; font-size:0.75rem; font-weight:600; padding:0.1rem 0.45rem; border-radius:4px; font-family:monospace; }
-  @media(max-width:600px){ .grid-2,.grid-3{ grid-template-columns:1fr; } .cycle{ flex-direction:column; } .cycle-arrow{ transform:rotate(90deg); } }
+  @media(max-width:600px){ .grid-2,.grid-3{ grid-template-columns:1fr; } }
 </style>
 <link rel="stylesheet" href="worksheet.css">
 </head>
 <body>
 
 <div class="hero">
-  <div class="module-num">Module 16 of 16 - Final Module</div>
-  <h1>Evaluation, Reflection &amp; Communication</h1>
-  <p>Critically evaluating your project outcomes, reflecting on what you learned, and communicating your work to different audiences.</p>
+  <div class="module-num">Module 14 of 16</div>
+  <h1>Project Planning &amp; Management</h1>
+  <p>Applying structured project management methods to engineering tasks - from brief to delivery.</p>
 </div>
 <div class="meta-bar">
-  <span>&#128340; 75–90 min</span>
+  <span>&#128340; 60–75 min</span>
   <span>&#127919; Group: Project</span>
-  <span>&#128268; Context: Your completed project</span>
+  <span>&#128268; Context: Your own robot arm project</span>
 </div>
 
 <div class="container">
@@ -99,134 +98,158 @@
   <!-- THEORY 1 -->
   <div class="section-card">
     <span class="pill pill-theory">Theory</span>
-    <h2>What is Critical Evaluation?</h2>
-    <img src="images/design-cycle.svg" alt="Engineering design cycle" style="width:100%;height:auto;display:block;border-radius:8px;margin:12px 0;">
-    <p><strong>Evaluation</strong> means comparing your outcomes against your original specification and asking: did I succeed? <strong>Critical</strong> evaluation means being honest about where you fell short and explaining why - not just listing what went well.</p>
-    <p>Engineers who can accurately evaluate their own work are more valuable than those who can only report success. Identifying failure modes, understanding root causes, and proposing improvements is the core of engineering iteration.</p>
-    <div class="cycle">
-      <div class="cycle-step">Design</div>
-      <div class="cycle-arrow">&#8594;</div>
-      <div class="cycle-step">Build</div>
-      <div class="cycle-arrow">&#8594;</div>
-      <div class="cycle-step">Test</div>
-      <div class="cycle-arrow">&#8594;</div>
-      <div class="cycle-step">Evaluate</div>
-      <div class="cycle-arrow">&#8594;</div>
-      <div class="cycle-step">Improve</div>
-      <div class="cycle-arrow">&#8594;</div>
-      <div class="cycle-step">Design</div>
+    <h2>Engineering Project Phases</h2>
+    <img src="images/project-lifecycle.svg" alt="Engineering project lifecycle" style="width:100%;height:auto;display:block;border-radius:8px;margin:12px 0;">
+    <p>Most engineering projects follow a common lifecycle, regardless of scale. Understanding which phase you are in helps you focus your effort and communicate progress clearly:</p>
+    <div class="grid-3">
+      <div class="mini-card">
+        <h4>&#128269; 1. Brief &amp; Scope</h4>
+        <p>What needs to be built? Who is it for? What are the constraints (time, budget, skills)?</p>
+      </div>
+      <div class="mini-card">
+        <h4>&#128196; 2. Research &amp; Specification</h4>
+        <p>Investigate options, define measurable requirements (the spec), identify risks.</p>
+      </div>
+      <div class="mini-card">
+        <h4>&#9998;&#65039; 3. Design</h4>
+        <p>Sketch, model, simulate. Select the best approach. Document decisions.</p>
+      </div>
+      <div class="mini-card">
+        <h4>&#128295; 4. Prototype &amp; Build</h4>
+        <p>Make the first version. Accept that it will not be perfect - iteration is normal.</p>
+      </div>
+      <div class="mini-card">
+        <h4>&#9989; 5. Test &amp; Evaluate</h4>
+        <p>Test against the specification. Record results. Identify what to improve.</p>
+      </div>
+      <div class="mini-card">
+        <h4>&#128196; 6. Document &amp; Present</h4>
+        <p>Write up what you did and why. Present findings to a technical or non-technical audience.</p>
+      </div>
     </div>
-    <p>This iterative cycle - design, build, test, evaluate, improve - never truly ends in a living engineering project. Each iteration narrows the gap between the current state and the ideal.</p>
   </div>
 
   <!-- THEORY 2 -->
   <div class="section-card">
     <span class="pill pill-theory">Theory</span>
-    <h2>Writing a Strong Evaluation</h2>
-    <p>A strong evaluation has three components for each specification point:</p>
-    <table>
-      <tr><th>Component</th><th>What to include</th><th>Weak example</th><th>Strong example</th></tr>
-      <tr>
-        <td><strong>Outcome</strong></td>
-        <td>Did you meet the spec? By how much?</td>
-        <td>"The arm was accurate."</td>
-        <td>"J2 achieved ±0.3° repeatability, exceeding the ±2° spec."</td>
-      </tr>
-      <tr>
-        <td><strong>Analysis</strong></td>
-        <td>Why did you get this result?</td>
-        <td>"It worked well."</td>
-        <td>"Accuracy was high because the AS5600 encoder provides closed-loop feedback, eliminating accumulated step error."</td>
-      </tr>
-      <tr>
-        <td><strong>Improvement</strong></td>
-        <td>What would you do differently?</td>
-        <td>"I would make it better."</td>
-        <td>"Cycle time could be reduced by 30% by overlapping joint moves rather than moving one joint at a time."</td>
-      </tr>
-    </table>
+    <h2>Gantt Charts &amp; Time Planning</h2>
+    <img src="images/gantt-template.svg" alt="Gantt chart template" style="width:100%;height:auto;display:block;border-radius:8px;margin:12px 0;">
+    <p>A <strong>Gantt chart</strong> is a bar chart that maps tasks against time. It is the most widely used project scheduling tool in engineering. Each row is a task; the bar shows when it runs. Overlapping bars show parallel work.</p>
+    <div class="gantt-wrap">
+      <table class="gantt">
+        <tr>
+          <th class="task-name">Task</th>
+          <th>Week 1</th><th>Week 2</th><th>Week 3</th><th>Week 4</th><th>Week 5</th><th>Week 6</th>
+        </tr>
+        <tr>
+          <td class="task-name">Research &amp; brief</td>
+          <td style="text-align:center"><div class="bar" style="width:80%"></div></td>
+          <td></td><td></td><td></td><td></td><td></td>
+        </tr>
+        <tr>
+          <td class="task-name">Specification</td>
+          <td></td>
+          <td style="text-align:center"><div class="bar" style="width:100%"></div></td>
+          <td></td><td></td><td></td><td></td>
+        </tr>
+        <tr>
+          <td class="task-name">Design &amp; modelling</td>
+          <td></td><td></td>
+          <td style="text-align:center"><div class="bar bar-green" style="width:100%"></div></td>
+          <td style="text-align:center"><div class="bar bar-green" style="width:50%"></div></td>
+          <td></td><td></td>
+        </tr>
+        <tr>
+          <td class="task-name">Build &amp; program</td>
+          <td></td><td></td><td></td>
+          <td style="text-align:center"><div class="bar bar-green" style="width:50%"></div></td>
+          <td style="text-align:center"><div class="bar bar-green" style="width:100%"></div></td>
+          <td></td>
+        </tr>
+        <tr>
+          <td class="task-name">Test &amp; evaluate</td>
+          <td></td><td></td><td></td><td></td><td></td>
+          <td style="text-align:center"><div class="bar bar-purple" style="width:100%"></div></td>
+        </tr>
+      </table>
+    </div>
+    <p>Notice that design and build overlap in weeks 3–4 - this is normal in iterative engineering. The chart makes dependencies visible: you cannot build before you have designed.</p>
   </div>
 
   <!-- THEORY 3 -->
   <div class="section-card">
     <span class="pill pill-theory">Theory</span>
-    <h2>Communicating to Different Audiences</h2>
-    <p>The same project needs to be communicated differently depending on who is listening. This is a professional skill - engineers must explain complex technical work to non-technical managers, clients, and the public.</p>
-    <div class="grid-3">
-      <div class="mini-card">
-        <h4>&#128203; Technical report</h4>
-        <p>Full detail, evidence, diagrams. Audience: engineers, assessors. Use technical vocabulary correctly.</p>
-      </div>
-      <div class="mini-card">
-        <h4>&#128101; Peer presentation</h4>
-        <p>Live or recorded. Show the arm working. Explain key decisions. Handle questions.</p>
-      </div>
-      <div class="mini-card">
-        <h4>&#127760; Non-technical summary</h4>
-        <p>One page, plain English. Explain what the system does and why it matters - no jargon.</p>
-      </div>
+    <h2>Writing a Specification</h2>
+    <p>A specification defines what a successful outcome looks like, in measurable terms. Vague requirements lead to disagreements about whether the project succeeded.</p>
+    <table>
+      <tr><th>Vague requirement</th><th>Measurable specification</th></tr>
+      <tr><td>"The arm should be accurate"</td><td>Repeat position accuracy ≤ ±2° on all joints after 10 cycles</td></tr>
+      <tr><td>"The arm should be safe"</td><td>All joint limits configured; risk assessment completed and signed; SOP posted at workstation</td></tr>
+      <tr><td>"The program should work"</td><td>G-code program completes 5 consecutive cycles without fault; cycle time ≤ 15 s</td></tr>
+      <tr><td>"Good documentation"</td><td>Circuit diagram, wiring list, and annotated code submitted; peer-reviewed</td></tr>
+    </table>
+    <div class="highlight-box">
+      <strong>Tip:</strong> Use <em>Essential</em> and <em>Desirable</em> columns in your spec. Essential = must have for the project to pass. Desirable = would improve it if time allows.
     </div>
-    <div class="gold-box">
-      <strong>&#127942; BTEC assessment note:</strong> For merit and distinction criteria, your evaluation must be <em>critical</em> - it must identify weaknesses and suggest specific, justified improvements. Simply listing what worked will not achieve higher grades.
+
+    <div class="callout callout-tip">
+      <span class="callout-icon">✅</span>
+      <div class="callout-body">
+        <strong>Measurable Specification Points - Examples for This Arm</strong></br>
+        <ul style="margin:0.4rem 0 0;padding-left:1.2rem;">
+          <li>"All 6 joints return to the Home position within <strong>±1°</strong> after 10 consecutive cycles" - measurable via the angle readings in <span class="ui-ref">Joint Control</span></li>
+          <li>"End-to-end cycle time (Home → Pick → Place → Home) is under <strong>12 seconds</strong> at 75% speed" - measurable with a stopwatch or the execution log</li>
+          <li>"App connects to Pi and achieves a control session within <strong>5 seconds</strong> on the classroom network" - measurable from the Connection tab</li>
+          <li>"Joint temperatures remain below <strong>50°C</strong> after 10 consecutive cycles" - measurable from the temperature field in Joint Control</li>
+          <li>"Camera tab identifies a red block on a white surface within <strong>2 seconds</strong> of placement" - measurable with a timer and the Camera tab</li>
+        </ul>
+        Compare these to the generic examples above: each references a specific data source (a tab, a field, a tool) so the measurement method is unambiguous.
+      </div>
     </div>
   </div>
 
   <!-- WORKSHEET -->
   <div class="section-card worksheet-card">
     <span class="pill pill-worksheet">Worksheet</span>
-    <h2>Activity - Evaluate and Present Your Project</h2>
-    <p>Complete these tasks to finalise your project and prepare for assessment.</p>
+    <h2>Activity - Plan Your Robot Arm Project</h2>
+    <p>You will create a project plan for your own robot arm assignment. This plan will guide your work in Modules 15 and 16.</p>
     <ul class="steps">
-      <li><strong>Specification review:</strong> Return to the specification you wrote in Module 14. For each point, record the actual outcome (your test results from Module 15) and state pass or fail.</li>
-      <li><strong>Written evaluation:</strong> For each specification point, write 2–4 sentences covering outcome, analysis, and improvement (use the table format from Theory 2 above as a guide).</li>
-      <li><strong>Overall reflection:</strong> Write one paragraph (150–200 words) answering: What were the two most significant technical challenges you faced, and how did you overcome them?</li>
-      <li><strong>Future development:</strong> Write three specific, justified improvements you would make if you had more time. For each, explain the engineering reason it would improve the system.</li>
-      <li><strong>Presentation:</strong> Prepare a 5-minute presentation of your project. Include: what the arm was programmed to do, a live demonstration, two key results from testing, and one honest critique of your own work.</li>
-      <li><strong>Non-technical summary:</strong> Write a half-page plain-English summary of your project, suitable for a parent, governor, or potential employer who has no engineering background.</li>
+      <li>Write a <strong>project brief</strong> in 3–5 sentences: what you are going to make the arm do, who it is for, and what success looks like.</li>
+      <li>List at least <strong>six measurable specification points</strong> (mix of essential and desirable) covering: performance, safety, software, and documentation.</li>
+      <li>Identify at least <strong>three risks</strong> to your project (technical or practical) and write a mitigation for each.</li>
+      <li>Draw a <strong>Gantt chart</strong> on paper or in a spreadsheet, mapping your six project phases across the weeks available. Identify any parallel tasks.</li>
+      <li>Share your plan with a classmate for peer review. Ask them: Is the brief clear? Are the spec points measurable? Is the timeline realistic?</li>
+      <li>Update your plan based on their feedback and keep it as a living document - revise it as the project progresses.</li>
     </ul>
 
     <div class="callout callout-tip no-print">
-      <span class="callout-icon">💭</span>
+      <span class="callout-icon">🔧</span>
       <div class="callout-body">
-        <strong>Evaluation Prompt - Programming Mode Choice</strong></br>
-        Write a paragraph addressing this question: <em>"Which programming mode (Blockly, G-Code, or RAPID) was most effective for your project, and why? If you were building a pick-and-place system that needed to respond to the camera (pick the block the camera detects, not a pre-taught position), which mode would you use and what would need to change in either the app or the server to support it?"</em>
-        <br><br>
-        A strong answer names specific advantages and limitations of the chosen mode, references actual observations from the project (e.g. "G-code was faster to edit when I needed to adjust a single position"), and proposes a technically plausible change for the camera-reactive scenario.
+        <strong>Extension Scope - End-Tool Subsystem</strong></br>
+        If you want a more advanced project, include the end-tool subsystem (gripper or vacuum pump) in your specification. Additional specification points could include:
+        <ul style="margin:0.4rem 0 0;padding-left:1.2rem;">
+          <li>"Gripper closes to a consistent angle within <strong>±5°</strong> across 10 operations" - verify via the End Tool Servo panel in <span class="ui-ref">Joint Control</span></li>
+          <li>"Vacuum pump maintains suction for at least <strong>10 seconds</strong> without pressure loss" - verify by timing grip duration during the pick operation</li>
+        </ul>
+        The end-tool controls (<code>GripperOpen</code>, <code>GripperClose</code>, <code>PumpOn</code>, <code>PumpOff</code>) are available in all three programming modes (G-Code: <code>M10</code>/<code>M11</code>; RAPID: named commands; Blockly: dedicated blocks).
       </div>
     </div>
 
-    <div class="callout callout-tip no-print">
-      <span class="callout-icon">📐</span>
-      <div class="callout-body">
-        <strong>Improvement Topic - 3D Model Calibration</strong></br>
-        Evaluate how accurately the 3D Visualisation model matched the physical arm's end-effector position during your project. Consider: did the model diverge from the physical arm at extreme joint configurations? Possible causes: joint flex under load, mechanical backlash, or inaccurate link lengths in the URDF.
-        <br><br>
-        A strong improvement proposal would be: <em>"The URDF link lengths could be refined by commanding 10 known positions, measuring the actual end-effector XYZ with a ruler and reference frame, comparing to the FK-computed values, and adjusting the URDF until the error is below ±5 mm. The AS5600 encoders provide a second angle reference that could also be used to detect systematic backlash errors."</em>
-        This demonstrates understanding of the URDF (Settings tab), the Kinematics tab, and the AS5600 hardware - an engineering improvement rooted in the specific system.
-      </div>
+    <div class="ws-field">
+      <label>Project brief (3–5 sentences)</label>
+      <textarea style="min-height:100px;" placeholder="What the arm will do, who it is for, and what success looks like..."></textarea>
     </div>
 
-    <div class="callout callout-tip no-print">
-      <span class="callout-icon">🎯</span>
-      <div class="callout-body">
-        <strong>Live Demo Suggestion - Control Session Handover</strong></br>
-        For a memorable and technically impressive demonstration, show the <strong>control session handover</strong>:
-        <ol style="margin:0.4rem 0 0;padding-left:1.2rem;">
-          <li>Your computer has control - run a short automated sequence</li>
-          <li>A second student connects on a second laptop - show the "another client has control" status message on their screen</li>
-          <li>Demonstrate <strong>Force Take Control</strong> from the second laptop - your session is displaced and you are notified</li>
-          <li>The second student now commands the arm</li>
-        </ol>
-        This demonstrates a real distributed-system concept (mutual exclusion over a network) to examiners - not just "the arm moves to a position". It directly showcases knowledge from Module 9 (WebSocket architecture) and Module 13 (control session as an engineering control), and is unique to this specific system.
-      </div>
+    <div class="ws-field">
+      <label>Specification points (at least six, measurable)</label>
+      <textarea style="min-height:120px;" placeholder="1. ...&#10;2. ...&#10;3. ..."></textarea>
     </div>
 
-    <h3>Evaluation Summary Table</h3>
+    <h3>Risk Register</h3>
     <table>
-      <tr><th>Spec point</th><th>Target</th><th>Actual result</th><th>Pass/Fail</th><th>Key reason for outcome</th></tr>
+      <tr><th>Risk</th><th>Likelihood (H/M/L)</th><th>Impact (H/M/L)</th><th>Mitigation</th></tr>
       <tr>
         <td><input type="text" placeholder="1."></td>
-        <td><input type="text"></td>
         <td><input type="text"></td>
         <td><input type="text"></td>
         <td><input type="text"></td>
@@ -236,32 +259,9 @@
         <td><input type="text"></td>
         <td><input type="text"></td>
         <td><input type="text"></td>
-        <td><input type="text"></td>
       </tr>
       <tr>
         <td><input type="text" placeholder="3."></td>
-        <td><input type="text"></td>
-        <td><input type="text"></td>
-        <td><input type="text"></td>
-        <td><input type="text"></td>
-      </tr>
-      <tr>
-        <td><input type="text" placeholder="4."></td>
-        <td><input type="text"></td>
-        <td><input type="text"></td>
-        <td><input type="text"></td>
-        <td><input type="text"></td>
-      </tr>
-      <tr>
-        <td><input type="text" placeholder="5."></td>
-        <td><input type="text"></td>
-        <td><input type="text"></td>
-        <td><input type="text"></td>
-        <td><input type="text"></td>
-      </tr>
-      <tr>
-        <td><input type="text" placeholder="6."></td>
-        <td><input type="text"></td>
         <td><input type="text"></td>
         <td><input type="text"></td>
         <td><input type="text"></td>
@@ -269,68 +269,61 @@
     </table>
 
     <div class="ws-field">
-      <label>Overall reflection (150–200 words)</label>
-      <textarea style="min-height:120px;" placeholder="Two most significant technical challenges and how you overcame them..."></textarea>
+      <label>Peer review notes and plan updates</label>
+      <textarea placeholder="Feedback received: ...&#10;Changes made: ..."></textarea>
     </div>
-    <div class="ws-field">
-      <label>Future development - three justified improvements</label>
-      <textarea style="min-height:120px;" placeholder="1. ...&#10;2. ...&#10;3. ..."></textarea>
-    </div>
-    <div class="ws-field">
-      <label>Programming mode evaluation (optional prompt)</label>
-      <textarea placeholder="Which mode was most effective and why? Camera-reactive scenario..."></textarea>
-    </div>
-    <div class="ws-field">
-      <label>Non-technical summary (plain English)</label>
-      <textarea style="min-height:100px;" placeholder="Half-page summary for a non-engineer audience..."></textarea>
+
+    <div class="callout callout-warning no-print">
+      <span class="callout-icon">⚠️</span>
+      <div class="callout-body">
+        <strong>Risk Register - Software-Specific Risks to Include</strong></br>
+        <ul style="margin:0.4rem 0 0;padding-left:1.2rem;">
+          <li><strong>Risk: Control session contention</strong> - two students try to command the arm simultaneously. Likelihood: Medium. Mitigation: single-client enforcement by the server; 5-minute idle timeout; communicate who has control before switching operators.</li>
+          <li><strong>Risk: Network drop mid-move</strong> - the app loses connection while a G-code sequence is running. Likelihood: Low. Mitigation: the server continues executing buffered commands; reconnect immediately and issue Stop All from the <span class="ui-ref">G-Code Control</span> tab.</li>
+          <li><strong>Risk: Serial bus loss during pick</strong> - the server loses contact with the servo bus while gripping. Likelihood: Very Low. Mitigation: auto-recovery occurs within 30 s; always Home before starting a new sequence to confirm arm position.</li>
+        </ul>
+      </div>
     </div>
   </div>
 
   <!-- SO WHAT -->
   <div class="section-card">
     <span class="pill pill-sowhat">So What?</span>
-    <h2>Reflection as an Engineering Habit</h2>
-    <p>The best engineers are those who treat every project - successful or not - as a learning opportunity. The practice of structured reflection (what worked, what did not, and why) is what separates engineers who improve continuously from those who repeat the same mistakes.</p>
-    <p>Professional engineering bodies (IMechE, IET, BCS) require evidence of <em>continuing professional development</em> (CPD) - ongoing learning and reflection - as a condition of membership. The habit starts here.</p>
-    <p><strong>Final thought:</strong> When you started Module 1, you may not have known what a serial bus, a kinematic chain, or a PID controller was. Look at your project now. That distance is what engineering education is for.</p>
-  </div>
-
-  <!-- COMPLETION BADGE -->
-  <div class="completion-badge">
-    <div class="badge-icon">&#127941;</div>
-    <h3>Curriculum Complete</h3>
-    <p>You have worked through all 16 modules - Foundation, Intermediate, Advanced, and Project. Well done.</p>
+    <h2>Why Planning Matters</h2>
+    <p>Most engineering project failures are not caused by bad technical skills - they are caused by poor planning. Running out of time, scope creep (the project keeps growing), and unclear requirements are the top three causes of cost overruns and late delivery in the engineering industry.</p>
+    <p>The tools in this module - Gantt charts, specifications, risk registers - are used by professional engineers on projects worth millions of pounds. You are learning the same language.</p>
+    <p><strong>Think about:</strong> Look back at your Gantt chart. What is your critical path - the sequence of tasks where any delay will push back the final deadline? How could you protect it?</p>
   </div>
 
   <!-- MCQ -->
   <div class="section-card">
-    <span class="pill pill-mcq">Final Quiz</span>
+    <span class="pill pill-mcq">Quiz</span>
     <h2>Check Your Understanding</h2>
 
     <div class="mcq-question">
-      <p>1. A critical evaluation differs from a basic evaluation because it:</p>
-      <label class="mcq-option"><input type="radio" name="q1" value="a"> Is longer and uses more technical words</label>
-      <label class="mcq-option"><input type="radio" name="q1" value="b"> Honestly identifies weaknesses and proposes specific, justified improvements</label>
-      <label class="mcq-option"><input type="radio" name="q1" value="c"> Only covers the things that went well</label>
-      <label class="mcq-option"><input type="radio" name="q1" value="d"> Is written after the presentation</label>
+      <p>1. What makes a specification point useful rather than vague?</p>
+      <label class="mcq-option"><input type="radio" name="q1" value="a"> It is written in technical jargon</label>
+      <label class="mcq-option"><input type="radio" name="q1" value="b"> It is measurable - you can test whether it has been met</label>
+      <label class="mcq-option"><input type="radio" name="q1" value="c"> It is aspirational and ambitious</label>
+      <label class="mcq-option"><input type="radio" name="q1" value="d"> It is short</label>
       <div class="feedback-msg" id="q1-fb"></div>
     </div>
 
     <div class="mcq-question">
-      <p>2. When presenting to a non-technical audience, the most important thing is to:</p>
-      <label class="mcq-option"><input type="radio" name="q2" value="a"> Use as much technical vocabulary as possible to appear credible</label>
-      <label class="mcq-option"><input type="radio" name="q2" value="b"> Explain what the system does and why it matters, in plain language</label>
-      <label class="mcq-option"><input type="radio" name="q2" value="c"> Focus only on the parts that did not work</label>
-      <label class="mcq-option"><input type="radio" name="q2" value="d"> Read directly from your report</label>
+      <p>2. On a Gantt chart, overlapping bars on different tasks indicate:</p>
+      <label class="mcq-option"><input type="radio" name="q2" value="a"> A planning error</label>
+      <label class="mcq-option"><input type="radio" name="q2" value="b"> Those tasks are running in parallel</label>
+      <label class="mcq-option"><input type="radio" name="q2" value="c"> The project is behind schedule</label>
+      <label class="mcq-option"><input type="radio" name="q2" value="d"> The same person is doing both tasks</label>
       <div class="feedback-msg" id="q2-fb"></div>
     </div>
 
     <div class="mcq-question">
-      <p>3. The engineering design cycle is best described as:</p>
-      <label class="mcq-option"><input type="radio" name="q3" value="a"> A linear process that ends when the first design is built</label>
-      <label class="mcq-option"><input type="radio" name="q3" value="b"> An iterative loop of design → build → test → evaluate → improve</label>
-      <label class="mcq-option"><input type="radio" name="q3" value="c"> A process that only applies to large industrial projects</label>
-      <label class="mcq-option"><input type="radio" name="q3" value="d"> Something done only at the start of a project</label>
+      <p>3. The most common cause of engineering project failure is:</p>
+      <label class="mcq-option"><input type="radio" name="q3" value="a"> Technical complexity being too high</label>
+      <label class="mcq-option"><input type="radio" name="q3" value="b"> Equipment breaking down</label>
+      <label class="mcq-option"><input type="radio" name="q3" value="c"> Poor planning - unclear requirements, scope creep, time overruns</label>
+      <label class="mcq-option"><input type="radio" name="q3" value="d"> Insufficient budget</label>
       <div class="feedback-msg" id="q3-fb"></div>
     </div>
 
@@ -340,17 +333,17 @@
   </div>
 
   <div class="nav-row">
-    <a class="nav-btn" href="module-15.html">&#8592; Module 15</a>
-    <a class="nav-btn primary" href="index.html">&#8592; Back to Index</a>
+    <a class="nav-btn" href="module-13.html">&#8592; Module 13</a>
+    <a class="nav-btn primary" href="module-15.html">Module 15 &#8594;</a>
   </div>
 </div>
 
 <script>
-const answers = { q1: 'b', q2: 'b', q3: 'b' };
+const answers = { q1: 'b', q2: 'b', q3: 'c' };
 const feedback = {
-  q1: { b: 'Correct! Critical evaluation honestly identifies weaknesses and proposes specific, justified improvements - not just a list of successes.', wrong: 'Not quite. Critical evaluation means honestly identifying weaknesses and proposing specific, justified improvements.' },
-  q2: { b: 'Correct! For a non-technical audience, plain language and clear explanation of purpose matters far more than technical detail.', wrong: 'Not quite. For a non-technical audience, plain language and explaining what the system does and why it matters is most important.' },
-  q3: { b: 'Correct! The engineering design cycle is an iterative loop - design, build, test, evaluate, improve - that repeats with each iteration.', wrong: 'Not quite. The design cycle is an iterative loop: design → build → test → evaluate → improve, repeated to converge on the best solution.' }
+  q1: { b: 'Correct! A measurable specification point lets you objectively test whether the requirement has been met.', wrong: 'Not quite. A specification point is useful when it is measurable - you can test whether it has been achieved.' },
+  q2: { b: 'Correct! Overlapping bars mean those tasks run in parallel, which is normal and efficient in engineering projects.', wrong: 'Not quite. Overlapping bars simply show parallel tasks - two things happening at the same time.' },
+  q3: { c: 'Correct! Most project failures stem from poor planning: unclear requirements, scope creep, and poor time management.', wrong: 'Not quite. Research consistently shows that poor planning - unclear requirements, scope creep, time overruns - is the top cause of project failure.' }
 };
 function checkMCQ() {
   let score = 0;

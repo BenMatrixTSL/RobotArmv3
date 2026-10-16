@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Module 14 - Project Planning &amp; Management</title>
+<title>Module 13 - Safety Standards & Design for Safety</title>
 <style>
   :root {
     --bg: #f8fafc; --card: #ffffff; --border: #e2e8f0;
@@ -13,10 +13,11 @@
     --purple: #7c3aed; --purple-light: #faf5ff;
     --orange: #ea580c; --orange-light: #fff7ed;
     --red: #dc2626; --red-light: #fef2f2;
+    --yellow: #ca8a04; --yellow-light: #fefce8;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
-  .hero { background: linear-gradient(135deg, #1c1917 0%, #44403c 100%); color: white; padding: 3rem 2rem; text-align: center; }
+  .hero { background: linear-gradient(135deg, #450a0a 0%, #7f1d1d 100%); color: white; padding: 3rem 2rem; text-align: center; }
   .hero .module-num { font-size: 0.85rem; opacity: 0.6; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 0.5rem; }
   .hero h1 { font-size: 2rem; font-weight: 700; margin-bottom: 0.75rem; }
   .hero p { font-size: 1.05rem; opacity: 0.85; max-width: 600px; margin: 0 auto; }
@@ -32,26 +33,30 @@
   h3 { font-size: 1.05rem; font-weight: 600; margin: 1.2rem 0 0.5rem; }
   p  { margin-bottom: 0.8rem; }
   .highlight-box { background: var(--accent-light); border-left: 4px solid var(--accent); padding: 1rem 1.2rem; border-radius: 0 8px 8px 0; margin: 1rem 0; }
+  .warning-box { background: var(--yellow-light); border-left: 4px solid var(--yellow); padding: 1rem 1.2rem; border-radius: 0 8px 8px 0; margin: 1rem 0; color: #713f12; }
   .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1rem 0; }
   .grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 1rem; margin: 1rem 0; }
   .mini-card { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; }
   .mini-card h4 { font-size: 0.9rem; font-weight: 700; margin-bottom: 0.4rem; }
   .mini-card p  { font-size: 0.85rem; color: var(--muted); margin: 0; }
+  .hierarchy { display: flex; flex-direction: column; gap: 0.4rem; margin: 1rem 0; }
+  .hier-row { display: flex; align-items: center; gap: 0.8rem; padding: 0.6rem 1rem; border-radius: 6px; font-size: 0.9rem; font-weight: 600; }
+  .h1 { background: #fef2f2; border: 1px solid #fca5a5; color: #dc2626; }
+  .h2 { background: #fff7ed; border: 1px solid #fdba74; color: #c2410c; }
+  .h3 { background: #fefce8; border: 1px solid #fde047; color: #854d0e; }
+  .h4 { background: #f0fdf4; border: 1px solid #86efac; color: #15803d; }
+  .h5 { background: #eff6ff; border: 1px solid #93c5fd; color: #1d4ed8; }
+  .hier-num { font-size: 1.1rem; min-width: 2rem; }
   table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
   th { background: var(--accent-light); color: var(--accent); text-align: left; padding: 0.6rem 0.8rem; font-weight: 600; }
   td { padding: 0.55rem 0.8rem; border-bottom: 1px solid var(--border); }
   tr:last-child td { border-bottom: none; }
-  .gantt-wrap { overflow-x: auto; margin: 1rem 0; }
-  .gantt { border-collapse: collapse; min-width: 600px; font-size: 0.82rem; }
-  .gantt th { background: #1e293b; color: white; text-align: center; padding: 0.4rem 0.6rem; }
-  .gantt td { border: 1px solid var(--border); padding: 0.35rem 0.6rem; }
-  .gantt .task-name { background: var(--bg); font-weight: 600; min-width: 160px; }
-  .bar { background: var(--accent); border-radius: 3px; height: 16px; }
-  .bar-green { background: var(--green); }
-  .bar-purple { background: var(--purple); }
   .steps { list-style: none; counter-reset: step; padding: 0; }
   .steps li { counter-increment: step; display: flex; gap: 1rem; margin-bottom: 0.9rem; align-items: flex-start; }
   .steps li::before { content: counter(step); min-width: 28px; height: 28px; background: var(--green); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; flex-shrink: 0; }
+  .tab-ref { display: inline-block; background: #0f172a; color: #7dd3fc; font-family: monospace; font-size: 0.8rem; padding: 0.15rem 0.5rem; border-radius: 4px; }
+  .todo-block { background: var(--red-light); border: 2px dashed var(--red); border-radius: 8px; padding: 1rem 1.2rem; margin: 1rem 0; color: var(--red); }
+  .todo-block strong { display: block; margin-bottom: 0.3rem; }
   .mcq-question { margin-bottom: 1.5rem; }
   .mcq-question p { font-weight: 600; margin-bottom: 0.6rem; }
   .mcq-option { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.35rem; cursor: pointer; font-size: 0.95rem; }
@@ -83,14 +88,14 @@
 <body>
 
 <div class="hero">
-  <div class="module-num">Module 14 of 16</div>
-  <h1>Project Planning &amp; Management</h1>
-  <p>Applying structured project management methods to engineering tasks - from brief to delivery.</p>
+  <div class="module-num">Module 13 of 16</div>
+  <h1>Safety Standards &amp; Design for Safety</h1>
+  <p>How international standards shape robot design, and how to apply systematic safety thinking to the arm you are using.</p>
 </div>
 <div class="meta-bar">
   <span>&#128340; 60–75 min</span>
-  <span>&#127919; Group: Project</span>
-  <span>&#128268; Context: Your own robot arm project</span>
+  <span>&#127919; Group: Advanced</span>
+  <span>&#128268; App tabs: Dead Zones · Settings · Joint Control</span>
 </div>
 
 <div class="container">
@@ -98,112 +103,93 @@
   <!-- THEORY 1 -->
   <div class="section-card">
     <span class="pill pill-theory">Theory</span>
-    <h2>Engineering Project Phases</h2>
-    <img src="images/project-lifecycle.svg" alt="Engineering project lifecycle" style="width:100%;height:auto;display:block;border-radius:8px;margin:12px 0;">
-    <p>Most engineering projects follow a common lifecycle, regardless of scale. Understanding which phase you are in helps you focus your effort and communicate progress clearly:</p>
-    <div class="grid-3">
-      <div class="mini-card">
-        <h4>&#128269; 1. Brief &amp; Scope</h4>
-        <p>What needs to be built? Who is it for? What are the constraints (time, budget, skills)?</p>
-      </div>
-      <div class="mini-card">
-        <h4>&#128196; 2. Research &amp; Specification</h4>
-        <p>Investigate options, define measurable requirements (the spec), identify risks.</p>
-      </div>
-      <div class="mini-card">
-        <h4>&#9998;&#65039; 3. Design</h4>
-        <p>Sketch, model, simulate. Select the best approach. Document decisions.</p>
-      </div>
-      <div class="mini-card">
-        <h4>&#128295; 4. Prototype &amp; Build</h4>
-        <p>Make the first version. Accept that it will not be perfect - iteration is normal.</p>
-      </div>
-      <div class="mini-card">
-        <h4>&#9989; 5. Test &amp; Evaluate</h4>
-        <p>Test against the specification. Record results. Identify what to improve.</p>
-      </div>
-      <div class="mini-card">
-        <h4>&#128196; 6. Document &amp; Present</h4>
-        <p>Write up what you did and why. Present findings to a technical or non-technical audience.</p>
-      </div>
+    <h2>Key Safety Standards for Robots</h2>
+    <p>Industrial robots are governed by a hierarchy of international standards. These define how robots must be designed, installed, and operated to protect workers:</p>
+    <table>
+      <tr><th>Standard</th><th>Scope</th></tr>
+      <tr><td><strong>ISO 10218-1</strong></td><td>Robot design and manufacture - what the robot builder must provide</td></tr>
+      <tr><td><strong>ISO 10218-2</strong></td><td>Robot installation and work cell - what the integrator must ensure</td></tr>
+      <tr><td><strong>ISO/TS 15066</strong></td><td>Collaborative robots (cobots) - force and speed limits for human contact</td></tr>
+      <tr><td><strong>EN 60204-1</strong></td><td>Electrical safety of machines - wiring, guarding, emergency stop design</td></tr>
+      <tr><td><strong>PUWER 1998</strong></td><td>UK law - Provision and Use of Work Equipment Regulations</td></tr>
+    </table>
+    <div class="highlight-box">
+      <strong>Note:</strong> This arm is an educational device, not CE-marked industrial equipment. However, the same safety principles apply at any scale.
     </div>
   </div>
 
   <!-- THEORY 2 -->
   <div class="section-card">
     <span class="pill pill-theory">Theory</span>
-    <h2>Gantt Charts &amp; Time Planning</h2>
-    <img src="images/gantt-template.svg" alt="Gantt chart template" style="width:100%;height:auto;display:block;border-radius:8px;margin:12px 0;">
-    <p>A <strong>Gantt chart</strong> is a bar chart that maps tasks against time. It is the most widely used project scheduling tool in engineering. Each row is a task; the bar shows when it runs. Overlapping bars show parallel work.</p>
-    <div class="gantt-wrap">
-      <table class="gantt">
-        <tr>
-          <th class="task-name">Task</th>
-          <th>Week 1</th><th>Week 2</th><th>Week 3</th><th>Week 4</th><th>Week 5</th><th>Week 6</th>
-        </tr>
-        <tr>
-          <td class="task-name">Research &amp; brief</td>
-          <td style="text-align:center"><div class="bar" style="width:80%"></div></td>
-          <td></td><td></td><td></td><td></td><td></td>
-        </tr>
-        <tr>
-          <td class="task-name">Specification</td>
-          <td></td>
-          <td style="text-align:center"><div class="bar" style="width:100%"></div></td>
-          <td></td><td></td><td></td><td></td>
-        </tr>
-        <tr>
-          <td class="task-name">Design &amp; modelling</td>
-          <td></td><td></td>
-          <td style="text-align:center"><div class="bar bar-green" style="width:100%"></div></td>
-          <td style="text-align:center"><div class="bar bar-green" style="width:50%"></div></td>
-          <td></td><td></td>
-        </tr>
-        <tr>
-          <td class="task-name">Build &amp; program</td>
-          <td></td><td></td><td></td>
-          <td style="text-align:center"><div class="bar bar-green" style="width:50%"></div></td>
-          <td style="text-align:center"><div class="bar bar-green" style="width:100%"></div></td>
-          <td></td>
-        </tr>
-        <tr>
-          <td class="task-name">Test &amp; evaluate</td>
-          <td></td><td></td><td></td><td></td><td></td>
-          <td style="text-align:center"><div class="bar bar-purple" style="width:100%"></div></td>
-        </tr>
-      </table>
+    <h2>The Hierarchy of Controls</h2>
+    <img src="images/controls-pyramid.svg" alt="Hierarchy of controls pyramid" style="width:100%;height:auto;display:block;border-radius:8px;margin:12px 0;">
+    <p>When designing for safety, engineers work through a priority hierarchy - eliminating hazards is always preferred over warning about them:</p>
+    <div class="hierarchy">
+      <div class="hier-row h1"><span class="hier-num">1</span> <strong>Eliminate</strong> - Remove the hazard entirely (e.g. redesign so the motion is not needed)</div>
+      <div class="hier-row h2"><span class="hier-num">2</span> <strong>Substitute</strong> - Replace with a less dangerous alternative (e.g. slower motor)</div>
+      <div class="hier-row h3"><span class="hier-num">3</span> <strong>Engineering controls</strong> - Guards, interlocks, software limits, force limiting</div>
+      <div class="hier-row h4"><span class="hier-num">4</span> <strong>Administrative controls</strong> - Procedures, training, supervision, permit-to-work</div>
+      <div class="hier-row h5"><span class="hier-num">5</span> <strong>PPE</strong> - Personal protective equipment (last resort - relies on human compliance)</div>
     </div>
-    <p>Notice that design and build overlap in weeks 3–4 - this is normal in iterative engineering. The chart makes dependencies visible: you cannot build before you have designed.</p>
+    <p>In this arm, the <strong>Dead Zones</strong> tab provides an engineering control (level 3). Your lab rules about not reaching into the operating envelope are administrative controls (level 4).</p>
+
+    <div class="callout callout-info">
+      <span class="callout-icon">🚫</span>
+      <div class="callout-body">
+        <strong>Dead Zones Tab - Safety Parameters</strong></br>
+        Each dead zone is a named rectangular XYZ exclusion volume with an enable/disable toggle. In the safety hierarchy, dead zones are a <strong>Level 3 Engineering Control</strong> - they are enforced automatically by the server and do not rely on the operator remembering to avoid a specific area. Enable the <strong>Dead Zones</strong> overlay in 3D Visualisation to verify that defined zones correspond to physical obstacles in the lab layout. A zone defined incorrectly (wrong coordinates, wrong size, or accidentally disabled) provides no protection - verify the visual overlay against the physical space.
+      </div>
+    </div>
+
+    <div class="callout callout-info">
+      <span class="callout-icon">🔐</span>
+      <div class="callout-body">
+        <strong>Control Session - Level 3 Engineering Control</strong></br>
+        The software <em>control session</em> mechanism is an engineering control (Level 3 in the hierarchy). Only one WebSocket client at a time can issue movement commands. Key properties:
+        <ul style="margin:0.4rem 0 0;padding-left:1.2rem;">
+          <li>A <strong>5-minute idle timeout</strong> auto-releases control if no movement is commanded - preventing an abandoned session from blocking others</li>
+          <li>A disconnecting client <strong>immediately releases control</strong></li>
+          <li>Control can only be forcibly taken from another client using an explicit <strong>Force Take Control</strong> - and the displaced client is notified</li>
+        </ul>
+        In a multi-user lab environment, this prevents two students from simultaneously commanding conflicting movements. Classify it alongside dead zones in your hierarchy of controls worksheet.
+      </div>
+    </div>
   </div>
 
   <!-- THEORY 3 -->
   <div class="section-card">
     <span class="pill pill-theory">Theory</span>
-    <h2>Writing a Specification</h2>
-    <p>A specification defines what a successful outcome looks like, in measurable terms. Vague requirements lead to disagreements about whether the project succeeded.</p>
-    <table>
-      <tr><th>Vague requirement</th><th>Measurable specification</th></tr>
-      <tr><td>"The arm should be accurate"</td><td>Repeat position accuracy ≤ ±2° on all joints after 10 cycles</td></tr>
-      <tr><td>"The arm should be safe"</td><td>All joint limits configured; risk assessment completed and signed; SOP posted at workstation</td></tr>
-      <tr><td>"The program should work"</td><td>G-code program completes 5 consecutive cycles without fault; cycle time ≤ 15 s</td></tr>
-      <tr><td>"Good documentation"</td><td>Circuit diagram, wiring list, and annotated code submitted; peer-reviewed</td></tr>
-    </table>
-    <div class="highlight-box">
-      <strong>Tip:</strong> Use <em>Essential</em> and <em>Desirable</em> columns in your spec. Essential = must have for the project to pass. Desirable = would improve it if time allows.
+    <h2>Speed &amp; Force Limiting</h2>
+    <img src="images/ke-speed-graph.svg" alt="Kinetic energy vs speed graph" style="width:100%;height:auto;display:block;border-radius:8px;margin:12px 0;">
+    <p>One of the most important safety parameters in any robot is how fast it moves and how much force it can exert. These two quantities determine the severity of a collision:</p>
+    <p style="text-align:center; font-family:monospace; background:#f1f5f9; padding:0.8rem; border-radius:8px; margin:1rem 0;">
+      Energy = ½ × m × v²&nbsp;&nbsp;&nbsp;&nbsp;Force = m × a
+    </p>
+    <p>Doubling the speed quadruples the kinetic energy at impact. This is why cobots under ISO/TS 15066 have strict speed limits when humans are nearby.</p>
+    <div class="grid-2">
+      <div class="mini-card">
+        <h4>&#128268; Speed limiting</h4>
+        <p>Reducing maximum joint speed (via the Settings tab or G-code feed rate F parameter) reduces both cycle time and collision energy.</p>
+      </div>
+      <div class="mini-card">
+        <h4>&#9889; Torque/current limiting</h4>
+        <p>The ST3215 servos have a hardware current limit built into the servo IC - this caps the force the joint can exert. There is no current-limit slider in the Settings tab; the closest software-accessible safety control for overload is the speed limit.</p>
+      </div>
+    </div>
+    <div class="warning-box">
+      <strong>&#9888;&#65039; Even at low speeds, a robot arm can cause injury</strong> if a finger or hand is trapped between a moving link and a fixed object. Treat the arm with the same respect as any powered machinery.
     </div>
 
-    <div class="callout callout-tip">
-      <span class="callout-icon">✅</span>
+    <div class="callout callout-info">
+      <span class="callout-icon">🌡️</span>
       <div class="callout-body">
-        <strong>Measurable Specification Points - Examples for This Arm</strong></br>
+        <strong>Thermal Protection - Layered Engineering Controls</strong></br>
+        The system has thermal protection at two levels - a useful example of layered engineering controls:
         <ul style="margin:0.4rem 0 0;padding-left:1.2rem;">
-          <li>"All 6 joints return to the Home position within <strong>±1°</strong> after 10 consecutive cycles" - measurable via the angle readings in <span class="ui-ref">Joint Control</span></li>
-          <li>"End-to-end cycle time (Home → Pick → Place → Home) is under <strong>12 seconds</strong> at 75% speed" - measurable with a stopwatch or the execution log</li>
-          <li>"App connects to Pi and achieves a control session within <strong>5 seconds</strong> on the classroom network" - measurable from the Connection tab</li>
-          <li>"Joint temperatures remain below <strong>50°C</strong> after 10 consecutive cycles" - measurable from the temperature field in Joint Control</li>
-          <li>"Camera tab identifies a red block on a white surface within <strong>2 seconds</strong> of placement" - measurable with a timer and the Camera tab</li>
+          <li><strong>Level 1 (hardware)</strong>: the ST3215 servo IC has a built-in thermal fuse / shutdown - the servo cuts power if it overheats, regardless of software state</li>
+          <li><strong>Level 3 (software)</strong>: the server detects an overtemperature fault from the servo's telemetry and enforces a 30-second cool-down period for that joint, refusing further move commands until it has cooled. The LED strip switches to flashing orange to signal the fault</li>
         </ul>
-        Compare these to the generic examples above: each references a specific data source (a tab, a field, a tool) so the measurement method is unambiguous.
+        Ask: which control is preferred in the hierarchy, and why is the hardware-level control retained even when the software-level control exists?
       </div>
     </div>
   </div>
@@ -211,45 +197,39 @@
   <!-- WORKSHEET -->
   <div class="section-card worksheet-card">
     <span class="pill pill-worksheet">Worksheet</span>
-    <h2>Activity - Plan Your Robot Arm Project</h2>
-    <p>You will create a project plan for your own robot arm assignment. This plan will guide your work in Modules 15 and 16.</p>
+    <h2>Activity - Safety Audit of the Arm</h2>
+    <p>Carry out a systematic safety review of the arm setup in your lab, applying the hierarchy of controls.</p>
     <ul class="steps">
-      <li>Write a <strong>project brief</strong> in 3–5 sentences: what you are going to make the arm do, who it is for, and what success looks like.</li>
-      <li>List at least <strong>six measurable specification points</strong> (mix of essential and desirable) covering: performance, safety, software, and documentation.</li>
-      <li>Identify at least <strong>three risks</strong> to your project (technical or practical) and write a mitigation for each.</li>
-      <li>Draw a <strong>Gantt chart</strong> on paper or in a spreadsheet, mapping your six project phases across the weeks available. Identify any parallel tasks.</li>
-      <li>Share your plan with a classmate for peer review. Ask them: Is the brief clear? Are the spec points measurable? Is the timeline realistic?</li>
-      <li>Update your plan based on their feedback and keep it as a living document - revise it as the project progresses.</li>
+      <li>Identify three specific hazards associated with this arm (e.g. struck by moving link, trapped fingers, tripping on cables). Write each below.</li>
+      <li>For each hazard, classify it using the hierarchy: which existing controls are in place? Which level of the hierarchy are they at?</li>
+      <li>Open the <span class="tab-ref">Dead Zones</span> tab. Check that joint limits are set appropriately. Does the current limit prevent the arm reaching any fixtures or people in your lab layout?</li>
+      <li>Open the <span class="tab-ref">Settings</span> tab. Find the <strong>Linear Speed</strong> and <strong>Movement Mode</strong> parameters and record their current values. Note: there is no current-limit slider here - the ST3215 servo's current limit is a hardware parameter. The closest software-accessible safety control for overload is the speed limit.</li>
+      <li>Open the <span class="tab-ref">Joint Control</span> tab. Command a fast move (high speed) and observe the behaviour. Then set speed to 20% and repeat. Describe the difference in collision risk.</li>
+      <li>Write a short (half-page) <strong>safe operating procedure (SOP)</strong> for using this arm in your lab. Include: who may operate it, pre-use checks, what to do if something goes wrong, and how to safely power it down.</li>
     </ul>
 
     <div class="callout callout-tip no-print">
-      <span class="callout-icon">🔧</span>
+      <span class="callout-icon">📋</span>
       <div class="callout-body">
-        <strong>Extension Scope - End-Tool Subsystem</strong></br>
-        If you want a more advanced project, include the end-tool subsystem (gripper or vacuum pump) in your specification. Additional specification points could include:
-        <ul style="margin:0.4rem 0 0;padding-left:1.2rem;">
-          <li>"Gripper closes to a consistent angle within <strong>±5°</strong> across 10 operations" - verify via the End Tool Servo panel in <span class="ui-ref">Joint Control</span></li>
-          <li>"Vacuum pump maintains suction for at least <strong>10 seconds</strong> without pressure loss" - verify by timing grip duration during the pick operation</li>
-        </ul>
-        The end-tool controls (<code>GripperOpen</code>, <code>GripperClose</code>, <code>PumpOn</code>, <code>PumpOff</code>) are available in all three programming modes (G-Code: <code>M10</code>/<code>M11</code>; RAPID: named commands; Blockly: dedicated blocks).
+        <strong>SOP Template - Connection and Control Workflow</strong></br>
+        Your SOP should include this specific sequence for using the application safely:
+        <ol style="margin:0.4rem 0 0;padding-left:1.2rem;">
+          <li>Open the application, navigate to <span class="ui-ref">Connection</span> tab, enter Pi IP address (or use Auto-Detect), connect</li>
+          <li>Observe the LED strip - confirm it shows <strong>solid green</strong> (connected and ready) before proceeding</li>
+          <li>Press <strong>Take Control</strong> - confirm the status bar shows you have control</li>
+          <li>Enable torque only when ready to move and everyone is clear of the working envelope</li>
+          <li>After completing work: press <strong>E-Stop</strong> or run the Home sequence, then <strong>Disable Torque</strong>, then press <strong>Release Control</strong></li>
+          <li>Do not leave the session with control held - another user will be locked out</li>
+        </ol>
       </div>
     </div>
 
-    <div class="ws-field">
-      <label>Project brief (3–5 sentences)</label>
-      <textarea style="min-height:100px;" placeholder="What the arm will do, who it is for, and what success looks like..."></textarea>
-    </div>
-
-    <div class="ws-field">
-      <label>Specification points (at least six, measurable)</label>
-      <textarea style="min-height:120px;" placeholder="1. ...&#10;2. ...&#10;3. ..."></textarea>
-    </div>
-
-    <h3>Risk Register</h3>
+    <h3>Hazard Register</h3>
     <table>
-      <tr><th>Risk</th><th>Likelihood (H/M/L)</th><th>Impact (H/M/L)</th><th>Mitigation</th></tr>
+      <tr><th>Hazard</th><th>Who is at risk</th><th>Existing controls</th><th>Hierarchy level</th><th>Residual risk</th></tr>
       <tr>
         <td><input type="text" placeholder="1."></td>
+        <td><input type="text"></td>
         <td><input type="text"></td>
         <td><input type="text"></td>
         <td><input type="text"></td>
@@ -259,9 +239,11 @@
         <td><input type="text"></td>
         <td><input type="text"></td>
         <td><input type="text"></td>
+        <td><input type="text"></td>
       </tr>
       <tr>
         <td><input type="text" placeholder="3."></td>
+        <td><input type="text"></td>
         <td><input type="text"></td>
         <td><input type="text"></td>
         <td><input type="text"></td>
@@ -269,19 +251,32 @@
     </table>
 
     <div class="ws-field">
-      <label>Peer review notes and plan updates</label>
-      <textarea placeholder="Feedback received: ...&#10;Changes made: ..."></textarea>
+      <label>Settings values - Linear Speed and Movement Mode</label>
+      <input type="text" placeholder="Linear Speed: ___ mm/s   Movement Mode: PTP / Linear Cartesian">
     </div>
 
-    <div class="callout callout-warning no-print">
-      <span class="callout-icon">⚠️</span>
+    <div class="ws-field">
+      <label>Speed comparison - high speed vs 20% (collision risk)</label>
+      <textarea placeholder="At high speed... At 20%..."></textarea>
+    </div>
+
+    <div class="ws-field">
+      <label>Safe Operating Procedure (SOP)</label>
+      <textarea style="min-height:140px;" placeholder="Who may operate: ...&#10;Pre-use checks: ...&#10;If something goes wrong: ...&#10;Safe power-down: ..."></textarea>
+    </div>
+
+    <div class="callout callout-info no-print">
+      <span class="callout-icon">⚙️</span>
       <div class="callout-body">
-        <strong>Risk Register - Software-Specific Risks to Include</strong></br>
+        <strong>Settings Tab - Confirmed Parameters</strong></br>
+        Relevant parameters in the <span class="ui-ref">Settings</span> tab for safety analysis:
         <ul style="margin:0.4rem 0 0;padding-left:1.2rem;">
-          <li><strong>Risk: Control session contention</strong> - two students try to command the arm simultaneously. Likelihood: Medium. Mitigation: single-client enforcement by the server; 5-minute idle timeout; communicate who has control before switching operators.</li>
-          <li><strong>Risk: Network drop mid-move</strong> - the app loses connection while a G-code sequence is running. Likelihood: Low. Mitigation: the server continues executing buffered commands; reconnect immediately and issue Stop All from the <span class="ui-ref">G-Code Control</span> tab.</li>
-          <li><strong>Risk: Serial bus loss during pick</strong> - the server loses contact with the servo bus while gripping. Likelihood: Very Low. Mitigation: auto-recovery occurs within 30 s; always Home before starting a new sequence to confirm arm position.</li>
+          <li><strong>Movement Mode</strong>: PTP (point-to-point, faster) or Linear Cartesian (straight-line end-effector path, slower)</li>
+          <li><strong>Linear Speed (mm/s)</strong>: maximum speed for Linear Cartesian moves</li>
+          <li><strong>Linear Step Size (mm)</strong>: waypoint spacing for linear interpolation (smaller = smoother path, more computation)</li>
+          <li><strong>Status Watchdog Interval</strong>: fallback poll period if the server stops pushing updates</li>
         </ul>
+        There is no explicit current-limit slider - the ST3215 servo's current limit is a hardware parameter. The closest software-accessible safety control for overload is the <strong>speed limit</strong>: lower speed → lower peak current draw → lower risk of thermal overload.
       </div>
     </div>
   </div>
@@ -289,10 +284,10 @@
   <!-- SO WHAT -->
   <div class="section-card">
     <span class="pill pill-sowhat">So What?</span>
-    <h2>Why Planning Matters</h2>
-    <p>Most engineering project failures are not caused by bad technical skills - they are caused by poor planning. Running out of time, scope creep (the project keeps growing), and unclear requirements are the top three causes of cost overruns and late delivery in the engineering industry.</p>
-    <p>The tools in this module - Gantt charts, specifications, risk registers - are used by professional engineers on projects worth millions of pounds. You are learning the same language.</p>
-    <p><strong>Think about:</strong> Look back at your Gantt chart. What is your critical path - the sequence of tasks where any delay will push back the final deadline? How could you protect it?</p>
+    <h2>Safety Is an Engineering Responsibility</h2>
+    <p>In UK law (Health and Safety at Work Act 1974, PUWER 1998), employers have a duty to ensure that work equipment is safe. But the engineer who designs the system shares moral - and sometimes legal - responsibility for how safe it is to use.</p>
+    <p>The hierarchy of controls, risk assessments, and safety standards exist because history has shown that relying on people to "be careful" is not enough. Engineering out the hazard is always better than managing it with rules and warning signs.</p>
+    <p><strong>Think about:</strong> If you were asked to deploy this arm in a public exhibition where members of the public (including children) could get close to it, what additional controls would you need? At which levels of the hierarchy?</p>
   </div>
 
   <!-- MCQ -->
@@ -301,29 +296,29 @@
     <h2>Check Your Understanding</h2>
 
     <div class="mcq-question">
-      <p>1. What makes a specification point useful rather than vague?</p>
-      <label class="mcq-option"><input type="radio" name="q1" value="a"> It is written in technical jargon</label>
-      <label class="mcq-option"><input type="radio" name="q1" value="b"> It is measurable - you can test whether it has been met</label>
-      <label class="mcq-option"><input type="radio" name="q1" value="c"> It is aspirational and ambitious</label>
-      <label class="mcq-option"><input type="radio" name="q1" value="d"> It is short</label>
+      <p>1. According to the hierarchy of controls, which approach is always preferred first?</p>
+      <label class="mcq-option"><input type="radio" name="q1" value="a"> Providing PPE to operators</label>
+      <label class="mcq-option"><input type="radio" name="q1" value="b"> Posting warning signs</label>
+      <label class="mcq-option"><input type="radio" name="q1" value="c"> Eliminating the hazard entirely</label>
+      <label class="mcq-option"><input type="radio" name="q1" value="d"> Writing a safe operating procedure</label>
       <div class="feedback-msg" id="q1-fb"></div>
     </div>
 
     <div class="mcq-question">
-      <p>2. On a Gantt chart, overlapping bars on different tasks indicate:</p>
-      <label class="mcq-option"><input type="radio" name="q2" value="a"> A planning error</label>
-      <label class="mcq-option"><input type="radio" name="q2" value="b"> Those tasks are running in parallel</label>
-      <label class="mcq-option"><input type="radio" name="q2" value="c"> The project is behind schedule</label>
-      <label class="mcq-option"><input type="radio" name="q2" value="d"> The same person is doing both tasks</label>
+      <p>2. Doubling a robot's speed increases the kinetic energy at impact by a factor of:</p>
+      <label class="mcq-option"><input type="radio" name="q2" value="a"> 2 (doubles)</label>
+      <label class="mcq-option"><input type="radio" name="q2" value="b"> 4 (quadruples)</label>
+      <label class="mcq-option"><input type="radio" name="q2" value="c"> 1.5 (50% more)</label>
+      <label class="mcq-option"><input type="radio" name="q2" value="d"> 8 (octuples)</label>
       <div class="feedback-msg" id="q2-fb"></div>
     </div>
 
     <div class="mcq-question">
-      <p>3. The most common cause of engineering project failure is:</p>
-      <label class="mcq-option"><input type="radio" name="q3" value="a"> Technical complexity being too high</label>
-      <label class="mcq-option"><input type="radio" name="q3" value="b"> Equipment breaking down</label>
-      <label class="mcq-option"><input type="radio" name="q3" value="c"> Poor planning - unclear requirements, scope creep, time overruns</label>
-      <label class="mcq-option"><input type="radio" name="q3" value="d"> Insufficient budget</label>
+      <p>3. Software dead zones in the app are an example of which hierarchy level?</p>
+      <label class="mcq-option"><input type="radio" name="q3" value="a"> Elimination</label>
+      <label class="mcq-option"><input type="radio" name="q3" value="b"> PPE</label>
+      <label class="mcq-option"><input type="radio" name="q3" value="c"> Administrative control</label>
+      <label class="mcq-option"><input type="radio" name="q3" value="d"> Engineering control</label>
       <div class="feedback-msg" id="q3-fb"></div>
     </div>
 
@@ -333,17 +328,17 @@
   </div>
 
   <div class="nav-row">
-    <a class="nav-btn" href="module-13.html">&#8592; Module 13</a>
-    <a class="nav-btn primary" href="module-15.html">Module 15 &#8594;</a>
+    <a class="nav-btn" href="module-12.html">&#8592; Module 12</a>
+    <a class="nav-btn primary" href="module-14.html">Module 14 &#8594;</a>
   </div>
 </div>
 
 <script>
-const answers = { q1: 'b', q2: 'b', q3: 'c' };
+const answers = { q1: 'c', q2: 'b', q3: 'd' };
 const feedback = {
-  q1: { b: 'Correct! A measurable specification point lets you objectively test whether the requirement has been met.', wrong: 'Not quite. A specification point is useful when it is measurable - you can test whether it has been achieved.' },
-  q2: { b: 'Correct! Overlapping bars mean those tasks run in parallel, which is normal and efficient in engineering projects.', wrong: 'Not quite. Overlapping bars simply show parallel tasks - two things happening at the same time.' },
-  q3: { c: 'Correct! Most project failures stem from poor planning: unclear requirements, scope creep, and poor time management.', wrong: 'Not quite. Research consistently shows that poor planning - unclear requirements, scope creep, time overruns - is the top cause of project failure.' }
+  q1: { c: 'Correct! Elimination - removing the hazard entirely - is always the preferred first approach in the hierarchy.', wrong: 'Not quite. The hierarchy prioritises elimination first - removing the hazard entirely before considering any other measures.' },
+  q2: { b: 'Correct! KE = ½mv², so doubling v multiplies KE by 2² = 4.', wrong: 'Not quite. KE = ½mv², so doubling speed multiplies kinetic energy by 2² = 4 (quadruples).' },
+  q3: { d: 'Correct! Software limits are an engineering control - they are built into the system design rather than relying on human behaviour.', wrong: 'Not quite. Software limits are engineering controls - they are designed into the system rather than relying on rules or PPE.' }
 };
 function checkMCQ() {
   let score = 0;

@@ -1104,7 +1104,9 @@
                 directly from the hardware and decoded against the ST3215 datasheet's memory table - raw byte
                 value alongside its real-world meaning. EEPROM shows the factory default so anything that's been
                 changed stands out; SRAM is live telemetry (position, speed, current draw, fault flags, etc.) shown
-                read-only.
+                read-only. Selecting <strong>End Tool (ID 64)</strong> shows the ESP32 end tool's registers instead:
+                its identity and the saved Tool type ID as EEPROM, and its outputs, telemetry and hobby-servo settings
+                as RAM - which, unlike servo SRAM, can be edited here once editing is enabled.
             </p>
 
             <div class="calibration-controls">
@@ -1117,6 +1119,7 @@
                         <option value="4">Joint 4</option>
                         <option value="5">Joint 5</option>
                         <option value="6">Joint 6</option>
+                        <option value="tool">End Tool (ID 64)</option>
                     </select>
                 </label>
                 <button id="calibrationReadButton" class="btn btn-primary" disabled onclick="readCalibrationTable()">Read Registers</button>
@@ -1137,6 +1140,23 @@
                 </p>
             </div>
             <p class="info-text" id="calibrationStatus"></p>
+
+            <div class="connection-panel" id="traineeZeroTrimSection">
+                <h3>Student Zero Calibration (Trainee Trim)</h3>
+                <p class="info-text">
+                    Jog the joint selected above until its alignment marks line up exactly, then press
+                    <strong>Set current position as 0&deg;</strong>. The joint does not move - its reading changes so that
+                    this position becomes 0&deg;. This is a <strong>software trim only</strong>: nothing is written to the
+                    servo, and <strong>Reset</strong> always restores the servo's own calibration. Trims are limited to
+                    &plusmn;10&deg; and are kept until they are reset, even if the server restarts.
+                </p>
+                <div class="connection-form">
+                    <button id="zeroTrimSetButton" class="btn btn-primary" disabled onclick="setTraineeZeroTrim()">Set current position as 0&deg;</button>
+                    <button id="zeroTrimResetButton" class="btn btn-secondary" disabled onclick="resetTraineeZeroTrim(false)">Reset this joint</button>
+                    <button id="zeroTrimResetAllButton" class="btn btn-warning" disabled onclick="resetTraineeZeroTrim(true)">Reset all joints</button>
+                </div>
+                <p class="info-text" id="zeroTrimSummary">Trainee trims: -</p>
+            </div>
 
             <h3 class="calibration-section-heading">EEPROM (persistent configuration)</h3>
             <div class="table-wrap">
@@ -1160,7 +1180,7 @@
                 </table>
             </div>
 
-            <h3 class="calibration-section-heading">SRAM (live/runtime state - resets on power-off, read-only here)</h3>
+            <h3 class="calibration-section-heading" id="calibrationSramHeading">SRAM (live/runtime state - resets on power-off, read-only here)</h3>
             <div class="table-wrap">
                 <table class="calibration-table" id="calibrationSramTable">
                     <thead>
@@ -1171,6 +1191,7 @@
                             <th>Raw</th>
                             <th>Value</th>
                             <th>Access</th>
+                            <th id="calibrationSramEditHeader" hidden>Edit</th>
                         </tr>
                     </thead>
                     <tbody id="calibrationSramTableBody">
@@ -1349,8 +1370,9 @@
                 </div>
                 <p class="info-text camera-help-text">
                     Point the camera at the workspace. ArUco markers will be detected automatically
-                    and coloured blocks will be highlighted. Marker IDs 0–3 define the workspace
-                    coordinate frame for position estimation.
+                    and coloured blocks will be highlighted. The four corner markers define the workspace
+                    coordinate frame: each marker's corner is taken from where it sits in the picture, and
+                    the top-left marker is the origin. Keep only the four corner markers in view.
                 </p>
             </div>
         </div>
@@ -1735,6 +1757,7 @@
     <script src="positionsManager.js"></script>
     <!-- STS3215 EEPROM Memory Table: register definitions for the Calibration tab -->
     <script src="stsMemoryTable.js"></script>
+    <script src="endToolMemoryTable.js"></script>
     <!-- Calibration Page: reads and displays a servo's full EEPROM against the memory table -->
     <script src="calibrationPage.js"></script>
     <script src="cameraView.js?v=20260616"></script>

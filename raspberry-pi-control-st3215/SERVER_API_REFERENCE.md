@@ -41,7 +41,7 @@ For the wire protocol basics (connection, JSON message envelope, response types)
 | Command | Description | Params | Response | Wrapper | Call sites |
 |---|---|---|---|---|---|
 | `getStatus` | Returns the latest cached status (angle, position, speed, load, voltage, temperature, torque state) for every joint. Answered from cache — never touches the bus itself. | none | `{type:'status', joints:[...], cacheAgeMs}` | `getStatus()` (Promise) / `requestStatus()` (fire-and-forget) | `getStatus()`: app.js × 11, positionsManager.js × 1, blocklyRobotArm.js × 6 (template strings). `requestStatus()`: app.js × 4. Server also pushes `status` unsolicited every bus tick — most of the above are one-shot "read current angles right now" snapshots for move planning, not polling. |
-| `getJointConfigs` | Reports which joint numbers (1–6) currently have a responding servo, so the UI knows which joints to render/enable. | none | `{type:'jointConfigs', count, total, joints:[{jointNumber, servoId, available}]}` | `requestJointConfigs()` (fire-and-forget) / `getJointConfigs()` (local cache getter, no WS round trip) | `requestJointConfigs()`: app.js × 2 (2423, 6987). `getJointConfigs()` cache read: app.js × 1 (7457). Server also pushes this unsolicited on connect and whenever the joint set changes. |
+| `getJointConfigs` | Reports which joint numbers (1–6) currently have a responding servo, so the UI knows which joints to render/enable, plus each joint's trainee zero trim. | none | `{type:'jointConfigs', count, total, joints:[{jointNumber, servoId, available, zeroTrimDegrees}]}` | `requestJointConfigs()` (fire-and-forget) / `getJointConfigs()` (local cache getter, no WS round trip) | `requestJointConfigs()`: app.js × 2 (2423, 6987). `getJointConfigs()` cache read: app.js × 1 (7457). Server also pushes this unsolicited on connect and whenever the joint set changes. |
 | `getServerDiagnostics` | Returns internal server/bus health counters — bus tick timing, write-queue depth, connected client count, uptime, build ID. | none | `{type:'serverDiagnostics', diagnostics:{...}}` | `getServerDiagnostics()` | app.js × 1 (2610) |
 | `getEndTool` | Returns the cached identity/state of whatever end-tool is currently detected on the bus (ID 64). | none | `{type:'endTool', present, toolTypeId, known, tool, tools, lastProbeAt, lastError}` | *(no explicit wrapper — handled via the unsolicited `endTool` push)* | 0 explicit sends; app reacts passively via `applyEndToolState()` (app.js:920) |
 | `refreshEndTool` | Asks the server to re-probe the end-tool node right now, instead of waiting for its automatic ~15s poll — used right after a tool swap. | none | `{type:'success', message:'End tool probe requested'}` (the actual updated tool state arrives as a separate unsolicited `endTool` push) | *(raw `sendCommand`)* | app.js × 1 (1079) |
@@ -64,6 +64,15 @@ For the wire protocol basics (connection, JSON message envelope, response types)
 
 **Removed:** `setJointCenter` (and the whole software joint-centering override — `servo-joint-centers.json`, `ServoController.setCenterPosition()`) was removed once EEPROM-based commissioning (Calibration tab, `writeServoEepromRaw` to the Position Correction register) made a software-only zero-point override redundant.
 
+### Trainee zero trims (student calibration)
+
+A software-only zero offset per joint for teaching zero-angle calibration (curriculum Module 15). It is applied in `ServoController.angleToSteps()`/`stepsToAngle()` and **never written to servo EEPROM**, so resetting it always restores the servo's own calibration. It needs the control session but **not** the password. Trims are capped at ±10° and are saved to `$ROBOT_ARM_STATE_DIR/trainee-zero-trims.json` (default `/var/lib/robot-arm-st3215/`), so they survive a restart until they are reset. The servo's EEPROM angle limits are always read and written relative to the factory centre, ignoring any trim. Each change is re-broadcast in `jointConfigs` as `zeroTrimDegrees`.
+
+| Command | Description | Type | Params | Response | Wrapper | Call sites |
+|---|---|---|---|---|---|---|
+| `setJointZeroTrim` | Makes the joint's current physical position read as 0°. No movement and no EEPROM write. Refused if the joint is more than 10° from its factory zero. | Bus-write (queued) | `joint:number` | `{type:'success', message, joint, zeroTrimDegrees}` / `{type:'error', message}` | `setJointZeroTrim(joint)` | calibrationPage.js × 1 |
+| `resetJointZeroTrim` | Removes the trim from one joint, or from every joint. | Bus-write (queued) | `joint:number \| 'all'` | `{type:'success', message}` / `{type:'error', message}` | `resetJointZeroTrim(joint)` | calibrationPage.js × 1 |
+
 ---
 
 ## 4. Commissioning / EEPROM (new — not in `API_DOCUMENTATION.md` at all)
@@ -71,7 +80,7 @@ For the wire protocol basics (connection, JSON message envelope, response types)
 | Command | Description | Params | Response | Wrapper | Call sites |
 |---|---|---|---|---|---|
 | `readServoEeprom` | Reads a servo's full commissioning profile — PID gains, overload/stall protection thresholds, hard angle limits, and max torque — directly from its onboard EEPROM. | `joint:number` | `{type:'servoEeprom', joint, profile}` — `profile` = PID gains + overload protection + angle limits + max torque | `readServoEeprom(joint)` | app.js × 1 (3420) |
-| `writeServoEeprom` | Writes one or more EEPROM settings directly to a servo. Persists only on the servo's own hardware — nothing is auto-reapplied elsewhere. | `joint:number`, `values:object` — recognized groups: `{p,d,i,minStartupForce}`, `{overloadTorque,protTorque,protTimeMs}`, `{minAngleDeg,maxAngleDeg}` (together), `{maxTorque}` | `{type:'success', message, applied:[...]}` / `{type:'error', message:'No recognized fields in values'}` / `{type:'error', message, applied}` (partial progress) | `writeServoEeprom(joint, values)` | app.js × 1 (3480) |
+| `writeServoEeprom` | Writes one or more EEPROM settings directly to a servo. Persists only on the servo's own hardware — nothing is auto-reapplied elsewhere. Requires the control password (like `writeServoEepromRaw`). | `joint:number`, `password:string`, `values:object` — recognized groups: `{p,d,i,minStartupForce}`, `{overloadTorque,protTorque,protTimeMs}`, `{minAngleDeg,maxAngleDeg}` (together), `{maxTorque}` | `{type:'success', message, applied:[...]}` / `{type:'error', message:'No recognized fields in values'}` / `{type:'error', message, applied}` (partial progress) | `writeServoEeprom(joint, values)` | app.js × 1 (3480) |
 
 **Removed:** `commissionAllServos` and the whole `servo-pid-config.json` auto-apply-at-startup mechanism (`applyPIDConfig()` in `servoWorker.js`) were removed once the project settled on managing every EEPROM value manually via the Commissioning panel and Calibration page — EEPROM already persists on the servo itself, so a separate config file to reapply at every server start was redundant. `servo-tuner.js` still writes its sweep results directly to each servo's EEPROM, just no longer also to a JSON file.
 
@@ -127,6 +136,13 @@ Control-session enforcement for `executeLinearMove` is checked manually against 
 | `toolReset` | Reboots the end-tool's ESP32. | yes | `{type:'success', message:'Tool reset command sent'}` | **Dead** |
 
 None of these have named wrapper methods in `robotArmClient.js` beyond the generic `sendCommand`/`sendRequest` — the app sends them with raw command strings.
+
+### Calibration page raw register access
+
+| Command | Description | Requires | Params | Response | Wrapper |
+|---|---|---|---|---|---|
+| `readEndToolRegisters` | Reads the tool's whole 64-byte register array (8-byte READs, chunked), for the Calibration tab's "End Tool (ID 64)" entry. Decoded client-side by `endToolMemoryTable.js`. | control session | none | `{type:'endToolRegisters', bytes:number[64]}` | `readEndToolRegisters()` |
+| `writeEndToolRegister` | Writes one raw register on the tool. Address/range validated against `END_TOOL_WRITE_RANGES` in `servoWorker.js` (Tool type ID, status flags, PWM duty/control, hobby servo enable/position/angle/pulse min/max). Only Tool type ID (address 3) persists on the tool; the rest is RAM. | control session + control password | `address:number`, `rawValue:number`, `password:string` | `{type:'success', message}` / `{type:'error', message}` | `writeEndToolRegister(address, rawValue, password)` |
 
 ---
 

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Module 12 - Automation Cell Design</title>
+<title>Module 11 - Mechatronic System Integration</title>
 <style>
   :root {
     --bg: #f8fafc; --card: #ffffff; --border: #e2e8f0;
@@ -16,7 +16,7 @@
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
-  .hero { background: linear-gradient(135deg, #052e16 0%, #14532d 100%); color: white; padding: 3rem 2rem; text-align: center; }
+  .hero { background: linear-gradient(135deg, #1a0533 0%, #3b1f6b 100%); color: white; padding: 3rem 2rem; text-align: center; }
   .hero .module-num { font-size: 0.85rem; opacity: 0.6; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 0.5rem; }
   .hero h1 { font-size: 2rem; font-weight: 700; margin-bottom: 0.75rem; }
   .hero p { font-size: 1.05rem; opacity: 0.85; max-width: 600px; margin: 0 auto; }
@@ -25,6 +25,7 @@
   .section-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.75rem; margin-bottom: 1.5rem; }
   .pill { display: inline-block; font-size: 0.75rem; font-weight: 600; padding: 0.2rem 0.65rem; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.9rem; }
   .pill-theory   { background: var(--accent-light); color: var(--accent); }
+  .pill-activity { background: var(--green-light);  color: var(--green); }
   .pill-worksheet{ background: var(--purple-light); color: var(--purple); }
   .pill-sowhat   { background: var(--orange-light); color: var(--orange); }
   .pill-mcq      { background: #fff8e1; color: #856404; }
@@ -33,10 +34,18 @@
   p  { margin-bottom: 0.8rem; }
   .highlight-box { background: var(--accent-light); border-left: 4px solid var(--accent); padding: 1rem 1.2rem; border-radius: 0 8px 8px 0; margin: 1rem 0; }
   .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1rem 0; }
-  .grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 1rem; margin: 1rem 0; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 1rem; margin: 1rem 0; }
   .mini-card { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; }
   .mini-card h4 { font-size: 0.9rem; font-weight: 700; margin-bottom: 0.4rem; }
   .mini-card p  { font-size: 0.85rem; color: var(--muted); margin: 0; }
+  .layer-stack { display: flex; flex-direction: column; gap: 0.5rem; margin: 1rem 0; }
+  .layer { display: flex; align-items: center; gap: 1rem; padding: 0.75rem 1rem; border-radius: 8px; font-size: 0.9rem; font-weight: 600; }
+  .layer-app    { background: #eff6ff; border: 1px solid #bfdbfe; color: #1d4ed8; }
+  .layer-ws     { background: #f0fdf4; border: 1px solid #bbf7d0; color: #15803d; }
+  .layer-server { background: #faf5ff; border: 1px solid #ddd6fe; color: #6d28d9; }
+  .layer-serial { background: #fff7ed; border: 1px solid #fed7aa; color: #c2410c; }
+  .layer-hw     { background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; }
+  .layer-arrow  { text-align: center; color: var(--muted); font-size: 1.1rem; }
   table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
   th { background: var(--accent-light); color: var(--accent); text-align: left; padding: 0.6rem 0.8rem; font-weight: 600; }
   td { padding: 0.55rem 0.8rem; border-bottom: 1px solid var(--border); }
@@ -45,7 +54,6 @@
   .steps li { counter-increment: step; display: flex; gap: 1rem; margin-bottom: 0.9rem; align-items: flex-start; }
   .steps li::before { content: counter(step); min-width: 28px; height: 28px; background: var(--green); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; flex-shrink: 0; }
   .tab-ref { display: inline-block; background: #0f172a; color: #7dd3fc; font-family: monospace; font-size: 0.8rem; padding: 0.15rem 0.5rem; border-radius: 4px; }
-  .code-block { background: #0f172a; color: #7dd3fc; font-family: monospace; font-size: 0.88rem; padding: 1rem 1.2rem; border-radius: 8px; margin: 1rem 0; white-space: pre; overflow-x: auto; }
   .todo-block { background: var(--red-light); border: 2px dashed var(--red); border-radius: 8px; padding: 1rem 1.2rem; margin: 1rem 0; color: var(--red); }
   .todo-block strong { display: block; margin-bottom: 0.3rem; }
   .mcq-question { margin-bottom: 1.5rem; }
@@ -63,7 +71,7 @@
   .nav-row { display: flex; justify-content: space-between; margin-top: 2rem; }
   .nav-btn { display: inline-block; padding: 0.6rem 1.4rem; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 0.9rem; border: 2px solid var(--border); color: var(--text); }
   .nav-btn.primary { background: var(--accent); color: white; border-color: var(--accent); }
-  @media(max-width:600px){ .grid-2,.grid-3{ grid-template-columns:1fr; } }
+  @media(max-width:600px){ .grid-2,.grid-4{ grid-template-columns:1fr; } }
   .callout{border-radius:8px;padding:.875rem 1rem;margin:.75rem 0;font-size:.93rem;display:flex;gap:.75rem}
   .callout-icon{font-size:1.25rem;flex-shrink:0;line-height:1.4}
   .callout-body{flex:1}
@@ -78,14 +86,14 @@
 <body>
 
 <div class="hero">
-  <div class="module-num">Module 12 of 16</div>
-  <h1>Automation Cell Design</h1>
-  <p>Designing a complete robot work cell - workspace boundaries, stored positions, programs, and safe operating procedures.</p>
+  <div class="module-num">Module 11 of 16</div>
+  <h1>Mechatronic System Integration</h1>
+  <p>Understanding how mechanics, electronics, software and control theory combine into a single working system.</p>
 </div>
 <div class="meta-bar">
   <span>&#128340; 75–90 min</span>
   <span>&#127919; Group: Advanced</span>
-  <span>&#128268; App tabs: Dead Zones · Stored Positions · G-Code · Joint Control</span>
+  <span>&#128268; App tabs: All tabs</span>
 </div>
 
 <div class="container">
@@ -93,73 +101,102 @@
   <!-- THEORY 1 -->
   <div class="section-card">
     <span class="pill pill-theory">Theory</span>
-    <h2>What is a Robot Work Cell?</h2>
-    <img src="images/cell-layout.svg" alt="Automation cell layout" style="width:100%;height:auto;display:block;border-radius:8px;margin:12px 0;">
-    <img src="images/cell-floorplan.svg" alt="Robot cell floor plan with safety zones" style="width:100%;height:auto;display:block;border-radius:8px;margin:12px 0;">
-    <p>An <strong>automation cell</strong> (or work cell) is the defined physical space, equipment, and procedures that allow a robot to operate safely and productively. It includes:</p>
-    <div class="grid-3">
+    <h2>What is Mechatronics?</h2>
+    <p><strong>Mechatronics</strong> is the engineering discipline that combines mechanical engineering, electrical engineering, and computer science into integrated systems. The word is a portmanteau of <em>mechanics</em> and <em>electronics</em>.</p>
+    <div class="grid-4">
       <div class="mini-card">
-        <h4>&#128506;&#65039; Workspace</h4>
-        <p>The volume the robot can physically reach - and the subset where it is allowed to move (the <em>operating envelope</em>).</p>
+        <h4>&#9881;&#65039; Mechanical</h4>
+        <p>Structure, joints, links, gears, bearings, materials</p>
       </div>
       <div class="mini-card">
-        <h4>&#128274; Interlocks</h4>
-        <p>Safety mechanisms that stop the robot if a human enters the cell - light curtains, door switches, pressure mats.</p>
+        <h4>&#9889; Electrical</h4>
+        <p>Power supply, motors, wiring, PCBs, sensors</p>
       </div>
       <div class="mini-card">
-        <h4>&#128203; Program</h4>
-        <p>The sequence of moves the robot follows - stored positions, G-code files, or teach-pendant recordings.</p>
+        <h4>&#128187; Software</h4>
+        <p>Control algorithms, interfaces, communication protocols</p>
+      </div>
+      <div class="mini-card">
+        <h4>&#127919; Control</h4>
+        <p>Feedback loops, PID, path planning, safety limits</p>
       </div>
     </div>
-    <p>Even a small educational arm needs these elements defined. Without a clear operating envelope, the arm may strike fixtures, cables, or people.</p>
+    <p>This arm is a complete mechatronic system. You cannot understand or fix a problem in one domain without understanding how it connects to the others.</p>
   </div>
 
   <!-- THEORY 2 -->
   <div class="section-card">
     <span class="pill pill-theory">Theory</span>
-    <h2>Dead Zones - Software Limits</h2>
-    <p>In the absence of physical guards, software <strong>dead zones</strong> (also called <em>joint limits</em> or <em>software stops</em>) restrict the range of motion to a safe subset. The app's Dead Zones tab lets you configure minimum and maximum joint angles for each axis.</p>
-    <div class="highlight-box">
-      <strong>Why this matters:</strong> The ST3215 servos can rotate beyond the mechanical clearance of the arm structure. Without software limits, you risk stripping gears, snapping cables, or causing the arm to fold back on itself.
+    <h2>The Full System Stack</h2>
+    <img src="images/system-architecture.svg" alt="Full system architecture diagram" style="width:100%;height:auto;display:block;border-radius:8px;margin:12px 0;">
+    <p>Every action you trigger in the app travels through five distinct layers before a joint actually moves:</p>
+    <div class="layer-stack">
+      <div class="layer layer-app">&#128187; HMI / Electron App - User clicks a button or runs a G-code file</div>
+      <div class="layer-arrow">&#8595; WebSocket (JSON, TCP 8080)</div>
+      <div class="layer layer-ws">&#128257; Network Transport - Command sent as a JSON packet over Wi-Fi or LAN</div>
+      <div class="layer-arrow">&#8595; Server on Raspberry Pi receives and parses</div>
+      <div class="layer layer-server">&#127381; Controller (Raspberry Pi) - Motion planning, safety checks, PID setpoints calculated</div>
+      <div class="layer-arrow">&#8595; UART serial bus at 1 Mbaud</div>
+      <div class="layer layer-serial">&#128268; Serial Protocol - Position command sent to each ST3215 servo by ID</div>
+      <div class="layer-arrow">&#8595; Internal servo electronics</div>
+      <div class="layer layer-hw">&#128302; Actuator / Sensor - Motor drives joint; AS5600 encoder reads back position</div>
     </div>
-    <table>
-      <tr><th>Limit type</th><th>Where set</th><th>Priority</th></tr>
-      <tr><td>Hardware end-stops</td><td>Physical mechanical stops on the joint</td><td>Highest - cannot be overridden</td></tr>
-      <tr><td>Software dead zones</td><td>Dead Zones tab in the app</td><td>Medium - enforced by Python server</td></tr>
-      <tr><td>Program limits</td><td>Bounds in G-code / Blockly</td><td>Lowest - only applies to that program</td></tr>
-    </table>
-    <p>A well-designed cell uses all three layers - defence in depth.</p>
+    <div class="highlight-box">
+      <strong>Key insight:</strong> A fault at any layer produces a symptom at a different layer. A network drop (layer 2) looks like the arm ignoring commands (layer 5 symptom). Tracing faults means working through the stack systematically.
+    </div>
+    <div class="callout callout-info">
+      <span class="callout-icon">🏗️</span>
+      <div class="callout-body">
+        <strong>Five-Layer System Stack</strong></br>
+        <ol style="margin:0.5rem 0 0;padding-left:1.2rem;">
+          <li><strong>HMI - Electron App</strong>: the user interface running on PC or the robot arm touchscreen</li>
+          <li><strong>WebSocket / JSON over TCP:8080</strong>: bi-directional real-time messaging</li>
+          <li><strong>Server on Raspberry Pi</strong>: control session management, kinematics solver, motion planning, safety enforcement, G-code/RAPID execution</li>
+          <li><strong>Serial bus interface (1 Mbps half-duplex)</strong>: the daisy-chained physical link, polled every 20 ms</li>
+          <li><strong>ST3215 servo hardware + AS5600 sensors</strong>: actuators with internal PID, position/load/temperature sensors, and independent magnetic encoders via I²C</li>
+        </ol>
+        The LED strip and camera are <em>peripheral</em> subsystems alongside this stack - they do not carry motion commands. A fault at any one layer produces symptoms at a different layer; the key skill in this module is tracing a symptom back to its source layer.
+      </div>
+    </div>
   </div>
 
   <!-- THEORY 3 -->
   <div class="section-card">
     <span class="pill pill-theory">Theory</span>
-    <h2>Teach-and-Playback Programming</h2>
-    <p>The most common way to program industrial robots is <strong>teach-and-playback</strong>: an operator manually guides the robot to key positions (using a pendant or jog controls), saves each position, then the robot replays the sequence automatically.</p>
-    <p>The app's <strong>Stored Positions</strong> tab implements this. You jog each joint to the desired pose, name it (e.g. <em>pick_above</em>, <em>pick</em>, <em>place_above</em>, <em>place</em>), and store it. A G-code program then moves between them by name or by recalled joint values.</p>
-    <div class="code-block">; Simple pick-and-place G-code cell program
-G28         ; Home all joints
-G01 J1=0 J2=30 J3=45 J4=0 F50   ; Move to pick_above
-G01 J2=45                         ; Lower to pick
-G04 P500                          ; Wait 500 ms (gripper close)
-G01 J2=30                         ; Lift
-G01 J1=90 J2=30 J3=45 J4=0 F50   ; Swing to place_above
-G01 J2=45                         ; Lower to place
-G04 P500                          ; Wait 500 ms (gripper open)
-G01 J2=30                         ; Lift
-G28                               ; Return home
-M30                               ; End program</div>
-    <div class="callout callout-info">
-      <span class="callout-icon">📍</span>
+    <h2>Integration Challenges</h2>
+    <table>
+      <tr><th>Challenge</th><th>Example in this system</th><th>Engineering solution</th></tr>
+      <tr><td>Timing / latency</td><td>WebSocket round-trip adds delay to feedback loop</td><td>Local PID runs on servo; only setpoints are sent over network</td></tr>
+      <tr><td>Unit mismatch</td><td>App sends degrees; servo expects raw encoder counts</td><td>Conversion function in Python server</td></tr>
+      <tr><td>Power sequencing</td><td>Servos must be powered before comms begin</td><td>Connection handshake checks servo IDs at startup</td></tr>
+      <tr><td>Mechanical compliance</td><td>Backlash causes position error even with accurate commands</td><td>Dead-band in control loop, approach from same direction</td></tr>
+      <tr><td>Thermal management</td><td>Motors heat up over long duty cycles</td><td>Load monitoring, automatic current limiting in servo firmware</td></tr>
+    </table>
+    <div class="callout callout-tip">
+      <span class="callout-icon">💡</span>
       <div class="callout-body">
-        <strong>Stored Positions Tab - Confirmed Parameters</strong></br>
-        The Stored Positions tab manages up to <strong>100 named positions</strong> in slots 0–99. Each position has:
+        <strong>LED Strip - Cross-Layer Integration Example</strong></br>
+        The WS2812B LED status strip on the arm is a clean example of cross-layer integration. Its colour is determined by the server reading conditions across multiple layers simultaneously: the number of connected WebSocket clients (layer 2), the serial bus health (layer 4), joint thermal faults (layer 5), and whether a move is in progress (layer 3). A single physical output aggregates the state of the entire system. When diagnosing a fault, the LED strip gives you a fast first indicator of which layer to investigate.
+      </div>
+    </div>
+    <div class="callout callout-info">
+      <span class="callout-icon">🤏</span>
+      <div class="callout-body">
+        <strong>End-Tool Node - Embedded Subsystem Integration</strong></br>
+        The ESP32 microcontroller at the tip of the arm (bus address 64) is a complete embedded subsystem on the same serial bus as the main joints. It has its own identity, fault register, PWM outputs, hobby servo drive, and ADC current sensing. Integrating it raised several engineering challenges:
         <ul style="margin:0.4rem 0 0;padding-left:1.2rem;">
-          <li>A <strong>slot number</strong> (0–99)</li>
-          <li>A <strong>user-defined name string</strong> (e.g. "Home", "PickAbove", "Pick", "PlaceAbove")</li>
-          <li>The <strong>joint angle set</strong> for all joints at that position</li>
+          <li><strong>Bus arbitration</strong>: two device types (servos and ESP32) share one bus - the server must address them correctly</li>
+          <li><strong>Watchdog management</strong>: the ESP32 has its own communication watchdog that must be refreshed periodically</li>
+          <li><strong>Fault isolation</strong>: an ESP32 fault must not freeze the main joint control loop</li>
         </ul>
-        Use the <strong>Save from Robot</strong> button to capture the arm's current pose. Use <strong>Export JSON</strong> / <strong>Import JSON</strong> to save and restore a complete position set - this is the cell program backup workflow. Name positions descriptively rather than using slot numbers; the names appear in G-code and Blockly programs.
+        The end-tool controls (ping, fault clear, servo position, PWM duty) are in the <span class="ui-ref">Joint Control</span> tab under the End Tool panel.
+      </div>
+    </div>
+    <div class="callout callout-info">
+      <span class="callout-icon">📷</span>
+      <div class="callout-body">
+        <strong>Camera Subsystem - Perception Integration</strong></br>
+        A USB camera on the Raspberry Pi provides a perception input. It streams JPEG frames to port 8082, and the server proxies the ArUco marker detection and coloured block highlighting results into the WebSocket feed. From the app's perspective, vision data arrives alongside joint telemetry on the same connection. The <span class="ui-ref">Camera</span> tab displays the live stream with overlaid detections. This is a genuine multi-process integration scenario: the control system and the vision system run independently and must be synchronised without blocking each other.
       </div>
     </div>
   </div>
@@ -167,70 +204,40 @@ M30                               ; End program</div>
   <!-- WORKSHEET -->
   <div class="section-card worksheet-card">
     <span class="pill pill-worksheet">Worksheet</span>
-    <h2>Activity - Design Your Own Work Cell</h2>
-    <p>You will define a safe operating envelope, store key positions, and write a G-code program to run a repeating cycle.</p>
+    <h2>Activity - Full-System Trace</h2>
+    <p>You will trace a single user action through all five layers of the system, observing what happens at each stage.</p>
     <ul class="steps">
-      <li>Open the <span class="tab-ref">Dead Zones</span> tab. Review the current joint limits. Sketch the physical workspace on paper and identify any areas to avoid (cables, bench edges, other equipment). Adjust limits if needed.</li>
-      <li>Open the <span class="tab-ref">Joint Control</span> tab and jog the arm to four key positions for a pick-and-place task: <strong>Home</strong>, <strong>Pick Above</strong>, <strong>Pick</strong>, <strong>Place Above</strong>. Write down the joint angles for each.</li>
-      <li>Open the <span class="tab-ref">Stored Positions</span> tab. Save each of the four positions with a descriptive name.</li>
-      <li>Open the <span class="tab-ref">G-Code Control</span> tab. Write a program using the joint angles you recorded to perform one complete pick-and-place cycle. Use G04 with a dwell time at the pick and place points to simulate gripper action.</li>
-      <li>Run the program at 25% speed first. Check for any joint limit warnings or unexpected motion. Gradually increase to 75%.</li>
-      <li>Time the cycle at 50% and 75% speed. Calculate the <strong>cycle time</strong> (time for one complete pick-and-place).</li>
-      <li><p>In <span class="ui-ref">Settings</span>, switch <strong>Movement Mode</strong> between <strong>PTP</strong> and <strong>Linear Cartesian</strong> and repeat the cycle time test at 50% speed in both modes. Record both times. Linear Cartesian mode will typically be slower - the server computes Cartesian waypoints to keep the tool moving in a straight line. Note this in your cycle time table alongside the path quality (use the End-Effector Trace in 3D Visualisation to compare path straightness).</p></li>
+      <li>Open the app and connect to the arm via the <span class="tab-ref">Connection</span> tab. Note the connection status - this confirms layers 1–2 are working.</li>
+      <li>Navigate to the <span class="tab-ref">3D Visualization</span> tab. This shows the forward kinematics model (layer 3/5 - the software model).</li>
+      <li><p>Click the <strong>Pop Out</strong> button in the <span class="ui-ref">3D Visualisation</span> tab to open the 3D model in a separate always-on-top window. Arrange this alongside the main app window showing <span class="ui-ref">Joint Control</span>. Now, when you command Joint 1 to move 30°, you can simultaneously watch the 3D model update, the live angle readout change, and the load % respond - three data streams from three system layers, all in one view.</p></li>
+      <li>Open the <span class="tab-ref">Joint Control</span> tab alongside. Command Joint 1 to move 30°. Simultaneously watch: (a) the 3D model update, (b) the live position readout, (c) the load value change mid-move.</li>
+      <li>Now use the <span class="tab-ref">G-Code Control</span> tab to run a short two-move program. This exercises layers 1→5 with a programmatic sequence rather than manual input.</li>
+      <li>Use the <span class="tab-ref">Visual Programming</span> (Blockly) tab to build the same two moves as a block program. Compare: which interface felt more reliable? Which was faster to create?</li>
+      <li>Finally, open the <span class="tab-ref">Kinematics</span> tab. Enter the joint angles you used and confirm the displayed XYZ coordinates match where the arm physically ended up. This closes the loop between software model and physical reality.</li>
     </ul>
-    <div class="callout callout-info no-print">
-      <span class="callout-icon">🔢</span>
-      <div class="callout-body">
-        <strong>Speed Units - G-code vs Blockly</strong></br>
-        Speed is expressed differently depending on which programming mode you use:
-        <ul style="margin:0.4rem 0 0;padding-left:1.2rem;">
-          <li><strong>G-Code</strong>: the F parameter is in <strong>steps per second</strong> (e.g. <code>G1 J2=45 F500</code> - 500 steps/sec ≈ 44°/sec)</li>
-          <li><strong>Blockly</strong>: speed is set in <strong>degrees per second</strong> (automatically converted to steps/sec using the ratio 11.37 steps/degree)</li>
-        </ul>
-        To convert: multiply degrees/sec by 11.37 to get steps/sec. For example, 100°/sec = F1137 in G-code.
-      </div>
+
+    <h3>Reflection Questions</h3>
+    <div class="ws-field">
+      <label>1. Which layer introduced the most noticeable delay? How did you detect it?</label>
+      <textarea placeholder="Your answer..."></textarea>
     </div>
-
-    <h3>Cell Design Record</h3>
-    <table>
-      <tr><th>Position name</th><th>J1 (°)</th><th>J2 (°)</th><th>J3 (°)</th><th>J4 (°)</th></tr>
-      <tr><td>Home</td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td></tr>
-      <tr><td>Pick Above</td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td></tr>
-      <tr><td>Pick</td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td></tr>
-      <tr><td>Place Above</td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td></tr>
-    </table>
-
-    <table>
-      <tr><th>Speed setting</th><th>Cycle time (s)</th><th>Observations</th></tr>
-      <tr><td>25%</td><td><input type="text"></td><td><input type="text"></td></tr>
-      <tr><td>50%</td><td><input type="text"></td><td><input type="text"></td></tr>
-      <tr><td>75%</td><td><input type="text"></td><td><input type="text"></td></tr>
-      <tr><td>50% PTP</td><td><input type="text"></td><td><input type="text"></td></tr>
-      <tr><td>50% Linear Cartesian</td><td><input type="text"></td><td><input type="text"></td></tr>
-    </table>
-
-    <div class="callout callout-info no-print">
-      <span class="callout-icon">🚫</span>
-      <div class="callout-body">
-        <strong>Dead Zones Tab - Confirmed Parameters</strong></br>
-        Dead zones are defined as <strong>named rectangular XYZ exclusion volumes</strong>. Each zone has:
-        <ul style="margin:0.4rem 0 0;padding-left:1.2rem;">
-          <li>A user-defined <strong>name</strong> (e.g. "TableEdge", "CableRun")</li>
-          <li><strong>X min/max, Y min/max, Z min/max</strong> bounds in millimetres (Cartesian coordinates)</li>
-          <li>An <strong>enable/disable toggle</strong> per zone - disabled zones are ignored during path planning</li>
-        </ul>
-        When a planned move would pass through an active dead zone, the server automatically routes the path over the zone via a safe Z height. Enable the <strong>Dead Zones</strong> overlay in 3D Visualisation to see the defined volumes as coloured boxes in the 3D model.
-      </div>
+    <div class="ws-field">
+      <label>2. Did the 3D model always match the physical arm position? If not, what might cause discrepancy?</label>
+      <textarea placeholder="Your answer..."></textarea>
+    </div>
+    <div class="ws-field">
+      <label>3. What would happen if the Python server crashed mid-move? Which layer would stop first?</label>
+      <textarea placeholder="Your answer..."></textarea>
     </div>
   </div>
 
   <!-- SO WHAT -->
   <div class="section-card">
     <span class="pill pill-sowhat">So What?</span>
-    <h2>Cell Design in the Real World</h2>
-    <p>In a factory, designing a robot cell is an engineering project in its own right. It involves layout drawings (often 2D floor plans and 3D models), risk assessments (ISO 10218-2), cycle time analysis for production planning, and sign-off from safety engineers before any operator enters the cell.</p>
-    <p>The concepts you applied here - define the envelope, teach positions, write a program, time the cycle - are exactly the steps a robotics engineer follows, just with larger, faster, and more dangerous machinery.</p>
-    <p><strong>Think about:</strong> If this arm was producing 500 parts per day, and each pick-and-place cycle takes 8 seconds, how many cycles per hour would you need? What speed setting would achieve that? Could you redesign the path to shorten the cycle time?</p>
+    <h2>Why Integration Is the Hard Part</h2>
+    <p>Individual components - servos, Raspberry Pi, network - are well-understood in isolation. The difficulty in real engineering projects is making them work <em>together</em> reliably. This is why systems integration is a dedicated engineering role in industry.</p>
+    <p>When you built a Blockly program and watched it execute on the physical arm, you experienced the entire mechatronic stack in action. Most users never think about the five layers beneath a button press - but engineers must design, test, and maintain every one of them.</p>
+    <p><strong>Industry connection:</strong> Automotive manufacturing robots, surgical robots, and warehouse automation systems all follow the same layered model - HMI → network/fieldbus → controller → actuator/sensor. The vocabulary and patterns you have learned here transfer directly.</p>
   </div>
 
   <!-- MCQ -->
@@ -239,29 +246,29 @@ M30                               ; End program</div>
     <h2>Check Your Understanding</h2>
 
     <div class="mcq-question">
-      <p>1. What is the highest-priority limit that prevents a robot from exceeding its joint range?</p>
-      <label class="mcq-option"><input type="radio" name="q1" value="a"> Software dead zones in the app</label>
-      <label class="mcq-option"><input type="radio" name="q1" value="b"> Physical mechanical end-stops on the joint</label>
-      <label class="mcq-option"><input type="radio" name="q1" value="c"> Limits coded into the G-code program</label>
-      <label class="mcq-option"><input type="radio" name="q1" value="d"> The operator's visual check</label>
+      <p>1. In this arm's system stack, where does PID control run?</p>
+      <label class="mcq-option"><input type="radio" name="q1" value="a"> In the Electron app</label>
+      <label class="mcq-option"><input type="radio" name="q1" value="b"> Inside each ST3215 servo</label>
+      <label class="mcq-option"><input type="radio" name="q1" value="c"> On the server on the Raspberry Pi</label>
+      <label class="mcq-option"><input type="radio" name="q1" value="d"> In the WebSocket protocol</label>
       <div class="feedback-msg" id="q1-fb"></div>
     </div>
 
     <div class="mcq-question">
-      <p>2. In teach-and-playback programming, what does the operator do first?</p>
-      <label class="mcq-option"><input type="radio" name="q2" value="a"> Write a G-code file from scratch</label>
-      <label class="mcq-option"><input type="radio" name="q2" value="b"> Manually jog the robot to each key position and save it</label>
-      <label class="mcq-option"><input type="radio" name="q2" value="c"> Simulate the motion in software</label>
-      <label class="mcq-option"><input type="radio" name="q2" value="d"> Check the servo temperatures</label>
+      <p>2. Mechatronics combines which disciplines?</p>
+      <label class="mcq-option"><input type="radio" name="q2" value="a"> Civil engineering and architecture</label>
+      <label class="mcq-option"><input type="radio" name="q2" value="b"> Mechanical, electrical, software and control engineering</label>
+      <label class="mcq-option"><input type="radio" name="q2" value="c"> Chemistry and materials science</label>
+      <label class="mcq-option"><input type="radio" name="q2" value="d"> Mechanical and civil engineering only</label>
       <div class="feedback-msg" id="q2-fb"></div>
     </div>
 
     <div class="mcq-question">
-      <p>3. What does the G04 command do in a G-code program?</p>
-      <label class="mcq-option"><input type="radio" name="q3" value="a"> Go to home position</label>
-      <label class="mcq-option"><input type="radio" name="q3" value="b"> Set the feed rate</label>
-      <label class="mcq-option"><input type="radio" name="q3" value="c"> Pause for a specified dwell time</label>
-      <label class="mcq-option"><input type="radio" name="q3" value="d"> End the program</label>
+      <p>3. A command sent from the app is silently dropped and the arm does not move. Which layer should you investigate first?</p>
+      <label class="mcq-option"><input type="radio" name="q3" value="a"> The servo motor windings</label>
+      <label class="mcq-option"><input type="radio" name="q3" value="b"> The network/WebSocket connection between app and Pi</label>
+      <label class="mcq-option"><input type="radio" name="q3" value="c"> The 3D visualisation model</label>
+      <label class="mcq-option"><input type="radio" name="q3" value="d"> The G-code parser</label>
       <div class="feedback-msg" id="q3-fb"></div>
     </div>
 
@@ -271,17 +278,17 @@ M30                               ; End program</div>
   </div>
 
   <div class="nav-row">
-    <a class="nav-btn" href="module-11.html">&#8592; Module 11</a>
-    <a class="nav-btn primary" href="module-13.html">Module 13 &#8594;</a>
+    <a class="nav-btn" href="module-10.html">&#8592; Module 10</a>
+    <a class="nav-btn primary" href="module-12.html">Module 12 &#8594;</a>
   </div>
 </div>
 
 <script>
-const answers = { q1: 'b', q2: 'b', q3: 'c' };
+const answers = { q1: 'b', q2: 'b', q3: 'b' };
 const feedback = {
-  q1: { b: 'Correct! Physical mechanical end-stops cannot be overridden by software - they are the final safety barrier.', wrong: 'Not quite. Physical mechanical end-stops are the highest priority - they cannot be overridden by software.' },
-  q2: { b: 'Correct! Teach-and-playback means jogging the robot to key positions and saving them, then replaying the sequence.', wrong: 'Not quite. Teach-and-playback starts by manually jogging the robot to each key position and saving it.' },
-  q3: { c: 'Correct! G04 is a dwell command - it pauses execution for a specified time (e.g. G04 P500 = 500 ms).', wrong: 'Not quite. G04 is a dwell/pause command used to wait at a position (e.g. while a gripper operates).' }
+  q1: { b: 'Correct! PID runs inside each ST3215 servo - only setpoints travel over the network, keeping the control loop fast.', wrong: 'Not quite. PID runs inside each ST3215 servo, keeping the control loop local and fast.' },
+  q2: { b: 'Correct! Mechatronics integrates mechanical, electrical, software and control engineering.', wrong: 'Not quite. Mechatronics combines mechanical, electrical, software and control engineering.' },
+  q3: { b: 'Correct! A silently dropped command most likely indicates a network/WebSocket failure between the app and the Pi.', wrong: 'Not quite. A silent drop with no movement suggests the command never reached the Pi - check the network/WebSocket layer first.' }
 };
 function checkMCQ() {
   let score = 0;

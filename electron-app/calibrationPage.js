@@ -1,6 +1,9 @@
 /**
  * Calibration tab - reads a servo's full EEPROM and SRAM blocks and renders
- * them against the STS3215 memory table (stsMemoryTable.js). The EEPROM
+ * them against the STS3215 memory table (stsMemoryTable.js), or - when
+ * "End Tool (ID 64)" is selected in the same dropdown - the ESP32 end tool's
+ * register array against endToolMemoryTable.js (identity + persisted Tool
+ * type ID as "EEPROM", everything else as editable "RAM"). The EEPROM
  * table highlights anything that differs from the factory default so a
  * change made at some point in the past (e.g. during PID/overload tuning)
  * is easy to spot later. The SRAM table shows live/runtime state (position,
@@ -17,8 +20,14 @@
  */
 
 // Cache of the last-read {eeprom, sram} byte arrays per joint, so the "show
-// only changed" toggle can re-render without a fresh bus read.
+// only changed" toggle can re-render without a fresh bus read. Keyed by joint
+// number (1-6) or CALIBRATION_TOOL_KEY for the end tool, whose single
+// 64-byte register block is stored under both eeprom and sram (the
+// endToolMemoryTable.js decoders each pick their own rows out of it).
 const calibrationRawByJoint = {};
+
+// Value of the "End Tool (ID 64)" option in calibrationJointSelect.
+const CALIBRATION_TOOL_KEY = 'tool';
 
 let calibrationWriteModeEnabled = false;
 
@@ -27,10 +36,46 @@ function setCalibrationStatus(message) {
     if (el) el.textContent = message;
 }
 
+/**
+ * What the joint dropdown currently points at: one of the six servos or the
+ * ESP32 end tool. Everything on this page that reads, renders or writes goes
+ * through this so the two device types share the same table code.
+ * @returns {{isTool:boolean, jointNumber:number|null, key:string|number, label:string}}
+ */
+function calibrationSelectedTarget() {
+    const value = document.getElementById('calibrationJointSelect').value;
+    if (value === CALIBRATION_TOOL_KEY) {
+        return { isTool: true, jointNumber: null, key: CALIBRATION_TOOL_KEY, label: 'End Tool' };
+    }
+    const jointNumber = parseInt(value, 10);
+    return { isTool: false, jointNumber, key: jointNumber, label: `Joint ${jointNumber}` };
+}
+
+/** Selected joint number, or null when the end tool is selected. */
+function calibrationSelectedJointNumber() {
+    const target = calibrationSelectedTarget();
+    return target.isTool ? null : target.jointNumber;
+}
+
 async function readCalibrationTable() {
-    const jointNumber = parseInt(document.getElementById('calibrationJointSelect').value, 10);
-    await readCalibrationForJoint(jointNumber);
+    await readCalibrationForTarget(calibrationSelectedTarget());
     renderCalibrationTable();
+}
+
+async function readCalibrationForTarget(target) {
+    if (target.isTool) await readCalibrationForTool();
+    else await readCalibrationForJoint(target.jointNumber);
+}
+
+async function readCalibrationForTool() {
+    try {
+        setCalibrationStatus('Reading End Tool registers...');
+        const response = await robotArmClient.readEndToolRegisters();
+        calibrationRawByJoint[CALIBRATION_TOOL_KEY] = { eeprom: response.bytes, sram: response.bytes };
+        setCalibrationStatus(`End Tool registers read at ${new Date().toLocaleTimeString()}`);
+    } catch (error) {
+        setCalibrationStatus(`Failed to read End Tool registers: ${error.message}`);
+    }
 }
 
 async function readCalibrationForJoint(jointNumber) {
@@ -55,8 +100,9 @@ async function toggleCalibrationWriteMode() {
     const button = document.getElementById('calibrationUnlockWritesButton');
     const editHeader = document.getElementById('calibrationEditHeader');
     const commissioningSection = document.getElementById('calibrationCommissioningSection');
-    const positionCorrectionSection = document.getElementById('calibrationPositionCorrectionSection');
 
+    // The Position Correction panel's visibility also depends on whether a
+    // servo or the end tool is selected, so renderCalibrationTable() owns it.
     if (calibrationWriteModeEnabled) {
         calibrationWriteModeEnabled = false;
         button.textContent = 'Enable Editing';
@@ -64,7 +110,6 @@ async function toggleCalibrationWriteMode() {
         button.classList.add('btn-warning');
         if (editHeader) editHeader.hidden = true;
         if (commissioningSection) commissioningSection.hidden = true;
-        if (positionCorrectionSection) positionCorrectionSection.hidden = true;
         renderCalibrationTable();
         return;
     }
@@ -101,14 +146,27 @@ async function toggleCalibrationWriteMode() {
     button.classList.add('btn-danger');
     if (editHeader) editHeader.hidden = false;
     if (commissioningSection) commissioningSection.hidden = false;
-    if (positionCorrectionSection) positionCorrectionSection.hidden = false;
     renderCalibrationTable();
 }
 
 function renderCalibrationTable() {
+    updateCalibrationServoOnlyPanels();
     renderEepromTable();
     renderSramTable();
     renderPositionCorrectionDisplay();
+}
+
+/**
+ * The trainee zero trim and Position Correction panels only make sense for
+ * a servo joint - hide them while the end tool is selected. Position
+ * Correction additionally needs edit mode to be on.
+ */
+function updateCalibrationServoOnlyPanels() {
+    const isTool = calibrationSelectedTarget().isTool;
+    const trimSection = document.getElementById('traineeZeroTrimSection');
+    const positionCorrectionSection = document.getElementById('calibrationPositionCorrectionSection');
+    if (trimSection) trimSection.hidden = isTool;
+    if (positionCorrectionSection) positionCorrectionSection.hidden = isTool || !calibrationWriteModeEnabled;
 }
 
 /**
@@ -119,8 +177,8 @@ function renderCalibrationTable() {
 function renderPositionCorrectionDisplay() {
     const valueEl = document.getElementById('posCorrectionValue');
     if (!valueEl) return;
-    const jointNumber = parseInt(document.getElementById('calibrationJointSelect').value, 10);
-    const cached = calibrationRawByJoint[jointNumber];
+    const jointNumber = calibrationSelectedJointNumber();
+    const cached = jointNumber === null ? null : calibrationRawByJoint[jointNumber];
     if (!cached) {
         valueEl.textContent = 'Position Correction: - ';
         return;
@@ -129,19 +187,52 @@ function renderPositionCorrectionDisplay() {
     valueEl.textContent = `Position Correction: ${decodeSignedStepNumeric(raw)} step`;
 }
 
+/**
+ * Decoded EEPROM rows for the selected target - STS3215 memory table for a
+ * joint, endToolMemoryTable.js for the end tool. Null until it's been read.
+ */
+function decodedEepromRowsForTarget(target) {
+    const cached = calibrationRawByJoint[target.key];
+    if (!cached) return null;
+    return target.isTool ? decodeEndToolEepromBlock(cached.eeprom) : decodeEepromBlock(cached.eeprom);
+}
+
+/** Decoded SRAM/RAM rows for the selected target, or null until read. */
+function decodedSramRowsForTarget(target) {
+    const cached = calibrationRawByJoint[target.key];
+    if (!cached) return null;
+    return target.isTool ? decodeEndToolRamBlock(cached.sram) : decodeSramBlock(cached.sram);
+}
+
+/**
+ * The Edit column cell for one register row (only rendered in edit mode):
+ * a value box and Write button for writable registers, a padlock otherwise.
+ */
+function calibrationEditCell(r) {
+    if (r.writable) {
+        return `
+            <td>
+                <input type="number" class="cal-edit-input" id="cal-edit-${r.address}" value="${decodeRegisterValue(r, r.raw)}" min="${r.min}" max="${r.max}">
+                <button class="btn btn-small btn-primary" onclick="writeCalibrationRegister(${r.address})">Write</button>
+            </td>
+        `;
+    }
+    const reason = r.access === 'read' ? 'Read-only hardware field' : 'Not editable from this page';
+    return `<td><span class="cal-locked" title="${escapeCalibrationText(reason)}">&#128274;</span></td>`;
+}
+
 function renderEepromTable() {
-    const jointNumber = parseInt(document.getElementById('calibrationJointSelect').value, 10);
+    const target = calibrationSelectedTarget();
     const tbody = document.getElementById('calibrationTableBody');
     if (!tbody) return;
 
     const colSpan = calibrationWriteModeEnabled ? 9 : 8;
-    const cached = calibrationRawByJoint[jointNumber];
-    if (!cached) {
-        tbody.innerHTML = `<tr><td colspan="${colSpan}" class="calibration-empty">Select a joint and click &quot;Read EEPROM&quot;.</td></tr>`;
+    const decoded = decodedEepromRowsForTarget(target);
+    if (!decoded) {
+        tbody.innerHTML = `<tr><td colspan="${colSpan}" class="calibration-empty">Select a joint or the end tool and click &quot;Read Registers&quot;.</td></tr>`;
         return;
     }
 
-    const decoded = decodeEepromBlock(cached.eeprom);
     const diffOnly = document.getElementById('calibrationDiffOnly').checked;
     const rows = diffOnly ? decoded.filter(r => !r.isDefault) : decoded;
 
@@ -154,21 +245,7 @@ function renderEepromTable() {
         const addrHex = '0x' + r.address.toString(16).toUpperCase().padStart(2, '0');
         const readOnly = r.access === 'read';
         const rangeStr = r.min === -1 && r.max === -1 ? ' - ' : `${r.min}..${r.max} ${r.unit === ' - ' ? '' : r.unit}`.trim();
-
-        let editCell = '';
-        if (calibrationWriteModeEnabled) {
-            if (r.writable) {
-                editCell = `
-                    <td>
-                        <input type="number" class="cal-edit-input" id="cal-edit-${r.address}" value="${decodeRegisterValue(r, r.raw)}" min="${r.min}" max="${r.max}">
-                        <button class="btn btn-small btn-primary" onclick="writeCalibrationRegister(${r.address})">Write</button>
-                    </td>
-                `;
-            } else {
-                const reason = r.access === 'read' ? 'Read-only hardware field' : 'Not editable from this page';
-                editCell = `<td><span class="cal-locked" title="${escapeCalibrationText(reason)}">&#128274;</span></td>`;
-            }
-        }
+        const editCell = calibrationWriteModeEnabled ? calibrationEditCell(r) : '';
 
         return `
             <tr class="${r.isDefault ? '' : 'cal-changed'}${readOnly ? ' cal-readonly' : ''}">
@@ -187,21 +264,34 @@ function renderEepromTable() {
 }
 
 function renderSramTable() {
-    const jointNumber = parseInt(document.getElementById('calibrationJointSelect').value, 10);
+    const target = calibrationSelectedTarget();
     const tbody = document.getElementById('calibrationSramTableBody');
     if (!tbody) return;
 
-    const cached = calibrationRawByJoint[jointNumber];
-    if (!cached) {
-        tbody.innerHTML = `<tr><td colspan="6" class="calibration-empty">Select a joint and click &quot;Read EEPROM&quot;.</td></tr>`;
+    // Servo SRAM is deliberately read-only here (see stsMemoryTable.js); the
+    // end tool's RAM is its control interface, so it gets an Edit column.
+    const showEdit = target.isTool && calibrationWriteModeEnabled;
+    const editHeader = document.getElementById('calibrationSramEditHeader');
+    if (editHeader) editHeader.hidden = !showEdit;
+    const heading = document.getElementById('calibrationSramHeading');
+    if (heading) {
+        heading.textContent = target.isTool
+            ? 'RAM (outputs, telemetry and hobby-servo settings - resets on power-off, editable here)'
+            : 'SRAM (live/runtime state - resets on power-off, read-only here)';
+    }
+    const colSpan = showEdit ? 7 : 6;
+
+    const decoded = decodedSramRowsForTarget(target);
+    if (!decoded) {
+        tbody.innerHTML = `<tr><td colspan="${colSpan}" class="calibration-empty">Select a joint or the end tool and click &quot;Read Registers&quot;.</td></tr>`;
         return;
     }
 
-    const decoded = decodeSramBlock(cached.sram);
     tbody.innerHTML = decoded.map(r => {
         const addrHex = '0x' + r.address.toString(16).toUpperCase().padStart(2, '0');
         const readOnly = r.access === 'read';
-        const rangeStr = r.min === -1 && r.max === -1 ? ' - ' : `${r.min}..${r.max} ${r.unit === ' - ' ? '' : r.unit}`.trim();
+        const accessStr = readOnly ? 'read' : target.isTool ? 'r/w' : 'live (read-only here)';
+        const editCell = showEdit ? calibrationEditCell(r) : '';
         return `
             <tr>
                 <td>${addrHex} <span style="color:#999;">(${r.address})</span></td>
@@ -209,22 +299,36 @@ function renderSramTable() {
                 <td>${r.bytes}</td>
                 <td class="cal-value">${r.raw}</td>
                 <td class="cal-value cal-meaning">${escapeCalibrationText(r.meaningful)}</td>
-                <td>${readOnly ? 'read' : 'live (read-only here)'}</td>
+                <td>${accessStr}</td>
+                ${editCell}
             </tr>
         `;
     }).join('');
 }
 
 /**
- * Writes one EEPROM register's raw value to the servo currently selected in
- * the joint dropdown, after range/confirmation checks, then re-reads that
- * joint's registers so the table reflects what the hardware actually
- * accepted. SRAM is never writable from this page (see stsMemoryTable.js).
+ * Finds a register row by address in whichever decoded block holds it for
+ * the selected target: servo EEPROM only (servo SRAM is never written from
+ * this page), or either of the end tool's EEPROM/RAM blocks.
+ */
+function calibrationRegisterForAddress(target, address) {
+    const eepromRows = decodedEepromRowsForTarget(target);
+    const found = eepromRows && eepromRows.find(r => r.address === address);
+    if (found || !target.isTool) return found || null;
+    const ramRows = decodedSramRowsForTarget(target);
+    return (ramRows && ramRows.find(r => r.address === address)) || null;
+}
+
+/**
+ * Writes one register's raw value to the device currently selected in the
+ * dropdown (a servo's EEPROM, or any writable end tool register), after
+ * range/confirmation checks, then re-reads that device's registers so the
+ * table reflects what the hardware actually accepted. Servo SRAM is never
+ * writable from this page (see stsMemoryTable.js).
  */
 async function writeCalibrationRegister(address) {
-    const jointNumber = parseInt(document.getElementById('calibrationJointSelect').value, 10);
-    const cached = calibrationRawByJoint[jointNumber];
-    const reg = cached && decodeEepromBlock(cached.eeprom).find(r => r.address === address);
+    const target = calibrationSelectedTarget();
+    const reg = calibrationRegisterForAddress(target, address);
     if (!reg) return;
 
     const input = document.getElementById(`cal-edit-${address}`);
@@ -236,7 +340,7 @@ async function writeCalibrationRegister(address) {
 
     if (reg.extraConfirm) {
         const confirmed = await showConfirm(
-            `Write ${rawValue} to "${reg.name}" (address 0x${address.toString(16)}) on Joint ${jointNumber}?\n\n` +
+            `Write ${rawValue} to "${reg.name}" (address 0x${address.toString(16)}) on ${target.label}?\n\n` +
             `This can let the joint travel to a position that's mechanically unsafe if set incorrectly. Double-check the value before continuing.`
         );
         if (!confirmed) return;
@@ -248,32 +352,37 @@ async function writeCalibrationRegister(address) {
     if (writeButton) writeButton.disabled = true;
     input.disabled = true;
 
-    // A few registers (Position Correction, in particular) use a bit pattern
-    // that isn't standard two's complement - encode the value the user typed
-    // into the actual raw integer the servo expects before sending it.
-    const encodedValue = encodeRegisterValue(reg, rawValue);
+    // A few servo registers (Position Correction, in particular) use a bit
+    // pattern that isn't standard two's complement - encode the value the
+    // user typed into the actual raw integer the device expects before
+    // sending it. End tool registers are all plain integers.
+    const encodedValue = target.isTool ? rawValue : encodeRegisterValue(reg, rawValue);
 
     try {
-        setCalibrationStatus(`Writing Joint ${jointNumber} address ${addrHex}...`);
-        await robotArmClient.writeServoEepromRaw(jointNumber, address, encodedValue, password);
+        setCalibrationStatus(`Writing ${target.label} address ${addrHex}...`);
+        if (target.isTool) {
+            await robotArmClient.writeEndToolRegister(address, encodedValue, password);
+        } else {
+            await robotArmClient.writeServoEepromRaw(target.jointNumber, address, encodedValue, password);
+        }
 
-        // The write's own reply already waits for the servo's EEPROM-write
-        // settle time server-side, but read it back explicitly rather than
-        // trusting "success" alone - that's the only way to know the table
-        // reflects what the hardware actually holds, not just what we asked for.
-        setCalibrationStatus(`Verifying Joint ${jointNumber} address ${addrHex}...`);
-        await readCalibrationForJoint(jointNumber);
+        // The write's own reply already waits for the device's settle time
+        // server-side, but read it back explicitly rather than trusting
+        // "success" alone - that's the only way to know the table reflects
+        // what the hardware actually holds, not just what we asked for.
+        setCalibrationStatus(`Verifying ${target.label} address ${addrHex}...`);
+        await readCalibrationForTarget(target);
         renderCalibrationTable();
 
-        const confirmedReg = decodeEepromBlock(calibrationRawByJoint[jointNumber].eeprom).find(r => r.address === address);
+        const confirmedReg = calibrationRegisterForAddress(target, address);
         if (confirmedReg && confirmedReg.raw === encodedValue) {
-            setCalibrationStatus(`Confirmed - Joint ${jointNumber} address ${addrHex} now reads ${rawValue} (${confirmedReg.meaningful}).`);
+            setCalibrationStatus(`Confirmed - ${target.label} address ${addrHex} now reads ${rawValue} (${confirmedReg.meaningful}).`);
         } else {
             const actual = confirmedReg ? confirmedReg.meaningful : '(read failed)';
-            setCalibrationStatus(`Wrote ${rawValue} but the read-back shows ${actual} - the write may not have taken effect. Try again or check the servo connection.`);
+            setCalibrationStatus(`Wrote ${rawValue} but the read-back shows ${actual} - the write may not have taken effect. Try again or check the ${target.isTool ? 'end tool' : 'servo'} connection.`);
         }
     } catch (error) {
-        setCalibrationStatus(`Failed to write Joint ${jointNumber} address ${addrHex}: ${error.message}`);
+        setCalibrationStatus(`Failed to write ${target.label} address ${addrHex}: ${error.message}`);
         renderCalibrationTable(); // re-enable the row's controls even on failure
     }
 }
@@ -300,7 +409,11 @@ const STS_TARGET_LOCATION_RECENTER_VALUE = 2048;
  * main EEPROM table only ever show what's genuinely on the hardware.
  */
 async function adjustPositionCorrection(direction) {
-    const jointNumber = parseInt(document.getElementById('calibrationJointSelect').value, 10);
+    const jointNumber = calibrationSelectedJointNumber();
+    if (jointNumber === null) {
+        showAppMessage('Position Correction only applies to a servo joint - select a joint first.');
+        return;
+    }
     const password = document.getElementById('calibrationWritePassword').value;
     if (!password) {
         showAppMessage('Enter the control-lock password to enable editing.');
@@ -532,8 +645,7 @@ async function commissionAllServos() {
         // than leave other joints' tables showing stale pre-commissioning
         // bytes, then re-read the one currently on screen.
         for (const key of Object.keys(calibrationRawByJoint)) delete calibrationRawByJoint[key];
-        const selectedJoint = parseInt(document.getElementById('calibrationJointSelect').value, 10);
-        await readCalibrationForJoint(selectedJoint);
+        await readCalibrationForTarget(calibrationSelectedTarget());
         renderCalibrationTable();
 
         if (failures.length === 0) {
@@ -567,6 +679,71 @@ async function writeCommissioningRegisterWithRetry(joint, address, value, passwo
         if (attemptsLeft <= 1) throw error;
         await new Promise(resolve => setTimeout(resolve, 150));
         await writeCommissioningRegisterWithRetry(joint, address, value, password, attemptsLeft - 1);
+    }
+}
+
+// ===== Student zero calibration (trainee trims) =====
+// A software-only zero offset per joint, kept by the server and reported in
+// each joint's jointConfigs entry as zeroTrimDegrees. Unlike Position
+// Correction above it needs no password and never touches servo EEPROM, so
+// "Reset" always gets back to the real calibration - safe for students.
+
+/**
+ * Shows every joint's current trainee trim, and warns when any are active so
+ * a trim left behind by one class doesn't silently affect the next.
+ */
+function renderTraineeZeroTrims() {
+    const summary = document.getElementById('zeroTrimSummary');
+    if (!summary) return;
+    const configs = (robotArmClient && robotArmClient.jointConfigs) || [];
+    const trims = configs.filter(j => j && j.jointNumber !== undefined && typeof j.zeroTrimDegrees === 'number');
+    if (trims.length === 0) {
+        summary.textContent = 'Trainee trims: not available (connect to the arm - the server may need updating).';
+        summary.classList.remove('zero-trim-active');
+        return;
+    }
+    const active = trims.filter(j => j.zeroTrimDegrees !== 0);
+    const list = trims.map(j => `J${j.jointNumber} ${j.zeroTrimDegrees > 0 ? '+' : ''}${j.zeroTrimDegrees.toFixed(2)}°`).join('   ');
+    summary.textContent = active.length === 0
+        ? `Trainee trims: none active - every joint is using the servo's own calibration.   (${list})`
+        : `⚠ Trainee trims ACTIVE on ${active.map(j => 'J' + j.jointNumber).join(', ')} - reset them when you have finished.   (${list})`;
+    summary.classList.toggle('zero-trim-active', active.length > 0);
+}
+
+async function setTraineeZeroTrim() {
+    const jointNumber = calibrationSelectedJointNumber();
+    if (jointNumber === null) {
+        showAppMessage('Zero trims only apply to a servo joint - select a joint first.');
+        return;
+    }
+    const confirmed = await showConfirm(
+        `Make Joint ${jointNumber}'s current position read as 0°?\n\n` +
+        `Only do this when the joint's alignment marks line up exactly. The joint will not move. ` +
+        `You can undo it at any time with "Reset this joint".`
+    );
+    if (!confirmed) return;
+    try {
+        setCalibrationStatus(`Joint ${jointNumber}: setting trainee zero trim...`);
+        const result = await robotArmClient.setJointZeroTrim(jointNumber);
+        setCalibrationStatus(result && result.message ? result.message : `Joint ${jointNumber} zero trim set.`);
+    } catch (error) {
+        setCalibrationStatus(`Could not set Joint ${jointNumber}'s zero trim: ${error.message}`);
+    }
+}
+
+async function resetTraineeZeroTrim(allJoints) {
+    const jointNumber = calibrationSelectedJointNumber();
+    if (!allJoints && jointNumber === null) {
+        showAppMessage('Zero trims only apply to a servo joint - select a joint first.');
+        return;
+    }
+    const target = allJoints ? 'all' : jointNumber;
+    try {
+        setCalibrationStatus(allJoints ? 'Resetting all trainee zero trims...' : `Joint ${jointNumber}: resetting trainee zero trim...`);
+        const result = await robotArmClient.resetJointZeroTrim(target);
+        setCalibrationStatus(result && result.message ? result.message : 'Zero trim reset.');
+    } catch (error) {
+        setCalibrationStatus(`Could not reset the zero trim: ${error.message}`);
     }
 }
 
