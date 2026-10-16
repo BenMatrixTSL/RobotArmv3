@@ -11718,8 +11718,8 @@ void FCM_ProcessCommsByte()
                       if (FCV_PACKETPARAMCOUNT >= 2)
                       {                      
 
-                        // Writable register address (PWM 3-7 or hobby servo 48-54)
-                        if (((FCV_LASTADDRESS >= 3) && (FCV_LASTADDRESS <= 7)) || ((FCV_LASTADDRESS >= 48) && (FCV_LASTADDRESS <= 54)))
+                        // Writable register address (PWM 3-7, hobby servo 48-54, slew rate 57)
+                        if (((FCV_LASTADDRESS >= 3) && (FCV_LASTADDRESS <= 7)) || ((FCV_LASTADDRESS >= 48) && (FCV_LASTADDRESS <= 54)) || (FCV_LASTADDRESS == 57))
                         {                        
 
                           // Copy all WRITE data bytes into register array

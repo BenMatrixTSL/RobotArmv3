@@ -798,7 +798,7 @@
 																										</command>
 																										<command class_type='decision' title='WRITE needs at least one data byte in this basic version' exp='PacketParamCount &gt;= 2' swap='0' >
 																											<flowline >
-																												<command class_type='decision' title='Writable register address (PWM 3-7 or hobby servo 48-54)' exp='((LastAddress &gt;= 3) &amp;&amp; (LastAddress &lt;= 7)) || ((LastAddress &gt;= 48) &amp;&amp; (LastAddress &lt;= 54))' swap='0' >
+																												<command class_type='decision' title='Writable register address (PWM 3-7, hobby servo 48-54, slew rate 57)' exp='((LastAddress &gt;= 3) &amp;&amp; (LastAddress &lt;= 7)) || ((LastAddress &gt;= 48) &amp;&amp; (LastAddress &lt;= 54)) || (LastAddress = 57)' swap='0' >
 																													<flowline >
 																														<command class_type='call' title='Copy all WRITE data bytes into register array' macro='WritePacketBytesToRegisters' />
 																														<command class_type='calculation' title='Prepare WRITE acknowledge (send before slow hardware apply)' >
