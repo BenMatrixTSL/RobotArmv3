@@ -134,6 +134,7 @@ const END_TOOL_WRITE_RANGES = {
     51: { bytes: 2, min: 500, max: 2500 }, // Servo pulse min (us)
     53: { bytes: 2, min: 500, max: 2500 }, // Servo pulse max (us)
     57: { bytes: 1, min: 0,   max: 255 },  // Servo slew rate (steps per ~10 ms tick, 0 = jump) - firmware minor >= 3
+    58: { bytes: 2, min: 0,   max: 2000 }, // Servo current limit (mA, 0 = none) - stops a slewed move - firmware minor >= 3
 };
 
 // Angle limits (9, 11) can let a joint travel somewhere mechanically unsafe —
@@ -1545,6 +1546,19 @@ async function handleBusCommand(clientId, data) {
                 await requireEndTool().setHobbyServoSlewRate(rate);
                 reply({ type: 'success', message: `Tool hobby servo slew rate set to ${rate} steps/tick` });
             } catch (e) { reply({ type: 'error', message: 'Failed to set tool servo slew rate: ' + e.message }); }
+            break;
+        }
+        case 'toolSetServoCurrentLimit': {
+            try {
+                const limitMa = Number.isFinite(data.limitMa) ? data.limitMa : 0;
+                await requireEndTool().setHobbyServoCurrentLimit(limitMa);
+                reply({ type: 'success', message: `Tool hobby servo current limit set to ${limitMa} mA` });
+            } catch (e) { reply({ type: 'error', message: 'Failed to set tool servo current limit: ' + e.message }); }
+            break;
+        }
+        case 'toolGetServoSlewStatus': {
+            try { reply({ type: 'toolServoSlewStatus', ...await requireEndTool().getHobbyServoSlewStatus() }); }
+            catch (e) { reply({ type: 'error', message: 'Failed to read tool servo slew status: ' + e.message }); }
             break;
         }
         case 'toolSetWatchdog': {

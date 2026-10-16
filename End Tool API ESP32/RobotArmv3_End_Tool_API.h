@@ -71,6 +71,7 @@ MX_UINT32 FCLV_LOOP11;
 
 void FCM_RefreshRegisterArrayFromVariables();
 void FCM_ApplyPendingHobbyServo();
+void FCM_SampleServoCurrent();
 void FCM_ServoSlewTick();
 void FCM_SendStatusPacketWithMultiReadData();
 void FCM_UpdateAdcTelemetry();

@@ -11135,6 +11135,10 @@ MX_GLOBAL MX_UINT8 FCV_REGSERVOSLEWRATE = (0x0); // Register 57 (0x39): hobby se
 MX_GLOBAL MX_UINT8 FCV_SERVOSLEWTARGET = (0x0); // Hobby servo 8-bit position the slew is heading for
 MX_GLOBAL MX_UINT8 FCV_SERVOSLEWCURRENT = (0x0); // Hobby servo 8-bit position currently applied to the output (register 55)
 MX_GLOBAL MX_BOOL FCV_SERVOOUTPUTENABLED = (0); // Mirror of whether the hobby servo output is currently enabled - a move while disabled jumps, a move while enabled slews
+MX_GLOBAL MX_UINT8 FCV_REGSERVOCURRENTLIMIT_L = (0x0); // Register 58 (0x3A): servo current limit low byte (mA). 0 = no limit
+MX_GLOBAL MX_UINT8 FCV_REGSERVOCURRENTLIMIT_H = (0x0); // Register 59 (0x3B): servo current limit high byte (mA)
+MX_GLOBAL MX_UINT16 FCV_SERVOCURRENTLIMITMA = (0x0); // Servo current limit in mA assembled from registers 58/59
+MX_GLOBAL MX_UINT8 FCV_REGSERVOSLEWSTATUS = (0x0); // Register 60 (0x3C): 0 = at target/idle, 1 = slewing, 2 = stopped by current limit
 
 /*=----------------------------------------------------------------------=*\
    Use :
@@ -11170,7 +11174,7 @@ void FCM_RefreshRegisterArrayFromVariables()
   FCV_REGISTERS[23] = FCV_REGADC1MV_L;
   FCV_REGISTERS[24] = FCV_REGADC1MV_H;
 
-  // Copy hobby servo registers (addresses 48-57)
+  // Copy hobby servo registers (addresses 48-60)
   FCV_REGISTERS[48] = FCV_REGSERVOENABLE;
   FCV_REGISTERS[49] = FCV_REGSERVOPOSITION8BIT;
   FCV_REGISTERS[50] = FCV_REGSERVOANGLEDEG;
@@ -11181,6 +11185,9 @@ void FCM_RefreshRegisterArrayFromVariables()
   FCV_REGISTERS[55] = FCV_SERVOSLEWCURRENT;
   FCV_REGISTERS[56] = FCV_SERVOSLEWCURRENT * 180 / 255;
   FCV_REGISTERS[57] = FCV_REGSERVOSLEWRATE;
+  FCV_REGISTERS[58] = FCV_REGSERVOCURRENTLIMIT_L;
+  FCV_REGISTERS[59] = FCV_REGSERVOCURRENTLIMIT_H;
+  FCV_REGISTERS[60] = FCV_REGSERVOSLEWSTATUS;
 
 }
 
@@ -11230,7 +11237,13 @@ void FCM_ApplyPendingHobbyServo()
       // Jump servo directly to position (fast)
       FCD_0dd21_Servo_Controller1__SetPosition(FCV_HOBBYSERVOCHANNEL, FCV_SERVOSLEWCURRENT);
 
-    // } else {
+      // Report: at target (no slew, so no current-limit monitoring)
+      FCV_REGSERVOSLEWSTATUS = 0;
+
+    } else {
+
+      // Report: slewing (ServoSlewTick takes it from here)
+      FCV_REGSERVOSLEWSTATUS = 1;
 
     }
 
@@ -11248,8 +11261,55 @@ void FCM_ApplyPendingHobbyServo()
     // Output disabled: stop any slew in progress
     FCV_SERVOOUTPUTENABLED = 0;
     FCV_SERVOSLEWTARGET = FCV_SERVOSLEWCURRENT;
+    FCV_REGSERVOSLEWSTATUS = 0;
 
   }
+
+}
+
+/*=----------------------------------------------------------------------=*\
+   Use :
+\*=----------------------------------------------------------------------=*/
+void FCM_SampleServoCurrent()
+{
+
+  //Comment:
+  //One fresh reading of the hobby servo supply current (ADS1220 AN2, ~2 ms at 600 SPS) into Current3mA and registers 15/16. Used by the rotating telemetry update and, every tick while a current-limited slew is running, by ServoSlewTick.
+
+  // Read Servo shunt voltage (AN2 single ended)
+  FCV_SHUNT3VOLTS = FCD_0ff31_ADS1220__SampleSglVolts(2, FCV_ADCGAINSETTING);
+
+  // Convert shunt volts to current in amps (I=V/R)
+  FCV_CURRENT3A = flt_div(FCV_SHUNT3VOLTS, FCV_SHUNTRESISTANCEOHMS);
+
+  // Clamp Servo current lower bound to 0A
+  if (flt_lt(FCV_CURRENT3A, 0))
+  {
+
+    // Set Servo current to 0A if negative
+    FCV_CURRENT3A = 0;
+
+  // } else {
+
+  }
+
+  // Convert amps to milliamps
+  FCV_CURRENT3MA = flt_toi((flt_mul(FCV_CURRENT3A, 1000.0)));
+
+  // Clamp Servo current upper bound to 2000mA (2A)
+  if (FCV_CURRENT3MA > 2000)
+  {
+
+    // Set Servo current to 2000mA if above range
+    FCV_CURRENT3MA = 2000;
+
+  // } else {
+
+  }
+
+  // Store milliamps in low/high byte register pairs
+  FCV_REGCURRENT3MA_L = FCV_CURRENT3MA & 255;
+  FCV_REGCURRENT3MA_H = FCV_CURRENT3MA >> 8;
 
 }
 
@@ -11260,57 +11320,95 @@ void FCM_ServoSlewTick()
 {
 
   //Comment:
-  //Called once per main-loop iteration (~10 ms). Moves the hobby servo output one RegServoSlewRate step closer to ServoSlewTarget. Nothing to do while the output is disabled or already at target.
+  //Called once per main-loop iteration (~10 ms). Moves the hobby servo output one RegServoSlewRate step closer to ServoSlewTarget. Nothing to do while the output is disabled or already at target. With a non-zero current limit (registers 58/59) the servo current is sampled every tick and the slew stops and holds where it is once the limit is reached - grip-strength control.
 
   // Slew in progress
   if ((FCV_SERVOOUTPUTENABLED == 1) && (FCV_SERVOSLEWCURRENT != FCV_SERVOSLEWTARGET))
   {
 
-    // Moving up
-    if (FCV_SERVOSLEWCURRENT < FCV_SERVOSLEWTARGET)
+    // Current limit armed: take a fresh servo current reading
+    if (FCV_SERVOCURRENTLIMITMA > 0)
     {
 
-      // Last step (rate 0 or within one step)
-      if ((FCV_REGSERVOSLEWRATE == 0) || ((FCV_SERVOSLEWTARGET - FCV_SERVOSLEWCURRENT) <= FCV_REGSERVOSLEWRATE))
-      {
+      // Sample AN2 into Current3mA
+      FCM_SampleServoCurrent();
 
-        // Arrive at target
-        FCV_SERVOSLEWCURRENT = FCV_SERVOSLEWTARGET;
+    // } else {
 
-      } else {
+    }
 
-        // Step up
-        FCV_SERVOSLEWCURRENT = FCV_SERVOSLEWCURRENT + FCV_REGSERVOSLEWRATE;
+    // Current limit reached: stop here and hold
+    if ((FCV_SERVOCURRENTLIMITMA > 0) && (FCV_CURRENT3MA >= FCV_SERVOCURRENTLIMITMA))
+    {
 
-      }
+      // Abandon the rest of the move - hold the current position
+      FCV_SERVOSLEWTARGET = FCV_SERVOSLEWCURRENT;
+
+      // Report: stopped by current limit
+      FCV_REGSERVOSLEWSTATUS = 2;
 
     } else {
 
-      // Last step (rate 0 or within one step)
-      if ((FCV_REGSERVOSLEWRATE == 0) || ((FCV_SERVOSLEWCURRENT - FCV_SERVOSLEWTARGET) <= FCV_REGSERVOSLEWRATE))
+      // Moving up
+      if (FCV_SERVOSLEWCURRENT < FCV_SERVOSLEWTARGET)
       {
 
-        // Arrive at target
-        FCV_SERVOSLEWCURRENT = FCV_SERVOSLEWTARGET;
+        // Last step (rate 0 or within one step)
+        if ((FCV_REGSERVOSLEWRATE == 0) || ((FCV_SERVOSLEWTARGET - FCV_SERVOSLEWCURRENT) <= FCV_REGSERVOSLEWRATE))
+        {
+
+          // Arrive at target
+          FCV_SERVOSLEWCURRENT = FCV_SERVOSLEWTARGET;
+
+        } else {
+
+          // Step up
+          FCV_SERVOSLEWCURRENT = FCV_SERVOSLEWCURRENT + FCV_REGSERVOSLEWRATE;
+
+        }
 
       } else {
 
-        // Step down
-        FCV_SERVOSLEWCURRENT = FCV_SERVOSLEWCURRENT - FCV_REGSERVOSLEWRATE;
+        // Last step (rate 0 or within one step)
+        if ((FCV_REGSERVOSLEWRATE == 0) || ((FCV_SERVOSLEWCURRENT - FCV_SERVOSLEWTARGET) <= FCV_REGSERVOSLEWRATE))
+        {
+
+          // Arrive at target
+          FCV_SERVOSLEWCURRENT = FCV_SERVOSLEWTARGET;
+
+        } else {
+
+          // Step down
+          FCV_SERVOSLEWCURRENT = FCV_SERVOSLEWCURRENT - FCV_REGSERVOSLEWRATE;
+
+        }
+
+      }
+
+      // Apply the stepped position
+      FCD_0dd21_Servo_Controller1__SetPosition(FCV_HOBBYSERVOCHANNEL, FCV_SERVOSLEWCURRENT);
+
+      // Reached the target
+      if (FCV_SERVOSLEWCURRENT == FCV_SERVOSLEWTARGET)
+      {
+
+        // Report: at target
+        FCV_REGSERVOSLEWSTATUS = 0;
+
+      } else {
+
+        // Report: still slewing
+        FCV_REGSERVOSLEWSTATUS = 1;
 
       }
 
     }
-
-    // Apply the stepped position
-    FCD_0dd21_Servo_Controller1__SetPosition(FCV_HOBBYSERVOCHANNEL, FCV_SERVOSLEWCURRENT);
 
   // } else {
 
   }
 
 }
-
 /*=----------------------------------------------------------------------=*\
    Use :
 \*=----------------------------------------------------------------------=*/
@@ -11718,8 +11816,8 @@ void FCM_ProcessCommsByte()
                       if (FCV_PACKETPARAMCOUNT >= 2)
                       {                      
 
-                        // Writable register address (PWM 3-7, hobby servo 48-54, slew rate 57)
-                        if (((FCV_LASTADDRESS >= 3) && (FCV_LASTADDRESS <= 7)) || ((FCV_LASTADDRESS >= 48) && (FCV_LASTADDRESS <= 54)) || (FCV_LASTADDRESS == 57))
+                        // Writable register address (PWM 3-7, hobby servo 48-54, slew rate / current limit 57-59)
+                        if (((FCV_LASTADDRESS >= 3) && (FCV_LASTADDRESS <= 7)) || ((FCV_LASTADDRESS >= 48) && (FCV_LASTADDRESS <= 54)) || ((FCV_LASTADDRESS >= 57) && (FCV_LASTADDRESS <= 59)))
                         {                        
 
                           // Copy all WRITE data bytes into register array
@@ -11955,40 +12053,8 @@ void FCM_UpdateCurrentMeasurements()
     case 2:
     {
 
-      // Read Servo shunt voltage (AN2 single ended)
-      FCV_SHUNT3VOLTS = FCD_0ff31_ADS1220__SampleSglVolts(2, FCV_ADCGAINSETTING);
-
-      // Convert shunt volts to current in amps (I=V/R)
-      FCV_CURRENT3A = flt_div(FCV_SHUNT3VOLTS, FCV_SHUNTRESISTANCEOHMS);
-
-      // Clamp Servo current lower bound to 0A
-      if (flt_lt(FCV_CURRENT3A, 0))
-      {      
-
-        // Set Servo current to 0A if negative
-        FCV_CURRENT3A = 0;
-
-      // } else {
-
-      }
-
-      // Convert amps to milliamps
-      FCV_CURRENT3MA = flt_toi((flt_mul(FCV_CURRENT3A, 1000.0)));
-
-      // Clamp Servo current upper bound to 2000mA (2A)
-      if (FCV_CURRENT3MA > 2000)
-      {      
-
-        // Set Servo current to 2000mA if above range
-        FCV_CURRENT3MA = 2000;
-
-      // } else {
-
-      }
-
-      // Store milliamps in low/high byte register pairs
-      FCV_REGCURRENT3MA_L = FCV_CURRENT3MA & 255;
-      FCV_REGCURRENT3MA_H = FCV_CURRENT3MA >> 8;
+      // Servo channel (AN2) - shared with the slew current-limit check
+      FCM_SampleServoCurrent();
 
       break;
     }
@@ -12249,6 +12315,11 @@ void FCM_ApplyWritableRegistersToVariablesAndHardware()
   FCV_REGSERVOPULSEMAX_L = FCV_REGISTERS[53];
   FCV_REGSERVOPULSEMAX_H = FCV_REGISTERS[54];
   FCV_REGSERVOSLEWRATE = FCV_REGISTERS[57];
+  FCV_REGSERVOCURRENTLIMIT_L = FCV_REGISTERS[58];
+  FCV_REGSERVOCURRENTLIMIT_H = FCV_REGISTERS[59];
+
+  // Assemble the 16-bit servo current limit (mA, little-endian)
+  FCV_SERVOCURRENTLIMITMA = FCV_REGSERVOCURRENTLIMIT_H * 256 + FCV_REGSERVOCURRENTLIMIT_L;
 
   // Defer hobby servo hardware if this WRITE touched servo registers
   if ((FCV_LASTADDRESS >= 48) && (FCV_LASTADDRESS <= 54))

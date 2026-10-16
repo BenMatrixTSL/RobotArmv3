@@ -56,6 +56,8 @@ const END_TOOL_UNIT_DECODERS = {
     us:             (raw) => `${raw} µs`,
     deg:            (raw) => `${raw}°`,
     'slew-rate':    (raw) => raw === 0 ? '0 = jump immediately' : `${raw} steps/tick (full travel ≈ ${(255 / raw * 0.01).toFixed(2)} s)`,
+    'current-limit': (raw) => raw === 0 ? '0 = no limit' : `${raw} mA`,
+    'slew-status':  (raw) => ({ 0: '0 = at target / idle', 1: '1 = slewing', 2: '2 = stopped by current limit' })[raw] || `unknown (${raw})`,
 };
 
 /**
@@ -114,6 +116,10 @@ const END_TOOL_RAM_REGISTERS = [
       description: 'Angle currently applied to the hobby servo output (derived from register 55).' },
     { address: 57, bytes: 1, name: 'Servo slew rate', access: 'read&write', default: 0, min: 0, max: 255, unit: 'steps/tick', unitType: 'slew-rate',
       description: 'How fast the hobby servo output moves toward a new position/angle: 8-bit position steps per ~10 ms firmware tick. 0 = jump straight to the target (original behaviour). 1 = full 0-255 travel in about 2.5 s, 5 = about 0.5 s, 25 = about 0.1 s. A move made while the output is disabled always jumps (its real position is unknown). Needs end-tool firmware minor version 3 or later; older firmware reads 0 and ignores writes.' },
+    { address: 58, bytes: 2, name: 'Servo current limit', access: 'read&write', default: 0, min: 0, max: 2000, unit: 'mA', unitType: 'current-limit',
+      description: 'Grip-strength control: while a slewed move is in progress (slew rate > 0) the servo supply current (register 15) is sampled every tick, and the move stops and holds position as soon as the current reaches this limit. 0 = no limit. Has no effect on jump moves (slew rate 0). Register 60 shows whether the last move stopped on the limit. Firmware minor 3 or later.' },
+    { address: 60, bytes: 1, name: 'Servo slew status', access: 'read', default: 0, min: -1, max: -1, unit: ' - ', unitType: 'slew-status',
+      description: '0 = at target / idle, 1 = slew in progress, 2 = move stopped early because the servo current reached the limit in register 58 (gripper has closed on something).' },
 ];
 
 function decodeEndToolRegisters(registers, bytes) {

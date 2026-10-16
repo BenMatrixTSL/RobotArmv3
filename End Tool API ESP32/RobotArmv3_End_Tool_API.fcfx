@@ -267,6 +267,18 @@
 					<def class_type='variable' name='ServoOutputEnabled' type='b1' description='Mirror of whether the hobby servo output is currently enabled - a move while disabled jumps, a move while enabled slews' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
 				</variable>
 				<variable public='0' >
+					<def class_type='variable' name='RegServoCurrentLimit_L' type='u8' description='Register 58 (0x3A): servo current limit low byte (mA). 0 = no limit' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='RegServoCurrentLimit_H' type='u8' description='Register 59 (0x3B): servo current limit high byte (mA)' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='ServoCurrentLimitmA' type='u16' description='Servo current limit in mA assembled from registers 58/59' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
+				</variable>
+				<variable public='0' >
+					<def class_type='variable' name='RegServoSlewStatus' type='u8' description='Register 60 (0x3C): 0 = at target/idle, 1 = slewing, 2 = stopped by current limit' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
+				</variable>
+				<variable public='0' >
 					<def class_type='variable' name='LastDataLength' type='u8' description='Requested/read data length from last valid command' isconst='0' isHidden='0' isinit='1' usrinit='0' setinit='0' />
 				</variable>
 				<variable public='0' >
@@ -359,7 +371,7 @@
 							<exp exp='Registers[23] = RegAdc1mV_L' />
 							<exp exp='Registers[24] = RegAdc1mV_H' />
 						</command>
-						<command class_type='calculation' title='Copy hobby servo registers (addresses 48-57)' >
+						<command class_type='calculation' title='Copy hobby servo registers (addresses 48-60)' >
 							<exp exp='Registers[48] = RegServoEnable' />
 							<exp exp='Registers[49] = RegServoPosition8bit' />
 							<exp exp='Registers[50] = RegServoAngleDeg' />
@@ -370,6 +382,9 @@
 							<exp exp='Registers[55] = ServoSlewCurrent' />
 							<exp exp='Registers[56] = ServoSlewCurrent * 180 / 255' />
 							<exp exp='Registers[57] = RegServoSlewRate' />
+							<exp exp='Registers[58] = RegServoCurrentLimit_L' />
+							<exp exp='Registers[59] = RegServoCurrentLimit_H' />
+							<exp exp='Registers[60] = RegServoSlewStatus' />
 						</command>
 					</flowline>
 				</macro>
@@ -406,8 +421,15 @@
 											<argument exp='HobbyServoChannel' />
 											<argument exp='ServoSlewCurrent' />
 										</command>
+										<command class_type='calculation' title='Report: at target (no slew, so no current-limit monitoring)' >
+											<exp exp='RegServoSlewStatus = 0' />
+										</command>
 									</flowline>
-									<flowline />
+									<flowline >
+										<command class_type='calculation' title='Report: slewing (ServoSlewTick takes it from here)' >
+											<exp exp='RegServoSlewStatus = 1' />
+										</command>
+									</flowline>
 								</command>
 								<command class_type='calculation' title='Output is now enabled: later moves slew' >
 									<exp exp='ServoOutputEnabled = 1' />
@@ -421,50 +443,119 @@
 								<command class_type='calculation' title='Output disabled: stop any slew in progress' >
 									<exp exp='ServoOutputEnabled = 0' />
 									<exp exp='ServoSlewTarget = ServoSlewCurrent' />
+									<exp exp='RegServoSlewStatus = 0' />
 								</command>
 							</flowline>
 						</command>
 					</flowline>
 				</macro>
 				<macro >
+					<flowline name='SampleServoCurrent' description='' statediag='0' >
+						<return name='Return' type='v0' description='' isconst='0' isHidden='0' isinit='0' usrinit='' setinit='' />
+						<command class_type='comment' title='' comment='One fresh reading of the hobby servo supply current (ADS1220 AN2, ~2 ms at 600 SPS) into Current3mA and registers 15/16. Used by the rotating telemetry update and, every tick while a current-limited slew is running, by ServoSlewTick.' textarea='12,0,12,0' />
+						<command class_type='call' title='Read Servo shunt voltage (AN2 single ended)' component='ADS1220' macro='SampleSglVolts' >
+							<return exp='Shunt3Volts' />
+							<argument exp='2' />
+							<argument exp='AdcGainSetting' />
+						</command>
+						<command class_type='calculation' title='Convert shunt volts to current in amps (I=V/R)' >
+							<exp exp='Current3A = Shunt3Volts / ShuntResistanceOhms' />
+							<exp exp='//Current3A = Current3A * CurrentCalibrationGain' />
+						</command>
+						<command class_type='decision' title='Clamp Servo current lower bound to 0A' exp='Current3A &lt; 0' swap='0' >
+							<flowline >
+								<command class_type='calculation' title='Set Servo current to 0A if negative' >
+									<exp exp='Current3A = 0' />
+								</command>
+							</flowline>
+							<flowline />
+						</command>
+						<command class_type='calculation' title='Convert amps to milliamps' >
+							<exp exp='Current3mA = FLOAT (Current3A * 1000.0)' />
+						</command>
+						<command class_type='decision' title='Clamp Servo current upper bound to 2000mA (2A)' exp='Current3mA &gt; 2000' swap='0' >
+							<flowline >
+								<command class_type='calculation' title='Set Servo current to 2000mA if above range' >
+									<exp exp='Current3mA = 2000' />
+								</command>
+							</flowline>
+							<flowline />
+						</command>
+						<command class_type='calculation' title='Store milliamps in low/high byte register pairs' >
+							<exp exp='RegCurrent3mA_L = Current3mA &amp; 255' />
+							<exp exp='RegCurrent3mA_H = Current3mA &gt;&gt; 8' />
+						</command>
+					</flowline>
+				</macro>
+				<macro >
 					<flowline name='ServoSlewTick' description='' statediag='0' >
 						<return name='Return' type='v0' description='' isconst='0' isHidden='0' isinit='0' usrinit='' setinit='' />
-						<command class_type='comment' title='' comment='Called once per main-loop iteration (~10 ms). Moves the hobby servo output one RegServoSlewRate step closer to ServoSlewTarget. Nothing to do while the output is disabled or already at target.' textarea='12,0,12,0' />
+						<command class_type='comment' title='' comment='Called once per main-loop iteration (~10 ms). Moves the hobby servo output one RegServoSlewRate step closer to ServoSlewTarget. Nothing to do while the output is disabled or already at target. With a non-zero current limit (registers 58/59) the servo current is sampled every tick and the slew stops and holds where it is once the limit is reached - grip-strength control.' textarea='12,0,12,0' />
 						<command class_type='decision' title='Slew in progress' exp='(ServoOutputEnabled = 1) &amp;&amp; (ServoSlewCurrent &lt;&gt; ServoSlewTarget)' swap='0' >
 							<flowline >
-								<command class_type='decision' title='Moving up' exp='ServoSlewCurrent &lt; ServoSlewTarget' swap='0' >
+								<command class_type='decision' title='Current limit armed: take a fresh servo current reading' exp='ServoCurrentLimitmA &gt; 0' swap='0' >
 									<flowline >
-										<command class_type='decision' title='Last step (rate 0 or within one step)' exp='(RegServoSlewRate = 0) || ((ServoSlewTarget - ServoSlewCurrent) &lt;= RegServoSlewRate)' swap='0' >
-											<flowline >
-												<command class_type='calculation' title='Arrive at target' >
-													<exp exp='ServoSlewCurrent = ServoSlewTarget' />
-												</command>
-											</flowline>
-											<flowline >
-												<command class_type='calculation' title='Step up' >
-													<exp exp='ServoSlewCurrent = ServoSlewCurrent + RegServoSlewRate' />
-												</command>
-											</flowline>
-										</command>
+										<command class_type='call' title='Sample AN2 into Current3mA' macro='SampleServoCurrent' />
 									</flowline>
-									<flowline >
-										<command class_type='decision' title='Last step (rate 0 or within one step)' exp='(RegServoSlewRate = 0) || ((ServoSlewCurrent - ServoSlewTarget) &lt;= RegServoSlewRate)' swap='0' >
-											<flowline >
-												<command class_type='calculation' title='Arrive at target' >
-													<exp exp='ServoSlewCurrent = ServoSlewTarget' />
-												</command>
-											</flowline>
-											<flowline >
-												<command class_type='calculation' title='Step down' >
-													<exp exp='ServoSlewCurrent = ServoSlewCurrent - RegServoSlewRate' />
-												</command>
-											</flowline>
-										</command>
-									</flowline>
+									<flowline />
 								</command>
-								<command class_type='call' title='Apply the stepped position' component='Servo_Controller1' macro='SetPosition' >
-									<argument exp='HobbyServoChannel' />
-									<argument exp='ServoSlewCurrent' />
+								<command class_type='decision' title='Current limit reached: stop here and hold' exp='(ServoCurrentLimitmA &gt; 0) &amp;&amp; (Current3mA &gt;= ServoCurrentLimitmA)' swap='0' >
+									<flowline >
+										<command class_type='calculation' title='Abandon the rest of the move - hold the current position' >
+											<exp exp='ServoSlewTarget = ServoSlewCurrent' />
+										</command>
+										<command class_type='calculation' title='Report: stopped by current limit' >
+											<exp exp='RegServoSlewStatus = 2' />
+										</command>
+									</flowline>
+									<flowline >
+										<command class_type='decision' title='Moving up' exp='ServoSlewCurrent &lt; ServoSlewTarget' swap='0' >
+											<flowline >
+											<command class_type='decision' title='Last step (rate 0 or within one step)' exp='(RegServoSlewRate = 0) || ((ServoSlewTarget - ServoSlewCurrent) &lt;= RegServoSlewRate)' swap='0' >
+												<flowline >
+													<command class_type='calculation' title='Arrive at target' >
+														<exp exp='ServoSlewCurrent = ServoSlewTarget' />
+													</command>
+												</flowline>
+												<flowline >
+													<command class_type='calculation' title='Step up' >
+														<exp exp='ServoSlewCurrent = ServoSlewCurrent + RegServoSlewRate' />
+													</command>
+												</flowline>
+											</command>
+											</flowline>
+											<flowline >
+											<command class_type='decision' title='Last step (rate 0 or within one step)' exp='(RegServoSlewRate = 0) || ((ServoSlewCurrent - ServoSlewTarget) &lt;= RegServoSlewRate)' swap='0' >
+												<flowline >
+													<command class_type='calculation' title='Arrive at target' >
+														<exp exp='ServoSlewCurrent = ServoSlewTarget' />
+													</command>
+												</flowline>
+												<flowline >
+													<command class_type='calculation' title='Step down' >
+														<exp exp='ServoSlewCurrent = ServoSlewCurrent - RegServoSlewRate' />
+													</command>
+												</flowline>
+											</command>
+											</flowline>
+										</command>
+										<command class_type='call' title='Apply the stepped position' component='Servo_Controller1' macro='SetPosition' >
+											<argument exp='HobbyServoChannel' />
+											<argument exp='ServoSlewCurrent' />
+										</command>
+										<command class_type='decision' title='Reached the target' exp='ServoSlewCurrent = ServoSlewTarget' swap='0' >
+											<flowline >
+												<command class_type='calculation' title='Report: at target' >
+													<exp exp='RegServoSlewStatus = 0' />
+												</command>
+											</flowline>
+											<flowline >
+												<command class_type='calculation' title='Report: still slewing' >
+													<exp exp='RegServoSlewStatus = 1' />
+												</command>
+											</flowline>
+										</command>
+									</flowline>
 								</command>
 							</flowline>
 							<flowline />
@@ -798,7 +889,7 @@
 																										</command>
 																										<command class_type='decision' title='WRITE needs at least one data byte in this basic version' exp='PacketParamCount &gt;= 2' swap='0' >
 																											<flowline >
-																												<command class_type='decision' title='Writable register address (PWM 3-7, hobby servo 48-54, slew rate 57)' exp='((LastAddress &gt;= 3) &amp;&amp; (LastAddress &lt;= 7)) || ((LastAddress &gt;= 48) &amp;&amp; (LastAddress &lt;= 54)) || (LastAddress = 57)' swap='0' >
+																												<command class_type='decision' title='Writable register address (PWM 3-7, hobby servo 48-54, slew rate / current limit 57-59)' exp='((LastAddress &gt;= 3) &amp;&amp; (LastAddress &lt;= 7)) || ((LastAddress &gt;= 48) &amp;&amp; (LastAddress &lt;= 54)) || ((LastAddress &gt;= 57) &amp;&amp; (LastAddress &lt;= 59))' swap='0' >
 																													<flowline >
 																														<command class_type='call' title='Copy all WRITE data bytes into register array' macro='WritePacketBytesToRegisters' />
 																														<command class_type='calculation' title='Prepare WRITE acknowledge (send before slow hardware apply)' >
@@ -1031,38 +1122,7 @@
 							</case>
 							<case exp='2' >
 								<flowline >
-									<command class_type='call' title='Read Servo shunt voltage (AN2 single ended)' component='ADS1220' macro='SampleSglVolts' >
-										<return exp='Shunt3Volts' />
-										<argument exp='2' />
-										<argument exp='AdcGainSetting' />
-									</command>
-									<command class_type='calculation' title='Convert shunt volts to current in amps (I=V/R)' >
-										<exp exp='Current3A = Shunt3Volts / ShuntResistanceOhms' />
-										<exp exp='//Current3A = Current3A * CurrentCalibrationGain' />
-									</command>
-									<command class_type='decision' title='Clamp Servo current lower bound to 0A' exp='Current3A &lt; 0' swap='0' >
-										<flowline >
-											<command class_type='calculation' title='Set Servo current to 0A if negative' >
-												<exp exp='Current3A = 0' />
-											</command>
-										</flowline>
-										<flowline />
-									</command>
-									<command class_type='calculation' title='Convert amps to milliamps' >
-										<exp exp='Current3mA = FLOAT (Current3A * 1000.0)' />
-									</command>
-									<command class_type='decision' title='Clamp Servo current upper bound to 2000mA (2A)' exp='Current3mA &gt; 2000' swap='0' >
-										<flowline >
-											<command class_type='calculation' title='Set Servo current to 2000mA if above range' >
-												<exp exp='Current3mA = 2000' />
-											</command>
-										</flowline>
-										<flowline />
-									</command>
-									<command class_type='calculation' title='Store milliamps in low/high byte register pairs' >
-										<exp exp='RegCurrent3mA_L = Current3mA &amp; 255' />
-										<exp exp='RegCurrent3mA_H = Current3mA &gt;&gt; 8' />
-									</command>
+									<command class_type='call' title='Servo channel (AN2) - shared with the slew current-limit check' macro='SampleServoCurrent' />
 								</flowline>
 							</case>
 						</command>
@@ -1224,6 +1284,11 @@
 							<exp exp='RegServoPulseMax_L = Registers[53]' />
 							<exp exp='RegServoPulseMax_H = Registers[54]' />
 							<exp exp='RegServoSlewRate = Registers[57]' />
+							<exp exp='RegServoCurrentLimit_L = Registers[58]' />
+							<exp exp='RegServoCurrentLimit_H = Registers[59]' />
+						</command>
+						<command class_type='calculation' title='Assemble the 16-bit servo current limit (mA, little-endian)' >
+							<exp exp='ServoCurrentLimitmA = RegServoCurrentLimit_H * 256 + RegServoCurrentLimit_L' />
 						</command>
 						<command class_type='decision' title='Defer hobby servo hardware if this WRITE touched servo registers' exp='(LastAddress &gt;= 48) &amp;&amp; (LastAddress &lt;= 54)' swap='0' >
 							<flowline >
@@ -1862,6 +1927,7 @@
 		<view type='0' name='RefreshRegisterArrayFromVariables' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAABwQAAGMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
 		<view type='0' name='ProcessCommsByte' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAABwQAAGMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
 		<view type='0' name='ApplyWritableRegistersToVariablesAndHardware' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAABwQAAGMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
+		<view type='0' name='SampleServoCurrent' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAABwQAAGMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
 		<view type='0' name='ServoSlewTick' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAABwQAAGMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
 		<view type='0' name='ApplyPendingHobbyServo' mode='0' placement='LAAAAAAAAAABAAAA---------------------wUAAAAYAAAABwQAAGMDAAA' zoom='100' scrollx='0' scrolly='0' flags='0' />
 	</layout>

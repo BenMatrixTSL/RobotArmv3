@@ -66,5 +66,7 @@ Probe **GPIO 18** for ~50 Hz PWM after enable + set angle.
 | 49 | Position 0–255 |
 | 50 | Angle 0–180° |
 | 57 | Slew rate, steps per ~10 ms tick (`0` = jump) — macro `ServoSlewTick`, called every main-loop pass |
+| 58–59 | Servo current limit, mA LE (`0` = none) — `ServoSlewTick` samples AIN2 via `SampleServoCurrent` each tick and stops the slew at the limit |
+| 60 | Slew status: `0` at target, `1` slewing, `2` stopped by current limit |
 
 See `REGISTER_MAP.md` for full details.

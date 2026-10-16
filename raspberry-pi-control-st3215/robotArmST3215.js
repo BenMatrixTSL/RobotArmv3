@@ -296,6 +296,11 @@ const SERVO_ANGLE_DEG = 0x32;
 // Slew rate for the hobby servo output: 8-bit position steps per ~10 ms
 // firmware tick, 0 = jump straight to the target. Firmware minor >= 3.
 const SERVO_SLEW_RATE = 0x39;
+// Servo current limit in mA (16-bit LE, 0 = none): a slewed move stops and
+// holds as soon as the servo supply current reaches it. Firmware minor >= 3.
+const SERVO_CURRENT_LIMIT_L = 0x3A;
+// Slew status: 0 = at target/idle, 1 = slewing, 2 = stopped by current limit.
+const SERVO_SLEW_STATUS = 0x3C;
 const SERVO_CURRENT_POSITION_8BIT = 0x37;
 const SERVO_CURRENT_ANGLE = 0x38;
 
@@ -1795,6 +1800,42 @@ class EndToolController extends ServoController {
         if (value < 0) value = 0;
         if (value > 255) value = 255;
         await this.writeData(SERVO_SLEW_RATE, [value & 0xFF]);
+    }
+
+    /**
+     * Set the servo current limit that stops a slewed move early (grip
+     * strength control). Only acts while a slew is in progress - with slew
+     * rate 0 moves jump and are never monitored.
+     * @param {number} limitMa - 0-2000 mA, 0 = no limit
+     */
+    async setHobbyServoCurrentLimit(limitMa) {
+        let value = limitMa;
+        if (value < 0) value = 0;
+        if (value > 2000) value = 2000;
+        await this.writeData(SERVO_CURRENT_LIMIT_L, [this.stsLobyte(value), this.stsHibyte(value)]);
+    }
+
+    /**
+     * Read where a slewed move has got to: the position/angle actually
+     * applied so far, and whether it is still moving, done, or was stopped
+     * by the current limit.
+     * @returns {Object} { currentPosition8bit, currentAngle, slewRate, currentLimitMa, slewStatus, stoppedByCurrentLimit, slewing }
+     */
+    async getHobbyServoSlewStatus() {
+        const data = await this.readData(0x37, 6); // 55..60
+        if (!data || data.length < 6) {
+            throw new Error('Invalid hobby servo slew status data');
+        }
+        const slewStatus = data[5];
+        return {
+            currentPosition8bit: data[0],
+            currentAngle: data[1],
+            slewRate: data[2],
+            currentLimitMa: this.makeWord(data[3], data[4]),
+            slewStatus,
+            slewing: slewStatus === 1,
+            stoppedByCurrentLimit: slewStatus === 2
+        };
     }
 
     /**

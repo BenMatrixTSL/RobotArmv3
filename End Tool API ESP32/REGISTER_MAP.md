@@ -74,6 +74,9 @@ Addresses match `ST3215_ESP32_END_TOOL_API.md` (hex) and the Pi server (`robotAr
 | 55 (`0x37`) | `SERVO_CURRENT_POSITION_8BIT` | R | 8-bit position currently applied to the output (walks toward the target during a slew) |
 | 56 (`0x38`) | `SERVO_CURRENT_ANGLE` | R | Angle currently applied to the output (derived from 55) |
 | 57 (`0x39`) | `SERVO_SLEW_RATE` | RW | Slew rate: position steps per ~10 ms main-loop tick. `0` = jump immediately (default) |
+| 58 (`0x3A`) | `SERVO_CURRENT_LIMIT_L` | RW | Servo current limit low byte, mA. `0` = no limit (default) |
+| 59 (`0x3B`) | `SERVO_CURRENT_LIMIT_H` | RW | Servo current limit high byte |
+| 60 (`0x3C`) | `SERVO_SLEW_STATUS` | R | `0` = at target / idle, `1` = slewing, `2` = stopped by current limit |
 
 ### Behaviour
 
@@ -97,6 +100,24 @@ Addresses match `ST3215_ESP32_END_TOOL_API.md` (hex) and the Pi server (`robotAr
 - Registers 55/56 report the position/angle actually applied so far, so a host can poll them to see
   when the slew has finished.
 - Pi server: `toolSetServoSlewRate` (`rate: 0-255`), or write address 57 from the Calibration tab.
+
+### Current-limited slew / grip sensing (registers 58-60, firmware minor ≥ 3)
+
+- `SERVO_CURRENT_LIMIT` (58/59, mA, little-endian) arms current monitoring for slewed moves. While a
+  slew is in progress the firmware takes a fresh reading of the servo supply current (ADS1220 AIN2,
+  the same value as registers 15/16) **every tick** rather than on the slow rotating telemetry
+  schedule, and as soon as `current >= limit` it abandons the rest of the move and holds the position
+  it has reached. The servo keeps driving at that position, so the grip force is set by the limit.
+- `SERVO_SLEW_STATUS` (60) reports the outcome: `1` while moving, `0` when the target was reached,
+  `2` when the move was stopped by the current limit. It is reset by the next move.
+- Typical gripper close: set slew rate (e.g. 5) and current limit (e.g. 600 mA), write the closed
+  angle, then poll register 60 until it leaves `1`. `2` means an object was gripped; `0` means the
+  jaws closed fully without meeting resistance. Registers 55/56 give the position the jaws stopped at,
+  which can be used to estimate the object size.
+- A jump move (slew rate `0`) is never current-monitored - the servo is commanded straight to the
+  target. A new target written after a current-limit stop starts a normal slew from the held position.
+- Pi server: `toolSetServoCurrentLimit` (`limitMa: 0-2000`), `toolGetServoSlewStatus`, or
+  addresses 58/60 on the Calibration tab.
 
 ### WebSocket commands (Pi server)
 
