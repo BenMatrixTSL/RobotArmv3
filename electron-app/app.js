@@ -4897,6 +4897,12 @@ function updateMovementModeUI() {
     if (ptpBtn)   ptpBtn.classList.toggle('active', movementMode === 'ptp');
     if (linBtn)   linBtn.classList.toggle('active', movementMode === 'linear');
     if (linPanel) linPanel.style.display = movementMode === 'linear' ? '' : 'none';
+    const infoEl = document.getElementById('movementModeInfo');
+    if (infoEl) {
+        infoEl.textContent = movementMode === 'linear'
+            ? 'Linear - tool tip moves in a straight line (applies to XYZ jog, G1 XYZ, RAPID MoveL and Blockly Move TCP)'
+            : 'PTP - joints move together; tool path is curved';
+    }
 }
 
 function loadMovementSettings() {
