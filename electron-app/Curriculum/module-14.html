@@ -286,7 +286,7 @@
         There is no single settings page - each control sits where it is used:
         <ul style="margin:0.4rem 0 0;padding-left:1.2rem;">
           <li><strong>Speed</strong>: set per move - the speed control in <span class="ui-ref">Joint Control</span> / <span class="ui-ref">Pendant Control</span>, the <code>F</code> feed rate in G-code, or the speed argument of a RAPID / Blockly move</li>
-          <li><strong>Movement Mode</strong>: PTP (faster, curved tool path) or Linear Cartesian (straight-line tool path, slower, with its own tool speed in mm/s) on the <span class="ui-ref">Pendant Control</span> tab</li>
+          <li><strong>Movement Mode and Tool speed</strong>: PTP (curved tool path) or Linear Cartesian (straight-line tool path, slower), plus the tool-tip speed in mm/s used by pendant XYZ moves in either mode - on the <span class="ui-ref">Pendant Control</span> tab</li>
           <li><strong>Dead Zones</strong>: XYZ regions the arm must not enter, on the <span class="ui-ref">Dead Zones</span> tab</li>
           <li><strong>Servo protection thresholds</strong>: Max torque, Protection current, Overload torque and Protection time, stored in each servo's EEPROM and shown on the <span class="ui-ref">Calibration</span> tab (password needed to change)</li>
           <li><strong>Joint angle limits</strong>: Min/Max angle limit in the same EEPROM table, set from the arm's URDF during commissioning</li>

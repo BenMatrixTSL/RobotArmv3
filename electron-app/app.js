@@ -4271,13 +4271,19 @@ async function moveToXYZ(xArg, yArg, zArg, orientationOverride, skipRefinement) 
             const ikFkCheck = robotKinematics.forwardKinematics(jointAngles);
             console.log(`IK FK verify - target: X:${wp.x.toFixed(2)} Y:${wp.y.toFixed(2)} Z:${wp.z.toFixed(2)} | IK result: X:${ikFkCheck.position.x.toFixed(2)} Y:${ikFkCheck.position.y.toFixed(2)} Z:${ikFkCheck.position.z.toFixed(2)}`);
 
-            // Dispatch all joints simultaneously with proportional speeds so they arrive together.
-            const defaultStepsPerSec = typeof degreesPerSecondToStepsPerSecond === 'function'
+            // Dispatch all joints simultaneously with proportional speeds so they
+            // arrive together, paced so the tool tip covers this segment at about
+            // the Movement Mode card's tool speed (mm/s) - the same number Linear
+            // mode uses, so PTP and Linear moves are directly comparable. The tip
+            // follows a curve in PTP, so its true path speed is a little higher.
+            const segmentStart = w === 0 ? startPose : waypoints[w - 1];
+            const segmentDistanceMm = Math.hypot(wp.x - segmentStart.x, wp.y - segmentStart.y, wp.z - segmentStart.z);
+            const coordSpeeds = computeTipSpeeds(refAngles, jointAngles, segmentDistanceMm, linearSpeedMmPerSec);
+            const fallbackStepsPerSec = typeof degreesPerSecondToStepsPerSecond === 'function'
                 ? degreesPerSecondToStepsPerSecond(40) : 455;
-            const coordSpeeds = computeCoordinatedSpeeds(refAngles, jointAngles, defaultStepsPerSec);
             const xyzMovePromises = [];
             for (let i = 0; i < jointAngles.length; i++) {
-                xyzMovePromises.push(robotArmClient.moveJoint(i + 1, jointAngles[i], coordSpeeds[i] || defaultStepsPerSec));
+                xyzMovePromises.push(robotArmClient.moveJoint(i + 1, jointAngles[i], coordSpeeds[i] || fallbackStepsPerSec));
             }
             await Promise.allSettled(xyzMovePromises);
             await robotArmClient.waitForMotionComplete(30000);
@@ -4900,8 +4906,8 @@ function updateMovementModeUI() {
     const infoEl = document.getElementById('movementModeInfo');
     if (infoEl) {
         infoEl.textContent = movementMode === 'linear'
-            ? 'Linear - tool tip moves in a straight line (applies to XYZ jog, G1 XYZ, RAPID MoveL and Blockly Move TCP)'
-            : 'PTP - joints move together; tool path is curved';
+            ? 'Linear - tool tip moves in a straight line at the tool speed (applies to XYZ jog, G1 XYZ, RAPID MoveL and Blockly Move TCP)'
+            : 'PTP - joints move together so the tip path is curved; joint speeds are paced so the tip averages about the tool speed';
     }
 }
 
