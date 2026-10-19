@@ -89,7 +89,7 @@ T_total = T_01 × T_12 × T_23 × T_34</div>
       <span class="callout-icon">📄</span>
       <div class="callout-body">
         <strong>URDF - The Arm's Mathematical Description</strong></br>
-        The app's FK/IK solver uses a <strong>URDF</strong> (Unified Robot Description Format) file that defines the exact joint axes, link lengths, and joint limits for this specific arm. You can view the raw URDF XML in the <span class="ui-ref">Settings</span> tab under the Kinematics panel. The link lengths in the URDF are the real values used to compute the matrices shown in the Kinematics tab - compare them to your estimated values from Module 2.
+        The app's FK/IK solver uses a <strong>URDF</strong> (Unified Robot Description Format) file that defines the exact joint axes, link lengths, and joint limits for this specific arm. You can view the raw URDF XML by clicking <strong>View the URDF file</strong> at the top of the <span class="ui-ref">Kinematics</span> tab (lengths are in metres, joint limits in radians). The link lengths in the URDF are the real values used to compute the matrices shown in the Kinematics tab - compare them to your estimated values from Module 2.
       </div>
     </div>
   </div>
@@ -114,8 +114,8 @@ T_total = T_01 × T_12 × T_23 × T_34</div>
   <div class="callout callout-tip">
     <span class="callout-icon">⚙️</span>
     <div class="callout-body">
-      <strong>Settings - FK/IK Tester</strong></br>
-      The <span class="ui-ref">Settings</span> tab includes a dedicated forward and inverse kinematics tester that does not move the physical arm. Use this to verify your manual 2-link FK calculations from the worksheet - enter the joint angles and compare the computed end-effector position to your calculated result.
+      <strong>Kinematics tab - FK without moving the arm</strong></br>
+      Tick <strong>Simulate joint angles</strong> at the top of the <span class="ui-ref">Kinematics</span> tab and type angles into the step cards: the tab works through the forward kinematics for those angles without moving the physical arm. Use this to verify your manual 2-link FK calculations from the worksheet - enter the joint angles and compare the computed end-effector position to your calculated result. To check an inverse kinematics answer, run a Cartesian move in <span class="ui-ref">G-Code Control</span> (<code>G1 X.. Y.. Z..</code>) or <span class="ui-ref">RAPID</span> (<code>MoveLXYZ</code>) and compare the joint angles the solver chose with yours.
     </div>
   </div>
 

@@ -300,7 +300,7 @@
     <ol class="steps">
       <li><p>In the <span class="ui-ref">Joint Control</span> tab, observe the six joint status cards. Each card shows live data from its servo: <strong>angle (°)</strong>, <strong>velocity</strong>, <strong>load (%)</strong> (percentage of stall torque - a proxy for current draw), <strong>voltage (V)</strong>, and <strong>temperature (°C)</strong>. Record the idle values for all six joints in the worksheet.</p></li>
       <li><p>Disable torque on one joint and gently move it by hand. Watch the <strong>angle</strong> reading update in real time - the update rate is approximately 20 ms (50 times per second). Re-enable torque.</p></li>
-      <li><p>Open the <span class="ui-ref">Settings</span> tab and find the <strong>status watchdog interval</strong>. If the server stops sending updates for longer than this threshold, the app falls back to polling. This is what keeps the display responsive even if the network briefly hesitates.</p></li>
+      <li><p>The update rate is fixed: the onboard computer polls every servo on the bus about every 20 ms and pushes the results to the app. If those pushed updates stop arriving for a short while (for example the network hesitates), the app falls back to asking for the status itself, so the display stays live. Watch the angle reading while you move the joint and judge whether 20 ms is fast enough to look continuous.</p></li>
       <li><p>Return to Joint Control. Using the step controls, move Joint 1 by +10°. Watch the <strong>load</strong> reading change as the motor works against gravity. Record the peak load value.</p></li>
     </ol>
     <div class="callout callout-tip" style="margin-top:0.75rem;">
@@ -494,7 +494,7 @@
     </table>
 
     <div class="ws-field">
-      <label>4. What update interval (ms) was set in the Settings tab? Convert this to a frequency in Hz.</label>
+      <label>4. The joint status is updated about every 20 ms. Convert this interval to a frequency in Hz.</label>
       <input type="text" placeholder="Interval: ___ ms → Frequency: ___ Hz">
     </div>
 

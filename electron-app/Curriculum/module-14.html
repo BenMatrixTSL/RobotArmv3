@@ -103,7 +103,7 @@
 <div class="module-hero">
   <div class="module-badge">Advanced · Module 14</div>
   <h1>Safety Standards &amp; Design for Safety</h1>
-  <p>Duration: 60–75 min &nbsp;·&nbsp; Prerequisites: Modules 1, 13 &nbsp;·&nbsp; App tabs: Dead Zones · Settings · Joint Control</p>
+  <p>Duration: 60–75 min &nbsp;·&nbsp; Prerequisites: Modules 1, 13 &nbsp;·&nbsp; App tabs: Dead Zones · Calibration · Joint Control</p>
   <div class="objectives">
     <span class="obj">Identify key robot safety standards</span>
     <span class="obj">Apply the hierarchy of controls</span>
@@ -183,11 +183,11 @@
     <div class="grid-2">
       <div class="mini-card">
         <h4>&#128268; Speed limiting</h4>
-        <p>Reducing maximum joint speed (via the Settings tab or G-code feed rate F parameter) reduces both cycle time and collision energy.</p>
+        <p>Reducing joint speed (the speed control in Joint Control / Pendant Control, the G-code feed rate <code>F</code> parameter, or the speed argument of a RAPID / Blockly move) reduces both cycle time and collision energy.</p>
       </div>
       <div class="mini-card">
         <h4>&#9889; Torque/current limiting</h4>
-        <p>The ST3215 servos have a hardware current limit built into the servo IC - this caps the force the joint can exert. There is no current-limit slider in the Settings tab; the closest software-accessible safety control for overload is the speed limit.</p>
+        <p>The ST3215 servos have current and overload protection built into the servo itself - this caps the force the joint can exert. The thresholds (Max torque, Protection current, Overload torque) are stored in each servo's EEPROM and can be read on the <span class="ui-ref">Calibration</span> tab; there is no current-limit slider in the app, so for everyday use the closest software safety control for overload is the speed limit.</p>
       </div>
     </div>
     <div class="warning-box">
@@ -217,7 +217,7 @@
       <li>Identify three specific hazards associated with this arm (e.g. struck by moving link, trapped fingers, tripping on cables). Write each below.</li>
       <li>For each hazard, classify it using the hierarchy: which existing controls are in place? Which level of the hierarchy are they at?</li>
       <li>Open the <span class="tab-ref">Dead Zones</span> tab. Check that joint limits are set appropriately. Does the current limit prevent the arm reaching any fixtures or people in your lab layout?</li>
-      <li>Open the <span class="tab-ref">Settings</span> tab. Find the <strong>Linear Speed</strong> and <strong>Movement Mode</strong> parameters and record their current values. Note: there is no current-limit slider here - the ST3215 servo's current limit is a hardware parameter. The closest software-accessible safety control for overload is the speed limit.</li>
+      <li>Open the <span class="tab-ref">Calibration</span> tab, select Joint 2 and click <strong>Read Registers</strong>. Record the servo's own protection settings from the EEPROM table: <strong>Max torque</strong> (0x10), <strong>Protection current</strong> (0x1C) and <strong>Overload torque</strong> (0x24). Note: there is no current-limit slider in the app - these limits live in the servo hardware and need the control password to change. The closest everyday software safety control for overload is the speed you choose for each move.</li>
       <li>Open the <span class="tab-ref">Joint Control</span> tab. Command a fast move (high speed) and observe the behaviour. Then set speed to 20% and repeat. Describe the difference in collision risk.</li>
       <li>Write a short (half-page) <strong>safe operating procedure (SOP)</strong> for using this arm in your lab. Include: who may operate it, pre-use checks, what to do if something goes wrong, and how to safely power it down.</li>
     </ul>
@@ -265,8 +265,8 @@
     </table>
 
     <div class="ws-field">
-      <label>Settings values - Linear Speed and Movement Mode</label>
-      <input type="text" placeholder="Linear Speed: ___ mm/s   Movement Mode: PTP / Linear Cartesian">
+      <label>Servo protection values (Calibration tab, Joint 2) - Max torque, Protection current, Overload torque</label>
+      <input type="text" placeholder="Max torque: ___   Protection current: ___   Overload torque: ___">
     </div>
 
     <div class="ws-field">
@@ -282,15 +282,16 @@
     <div class="callout callout-info no-print">
       <span class="callout-icon">⚙️</span>
       <div class="callout-body">
-        <strong>Settings Tab - Confirmed Parameters</strong></br>
-        Relevant parameters in the <span class="ui-ref">Settings</span> tab for safety analysis:
+        <strong>Where the safety-relevant settings live</strong></br>
+        There is no single settings page - each control sits where it is used:
         <ul style="margin:0.4rem 0 0;padding-left:1.2rem;">
-          <li><strong>Movement Mode</strong>: PTP (point-to-point, faster) or Linear Cartesian (straight-line end-effector path, slower)</li>
-          <li><strong>Linear Speed (mm/s)</strong>: maximum speed for Linear Cartesian moves</li>
-          <li><strong>Linear Step Size (mm)</strong>: waypoint spacing for linear interpolation (smaller = smoother path, more computation)</li>
-          <li><strong>Status Watchdog Interval</strong>: fallback poll period if the server stops pushing updates</li>
+          <li><strong>Speed</strong>: set per move - the speed control in <span class="ui-ref">Joint Control</span> / <span class="ui-ref">Pendant Control</span>, the <code>F</code> feed rate in G-code, or the speed argument of a RAPID / Blockly move</li>
+          <li><strong>Dead Zones</strong>: XYZ regions the arm must not enter, on the <span class="ui-ref">Dead Zones</span> tab</li>
+          <li><strong>Servo protection thresholds</strong>: Max torque, Protection current, Overload torque and Protection time, stored in each servo's EEPROM and shown on the <span class="ui-ref">Calibration</span> tab (password needed to change)</li>
+          <li><strong>Joint angle limits</strong>: Min/Max angle limit in the same EEPROM table, set from the arm's URDF during commissioning</li>
+          <li><strong>Status updates</strong>: fixed at about 20 ms - not adjustable</li>
         </ul>
-        There is no explicit current-limit slider - the ST3215 servo's current limit is a hardware parameter. The closest software-accessible safety control for overload is the <strong>speed limit</strong>: lower speed → lower peak current draw → lower risk of thermal overload.
+        There is no explicit current-limit slider - the ST3215 servo's current limit is a hardware parameter. The closest everyday software safety control for overload is the <strong>speed</strong> you choose: lower speed → lower peak current draw → lower risk of thermal overload.
       </div>
     </div>
   </div>

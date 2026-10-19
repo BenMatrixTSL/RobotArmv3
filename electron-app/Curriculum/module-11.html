@@ -96,7 +96,7 @@
 <div class="module-hero">
   <div class="module-badge">Intermediate · Module 11</div>
   <h1>Data Logging &amp; Diagnostics</h1>
-  <p>Duration: 60–75 min &nbsp;·&nbsp; Prerequisites: Modules 3, 8 &nbsp;·&nbsp; App tabs: Joint Control · Settings · Connection</p>
+  <p>Duration: 60–75 min &nbsp;·&nbsp; Prerequisites: Modules 3, 8 &nbsp;·&nbsp; App tabs: Joint Control · Calibration · Connection</p>
   <div class="objectives">
     <span class="obj">Explain why engineers log data</span>
     <span class="obj">Interpret live servo telemetry</span>
@@ -204,7 +204,7 @@
       <li>Command Joint 2 (shoulder) to move slowly between 0° and 60°, repeatedly. Observe how the load value changes at the extremes of the motion.</li>
       <li>Now hold the end-effector gently (add a small manual load) and observe load % again. Record the difference.</li>
       <li>Check the temperature reading before and after 5 minutes of continuous motion. Is it rising?</li>
-      <li>Open the <span class="tab-ref">Settings</span> tab and locate any configurable temperature or load alarm thresholds. Note the default values.</li>
+      <li>Open the <span class="tab-ref">Calibration</span> tab, select Joint 2 and click <strong>Read Registers</strong>. The protection thresholds live in the servo itself: find <strong>Max temperature limit</strong> (0x0D), <strong>Protection current</strong> (0x1C) and <strong>Overload torque</strong> (0x24) in the EEPROM table and note their values. Compare them with the temperature and load you recorded.</li>
     </ul>
 
     <h3>Data Recording Table</h3>
@@ -217,8 +217,8 @@
     </table>
 
     <div class="ws-field">
-      <label>Observations - load change, temperature trend, and Settings notes</label>
-      <textarea placeholder="Describe what you observed for load %, temperature, and any Settings values..."></textarea>
+      <label>Observations - load change, temperature trend, and the servo's protection thresholds</label>
+      <textarea placeholder="Describe what you observed for load %, temperature, and the Max temperature limit / Protection current / Overload torque values from the Calibration tab..."></textarea>
     </div>
 
     <div class="callout callout-info no-print">
@@ -233,7 +233,7 @@
           <li><strong>Voltage (V)</strong> - servo supply voltage</li>
           <li><strong>Temperature (°C)</strong> - servo motor temperature</li>
         </ul>
-        Note: the <span class="ui-ref">Settings</span> tab does <em>not</em> have alarm threshold sliders for temperature or load - the configurable value is the <strong>status watchdog interval</strong> (the fallback poll period if the server stops pushing). The servos have hardware thermal protection built in.
+        Note: the app has no alarm-threshold sliders of its own. The thermal and overload protection is built into each servo and its thresholds are stored in the servo's EEPROM - the <span class="ui-ref">Calibration</span> tab reads them directly from the hardware (Max temperature limit, Protection current, Overload torque, Protection time). Changing them needs the control password.
       </div>
     </div>
   </div>
