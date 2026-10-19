@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Module 14 - Project Planning &amp; Management</title>
+<title>Module 16 - Project Planning &amp; Management</title>
 <style>
   :root {
-    --bg: #f8fafc; --card: #ffffff; --border: #e2e8f0;
+    --bg: #f0f2f5; --card: #ffffff; --border: #e2e8f0;
     --text: #1e293b; --muted: #64748b;
-    --accent: #3b82f6; --accent-light: #eff6ff;
+    --accent: #1e5a8a; --accent-light: #e8f0f8;
     --green: #16a34a; --green-light: #f0fdf4;
     --purple: #7c3aed; --purple-light: #faf5ff;
     --orange: #ea580c; --orange-light: #fff7ed;
@@ -16,11 +16,6 @@
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
-  .hero { background: linear-gradient(135deg, #1c1917 0%, #44403c 100%); color: white; padding: 3rem 2rem; text-align: center; }
-  .hero .module-num { font-size: 0.85rem; opacity: 0.6; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 0.5rem; }
-  .hero h1 { font-size: 2rem; font-weight: 700; margin-bottom: 0.75rem; }
-  .hero p { font-size: 1.05rem; opacity: 0.85; max-width: 600px; margin: 0 auto; }
-  .meta-bar { display: flex; justify-content: center; gap: 2rem; padding: 1rem; background: #1e293b; color: #94a3b8; font-size: 0.85rem; flex-wrap: wrap; }
   .container { max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem; }
   .section-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.75rem; margin-bottom: 1.5rem; }
   .pill { display: inline-block; font-size: 0.75rem; font-weight: 600; padding: 0.2rem 0.65rem; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.9rem; }
@@ -60,7 +55,7 @@
   .feedback-correct { background: var(--green-light); color: var(--green); }
   .feedback-wrong   { background: var(--red-light);   color: var(--red); }
   .check-btn { background: var(--accent); color: white; border: none; padding: 0.7rem 1.6rem; border-radius: 8px; font-size: 0.95rem; font-weight: 600; cursor: pointer; margin-top: 0.5rem; }
-  .check-btn:hover { background: #2563eb; }
+  .check-btn:hover { background: #17476e; }
   .score-bar-wrap { height: 8px; background: var(--border); border-radius: 4px; margin: 1rem 0 0.4rem; }
   .score-bar { height: 100%; background: var(--green); border-radius: 4px; transition: width 0.4s; width: 0%; }
   .score-text { font-size: 0.9rem; color: var(--muted); }
@@ -77,20 +72,39 @@
   .callout-body ul, .callout-body ol { padding-left:1.2rem; margin-top:0.3rem; }
   .ui-ref { display:inline-block; background:var(--green); color:#fff; font-size:0.75rem; font-weight:600; padding:0.1rem 0.45rem; border-radius:4px; font-family:monospace; }
   @media(max-width:600px){ .grid-2,.grid-3{ grid-template-columns:1fr; } }
+
+  /* Header - same as modules 1-10 */
+  .top-nav { background: var(--accent); color: #fff; display: flex; align-items: center; gap: 1rem; padding: 0.75rem 1.5rem; font-size: 0.9rem; }
+  .top-nav a { color: rgba(255,255,255,0.85); text-decoration: none; }
+  .top-nav a:hover { color: #fff; text-decoration: underline; }
+  .nav-center { flex: 1; text-align: center; font-weight: 600; }
+  .module-hero { background: var(--accent); color: #fff; padding: 2rem 1.5rem 2.5rem; text-align: center; }
+  .module-badge { display: inline-block; background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.35); border-radius: 20px; font-size: 0.78rem; font-weight: 600; padding: 0.25em 0.9em; letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 0.75rem; }
+  .module-hero h1 { margin: 0 0 0.5rem; font-size: 1.9rem; font-weight: 700; }
+  .module-hero p { margin: 0; opacity: 0.85; font-size: 1rem; color: #fff; }
+  .objectives { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.4rem; margin-top: 1rem; }
+  .obj { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); border-radius: 4px; font-size: 0.78rem; padding: 0.2em 0.7em; }
 </style>
 <link rel="stylesheet" href="worksheet.css">
 </head>
 <body>
 
-<div class="hero">
-  <div class="module-num">Module 14 of 16</div>
+<nav class="top-nav">
+  <a href="module-15.html">← Module 15</a>
+  <span class="nav-center">Module 16 of 18</span>
+  <a href="module-17.html">Next: Module 17 →</a>
+</nav>
+
+<div class="module-hero">
+  <div class="module-badge">Project · Module 16</div>
   <h1>Project Planning &amp; Management</h1>
-  <p>Applying structured project management methods to engineering tasks - from brief to delivery.</p>
-</div>
-<div class="meta-bar">
-  <span>&#128340; 60–75 min</span>
-  <span>&#127919; Group: Project</span>
-  <span>&#128268; Context: Your own robot arm project</span>
+  <p>Duration: 60–75 min &nbsp;·&nbsp; Prerequisites: Modules 1–15 &nbsp;·&nbsp; Context: Your own robot arm project</p>
+  <div class="objectives">
+    <span class="obj">Describe engineering project phases</span>
+    <span class="obj">Plan time with a Gantt chart</span>
+    <span class="obj">Write a specification</span>
+    <span class="obj">Plan your own robot arm project</span>
+  </div>
 </div>
 
 <div class="container">
@@ -199,7 +213,7 @@
         <ul style="margin:0.4rem 0 0;padding-left:1.2rem;">
           <li>"All 6 joints return to the Home position within <strong>±1°</strong> after 10 consecutive cycles" - measurable via the angle readings in <span class="ui-ref">Joint Control</span></li>
           <li>"End-to-end cycle time (Home → Pick → Place → Home) is under <strong>12 seconds</strong> at 75% speed" - measurable with a stopwatch or the execution log</li>
-          <li>"App connects to Pi and achieves a control session within <strong>5 seconds</strong> on the classroom network" - measurable from the Connection tab</li>
+          <li>"App connects to the onboard computer and achieves a control session within <strong>5 seconds</strong> on the classroom network" - measurable from the Connection tab</li>
           <li>"Joint temperatures remain below <strong>50°C</strong> after 10 consecutive cycles" - measurable from the temperature field in Joint Control</li>
           <li>"Camera tab identifies a red block on a white surface within <strong>2 seconds</strong> of placement" - measurable with a timer and the Camera tab</li>
         </ul>
@@ -212,7 +226,7 @@
   <div class="section-card worksheet-card">
     <span class="pill pill-worksheet">Worksheet</span>
     <h2>Activity - Plan Your Robot Arm Project</h2>
-    <p>You will create a project plan for your own robot arm assignment. This plan will guide your work in Modules 15 and 16.</p>
+    <p>You will create a project plan for your own robot arm assignment. This plan will guide your work in Modules 17 and 18.</p>
     <ul class="steps">
       <li>Write a <strong>project brief</strong> in 3–5 sentences: what you are going to make the arm do, who it is for, and what success looks like.</li>
       <li>List at least <strong>six measurable specification points</strong> (mix of essential and desirable) covering: performance, safety, software, and documentation.</li>
@@ -333,8 +347,8 @@
   </div>
 
   <div class="nav-row">
-    <a class="nav-btn" href="module-13.html">&#8592; Module 13</a>
-    <a class="nav-btn primary" href="module-15.html">Module 15 &#8594;</a>
+    <a class="nav-btn" href="module-15.html">&#8592; Module 15</a>
+    <a class="nav-btn primary" href="module-17.html">Module 17 &#8594;</a>
   </div>
 </div>
 

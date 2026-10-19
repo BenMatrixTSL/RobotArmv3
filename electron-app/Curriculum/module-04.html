@@ -124,7 +124,7 @@
 
 <nav class="top-nav">
   <a href="index.html">← All Modules</a>
-  <span class="nav-center">Module 4 of 16</span>
+  <span class="nav-center">Module 4 of 18</span>
   <a href="module-05.html">Next: Module 5 →</a>
 </nav>
 
@@ -250,7 +250,7 @@
     <div class="callout callout-info">
       <span class="callout-icon">🖱️</span>
       <div class="callout-body">
-        <strong>Example:</strong></br> When you click the "Connect" button, a <em>click event</em> fires. The application's event handler opens a WebSocket connection to the Raspberry Pi's IP address. When the connection opens, a <em>WebSocket open event</em> fires and the status indicator turns green. All of this happens through event handlers - not through a linear top-to-bottom program.
+        <strong>Example:</strong></br> When you click the "Connect" button, a <em>click event</em> fires. The application's event handler opens a WebSocket connection to the onboard computer's IP address. When the connection opens, a <em>WebSocket open event</em> fires and the status indicator turns green. All of this happens through event handlers - not through a linear top-to-bottom program.
       </div>
     </div>
 
@@ -260,7 +260,7 @@
     <h4>Loops and repetition</h4>
     <p>A <strong>loop</strong> repeats a block of instructions. Loops are used to:</p>
     <ul>
-      <li>Repeatedly poll the servo status (the Pi's server loops every ~10 ms)</li>
+      <li>Repeatedly poll the servo status (the onboard computer's server loops every ~10 ms)</li>
       <li>Repeat a pick-and-place cycle many times</li>
       <li>Gradually step through a list of stored positions</li>
     </ul>
@@ -420,7 +420,7 @@
     <p>You have just done what robotics engineers do every day: used a software interface to teach a robot a sequence of movements, then had it repeat that sequence automatically. The difference between your Blockly program and an industrial robot's program is mainly scale and complexity, not concept.</p>
     <p>The pendant control method you used is functionally identical to how industrial robots are programmed by operators on factory floors worldwide - they jog each joint to a position, save it, and build up a sequence. The Blockly visual programming environment bridges the gap between that hands-on teaching approach and writing structured code.</p>
     <p>HMI design is a discipline in its own right. Poor interfaces have caused industrial accidents - the Three Mile Island nuclear incident is partly attributed to confusing control room layout and indicator design. The principles you reviewed (feedback, consistency, error prevention) are not aesthetic preferences; they have measurable effects on operator performance and error rates.</p>
-    <p>As you progress to later modules - particularly G-code programming (Module 9) and system integration (Module 11) - you will see how the software layers build on top of what you have used today.</p>
+    <p>As you progress to later modules - particularly G-code programming (Module 9) and system integration (Module 12) - you will see how the software layers build on top of what you have used today.</p>
   </div>
 
   <!-- ══════════════════════════════════════════════════
@@ -459,7 +459,7 @@
         <label class="mcq-opt"><input type="radio" name="q3" value="a"> <span>The application runs through its code from top to bottom in a fixed sequence</span></label>
         <label class="mcq-opt"><input type="radio" name="q3" value="b"> <span>The application does nothing until something happens (a click, a message, a timer), then runs the corresponding handler</span></label>
         <label class="mcq-opt"><input type="radio" name="q3" value="c"> <span>The application generates random events to test the arm</span></label>
-        <label class="mcq-opt"><input type="radio" name="q3" value="d"> <span>The application is controlled entirely by the Raspberry Pi, not by user input</span></label>
+        <label class="mcq-opt"><input type="radio" name="q3" value="d"> <span>The application is controlled entirely by the onboard computer, not by user input</span></label>
       </div>
       <div class="mcq-feedback" id="q3-fb"></div>
     </div>

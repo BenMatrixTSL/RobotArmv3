@@ -1,70 +1,60 @@
-<svg viewBox="0 0 540 400" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, sans-serif">
+<svg viewBox="0 0 540 410" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, sans-serif">
   <defs>
     <marker id="arr-r" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 Z" fill="#ef4444"/></marker>
     <marker id="arr-g" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 Z" fill="#16a34a"/></marker>
     <marker id="arr-b" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 Z" fill="#3b82f6"/></marker>
-    <marker id="arr-p" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 Z" fill="#7c3aed"/></marker>
   </defs>
-  <rect width="540" height="400" fill="#f8fafc" rx="8"/>
+  <rect width="540" height="410" fill="#f8fafc" rx="8"/>
   <text x="270" y="24" text-anchor="middle" font-size="15" font-weight="700" fill="#1e293b">Coordinate Frames - Robot Arm</text>
-  <text x="270" y="40" text-anchor="middle" font-size="11" fill="#64748b">Each joint has its own local frame. FK chains them together to find the end-effector in the world frame.</text>
+  <text x="270" y="40" text-anchor="middle" font-size="11" fill="#64748b">Each joint has its own local frame - forward kinematics chains them together</text>
 
-  <!-- World / Base frame at bottom -->
-  <circle cx="160" cy="340" r="7" fill="#1e293b"/>
-  <!-- X -->
-  <line x1="160" y1="340" x2="230" y2="340" stroke="#ef4444" stroke-width="2.5" marker-end="url(#arr-r)"/>
-  <text x="236" y="344" font-size="12" fill="#ef4444" font-weight="700">X</text>
-  <!-- Y -->
-  <line x1="160" y1="340" x2="160" y2="275" stroke="#16a34a" stroke-width="2.5" marker-end="url(#arr-g)"/>
-  <text x="150" y="270" font-size="12" fill="#16a34a" font-weight="700">Y</text>
-  <!-- Z (out of page) -->
-  <line x1="160" y1="340" x2="132" y2="312" stroke="#3b82f6" stroke-width="2.5" marker-end="url(#arr-b)"/>
-  <text x="121" y="308" font-size="12" fill="#3b82f6" font-weight="700">Z</text>
-  <text x="160" y="362" text-anchor="middle" font-size="11" fill="#1e293b" font-weight="700">Frame 0</text>
-  <text x="160" y="375" text-anchor="middle" font-size="10" fill="#64748b">(World / Base)</text>
+  <!-- Geometry: Frame 0 (160,345) → Link 1 (95, vertical) → Frame 1 (160,250) → Link 2 (85, 30° left)
+       → Frame 2 (117.5,176.4) → Link 3 (75, 20° right) → Frame 3 (143.2,105.9). Frame axes rotate with the links. -->
 
-  <!-- Arm links -->
-  <!-- Link 1: base to shoulder -->
-  <rect x="152" y="240" width="16" height="102" rx="5" fill="#93c5fd" stroke="#3b82f6" stroke-width="1.5"/>
+  <!-- Links (drawn first so the frame axes sit on top) -->
+  <rect x="152" y="250" width="16" height="95" rx="5" fill="#93c5fd" stroke="#3b82f6" stroke-width="1.5"/>
+  <rect x="152" y="165" width="16" height="85" rx="5" fill="#c4b5fd" stroke="#7c3aed" stroke-width="1.5" transform="rotate(-30,160,250)"/>
+  <rect x="109.5" y="101.4" width="16" height="75" rx="5" fill="#fde68a" stroke="#d97706" stroke-width="1.5" transform="rotate(20,117.5,176.4)"/>
 
-  <!-- Frame 1 at shoulder joint -->
-  <circle cx="160" cy="240" r="7" fill="#3b82f6"/>
-  <line x1="160" y1="240" x2="215" y2="240" stroke="#ef4444" stroke-width="2" marker-end="url(#arr-r)"/>
-  <text x="220" y="244" font-size="11" fill="#ef4444">x₁</text>
-  <line x1="160" y1="240" x2="160" y2="190" stroke="#16a34a" stroke-width="2" marker-end="url(#arr-g)"/>
-  <text x="150" y="186" font-size="11" fill="#16a34a">y₁</text>
-  <text x="185" y="258" font-size="11" fill="#3b82f6" font-weight="700">Frame 1</text>
-  <text x="185" y="270" font-size="10" fill="#64748b">(Shoulder)</text>
-  <text x="185" y="282" font-size="9" fill="#64748b">rotated by θ₁</text>
+  <!-- Frame 0 (world / base) -->
+  <line x1="160" y1="345" x2="225" y2="345" stroke="#ef4444" stroke-width="2.5" marker-end="url(#arr-r)"/>
+  <line x1="160" y1="345" x2="160" y2="288" stroke="#16a34a" stroke-width="2.5" marker-end="url(#arr-g)"/>
+  <line x1="160" y1="345" x2="136" y2="321" stroke="#3b82f6" stroke-width="2.5" marker-end="url(#arr-b)"/>
+  <circle cx="160" cy="345" r="7" fill="#1e293b"/>
+  <text x="233" y="349" font-size="12" fill="#ef4444" font-weight="700">X</text>
+  <text x="150" y="294" text-anchor="end" font-size="12" fill="#16a34a" font-weight="700">Y</text>
+  <text x="130" y="320" text-anchor="end" font-size="12" fill="#3b82f6" font-weight="700">Z</text>
+  <text x="160" y="368" text-anchor="middle" font-size="11" fill="#1e293b" font-weight="700">Frame 0</text>
+  <text x="160" y="381" text-anchor="middle" font-size="10" fill="#64748b">(World / Base)</text>
 
-  <!-- Link 2: shoulder to elbow (angled) -->
-  <g transform="rotate(-30,160,240)">
-    <rect x="152" y="148" width="16" height="94" rx="5" fill="#c4b5fd" stroke="#7c3aed" stroke-width="1.5"/>
-  </g>
+  <!-- Frame 1 (shoulder), aligned with frame 0 -->
+  <line x1="160" y1="250" x2="205" y2="250" stroke="#ef4444" stroke-width="2" marker-end="url(#arr-r)"/>
+  <line x1="160" y1="250" x2="160" y2="207" stroke="#16a34a" stroke-width="2" marker-end="url(#arr-g)"/>
+  <circle cx="160" cy="250" r="6" fill="#3b82f6"/>
+  <text x="211" y="254" font-size="11" fill="#ef4444">x₁</text>
+  <text x="166" y="210" font-size="11" fill="#16a34a">y₁</text>
+  <text x="176" y="270" font-size="11" fill="#2563eb" font-weight="700">Frame 1</text>
+  <text x="176" y="283" font-size="10" fill="#64748b">(Shoulder)</text>
+  <text x="176" y="295" font-size="9" fill="#64748b">rotated by θ₁</text>
 
-  <!-- Frame 2 at elbow -->
-  <circle cx="136" cy="159" r="7" fill="#7c3aed"/>
-  <line x1="136" y1="159" x2="186" y2="143" stroke="#ef4444" stroke-width="2" marker-end="url(#arr-r)"/>
-  <text x="190" y="140" font-size="11" fill="#ef4444">x₂</text>
-  <line x1="136" y1="159" x2="120" y2="112" stroke="#16a34a" stroke-width="2" marker-end="url(#arr-g)"/>
-  <text x="108" y="108" font-size="11" fill="#16a34a">y₂</text>
-  <text x="86" y="175" font-size="11" fill="#7c3aed" font-weight="700">Frame 2</text>
-  <text x="86" y="187" font-size="10" fill="#64748b">(Elbow)</text>
-  <text x="86" y="199" font-size="9" fill="#64748b">rotated by θ₁+θ₂</text>
+  <!-- Frame 2 (elbow), rotated 30° with link 2 -->
+  <line x1="117.5" y1="176.4" x2="156.5" y2="153.9" stroke="#ef4444" stroke-width="2" marker-end="url(#arr-r)"/>
+  <line x1="117.5" y1="176.4" x2="95" y2="137.4" stroke="#16a34a" stroke-width="2" marker-end="url(#arr-g)"/>
+  <circle cx="117.5" cy="176.4" r="6" fill="#7c3aed"/>
+  <text x="162" y="155" font-size="11" fill="#ef4444">x₂</text>
+  <text x="89" y="140" text-anchor="end" font-size="11" fill="#16a34a">y₂</text>
+  <text x="104" y="186" text-anchor="end" font-size="11" fill="#7c3aed" font-weight="700">Frame 2</text>
+  <text x="104" y="199" text-anchor="end" font-size="10" fill="#64748b">(Elbow)</text>
+  <text x="104" y="211" text-anchor="end" font-size="9" fill="#64748b">rotated by θ₁+θ₂</text>
 
-  <!-- Link 3: elbow to wrist -->
-  <g transform="rotate(-10,136,159)">
-    <rect x="128" y="80" width="16" height="80" rx="5" fill="#fde68a" stroke="#d97706" stroke-width="1.5"/>
-  </g>
-
-  <!-- Frame 3 at wrist (end-effector) -->
-  <circle cx="128" cy="82" r="7" fill="#ea580c"/>
-  <line x1="128" y1="82" x2="178" y2="72" stroke="#ef4444" stroke-width="2" marker-end="url(#arr-r)"/>
-  <text x="182" y="70" font-size="11" fill="#ef4444">x₃</text>
-  <line x1="128" y1="82" x2="118" y2="38" stroke="#16a34a" stroke-width="2" marker-end="url(#arr-g)"/>
-  <text x="106" y="34" font-size="11" fill="#16a34a">y₃</text>
-  <text x="80" y="98" font-size="11" fill="#ea580c" font-weight="700">Frame 3</text>
-  <text x="80" y="110" font-size="10" fill="#64748b">(End-Effector)</text>
+  <!-- Frame 3 (end-effector), rotated 10° (30° - 20°) -->
+  <line x1="143.2" y1="105.9" x2="187.5" y2="98.1" stroke="#ef4444" stroke-width="2" marker-end="url(#arr-r)"/>
+  <line x1="143.2" y1="105.9" x2="135.4" y2="61.6" stroke="#16a34a" stroke-width="2" marker-end="url(#arr-g)"/>
+  <circle cx="143.2" cy="105.9" r="6" fill="#ea580c"/>
+  <text x="193" y="100" font-size="11" fill="#ef4444">x₃</text>
+  <text x="141" y="62" font-size="11" fill="#16a34a">y₃</text>
+  <text x="128" y="100" text-anchor="end" font-size="11" fill="#c2410c" font-weight="700">Frame 3</text>
+  <text x="128" y="113" text-anchor="end" font-size="10" fill="#64748b">(End-Effector)</text>
 
   <!-- Right side explanation -->
   <rect x="330" y="60" width="190" height="260" rx="8" fill="white" stroke="#e2e8f0" stroke-width="1.5"/>
@@ -85,5 +75,5 @@
   <text x="340" y="262" font-size="10" fill="#64748b">downstream with it - just</text>
   <text x="340" y="276" font-size="10" fill="#64748b">like a real robot arm joint.</text>
 
-  <text x="270" y="392" text-anchor="middle" font-size="10" fill="#64748b">The Kinematics tab in the app shows the result of this chain calculation for any set of joint angles</text>
+  <text x="270" y="402" text-anchor="middle" font-size="10" fill="#64748b">The Kinematics tab in the app shows the result of this chain calculation for any set of joint angles</text>
 </svg>

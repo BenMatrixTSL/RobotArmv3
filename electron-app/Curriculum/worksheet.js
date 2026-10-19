@@ -7,6 +7,59 @@
  *
  * Keep this file simple and readable - no advanced patterns.
  */
+// One-time move of saved answers after the modules were renumbered.
+// Saved answers are stored under the page's file name, so when a module is
+// inserted every later module's answers must move up by one.
+// Runs on every page that loads this file, including the curriculum index.
+//
+// Each step moves modules first..last up by one:
+//   layout 1 → 2: Module 10 "Machine Vision" inserted (old 10-16 became 11-17)
+//   layout 2 → 3: Module 15 "Maintenance & Calibration" inserted (old 15-17 became 16-18)
+var CURRICULUM_LAYOUT_STEPS = [
+  { first: 10, last: 16 },
+  { first: 15, last: 17 }
+];
+var CURRICULUM_LAYOUT_VERSION = CURRICULUM_LAYOUT_STEPS.length + 1;
+
+// Moves a storage key from layout `fromVersion` (default 1) to the current
+// layout, e.g. "curriculum-ws-module-12.html" (layout 1) → "...module-13.html"
+function remapOldModuleKey(key, fromVersion) {
+  var version = fromVersion || 1;
+  for (var s = version - 1; s < CURRICULUM_LAYOUT_STEPS.length; s++) {
+    var step = CURRICULUM_LAYOUT_STEPS[s];
+    key = key.replace(/module-(\d\d)\.html/, function (m, n) {
+      var num = Number(n);
+      return (num >= step.first && num <= step.last) ? 'module-' + (num + 1) + '.html' : m;
+    });
+  }
+  return key;
+}
+
+(function migrateSavedAnswers() {
+  try {
+    var version = Number(localStorage.getItem('curriculum-layout-version')) || 1;
+    if (version >= CURRICULUM_LAYOUT_VERSION) {
+      return;
+    }
+
+    // Read every old key first, then write - so module 11's answers are not
+    // overwritten by module 10's before they have been moved themselves
+    var moves = [];
+    for (var i = 0; i < localStorage.length; i++) {
+      var key = localStorage.key(i);
+      if (key && key.indexOf('curriculum-ws-') === 0 && remapOldModuleKey(key, version) !== key) {
+        moves.push({ from: key, to: remapOldModuleKey(key, version), value: localStorage.getItem(key) });
+      }
+    }
+    moves.forEach(function (m) { localStorage.removeItem(m.from); });
+    moves.forEach(function (m) { localStorage.setItem(m.to, m.value); });
+
+    localStorage.setItem('curriculum-layout-version', String(CURRICULUM_LAYOUT_VERSION));
+  } catch (e) {
+    // Storage blocked - nothing to migrate
+  }
+})();
+
 (function () {
   // Find every worksheet on this page
   var cards = document.querySelectorAll('.worksheet-card');

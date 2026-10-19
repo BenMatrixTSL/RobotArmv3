@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Module 15 - Maintenance & Calibration</title>
+<style>
+  :root {
+    --bg: #f0f2f5; --card: #ffffff; --border: #e2e8f0;
+    --text: #1e293b; --muted: #64748b;
+    --accent: #1e5a8a; --accent-light: #e8f0f8;
+    --green: #16a34a; --green-light: #f0fdf4;
+    --purple: #7c3aed; --purple-light: #faf5ff;
+    --orange: #ea580c; --orange-light: #fff7ed;
+    --red: #dc2626; --red-light: #fef2f2;
+    --yellow: #ca8a04; --yellow-light: #fefce8;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+  .container { max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem; }
+  .section-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.75rem; margin-bottom: 1.5rem; }
+  .pill { display: inline-block; font-size: 0.75rem; font-weight: 600; padding: 0.2rem 0.65rem; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.9rem; }
+  .pill-theory   { background: var(--accent-light); color: var(--accent); }
+  .pill-activity { background: var(--green-light);  color: var(--green); }
+  .pill-worksheet{ background: var(--purple-light); color: var(--purple); }
+  .pill-sowhat   { background: var(--orange-light); color: var(--orange); }
+  .pill-mcq      { background: #fff8e1; color: #856404; }
+  h2 { font-size: 1.3rem; font-weight: 700; margin-bottom: 0.75rem; }
+  h3 { font-size: 1.05rem; font-weight: 600; margin: 1.2rem 0 0.5rem; }
+  p  { margin-bottom: 0.8rem; color: var(--text); }
+  ul.plain { margin: 0 0 0.9rem 1.3rem; }
+  ul.plain li { margin-bottom: 0.3rem; }
+  .highlight-box { background: var(--accent-light); border-left: 4px solid var(--accent); padding: 1rem 1.2rem; border-radius: 0 8px 8px 0; margin: 1rem 0; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1rem 0; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 1rem; margin: 1rem 0; }
+  .mini-card { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; }
+  .mini-card h4 { font-size: 0.9rem; font-weight: 700; margin-bottom: 0.4rem; }
+  .mini-card p  { font-size: 0.85rem; color: var(--muted); margin: 0; }
+  .table-scroll { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+  th { background: var(--accent-light); color: var(--accent); text-align: left; padding: 0.6rem 0.8rem; font-weight: 600; }
+  td { padding: 0.55rem 0.8rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  .steps { list-style: none; counter-reset: step; padding: 0; }
+  .steps li { counter-increment: step; display: flex; gap: 1rem; margin-bottom: 0.9rem; align-items: flex-start; }
+  .steps li::before { content: counter(step); min-width: 28px; height: 28px; background: var(--green); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; flex-shrink: 0; }
+  .tab-ref { display: inline-block; background: #0f172a; color: #7dd3fc; font-family: monospace; font-size: 0.8rem; padding: 0.15rem 0.5rem; border-radius: 4px; }
+  /* MCQ */
+  .mcq-question { margin-bottom: 1.5rem; }
+  .mcq-question p { font-weight: 600; margin-bottom: 0.6rem; }
+  .mcq-option { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.35rem; cursor: pointer; font-size: 0.95rem; }
+  .mcq-option input { accent-color: var(--accent); }
+  .feedback-msg { font-size: 0.85rem; padding: 0.45rem 0.8rem; border-radius: 6px; margin-top: 0.5rem; display: none; }
+  .feedback-correct { background: var(--green-light); color: var(--green); }
+  .feedback-wrong   { background: var(--red-light);   color: var(--red); }
+  .check-btn { background: var(--accent); color: white; border: none; padding: 0.7rem 1.6rem; border-radius: 8px; font-size: 0.95rem; font-weight: 600; cursor: pointer; margin-top: 0.5rem; }
+  .check-btn:hover { background: #17476e; }
+  .score-bar-wrap { height: 8px; background: var(--border); border-radius: 4px; margin: 1rem 0 0.4rem; }
+  .score-bar { height: 100%; background: var(--green); border-radius: 4px; transition: width 0.4s; width: 0%; }
+  .score-text { font-size: 0.9rem; color: var(--muted); }
+  .nav-row { display: flex; justify-content: space-between; margin-top: 2rem; }
+  .nav-btn { display: inline-block; padding: 0.6rem 1.4rem; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 0.9rem; border: 2px solid var(--border); color: var(--text); }
+  .nav-btn.primary { background: var(--accent); color: white; border-color: var(--accent); }
+  @media(max-width:600px){ .grid-2,.grid-3{ grid-template-columns:1fr; } }
+  .callout{border-radius:8px;padding:.875rem 1rem;margin:.75rem 0;font-size:.93rem;display:flex;gap:.75rem}
+  .callout-icon{font-size:1.25rem;flex-shrink:0;line-height:1.4}
+  .callout-body{flex:1}
+  .callout-info{background:var(--accent-light);border:1px solid #bfdbfe}
+  .callout-tip{background:var(--green-light);border:1px solid #bbf7d0}
+  .callout-warning{background:var(--orange-light);border:1px solid #fed7aa}
+  .callout-danger{background:var(--red-light);border:1px solid #fecaca}
+  .ui-ref{display:inline;background:rgba(22,163,74,0.13);border:1px solid #bbf7d0;border-radius:4px;font-size:.8rem;font-weight:600;padding:.1em .45em;color:var(--green)}
+
+  /* Header - same as modules 1-10 */
+  .top-nav { background: var(--accent); color: #fff; display: flex; align-items: center; gap: 1rem; padding: 0.75rem 1.5rem; font-size: 0.9rem; }
+  .top-nav a { color: rgba(255,255,255,0.85); text-decoration: none; }
+  .top-nav a:hover { color: #fff; text-decoration: underline; }
+  .nav-center { flex: 1; text-align: center; font-weight: 600; }
+  .module-hero { background: var(--accent); color: #fff; padding: 2rem 1.5rem 2.5rem; text-align: center; }
+  .module-badge { display: inline-block; background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.35); border-radius: 20px; font-size: 0.78rem; font-weight: 600; padding: 0.25em 0.9em; letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 0.75rem; }
+  .module-hero h1 { margin: 0 0 0.5rem; font-size: 1.9rem; font-weight: 700; }
+  .module-hero p { margin: 0; opacity: 0.85; font-size: 1rem; color: #fff; }
+  .objectives { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.4rem; margin-top: 1rem; }
+  .obj { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); border-radius: 4px; font-size: 0.78rem; padding: 0.2em 0.7em; }
+</style>
+<link rel="stylesheet" href="worksheet.css">
+</head>
+<body>
+
+<nav class="top-nav">
+  <a href="module-14.html">← Module 14</a>
+  <span class="nav-center">Module 15 of 18</span>
+  <a href="module-16.html">Next: Module 16 →</a>
+</nav>
+
+<div class="module-hero">
+  <div class="module-badge">Advanced · Module 15</div>
+  <h1>Maintenance &amp; Calibration</h1>
+  <p>Duration: 3–4 hours &nbsp;·&nbsp; Prerequisites: Modules 3, 11, 14 &nbsp;·&nbsp; App tabs: Calibration · Joint Control · Connection</p>
+  <div class="objectives">
+    <span class="obj">Compare maintenance strategies</span>
+    <span class="obj">Carry out a recorded inspection</span>
+    <span class="obj">Identify spares, tools and safe isolation</span>
+    <span class="obj">Write a standard operating procedure</span>
+    <span class="obj">Calibrate a joint's zero position</span>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- THEORY 1 -->
+  <div class="section-card">
+    <span class="pill pill-theory">Theory</span>
+    <h2>Why Maintain a Robot?</h2>
+    <p>An industrial robot may run two or three shifts a day for ten years or more. Over that time cables flex millions of times, bearings and gears wear, fixings loosen, and dust and heat build up. <strong>Maintenance</strong> keeps the robot safe, accurate and available; <strong>calibration</strong> makes sure it still goes exactly where it is told.</p>
+    <p>In the UK this is also a legal duty. The <strong>Provision and Use of Work Equipment Regulations 1998 (PUWER)</strong>, which you met in Module 14, require work equipment to be <em>maintained in an efficient state, in efficient working order and in good repair</em>, and any maintenance log to be kept up to date.</p>
+
+    <h3>Three approaches to maintenance</h3>
+    <div class="grid-3">
+      <div class="mini-card">
+        <h4>&#128295; Corrective (reactive)</h4>
+        <p>Fix it when it breaks. Cheap to plan, but breakdowns are unplanned, often at the worst moment, and can damage other parts.</p>
+      </div>
+      <div class="mini-card">
+        <h4>&#128197; Preventive (planned)</h4>
+        <p>Inspect and service on a fixed schedule - daily, weekly, every 2,000 hours. Catches most problems early, but some parts are replaced before they need to be.</p>
+      </div>
+      <div class="mini-card">
+        <h4>&#128200; Predictive (condition-based)</h4>
+        <p>Use data to service only when a part shows signs of wear - for example a servo whose temperature or load slowly rises week by week. Needs monitoring (Module 11).</p>
+      </div>
+    </div>
+    <div class="highlight-box">
+      <strong>Measuring whether maintenance works:</strong> engineers track <strong>downtime</strong> (hours the robot could not run), <strong>MTBF</strong> (mean time between failures - higher is better), <strong>MTTR</strong> (mean time to repair - lower is better) and <strong>repeat faults</strong> (the same fault coming back means the root cause was not fixed).
+    </div>
+  </div>
+
+  <!-- THEORY 2 -->
+  <div class="section-card">
+    <span class="pill pill-theory">Theory</span>
+    <h2>Inspection Routines</h2>
+    <p>An inspection routine is a planned, written check of the robot's condition. It is done the same way every time so that nothing is missed and the results can be compared over time.</p>
+
+    <h3>Mechanical condition</h3>
+    <ul class="plain">
+      <li><strong>Fixings</strong> - are all screws, servo horns and brackets tight? A loose servo horn lets a joint slip, which shifts its zero.</li>
+      <li><strong>Play and backlash</strong> - with torque <em>on</em>, gently try to move each link. Any free movement before the servo resists is play in the gears or a loose joint.</li>
+      <li><strong>Cables</strong> - look for wear, kinks or crushed insulation where the servo bus cable flexes at each joint; check every connector is fully seated.</li>
+      <li><strong>End effector</strong> - gripper fingers, linkages and the gripper servo.</li>
+      <li><strong>Base</strong> - is the arm still firmly fixed to the bench? A base that moves ruins accuracy.</li>
+    </ul>
+
+    <h3>Environmental conditions</h3>
+    <div class="table-scroll">
+      <table>
+        <tr><th>Condition</th><th>Why it matters</th><th>On this arm</th></tr>
+        <tr><td>Particulate matter (dust, swarf)</td><td>Gets into gears and connectors; abrasive dust wears bearings.</td><td>Keep the arm covered when not in use.</td></tr>
+        <tr><td>Temperature</td><td>Motors and electronics derate or shut down when hot.</td><td>The servos protect themselves at about 70 °C.</td></tr>
+        <tr><td>Ventilation</td><td>Heat must escape from motors and power supplies.</td><td>Do not cover the power supply or onboard computer.</td></tr>
+        <tr><td>Shock and vibration</td><td>Loosens fixings, cracks solder joints, can slip a joint's zero.</td><td>A crash into an object can do the same.</td></tr>
+        <tr><td>Electrical noise</td><td>Interference corrupts communication signals.</td><td>The servo bus runs at 1 Mbaud - keep its cable away from mains and motor power wiring.</td></tr>
+      </table>
+    </div>
+
+    <h3>Using the arm's own data</h3>
+    <p>Part of the inspection can be done with the app. The <span class="ui-ref">Joint Control</span> tab shows each servo's temperature, voltage and load; the <span class="ui-ref">Connection</span> tab's diagnostics panel shows serial bus health. Recording these at every inspection builds up the trend data that predictive maintenance needs.</p>
+  </div>
+
+  <!-- THEORY 3 -->
+  <div class="section-card">
+    <span class="pill pill-theory">Theory</span>
+    <h2>Spares, Tools and Safe Isolation</h2>
+
+    <h3>Spare parts</h3>
+    <p>A broken robot that is waiting for a part is not producing anything. Factories hold a stock of <strong>critical spares</strong> - parts that wear out, fail most often, or would take longest to get. For an industrial robot this typically includes seals, bearings, motors, pneumatic and hydraulic lines and connectors, and end-effector parts such as gripper fingers and suction cups.</p>
+    <p>For this arm, sensible spares are: a spare <strong>ST3215 servo</strong> (it must be given the correct ID and commissioned before use), <strong>servo bus cables</strong> and connectors, <strong>fuses</strong> for the power supply, <strong>gripper parts</strong> including the small gripper servo, and a set of <strong>fixings</strong>.</p>
+
+    <h3>Tools and test equipment</h3>
+    <div class="grid-2">
+      <div class="mini-card">
+        <h4>Hand tools</h4>
+        <p>Hex (Allen) keys, screwdrivers, spanners and socket sets for fixings. Industrial robots also need a grease gun for gearboxes - the ST3215 servos are sealed, so this arm does not.</p>
+      </div>
+      <div class="mini-card">
+        <h4>Test equipment</h4>
+        <p>A <strong>multimeter</strong> to check supply voltage, continuity of cables and fuses, and to prove a circuit is dead. A <strong>safe isolation kit</strong>: lock-off device, padlock, warning tag and a voltage tester.</p>
+      </div>
+      <div class="mini-card">
+        <h4>Mastering gauges and reference marks</h4>
+        <p>Alignment marks, pins or gauges that show exactly where each joint's zero is - see the calibration section below.</p>
+      </div>
+      <div class="mini-card">
+        <h4>Software tools</h4>
+        <p>The app's <span class="ui-ref">Calibration</span> tab reads every setting stored in a servo. The project also has a bench <strong>calibration jig</strong> used to set up new servos.</p>
+      </div>
+    </div>
+
+    <div class="callout callout-danger">
+      <span class="callout-icon">&#9889;</span>
+      <div class="callout-body">
+        <strong>Safe isolation before any hands-on maintenance</strong></br>
+        Never work inside a robot's envelope, or on its wiring, with power applied. The safe isolation procedure is: <strong>1. Identify</strong> the supply. <strong>2. Isolate</strong> it (switch off and disconnect). <strong>3. Lock off</strong> and tag it so no one can reconnect it. <strong>4. Prove dead</strong> with a tested voltage tester. <strong>5. Check</strong> the tester still works on a known live source. On this arm, isolating the 24 V supply also powers down the onboard computer. Safe isolation is how employers meet the <strong>Electricity at Work Regulations 1989</strong>; mains-powered equipment such as the arm's power supply is also inspected and tested at intervals (<strong>portable appliance testing, PAT</strong>).
+      </div>
+    </div>
+  </div>
+
+  <!-- THEORY 4 -->
+  <div class="section-card">
+    <span class="pill pill-theory">Theory</span>
+    <h2>Standard Operating Procedures</h2>
+    <p>A <strong>standard operating procedure (SOP)</strong> is a written, step-by-step method for a task, so that it is done safely and the same way by everyone. A good maintenance SOP contains:</p>
+    <div class="table-scroll">
+      <table>
+        <tr><th>Section</th><th>Contents</th></tr>
+        <tr><td>Title and scope</td><td>What the procedure is for and which equipment it covers.</td></tr>
+        <tr><td>Hazards and PPE</td><td>What could go wrong and what protection is needed.</td></tr>
+        <tr><td>Isolation</td><td>Exactly how to make the equipment safe - or why power is needed (e.g. for calibration) and what extra precautions apply.</td></tr>
+        <tr><td>Tools and parts</td><td>Everything needed, so the job is not stopped half-way.</td></tr>
+        <tr><td>Steps</td><td>Numbered, one action per step, with checks along the way.</td></tr>
+        <tr><td>Acceptance test</td><td>How to prove the job worked, with pass/fail limits (e.g. "joint returns to its mark within ±0.5°").</td></tr>
+        <tr><td>Records and sign-off</td><td>What to write in the maintenance log, and who checks it.</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- ACTIVITY 1 -->
+  <div class="section-card">
+    <span class="pill pill-activity">Activity 15A</span>
+    <h2>Carry Out an Inspection</h2>
+    <p>Work in pairs. One person carries out each check; the other records it in the worksheet. <strong>Visual checks first, with the arm stopped and torque off.</strong></p>
+    <ul class="steps">
+      <li>With the arm powered down, inspect every fixing, cable and connector you can see. Do not dismantle anything - record anything loose or damaged and report it.</li>
+      <li>Power up and connect. In <span class="tab-ref">Connection</span>, record the server bus diagnostics. In <span class="tab-ref">Joint Control</span>, record each joint's temperature and voltage at rest.</li>
+      <li>Take control and switch torque on. Gently try to move each link by hand and feel for play. Record any joint with noticeable free movement.</li>
+      <li>Look at the environment around the arm: dust, heat sources, blocked ventilation, cables near power wiring. Record what you find.</li>
+    </ul>
+  </div>
+
+  <!-- THEORY 5 -->
+  <div class="section-card">
+    <span class="pill pill-theory">Theory</span>
+    <h2>Calibration and Mastering</h2>
+    <p>Every move a robot makes depends on it knowing where each joint's <strong>zero</strong> is. If a joint's zero is out by just 1°, the tool tip of a 300 mm arm misses by about 5 mm - and <em>every</em> stored position, program and XYZ move is wrong by the same amount.</p>
+    <p>A joint's zero can move after a servo is replaced, after a servo horn slips on its spline, or after a crash. Setting the zero back to the correct physical position is called <strong>mastering</strong> (or zero calibration). Industrial manufacturers each have their own method - for example alignment (witness) marks, a dial gauge in a reference notch, or an electronic mastering device - but the principle is always the same: <em>put the joint at a known physical position, then tell the controller that this is zero</em>.</p>
+
+    <h3>Where the arm stores its calibration</h3>
+    <div class="grid-2">
+      <div class="mini-card">
+        <h4>&#128274; The servo's own calibration (teacher)</h4>
+        <p>Each ST3215 stores a <strong>Position Correction</strong> value in its EEPROM (address 0x1F). It stays in the servo when the power is off. Changing it needs the instructor's password, because a mistake affects every user of the arm.</p>
+      </div>
+      <div class="mini-card">
+        <h4>&#127891; The trainee trim (you)</h4>
+        <p>A <strong>software-only</strong> offset kept by the onboard computer, on top of the servo's own calibration. It is limited to ±10° and <strong>Reset</strong> always removes it completely - so you can calibrate for real without any risk of losing the arm's true calibration.</p>
+      </div>
+    </div>
+
+    <h3>Tool and base reference points</h3>
+    <p>Mastering gets the joints right. Industrial cells also check the <strong>tool centre point (TCP)</strong> and <strong>base</strong> references - typically by bringing the tool tip to a fixed pointer in the cell and checking the reported XYZ position matches. A wrong tool length or a base that has moved shows up as a consistent XYZ error even when every joint's zero is correct.</p>
+  </div>
+
+  <!-- ACTIVITY 2 -->
+  <div class="section-card">
+    <span class="pill pill-activity">Activity 15B</span>
+    <h2>Explore the Servo Registers (Read-Only)</h2>
+    <p>The <span class="tab-ref">Calibration</span> tab reads every setting stored in a servo's memory. You can look at all of them - writing is locked behind the instructor's password.</p>
+    <ul class="steps">
+      <li>Take control of the arm, open the <span class="tab-ref">Calibration</span> tab, choose Joint 1 and press <strong>Read Registers</strong>.</li>
+      <li>The <strong>EEPROM</strong> table holds settings that stay in the servo when it is powered off. Rows that differ from the factory default are highlighted. Find <strong>Position correction</strong> (0x1F) and the <strong>Min / Max angle limit</strong> (0x09 / 0x0B) and record them in the worksheet.</li>
+      <li>Tick <strong>Show only values that differ from factory default</strong>. What has been changed from the factory settings, and why do you think it was changed?</li>
+      <li>The <strong>SRAM</strong> table is live data that is lost at power-off. Find <strong>Current location</strong>, <strong>Current voltage</strong> and <strong>Current temperature</strong>, and compare them with the Joint Control tab.</li>
+      <li>Repeat for the other joints. Do all six servos have the same Position correction? Why might they not?</li>
+    </ul>
+    <div class="callout callout-info">
+      <span class="callout-icon">&#128273;</span>
+      <div class="callout-body">
+        <strong>Why some registers are never editable</strong></br>
+        Even with the password, the servo <strong>ID</strong> and <strong>baud rate</strong> cannot be changed from this tab. A wrong ID or baud rate would make the servo stop answering on the bus, and you would need the bench calibration jig to recover it.
+      </div>
+    </div>
+  </div>
+
+  <!-- ACTIVITY 3 -->
+  <div class="section-card">
+    <span class="pill pill-activity">Activity 15C</span>
+    <h2>Calibrate a Joint's Zero</h2>
+    <p>You will master one joint using its alignment marks and the trainee trim, check your result, then undo it.</p>
+
+    <div class="callout callout-warning">
+      <span class="callout-icon">&#9888;&#65039;</span>
+      <div class="callout-body">
+        <strong>Before you start</strong></br>
+        Clear the area around the arm and keep a hand near the emergency stop. Jog with torque <strong>on</strong> and the smallest step size - with torque off, the shoulder and elbow can drop under their own weight. Your trim affects <strong>everyone</strong> using this arm until it is reset, so always finish with step 8.
+      </div>
+    </div>
+
+    <ul class="steps">
+      <li><strong>As found.</strong> In <span class="tab-ref">Joint Control</span>, command your joint to 0°. Look closely at its alignment marks. Do they line up? Record how far out they look.</li>
+      <li><strong>Align.</strong> Jog the joint in the smallest steps until the marks line up exactly. Record the angle the app now shows - this is the joint's <strong>zero error</strong>.</li>
+      <li><strong>Set.</strong> In <span class="tab-ref">Calibration</span>, select the same joint and press <strong>Set current position as 0°</strong>. The joint does not move, but its reading becomes 0°. Note the trim shown in the trainee trims line.</li>
+      <li><strong>Verify.</strong> Command the joint to +30°, then back to 0°. Do the marks still line up? Repeat from -30°. This tests whether the zero is right from both directions (any difference is backlash).</li>
+      <li><strong>Check the effect.</strong> Watch the 3D view and its <strong>End Effector Position</strong> readout as you set and reset the trim. Why does a zero error matter for XYZ moves as well as joint moves?</li>
+      <li><strong>Record as left.</strong> Fill in the calibration record in the worksheet - this is exactly what a maintenance engineer would sign off.</li>
+      <li><strong>Compare.</strong> Your instructor may show you how the same correction would be made permanently, using the Position Correction register.</li>
+      <li><strong>Undo.</strong> Press <strong>Reset this joint</strong>. Check that the trainee trims line says <em>none active</em> and that the joint's reading has gone back to the value you recorded in step 2.</li>
+    </ul>
+  </div>
+
+  <!-- WORKSHEET -->
+  <div class="section-card worksheet-card">
+    <span class="pill pill-worksheet">Worksheet</span>
+    <h2>Worksheet 15 - Maintenance &amp; Calibration</h2>
+
+    <h3>1. Activity 15A - Inspection record</h3>
+    <div class="table-scroll">
+      <table>
+        <tr><th>Check</th><th>Result (OK / Fault)</th><th>Notes / action needed</th></tr>
+        <tr><td>Fixings, servo horns and brackets</td><td><input type="text"></td><td><input type="text"></td></tr>
+        <tr><td>Bus cables and connectors</td><td><input type="text"></td><td><input type="text"></td></tr>
+        <tr><td>Play / backlash in each joint</td><td><input type="text"></td><td><input type="text"></td></tr>
+        <tr><td>Gripper / end effector</td><td><input type="text"></td><td><input type="text"></td></tr>
+        <tr><td>Base fixed to bench</td><td><input type="text"></td><td><input type="text"></td></tr>
+        <tr><td>Servo temperatures (all joints)</td><td><input type="text"></td><td><input type="text"></td></tr>
+        <tr><td>Supply voltage at servos</td><td><input type="text"></td><td><input type="text"></td></tr>
+        <tr><td>Bus diagnostics (Connection tab)</td><td><input type="text"></td><td><input type="text"></td></tr>
+      </table>
+    </div>
+
+    <div class="ws-field">
+      <label>2. Describe three environmental conditions in your workshop that could affect the arm, and how you would control each one.</label>
+      <textarea placeholder="Condition 1: ... Control: ...&#10;Condition 2: ... Control: ...&#10;Condition 3: ... Control: ..."></textarea>
+    </div>
+
+    <h3>3. Activity 15B - Servo register values</h3>
+    <div class="table-scroll">
+      <table>
+        <tr><th>Joint</th><th>Position correction (0x1F)</th><th>Min angle limit (0x09)</th><th>Max angle limit (0x0B)</th><th>Other changed values</th></tr>
+        <tr><td>1</td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td></tr>
+        <tr><td>2</td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td></tr>
+        <tr><td>3</td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td></tr>
+        <tr><td>4</td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td></tr>
+        <tr><td>5</td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td></tr>
+        <tr><td>6</td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td></tr>
+      </table>
+    </div>
+
+    <div class="ws-field">
+      <label>4. What is the difference between the EEPROM and SRAM tables? Why are the servo ID and baud rate locked even for the instructor?</label>
+      <textarea placeholder="EEPROM is... SRAM is...&#10;ID and baud rate are locked because..."></textarea>
+    </div>
+
+    <h3>5. Activity 15C - Calibration record</h3>
+    <div class="table-scroll">
+      <table>
+        <tr><th>Item</th><th>Value</th></tr>
+        <tr><td>Joint calibrated</td><td><input type="text"></td></tr>
+        <tr><td>As found: reading with marks aligned (zero error, °)</td><td><input type="text"></td></tr>
+        <tr><td>Trim set (°)</td><td><input type="text"></td></tr>
+        <tr><td>Verify from +30°: marks aligned? (Y/N, error)</td><td><input type="text"></td></tr>
+        <tr><td>Verify from -30°: marks aligned? (Y/N, error)</td><td><input type="text"></td></tr>
+        <tr><td>Reading after Reset (°)</td><td><input type="text"></td></tr>
+        <tr><td>Calibrated by / checked by / date</td><td><input type="text"></td></tr>
+      </table>
+    </div>
+
+    <div class="ws-field">
+      <label>6. Was there a difference between approaching zero from +30° and from -30°? What causes this, and what does it mean for how precisely a joint can be calibrated?</label>
+      <textarea placeholder="Difference: ...&#10;Cause: ...&#10;This means..."></textarea>
+    </div>
+
+    <div class="ws-field">
+      <label>7. Explain why a 1° zero error on the shoulder joint affects every stored position and every XYZ move. Estimate the error at the tool tip if the arm reaches 300 mm.</label>
+      <textarea placeholder="Because... Error at the tip ≈ 300 mm × (1° in radians) = ___ mm"></textarea>
+    </div>
+
+    <div class="ws-field">
+      <label>8. Compare the trainee trim with writing the servo's Position Correction register. Give one advantage and one disadvantage of each.</label>
+      <textarea placeholder="Trainee trim - advantage: ...  disadvantage: ...&#10;Position Correction - advantage: ...  disadvantage: ..."></textarea>
+    </div>
+
+    <h3>9. Spares list for one year of classroom use</h3>
+    <div class="table-scroll">
+      <table>
+        <tr><th>Part</th><th>Quantity</th><th>Reason (wears / fails / long lead time)</th></tr>
+        <tr><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td></tr>
+        <tr><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td></tr>
+        <tr><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td></tr>
+        <tr><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td></tr>
+      </table>
+    </div>
+
+    <div class="ws-field">
+      <label>10. Write a standard operating procedure for replacing a faulty servo on this arm. Include: scope, hazards and PPE, safe isolation, tools and parts, numbered steps (including setting the servo ID, commissioning and calibrating the zero), an acceptance test, and what to record.</label>
+      <textarea style="min-height:180px;" placeholder="Title and scope: ...&#10;Hazards and PPE: ...&#10;Isolation: ...&#10;Tools and parts: ...&#10;Steps: 1. ...&#10;Acceptance test: ...&#10;Records: ..."></textarea>
+    </div>
+
+    <div class="ws-field">
+      <label>11. Propose a preventive maintenance schedule for the arm (daily / weekly / termly checks). How would you judge whether the schedule is effective after a year?</label>
+      <textarea placeholder="Daily: ...&#10;Weekly: ...&#10;Termly: ...&#10;Effectiveness: I would measure..."></textarea>
+    </div>
+
+    <div class="ws-field">
+      <label>12. Extension: Research how one industrial robot manufacturer (e.g. ABB, FANUC, KUKA, Yaskawa) masters its robots. Compare their method with the alignment-mark method you used.</label>
+      <textarea placeholder="Manufacturer: ...&#10;Their method: ...&#10;Comparison: ..."></textarea>
+    </div>
+  </div>
+
+  <!-- SO WHAT -->
+  <div class="section-card">
+    <span class="pill pill-sowhat">So What?</span>
+    <h2>Why Does This Matter in Industry?</h2>
+    <p>On a car production line, one robot stopping can stop the whole line - downtime can cost thousands of pounds a minute. Maintenance teams are judged on how rarely that happens, and calibration teams on whether a robot that has had a motor replaced goes back into production placing parts exactly where it did before.</p>
+    <p>The habits you practised here are the professional ones: <strong>inspect against a written routine</strong>, <strong>record as found and as left</strong>, <strong>isolate before you touch</strong>, <strong>verify your work with an acceptance test</strong>, and <strong>make changes in a way that can be undone</strong>. That last point is why the trainee trim exists - and why industrial controllers keep backups of their calibration data before anyone remasters a robot.</p>
+  </div>
+
+  <!-- MCQ -->
+  <div class="section-card">
+    <span class="pill pill-mcq">Quiz</span>
+    <h2>Check Your Understanding</h2>
+
+    <div class="mcq-question" id="q1-block">
+      <p>1. A servo is replaced because its temperature has risen a little more every week for two months. This is an example of:</p>
+      <label class="mcq-option"><input type="radio" name="q1" value="a"> Corrective maintenance</label>
+      <label class="mcq-option"><input type="radio" name="q1" value="b"> Preventive maintenance on a fixed schedule</label>
+      <label class="mcq-option"><input type="radio" name="q1" value="c"> Predictive (condition-based) maintenance</label>
+      <label class="mcq-option"><input type="radio" name="q1" value="d"> Calibration</label>
+      <div class="feedback-msg" id="q1-fb"></div>
+    </div>
+
+    <div class="mcq-question" id="q2-block">
+      <p>2. You have isolated and locked off the arm's power supply. What must you do before touching the wiring?</p>
+      <label class="mcq-option"><input type="radio" name="q2" value="a"> Wait one minute for the capacitors to discharge</label>
+      <label class="mcq-option"><input type="radio" name="q2" value="b"> Prove it is dead with a tested voltage tester</label>
+      <label class="mcq-option"><input type="radio" name="q2" value="c"> Switch the torque off in the app</label>
+      <label class="mcq-option"><input type="radio" name="q2" value="d"> Nothing - locking off is enough</label>
+      <div class="feedback-msg" id="q2-fb"></div>
+    </div>
+
+    <div class="mcq-question" id="q3-block">
+      <p>3. A servo horn has slipped by one tooth on Joint 2. What is the most likely effect?</p>
+      <label class="mcq-option"><input type="radio" name="q3" value="a"> Only XYZ moves are affected - joint moves are still correct</label>
+      <label class="mcq-option"><input type="radio" name="q3" value="b"> Only the 3D view is wrong</label>
+      <label class="mcq-option"><input type="radio" name="q3" value="c"> The servo will overheat</label>
+      <label class="mcq-option"><input type="radio" name="q3" value="d"> Joint 2's zero has moved, so every position the arm goes to is shifted</label>
+      <div class="feedback-msg" id="q3-fb"></div>
+    </div>
+
+    <div class="mcq-question" id="q4-block">
+      <p>4. Why do students calibrate with the trainee trim instead of the servo's Position Correction register?</p>
+      <label class="mcq-option"><input type="radio" name="q4" value="a"> The trainee trim is more accurate</label>
+      <label class="mcq-option"><input type="radio" name="q4" value="b"> It is software-only and Reset always restores the servo's real calibration</label>
+      <label class="mcq-option"><input type="radio" name="q4" value="c"> The Position Correction register cannot be changed</label>
+      <label class="mcq-option"><input type="radio" name="q4" value="d"> The trainee trim is stored inside the servo</label>
+      <div class="feedback-msg" id="q4-fb"></div>
+    </div>
+
+    <button class="check-btn" onclick="checkMCQ()">Check Answers</button>
+    <div class="score-bar-wrap"><div class="score-bar" id="score-bar"></div></div>
+    <div class="score-text" id="score-text"></div>
+  </div>
+
+  <div class="nav-row">
+    <a class="nav-btn" href="module-14.html">&#8592; Module 14</a>
+    <a class="nav-btn primary" href="module-16.html">Module 16 &#8594;</a>
+  </div>
+</div>
+
+<script>
+const answers = { q1: 'c', q2: 'b', q3: 'd', q4: 'b' };
+const feedback = {
+  q1: {
+    c: 'Correct! Acting on a measured trend before the part fails is predictive (condition-based) maintenance.',
+    wrong: 'Not quite. The servo was replaced because data showed it was wearing - that is predictive (condition-based) maintenance.'
+  },
+  q2: {
+    b: 'Correct! Always prove dead with a voltage tester that you have checked on a known live source.',
+    wrong: 'Not quite. After isolating and locking off, you must prove the circuit is dead with a tested voltage tester before touching it.'
+  },
+  q3: {
+    d: 'Correct! The joint\'s physical zero no longer matches its reading, so every joint move, stored position and XYZ move is shifted.',
+    wrong: 'Not quite. A slipped horn moves the joint\'s physical zero, so every position the arm goes to is shifted - it needs remastering.'
+  },
+  q4: {
+    b: 'Correct! The trim never touches the servo, so a mistake can always be undone with Reset.',
+    wrong: 'Not quite. The trainee trim is software-only, so Reset always restores the servo\'s real calibration - a mistake can never be permanent.'
+  }
+};
+function checkMCQ() {
+  let score = 0;
+  ['q1','q2','q3','q4'].forEach(q => {
+    const sel = document.querySelector(`input[name="${q}"]:checked`);
+    const fb = document.getElementById(`${q}-fb`);
+    if (!sel) { fb.textContent = 'Please select an answer.'; fb.className = 'feedback-msg feedback-wrong'; fb.style.display = 'block'; return; }
+    const v = sel.value;
+    const correct = v === answers[q];
+    if (correct) score++;
+    fb.textContent = correct ? feedback[q][v] : feedback[q].wrong;
+    fb.className = 'feedback-msg ' + (correct ? 'feedback-correct' : 'feedback-wrong');
+    fb.style.display = 'block';
+  });
+  document.getElementById('score-bar').style.width = (score / 4 * 100) + '%';
+  document.getElementById('score-text').textContent = `Score: ${score} / 4`;
+}
+</script>
+<script src="worksheet.js"></script>
+</body>
+</html>

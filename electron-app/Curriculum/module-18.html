@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Module 16 - Evaluation, Reflection &amp; Communication</title>
+<title>Module 18 - Evaluation, Reflection &amp; Communication</title>
 <style>
   :root {
-    --bg: #f8fafc; --card: #ffffff; --border: #e2e8f0;
+    --bg: #f0f2f5; --card: #ffffff; --border: #e2e8f0;
     --text: #1e293b; --muted: #64748b;
-    --accent: #3b82f6; --accent-light: #eff6ff;
+    --accent: #1e5a8a; --accent-light: #e8f0f8;
     --green: #16a34a; --green-light: #f0fdf4;
     --purple: #7c3aed; --purple-light: #faf5ff;
     --orange: #ea580c; --orange-light: #fff7ed;
@@ -17,11 +17,6 @@
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
-  .hero { background: linear-gradient(135deg, #312e81 0%, #4f46e5 100%); color: white; padding: 3rem 2rem; text-align: center; }
-  .hero .module-num { font-size: 0.85rem; opacity: 0.6; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 0.5rem; }
-  .hero h1 { font-size: 2rem; font-weight: 700; margin-bottom: 0.75rem; }
-  .hero p { font-size: 1.05rem; opacity: 0.85; max-width: 600px; margin: 0 auto; }
-  .meta-bar { display: flex; justify-content: center; gap: 2rem; padding: 1rem; background: #1e293b; color: #94a3b8; font-size: 0.85rem; flex-wrap: wrap; }
   .container { max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem; }
   .section-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.75rem; margin-bottom: 1.5rem; }
   .pill { display: inline-block; font-size: 0.75rem; font-weight: 600; padding: 0.2rem 0.65rem; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.9rem; }
@@ -78,20 +73,39 @@
   .callout-body ul, .callout-body ol { padding-left:1.2rem; margin-top:0.3rem; }
   .ui-ref { display:inline-block; background:var(--green); color:#fff; font-size:0.75rem; font-weight:600; padding:0.1rem 0.45rem; border-radius:4px; font-family:monospace; }
   @media(max-width:600px){ .grid-2,.grid-3{ grid-template-columns:1fr; } .cycle{ flex-direction:column; } .cycle-arrow{ transform:rotate(90deg); } }
+
+  /* Header - same as modules 1-10 */
+  .top-nav { background: var(--accent); color: #fff; display: flex; align-items: center; gap: 1rem; padding: 0.75rem 1.5rem; font-size: 0.9rem; }
+  .top-nav a { color: rgba(255,255,255,0.85); text-decoration: none; }
+  .top-nav a:hover { color: #fff; text-decoration: underline; }
+  .nav-center { flex: 1; text-align: center; font-weight: 600; }
+  .module-hero { background: var(--accent); color: #fff; padding: 2rem 1.5rem 2.5rem; text-align: center; }
+  .module-badge { display: inline-block; background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.35); border-radius: 20px; font-size: 0.78rem; font-weight: 600; padding: 0.25em 0.9em; letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 0.75rem; }
+  .module-hero h1 { margin: 0 0 0.5rem; font-size: 1.9rem; font-weight: 700; }
+  .module-hero p { margin: 0; opacity: 0.85; font-size: 1rem; color: #fff; }
+  .objectives { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.4rem; margin-top: 1rem; }
+  .obj { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); border-radius: 4px; font-size: 0.78rem; padding: 0.2em 0.7em; }
 </style>
 <link rel="stylesheet" href="worksheet.css">
 </head>
 <body>
 
-<div class="hero">
-  <div class="module-num">Module 16 of 16 - Final Module</div>
+<nav class="top-nav">
+  <a href="module-17.html">← Module 17</a>
+  <span class="nav-center">Module 18 of 18</span>
+  <a href="index.html">All Modules →</a>
+</nav>
+
+<div class="module-hero">
+  <div class="module-badge">Project · Module 18 · Final Module</div>
   <h1>Evaluation, Reflection &amp; Communication</h1>
-  <p>Critically evaluating your project outcomes, reflecting on what you learned, and communicating your work to different audiences.</p>
-</div>
-<div class="meta-bar">
-  <span>&#128340; 75–90 min</span>
-  <span>&#127919; Group: Project</span>
-  <span>&#128268; Context: Your completed project</span>
+  <p>Duration: 75–90 min &nbsp;·&nbsp; Prerequisites: Modules 16, 17 &nbsp;·&nbsp; Context: Your completed project</p>
+  <div class="objectives">
+    <span class="obj">Critically evaluate a project</span>
+    <span class="obj">Write a strong evaluation</span>
+    <span class="obj">Communicate to technical and non-technical audiences</span>
+    <span class="obj">Reflect on your learning</span>
+  </div>
 </div>
 
 <div class="container">
@@ -177,7 +191,7 @@
     <h2>Activity - Evaluate and Present Your Project</h2>
     <p>Complete these tasks to finalise your project and prepare for assessment.</p>
     <ul class="steps">
-      <li><strong>Specification review:</strong> Return to the specification you wrote in Module 14. For each point, record the actual outcome (your test results from Module 15) and state pass or fail.</li>
+      <li><strong>Specification review:</strong> Return to the specification you wrote in Module 16. For each point, record the actual outcome (your test results from Module 17) and state pass or fail.</li>
       <li><strong>Written evaluation:</strong> For each specification point, write 2–4 sentences covering outcome, analysis, and improvement (use the table format from Theory 2 above as a guide).</li>
       <li><strong>Overall reflection:</strong> Write one paragraph (150–200 words) answering: What were the two most significant technical challenges you faced, and how did you overcome them?</li>
       <li><strong>Future development:</strong> Write three specific, justified improvements you would make if you had more time. For each, explain the engineering reason it would improve the system.</li>
@@ -217,7 +231,7 @@
           <li>Demonstrate <strong>Force Take Control</strong> from the second laptop - your session is displaced and you are notified</li>
           <li>The second student now commands the arm</li>
         </ol>
-        This demonstrates a real distributed-system concept (mutual exclusion over a network) to examiners - not just "the arm moves to a position". It directly showcases knowledge from Module 9 (WebSocket architecture) and Module 13 (control session as an engineering control), and is unique to this specific system.
+        This demonstrates a real distributed-system concept (mutual exclusion over a network) to examiners - not just "the arm moves to a position". It directly showcases knowledge from Module 9 (WebSocket architecture) and Module 14 (control session as an engineering control), and is unique to this specific system.
       </div>
     </div>
 
@@ -299,7 +313,7 @@
   <div class="completion-badge">
     <div class="badge-icon">&#127941;</div>
     <h3>Curriculum Complete</h3>
-    <p>You have worked through all 16 modules - Foundation, Intermediate, Advanced, and Project. Well done.</p>
+    <p>You have worked through all 18 modules - Foundation, Intermediate, Advanced, and Project. Well done.</p>
   </div>
 
   <!-- MCQ -->
@@ -340,7 +354,7 @@
   </div>
 
   <div class="nav-row">
-    <a class="nav-btn" href="module-15.html">&#8592; Module 15</a>
+    <a class="nav-btn" href="module-17.html">&#8592; Module 17</a>
     <a class="nav-btn primary" href="index.html">&#8592; Back to Index</a>
   </div>
 </div>

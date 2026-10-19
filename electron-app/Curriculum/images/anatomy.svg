@@ -1,80 +1,68 @@
 <svg viewBox="0 0 520 480" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, sans-serif">
+  <defs>
+    <marker id="arr-b" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#93c5fd"/>
+    </marker>
+    <marker id="arr-g" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#16a34a"/>
+    </marker>
+  </defs>
   <rect width="520" height="480" fill="#f8fafc" rx="8"/>
   <text x="260" y="28" text-anchor="middle" font-size="15" font-weight="700" fill="#1e293b">Robot Arm - Anatomy</text>
+
+  <!-- Geometry: J1 (250,398) → Link 1 (88, vertical) → J2 (250,310) → Link 2 (95, 20° left) → J3 (217.5,220.7)
+       → Link 3 (80, 15° right) → J4 (238.2,143.4) → end-effector. Links are drawn first, joints on top. -->
 
   <!-- Base platform -->
   <rect x="170" y="400" width="160" height="30" rx="4" fill="#334155" stroke="#1e293b" stroke-width="1.5"/>
   <rect x="150" y="425" width="200" height="14" rx="3" fill="#475569"/>
   <text x="250" y="455" text-anchor="middle" font-size="11" fill="#64748b">Base / Mounting Plate</text>
 
-  <!-- Joint 1 - Waist (rotation Z) -->
+  <!-- Link 1 - lower arm -->
+  <rect x="232" y="310" width="36" height="88" rx="8" fill="#93c5fd" stroke="#3b82f6" stroke-width="1.5"/>
+
+  <!-- Link 2 - upper arm, 20° from vertical about J2 -->
+  <rect x="232" y="215" width="36" height="95" rx="8" fill="#86efac" stroke="#16a34a" stroke-width="1.5" transform="rotate(-20,250,310)"/>
+
+  <!-- Link 3 - forearm, 15° from vertical about J3 -->
+  <rect x="199.5" y="140.7" width="36" height="80" rx="8" fill="#c4b5fd" stroke="#7c3aed" stroke-width="1.5" transform="rotate(15,217.5,220.7)"/>
+
+  <!-- End effector (gripper) on J4 -->
+  <polygon points="224,143 252,143 258,115 218,115" fill="#fbbf24" stroke="#d97706" stroke-width="1.5" stroke-linejoin="round"/>
+  <line x1="231" y1="115" x2="231" y2="97" stroke="#92400e" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="245" y1="115" x2="245" y2="97" stroke="#92400e" stroke-width="2.5" stroke-linecap="round"/>
+
+  <!-- Joints (on top of the links so their labels stay visible) -->
   <circle cx="250" cy="398" r="16" fill="#3b82f6" stroke="#1d4ed8" stroke-width="2"/>
   <text x="250" y="402" text-anchor="middle" font-size="10" font-weight="700" fill="white">J1</text>
-
-  <!-- Link 1 - lower arm -->
-  <rect x="232" y="310" width="36" height="92" rx="8" fill="#93c5fd" stroke="#3b82f6" stroke-width="1.5"/>
-  <text x="310" y="360" font-size="11" fill="#1e40af">Link 1</text>
-  <line x1="268" y1="356" x2="305" y2="356" stroke="#3b82f6" stroke-width="1" stroke-dasharray="3,2"/>
-
-  <!-- Joint 2 - Shoulder -->
   <circle cx="250" cy="310" r="16" fill="#16a34a" stroke="#15803d" stroke-width="2"/>
   <text x="250" y="314" text-anchor="middle" font-size="10" font-weight="700" fill="white">J2</text>
+  <circle cx="217.5" cy="220.7" r="16" fill="#7c3aed" stroke="#6d28d9" stroke-width="2"/>
+  <text x="217.5" y="224.7" text-anchor="middle" font-size="10" font-weight="700" fill="white">J3</text>
+  <circle cx="238.2" cy="143.4" r="14" fill="#ea580c" stroke="#c2410c" stroke-width="2"/>
+  <text x="238.2" y="147.4" text-anchor="middle" font-size="10" font-weight="700" fill="white">J4</text>
 
-  <!-- Link 2 - upper arm, angled -->
-  <g transform="rotate(-20,250,310)">
-    <rect x="232" y="215" width="36" height="97" rx="8" fill="#86efac" stroke="#16a34a" stroke-width="1.5"/>
-  </g>
-  <text x="310" y="265" font-size="11" fill="#166534">Link 2</text>
-  <line x1="268" y1="265" x2="305" y2="265" stroke="#16a34a" stroke-width="1" stroke-dasharray="3,2"/>
+  <!-- Rotation arrows: waist yaw (around the vertical axis) and shoulder pitch -->
+  <path d="M 222,404 A 28,9 0 0 0 274,407" stroke="#93c5fd" stroke-width="2" fill="none" stroke-dasharray="4,2" marker-end="url(#arr-b)"/>
+  <path d="M 272.6,318.2 A 24,24 0 0 0 269.7,296.2" stroke="#16a34a" stroke-width="2" fill="none" stroke-dasharray="4,2" marker-end="url(#arr-g)"/>
 
-  <!-- Joint 3 - Elbow -->
-  <circle cx="237" cy="215" r="16" fill="#7c3aed" stroke="#6d28d9" stroke-width="2"/>
-  <text x="237" y="219" text-anchor="middle" font-size="10" font-weight="700" fill="white">J3</text>
+  <!-- Link labels (right) -->
+  <line x1="270" y1="356" x2="305" y2="356" stroke="#3b82f6" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="310" y="360" font-size="11" fill="#1e40af">Link 1</text>
+  <line x1="256" y1="265" x2="305" y2="265" stroke="#16a34a" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="310" y="269" font-size="11" fill="#166534">Link 2</text>
+  <line x1="250" y1="182" x2="305" y2="182" stroke="#7c3aed" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="310" y="186" font-size="11" fill="#6d28d9">Link 3</text>
+  <line x1="260" y1="110" x2="305" y2="110" stroke="#ea580c" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="310" y="114" font-size="11" fill="#92400e">End-Effector</text>
 
-  <!-- Link 3 - forearm -->
-  <g transform="rotate(15,237,215)">
-    <rect x="219" y="135" width="36" height="82" rx="8" fill="#c4b5fd" stroke="#7c3aed" stroke-width="1.5"/>
-  </g>
-  <text x="300" y="175" font-size="11" fill="#6d28d9">Link 3</text>
-  <line x1="260" y1="175" x2="296" y2="175" stroke="#7c3aed" stroke-width="1" stroke-dasharray="3,2"/>
-
-  <!-- Joint 4 - Wrist -->
-  <circle cx="248" cy="135" r="14" fill="#ea580c" stroke="#c2410c" stroke-width="2"/>
-  <text x="248" y="139" text-anchor="middle" font-size="10" font-weight="700" fill="white">J4</text>
-
-  <!-- End effector -->
-  <polygon points="234,135 262,135 270,105 240,100 226,105" fill="#fbbf24" stroke="#d97706" stroke-width="1.5"/>
-  <line x1="244" y1="105" x2="244" y2="88" stroke="#92400e" stroke-width="2"/>
-  <line x1="256" y1="105" x2="256" y2="88" stroke="#92400e" stroke-width="2"/>
-  <text x="300" y="105" font-size="11" fill="#92400e">End-Effector</text>
-  <line x1="270" y1="102" x2="296" y2="102" stroke="#ea580c" stroke-width="1" stroke-dasharray="3,2"/>
-
-  <!-- Waist label -->
+  <!-- Joint labels (left) -->
   <text x="140" y="402" text-anchor="end" font-size="11" fill="#1d4ed8">Waist (Yaw)</text>
-  <line x1="145" y1="399" x2="233" y2="399" stroke="#3b82f6" stroke-width="1" stroke-dasharray="3,2"/>
-
-  <!-- Shoulder label -->
-  <text x="140" y="313" text-anchor="end" font-size="11" fill="#166534">Shoulder (Pitch)</text>
-  <line x1="145" y1="311" x2="233" y2="311" stroke="#16a34a" stroke-width="1" stroke-dasharray="3,2"/>
-
-  <!-- Elbow label -->
-  <text x="145" y="218" text-anchor="end" font-size="11" fill="#6d28d9">Elbow (Pitch)</text>
-  <line x1="148" y1="216" x2="220" y2="216" stroke="#7c3aed" stroke-width="1" stroke-dasharray="3,2"/>
-
-  <!-- Wrist label -->
-  <text x="145" y="138" text-anchor="end" font-size="11" fill="#c2410c">Wrist (Roll/Pitch)</text>
-  <line x1="148" y1="136" x2="233" y2="136" stroke="#ea580c" stroke-width="1" stroke-dasharray="3,2"/>
-
-  <!-- Rotation arcs -->
-  <path d="M 266,398 A 18,18 0 0 1 285,388" stroke="#3b82f6" stroke-width="2" fill="none" stroke-dasharray="4,2" marker-end="url(#arr-b)"/>
-  <path d="M 218,300 A 18,18 0 0 0 210,289" stroke="#16a34a" stroke-width="2" fill="none" stroke-dasharray="4,2" marker-end="url(#arr-g)"/>
-
-  <defs>
-    <marker id="arr-b" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
-      <path d="M0,0 L6,3 L0,6 Z" fill="#3b82f6"/>
-    </marker>
-    <marker id="arr-g" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
-      <path d="M0,0 L6,3 L0,6 Z" fill="#16a34a"/>
-    </marker>
-  </defs>
+  <line x1="145" y1="398" x2="233" y2="398" stroke="#3b82f6" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="140" y="314" text-anchor="end" font-size="11" fill="#166534">Shoulder (Pitch)</text>
+  <line x1="145" y1="310" x2="233" y2="310" stroke="#16a34a" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="140" y="224.7" text-anchor="end" font-size="11" fill="#6d28d9">Elbow (Pitch)</text>
+  <line x1="145" y1="220.7" x2="200.5" y2="220.7" stroke="#7c3aed" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="140" y="147.4" text-anchor="end" font-size="11" fill="#c2410c">Wrist (Roll/Pitch)</text>
+  <line x1="145" y1="143.4" x2="223" y2="143.4" stroke="#ea580c" stroke-width="1" stroke-dasharray="3,2"/>
 </svg>

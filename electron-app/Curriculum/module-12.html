@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Module 11 - Mechatronic System Integration</title>
+<title>Module 12 - Mechatronic System Integration</title>
 <style>
   :root {
-    --bg: #f8fafc; --card: #ffffff; --border: #e2e8f0;
+    --bg: #f0f2f5; --card: #ffffff; --border: #e2e8f0;
     --text: #1e293b; --muted: #64748b;
-    --accent: #3b82f6; --accent-light: #eff6ff;
+    --accent: #1e5a8a; --accent-light: #e8f0f8;
     --green: #16a34a; --green-light: #f0fdf4;
     --purple: #7c3aed; --purple-light: #faf5ff;
     --orange: #ea580c; --orange-light: #fff7ed;
@@ -16,11 +16,6 @@
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
-  .hero { background: linear-gradient(135deg, #1a0533 0%, #3b1f6b 100%); color: white; padding: 3rem 2rem; text-align: center; }
-  .hero .module-num { font-size: 0.85rem; opacity: 0.6; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 0.5rem; }
-  .hero h1 { font-size: 2rem; font-weight: 700; margin-bottom: 0.75rem; }
-  .hero p { font-size: 1.05rem; opacity: 0.85; max-width: 600px; margin: 0 auto; }
-  .meta-bar { display: flex; justify-content: center; gap: 2rem; padding: 1rem; background: #1e293b; color: #94a3b8; font-size: 0.85rem; flex-wrap: wrap; }
   .container { max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem; }
   .section-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.75rem; margin-bottom: 1.5rem; }
   .pill { display: inline-block; font-size: 0.75rem; font-weight: 600; padding: 0.2rem 0.65rem; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.9rem; }
@@ -64,7 +59,7 @@
   .feedback-correct { background: var(--green-light); color: var(--green); }
   .feedback-wrong   { background: var(--red-light);   color: var(--red); }
   .check-btn { background: var(--accent); color: white; border: none; padding: 0.7rem 1.6rem; border-radius: 8px; font-size: 0.95rem; font-weight: 600; cursor: pointer; margin-top: 0.5rem; }
-  .check-btn:hover { background: #2563eb; }
+  .check-btn:hover { background: #17476e; }
   .score-bar-wrap { height: 8px; background: var(--border); border-radius: 4px; margin: 1rem 0 0.4rem; }
   .score-bar { height: 100%; background: var(--green); border-radius: 4px; transition: width 0.4s; width: 0%; }
   .score-text { font-size: 0.9rem; color: var(--muted); }
@@ -80,20 +75,39 @@
   .callout-warning{background:var(--orange-light);border:1px solid #fed7aa}
   .callout-danger{background:var(--red-light);border:1px solid #fecaca}
   .ui-ref{display:inline;background:rgba(22,163,74,0.13);border:1px solid #bbf7d0;border-radius:4px;font-size:.8rem;font-weight:600;padding:.1em .45em;color:var(--green)}
+
+  /* Header - same as modules 1-10 */
+  .top-nav { background: var(--accent); color: #fff; display: flex; align-items: center; gap: 1rem; padding: 0.75rem 1.5rem; font-size: 0.9rem; }
+  .top-nav a { color: rgba(255,255,255,0.85); text-decoration: none; }
+  .top-nav a:hover { color: #fff; text-decoration: underline; }
+  .nav-center { flex: 1; text-align: center; font-weight: 600; }
+  .module-hero { background: var(--accent); color: #fff; padding: 2rem 1.5rem 2.5rem; text-align: center; }
+  .module-badge { display: inline-block; background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.35); border-radius: 20px; font-size: 0.78rem; font-weight: 600; padding: 0.25em 0.9em; letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 0.75rem; }
+  .module-hero h1 { margin: 0 0 0.5rem; font-size: 1.9rem; font-weight: 700; }
+  .module-hero p { margin: 0; opacity: 0.85; font-size: 1rem; color: #fff; }
+  .objectives { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.4rem; margin-top: 1rem; }
+  .obj { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); border-radius: 4px; font-size: 0.78rem; padding: 0.2em 0.7em; }
 </style>
 <link rel="stylesheet" href="worksheet.css">
 </head>
 <body>
 
-<div class="hero">
-  <div class="module-num">Module 11 of 16</div>
+<nav class="top-nav">
+  <a href="module-11.html">← Module 11</a>
+  <span class="nav-center">Module 12 of 18</span>
+  <a href="module-13.html">Next: Module 13 →</a>
+</nav>
+
+<div class="module-hero">
+  <div class="module-badge">Advanced · Module 12</div>
   <h1>Mechatronic System Integration</h1>
-  <p>Understanding how mechanics, electronics, software and control theory combine into a single working system.</p>
-</div>
-<div class="meta-bar">
-  <span>&#128340; 75–90 min</span>
-  <span>&#127919; Group: Advanced</span>
-  <span>&#128268; App tabs: All tabs</span>
+  <p>Duration: 75–90 min &nbsp;·&nbsp; Prerequisites: Modules 3, 9, 11 &nbsp;·&nbsp; App tabs: All tabs</p>
+  <div class="objectives">
+    <span class="obj">Define a mechatronic system</span>
+    <span class="obj">Describe the full system stack</span>
+    <span class="obj">Identify integration challenges</span>
+    <span class="obj">Trace a command through every layer</span>
+  </div>
 </div>
 
 <div class="container">
@@ -134,8 +148,8 @@
       <div class="layer layer-app">&#128187; HMI / Electron App - User clicks a button or runs a G-code file</div>
       <div class="layer-arrow">&#8595; WebSocket (JSON, TCP 8080)</div>
       <div class="layer layer-ws">&#128257; Network Transport - Command sent as a JSON packet over Wi-Fi or LAN</div>
-      <div class="layer-arrow">&#8595; Server on Raspberry Pi receives and parses</div>
-      <div class="layer layer-server">&#127381; Controller (Raspberry Pi) - Motion planning, safety checks, PID setpoints calculated</div>
+      <div class="layer-arrow">&#8595; Server on the onboard computer receives and parses</div>
+      <div class="layer layer-server">&#127381; Controller (onboard computer) - Motion planning, safety checks, PID setpoints calculated</div>
       <div class="layer-arrow">&#8595; UART serial bus at 1 Mbaud</div>
       <div class="layer layer-serial">&#128268; Serial Protocol - Position command sent to each ST3215 servo by ID</div>
       <div class="layer-arrow">&#8595; Internal servo electronics</div>
@@ -151,7 +165,7 @@
         <ol style="margin:0.5rem 0 0;padding-left:1.2rem;">
           <li><strong>HMI - Electron App</strong>: the user interface running on PC or the robot arm touchscreen</li>
           <li><strong>WebSocket / JSON over TCP:8080</strong>: bi-directional real-time messaging</li>
-          <li><strong>Server on Raspberry Pi</strong>: control session management, kinematics solver, motion planning, safety enforcement, G-code/RAPID execution</li>
+          <li><strong>Server on the onboard computer</strong>: control session management, kinematics solver, motion planning, safety enforcement, G-code/RAPID execution</li>
           <li><strong>Serial bus interface (1 Mbps half-duplex)</strong>: the daisy-chained physical link, polled every 20 ms</li>
           <li><strong>ST3215 servo hardware + AS5600 sensors</strong>: actuators with internal PID, position/load/temperature sensors, and independent magnetic encoders via I²C</li>
         </ol>
@@ -196,7 +210,7 @@
       <span class="callout-icon">📷</span>
       <div class="callout-body">
         <strong>Camera Subsystem - Perception Integration</strong></br>
-        A USB camera on the Raspberry Pi provides a perception input. It streams JPEG frames to port 8082, and the server proxies the ArUco marker detection and coloured block highlighting results into the WebSocket feed. From the app's perspective, vision data arrives alongside joint telemetry on the same connection. The <span class="ui-ref">Camera</span> tab displays the live stream with overlaid detections. This is a genuine multi-process integration scenario: the control system and the vision system run independently and must be synchronised without blocking each other.
+        A USB camera on the onboard computer provides a perception input (see Module 10). A separate vision service on the onboard computer analyses the camera images and serves JPEG frames and detection results (ArUco markers, coloured blocks) over HTTP on port 8082. The app fetches these independently of the WebSocket connection that carries joint telemetry, so vision data and servo data arrive by two different routes at two different rates. The <span class="ui-ref">Camera</span> tab displays the live stream with overlaid detections. This is a genuine multi-process integration scenario: the control system and the vision system run independently and must be synchronised without blocking each other.
       </div>
     </div>
   </div>
@@ -235,7 +249,7 @@
   <div class="section-card">
     <span class="pill pill-sowhat">So What?</span>
     <h2>Why Integration Is the Hard Part</h2>
-    <p>Individual components - servos, Raspberry Pi, network - are well-understood in isolation. The difficulty in real engineering projects is making them work <em>together</em> reliably. This is why systems integration is a dedicated engineering role in industry.</p>
+    <p>Individual components - servos, onboard computer, network - are well-understood in isolation. The difficulty in real engineering projects is making them work <em>together</em> reliably. This is why systems integration is a dedicated engineering role in industry.</p>
     <p>When you built a Blockly program and watched it execute on the physical arm, you experienced the entire mechatronic stack in action. Most users never think about the five layers beneath a button press - but engineers must design, test, and maintain every one of them.</p>
     <p><strong>Industry connection:</strong> Automotive manufacturing robots, surgical robots, and warehouse automation systems all follow the same layered model - HMI → network/fieldbus → controller → actuator/sensor. The vocabulary and patterns you have learned here transfer directly.</p>
   </div>
@@ -249,7 +263,7 @@
       <p>1. In this arm's system stack, where does PID control run?</p>
       <label class="mcq-option"><input type="radio" name="q1" value="a"> In the Electron app</label>
       <label class="mcq-option"><input type="radio" name="q1" value="b"> Inside each ST3215 servo</label>
-      <label class="mcq-option"><input type="radio" name="q1" value="c"> On the server on the Raspberry Pi</label>
+      <label class="mcq-option"><input type="radio" name="q1" value="c"> On the server on the onboard computer</label>
       <label class="mcq-option"><input type="radio" name="q1" value="d"> In the WebSocket protocol</label>
       <div class="feedback-msg" id="q1-fb"></div>
     </div>
@@ -266,7 +280,7 @@
     <div class="mcq-question">
       <p>3. A command sent from the app is silently dropped and the arm does not move. Which layer should you investigate first?</p>
       <label class="mcq-option"><input type="radio" name="q3" value="a"> The servo motor windings</label>
-      <label class="mcq-option"><input type="radio" name="q3" value="b"> The network/WebSocket connection between app and Pi</label>
+      <label class="mcq-option"><input type="radio" name="q3" value="b"> The network/WebSocket connection between the app and the onboard computer</label>
       <label class="mcq-option"><input type="radio" name="q3" value="c"> The 3D visualisation model</label>
       <label class="mcq-option"><input type="radio" name="q3" value="d"> The G-code parser</label>
       <div class="feedback-msg" id="q3-fb"></div>
@@ -278,8 +292,8 @@
   </div>
 
   <div class="nav-row">
-    <a class="nav-btn" href="module-10.html">&#8592; Module 10</a>
-    <a class="nav-btn primary" href="module-12.html">Module 12 &#8594;</a>
+    <a class="nav-btn" href="module-11.html">&#8592; Module 11</a>
+    <a class="nav-btn primary" href="module-13.html">Module 13 &#8594;</a>
   </div>
 </div>
 
@@ -288,7 +302,7 @@ const answers = { q1: 'b', q2: 'b', q3: 'b' };
 const feedback = {
   q1: { b: 'Correct! PID runs inside each ST3215 servo - only setpoints travel over the network, keeping the control loop fast.', wrong: 'Not quite. PID runs inside each ST3215 servo, keeping the control loop local and fast.' },
   q2: { b: 'Correct! Mechatronics integrates mechanical, electrical, software and control engineering.', wrong: 'Not quite. Mechatronics combines mechanical, electrical, software and control engineering.' },
-  q3: { b: 'Correct! A silently dropped command most likely indicates a network/WebSocket failure between the app and the Pi.', wrong: 'Not quite. A silent drop with no movement suggests the command never reached the Pi - check the network/WebSocket layer first.' }
+  q3: { b: 'Correct! A silently dropped command most likely indicates a network/WebSocket failure between the app and the onboard computer.', wrong: 'Not quite. A silent drop with no movement suggests the command never reached the onboard computer - check the network/WebSocket layer first.' }
 };
 function checkMCQ() {
   let score = 0;

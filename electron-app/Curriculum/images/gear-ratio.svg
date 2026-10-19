@@ -1,71 +1,45 @@
-<svg viewBox="0 0 520 360" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, sans-serif">
-  <rect width="520" height="360" fill="#f8fafc" rx="8"/>
+<svg viewBox="0 0 520 392" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, sans-serif">
+  <defs>
+    <marker id="arrB" markerWidth="8" markerHeight="8" refX="4" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 Z" fill="#2563eb"/>
+    </marker>
+    <marker id="arrO" markerWidth="8" markerHeight="8" refX="4" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 Z" fill="#ea580c"/>
+    </marker>
+  </defs>
+  <rect width="520" height="392" fill="#f8fafc" rx="8"/>
   <text x="260" y="26" text-anchor="middle" font-size="15" font-weight="700" fill="#1e293b">Gear Reduction &amp; Gear Ratio</text>
 
-  <!-- Driver (small) gear -->
-  <circle cx="155" cy="180" r="55" fill="none" stroke="#3b82f6" stroke-width="3"/>
-  <circle cx="155" cy="180" r="45" fill="#eff6ff" stroke="#93c5fd" stroke-width="1.5"/>
-  <circle cx="155" cy="180" r="10" fill="#3b82f6"/>
-  <!-- Gear teeth (driver) - 10 teeth -->
-  <g stroke="#3b82f6" stroke-width="3" fill="none">
-    <line x1="155" y1="122" x2="155" y2="110"/>
-    <line x1="177" y1="128" x2="184" y2="117"/>
-    <line x1="193" y1="145" x2="202" y2="138"/>
-    <line x1="198" y1="169" x2="210" y2="169"/>
-    <line x1="191" y1="193" x2="200" y2="200"/>
-    <line x1="175" y1="208" x2="182" y2="219"/>
-    <line x1="155" y1="213" x2="155" y2="225"/>
-    <line x1="133" y1="208" x2="126" y2="219"/>
-    <line x1="117" y1="193" x2="108" y2="200"/>
-    <line x1="110" y1="169" x2="98"  y2="169"/>
-    <line x1="117" y1="145" x2="108" y2="138"/>
-    <line x1="133" y1="128" x2="126" y2="117"/>
-  </g>
-  <text x="155" y="185" text-anchor="middle" font-size="11" fill="#1d4ed8" font-weight="700">Driver</text>
-  <text x="155" y="270" text-anchor="middle" font-size="11" fill="#3b82f6">12 teeth</text>
-  <text x="155" y="285" text-anchor="middle" font-size="10" fill="#64748b">Input (motor)</text>
+  <!-- Gears drawn to scale: module 5, pitch radii 30 and 120, centre distance 150, teeth interlock on the centre line -->
 
-  <!-- Rotation arrow on driver -->
-  <path d="M 155,122 A 58,58 0 0,1 205,155" stroke="#3b82f6" stroke-width="2" fill="none" stroke-dasharray="4,3"/>
-  <polygon points="205,155 212,145 200,148" fill="#3b82f6"/>
-  <text x="208" y="140" font-size="10" fill="#3b82f6">fast</text>
+  <!-- Driven (large) gear: 48 teeth -->
+  <path d="M383.7,182.7 L394.9,185.4 L394.5,190.9 L383.1,192.2 L382.4,197.5 L393.1,201.7 L392.0,207.1 L380.5,206.8 L379.1,212.0 L389.2,217.5 L387.4,222.8 L376.1,221.0 L374.0,226.0 L383.3,232.8 L380.9,237.8 L369.8,234.5 L367.1,239.2 L375.5,247.1 L372.4,251.7 L361.9,247.1 L358.6,251.4 L365.8,260.3 L362.1,264.5 L352.3,258.5 L348.5,262.3 L354.5,272.1 L350.3,275.8 L341.4,268.6 L337.1,271.9 L341.7,282.4 L337.1,285.5 L329.2,277.1 L324.5,279.8 L327.8,290.9 L322.8,293.3 L316.0,284.0 L311.0,286.1 L312.8,297.4 L307.5,299.2 L302.0,289.1 L296.8,290.5 L297.1,302.0 L291.7,303.1 L287.5,292.4 L282.2,293.1 L280.9,304.5 L275.4,304.9 L272.7,293.7 L267.3,293.7 L264.6,304.9 L259.1,304.5 L257.8,293.1 L252.5,292.4 L248.3,303.1 L242.9,302.0 L243.2,290.5 L238.0,289.1 L232.5,299.2 L227.2,297.4 L229.0,286.1 L224.0,284.0 L217.2,293.3 L212.2,290.9 L215.5,279.8 L210.8,277.1 L202.9,285.5 L198.3,282.4 L202.9,271.9 L198.6,268.6 L189.7,275.8 L185.5,272.1 L191.5,262.3 L187.7,258.5 L177.9,264.5 L174.2,260.3 L181.4,251.4 L178.1,247.1 L167.6,251.7 L164.5,247.1 L172.9,239.2 L170.2,234.5 L159.1,237.8 L156.7,232.8 L166.0,226.0 L163.9,221.0 L152.6,222.8 L150.8,217.5 L160.9,212.0 L159.5,206.8 L148.0,207.1 L146.9,201.7 L157.6,197.5 L156.9,192.2 L145.5,190.9 L145.1,185.4 L156.3,182.7 L156.3,177.3 L145.1,174.6 L145.5,169.1 L156.9,167.8 L157.6,162.5 L146.9,158.3 L148.0,152.9 L159.5,153.2 L160.9,148.0 L150.8,142.5 L152.6,137.2 L163.9,139.0 L166.0,134.0 L156.7,127.2 L159.1,122.2 L170.2,125.5 L172.9,120.8 L164.5,112.9 L167.6,108.3 L178.1,112.9 L181.4,108.6 L174.2,99.7 L177.9,95.5 L187.7,101.5 L191.5,97.7 L185.5,87.9 L189.7,84.2 L198.6,91.4 L202.9,88.1 L198.3,77.6 L202.9,74.5 L210.8,82.9 L215.5,80.2 L212.2,69.1 L217.2,66.7 L224.0,76.0 L229.0,73.9 L227.2,62.6 L232.5,60.8 L238.0,70.9 L243.2,69.5 L242.9,58.0 L248.3,56.9 L252.5,67.6 L257.8,66.9 L259.1,55.5 L264.6,55.1 L267.3,66.3 L272.7,66.3 L275.4,55.1 L280.9,55.5 L282.2,66.9 L287.5,67.6 L291.7,56.9 L297.1,58.0 L296.8,69.5 L302.0,70.9 L307.5,60.8 L312.8,62.6 L311.0,73.9 L316.0,76.0 L322.8,66.7 L327.8,69.1 L324.5,80.2 L329.2,82.9 L337.1,74.5 L341.7,77.6 L337.1,88.1 L341.4,91.4 L350.3,84.2 L354.5,87.9 L348.5,97.7 L352.3,101.5 L362.1,95.5 L365.8,99.7 L358.6,108.6 L361.9,112.9 L372.4,108.3 L375.5,112.9 L367.1,120.8 L369.8,125.5 L380.9,122.2 L383.3,127.2 L374.0,134.0 L376.1,139.0 L387.4,137.2 L389.2,142.5 L379.1,148.0 L380.5,153.2 L392.0,152.9 L393.1,158.3 L382.4,162.5 L383.1,167.8 L394.5,169.1 L394.9,174.6 L383.7,177.3 Z" fill="#ffedd5" stroke="#ea580c" stroke-width="2" stroke-linejoin="round"/>
+  <circle cx="270" cy="180" r="120" fill="none" stroke="#fdba74" stroke-width="1" stroke-dasharray="3,3"/>
+  <circle cx="270" cy="180" r="12" fill="#c2410c"/>
+  <line x1="270" y1="180" x2="270" y2="76" stroke="#fdba74" stroke-width="3" stroke-linecap="round"/>
 
-  <!-- Driven (large) gear -->
-  <circle cx="348" cy="180" r="110" fill="none" stroke="#ea580c" stroke-width="3"/>
-  <circle cx="348" cy="180" r="98" fill="#fff7ed" stroke="#fed7aa" stroke-width="1.5"/>
-  <circle cx="348" cy="180" r="14" fill="#ea580c"/>
-  <!-- Gear teeth (driven) - fewer, larger -->
-  <g stroke="#ea580c" stroke-width="3" fill="none">
-    <line x1="348" y1="67" x2="348" y2="50"/>
-    <line x1="390" y1="80" x2="402" y2="66"/>
-    <line x1="422" y1="113" x2="436" y2="103"/>
-    <line x1="446" y1="157" x2="462" y2="157"/>
-    <line x1="440" y1="202" x2="455" y2="210"/>
-    <line x1="415" y1="240" x2="427" y2="252"/>
-    <line x1="376" y1="263" x2="384" y2="278"/>
-    <line x1="348" y1="268" x2="348" y2="285"/>
-    <line x1="318" y1="263" x2="310" y2="278"/>
-    <line x1="279" y1="248" x2="267" y2="260"/>
-    <line x1="252" y1="222" x2="238" y2="230"/>
-    <line x1="237" y1="186" x2="222" y2="186"/>
-    <line x1="244" y1="147" x2="230" y2="140"/>
-    <line x1="265" y1="113" x2="253" y2="102"/>
-    <line x1="300" y1="83" x2="290" y2="70"/>
-  </g>
-  <text x="348" y="186" text-anchor="middle" font-size="11" fill="#c2410c" font-weight="700">Driven</text>
-  <text x="348" y="310" text-anchor="middle" font-size="11" fill="#ea580c">48 teeth</text>
-  <text x="348" y="325" text-anchor="middle" font-size="10" fill="#64748b">Output (joint)</text>
+  <!-- Driver (small) gear: 12 teeth -->
+  <path d="M143.4,176.0 L154.9,176.9 L154.9,183.1 L143.4,184.0 L142.3,188.3 L151.7,194.7 L148.6,200.1 L138.3,195.1 L135.1,198.3 L140.1,208.6 L134.7,211.7 L128.3,202.3 L124.0,203.4 L123.1,214.9 L116.9,214.9 L116.0,203.4 L111.7,202.3 L105.3,211.7 L99.9,208.6 L104.9,198.3 L101.7,195.1 L91.4,200.1 L88.3,194.7 L97.7,188.3 L96.6,184.0 L85.1,183.1 L85.1,176.9 L96.6,176.0 L97.7,171.7 L88.3,165.3 L91.4,159.9 L101.7,164.9 L104.9,161.7 L99.9,151.4 L105.3,148.3 L111.7,157.7 L116.0,156.6 L116.9,145.1 L123.1,145.1 L124.0,156.6 L128.3,157.7 L134.7,148.3 L140.1,151.4 L135.1,161.7 L138.3,164.9 L148.6,159.9 L151.7,165.3 L142.3,171.7 Z" fill="#dbeafe" stroke="#2563eb" stroke-width="2" stroke-linejoin="round"/>
+  <circle cx="120" cy="180" r="6" fill="#1d4ed8"/>
+  <line x1="120" y1="180" x2="120" y2="157" stroke="#93c5fd" stroke-width="3" stroke-linecap="round"/>
 
-  <!-- Rotation arrow on driven (opposite direction) -->
-  <path d="M 348,67 A 113,113 0 0,0 240,130" stroke="#ea580c" stroke-width="2" fill="none" stroke-dasharray="4,3"/>
-  <polygon points="240,130 228,128 234,140" fill="#ea580c"/>
-  <text x="222" y="120" font-size="10" fill="#ea580c">slow</text>
+  <!-- Rotation arrows -->
+  <path d="M 81.9,158 A 44,44 0 0,1 142,141.9" stroke="#2563eb" stroke-width="2" fill="none" stroke-dasharray="4,3" marker-end="url(#arrB)"/>
+  <text x="112" y="124" text-anchor="middle" font-size="10" font-weight="700" fill="#2563eb">fast</text>
+  <path d="M 374.2,92.6 A 136,136 0 0,0 258.1,44.5" stroke="#ea580c" stroke-width="2" fill="none" stroke-dasharray="4,3" marker-end="url(#arrO)"/>
+  <text x="384" y="84" font-size="10" font-weight="700" fill="#c2410c">slow</text>
 
-  <!-- Mesh point -->
-  <circle cx="210" cy="180" r="5" fill="#475569"/>
+  <!-- Labels -->
+  <text x="120" y="240" text-anchor="middle" font-size="12" font-weight="700" fill="#1d4ed8">Driver</text>
+  <text x="120" y="255" text-anchor="middle" font-size="11" fill="#2563eb">12 teeth</text>
+  <text x="120" y="269" text-anchor="middle" font-size="10" fill="#64748b">Input (motor)</text>
+
+  <text x="408" y="172" font-size="12" font-weight="700" fill="#c2410c">Driven</text>
+  <text x="408" y="187" font-size="11" fill="#c2410c">48 teeth</text>
+  <text x="408" y="201" font-size="10" fill="#64748b">Output (joint)</text>
 
   <!-- Formula box -->
-  <rect x="20" y="295" width="480" height="52" rx="8" fill="#0f172a"/>
-  <text x="260" y="316" text-anchor="middle" font-size="12" font-weight="700" fill="#7dd3fc">Gear Ratio = Driven teeth ÷ Driver teeth = 48 ÷ 12 = 4 : 1</text>
-  <text x="260" y="334" text-anchor="middle" font-size="11" fill="#93c5fd">Output torque × 4  ·  Output speed ÷ 4  ·  Useful for high-torque, low-speed joint actuation</text>
+  <rect x="20" y="318" width="480" height="58" rx="8" fill="#0f172a"/>
+  <text x="260" y="341" text-anchor="middle" font-size="12" font-weight="700" fill="#7dd3fc">Gear Ratio = Driven teeth ÷ Driver teeth = 48 ÷ 12 = 4 : 1</text>
+  <text x="260" y="361" text-anchor="middle" font-size="10.5" fill="#bfdbfe">Output torque × 4  ·  Output speed ÷ 4  ·  ideal for high-torque, low-speed joints</text>
 </svg>

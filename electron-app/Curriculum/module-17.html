@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Module 15 - Technical Documentation</title>
+<title>Module 17 - Technical Documentation</title>
 <style>
   :root {
-    --bg: #f8fafc; --card: #ffffff; --border: #e2e8f0;
+    --bg: #f0f2f5; --card: #ffffff; --border: #e2e8f0;
     --text: #1e293b; --muted: #64748b;
-    --accent: #3b82f6; --accent-light: #eff6ff;
+    --accent: #1e5a8a; --accent-light: #e8f0f8;
     --green: #16a34a; --green-light: #f0fdf4;
     --purple: #7c3aed; --purple-light: #faf5ff;
     --orange: #ea580c; --orange-light: #fff7ed;
@@ -16,11 +16,6 @@
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
-  .hero { background: linear-gradient(135deg, #0c4a6e 0%, #075985 100%); color: white; padding: 3rem 2rem; text-align: center; }
-  .hero .module-num { font-size: 0.85rem; opacity: 0.6; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 0.5rem; }
-  .hero h1 { font-size: 2rem; font-weight: 700; margin-bottom: 0.75rem; }
-  .hero p { font-size: 1.05rem; opacity: 0.85; max-width: 600px; margin: 0 auto; }
-  .meta-bar { display: flex; justify-content: center; gap: 2rem; padding: 1rem; background: #1e293b; color: #94a3b8; font-size: 0.85rem; flex-wrap: wrap; }
   .container { max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem; }
   .section-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.75rem; margin-bottom: 1.5rem; }
   .pill { display: inline-block; font-size: 0.75rem; font-weight: 600; padding: 0.2rem 0.65rem; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.9rem; }
@@ -60,7 +55,7 @@
   .feedback-correct { background: var(--green-light); color: var(--green); }
   .feedback-wrong   { background: var(--red-light);   color: var(--red); }
   .check-btn { background: var(--accent); color: white; border: none; padding: 0.7rem 1.6rem; border-radius: 8px; font-size: 0.95rem; font-weight: 600; cursor: pointer; margin-top: 0.5rem; }
-  .check-btn:hover { background: #2563eb; }
+  .check-btn:hover { background: #17476e; }
   .score-bar-wrap { height: 8px; background: var(--border); border-radius: 4px; margin: 1rem 0 0.4rem; }
   .score-bar { height: 100%; background: var(--green); border-radius: 4px; transition: width 0.4s; width: 0%; }
   .score-text { font-size: 0.9rem; color: var(--muted); }
@@ -77,20 +72,39 @@
   .callout-body ul, .callout-body ol { padding-left:1.2rem; margin-top:0.3rem; }
   .ui-ref { display:inline-block; background:var(--green); color:#fff; font-size:0.75rem; font-weight:600; padding:0.1rem 0.45rem; border-radius:4px; font-family:monospace; }
   @media(max-width:600px){ .grid-2,.grid-3{ grid-template-columns:1fr; } }
+
+  /* Header - same as modules 1-10 */
+  .top-nav { background: var(--accent); color: #fff; display: flex; align-items: center; gap: 1rem; padding: 0.75rem 1.5rem; font-size: 0.9rem; }
+  .top-nav a { color: rgba(255,255,255,0.85); text-decoration: none; }
+  .top-nav a:hover { color: #fff; text-decoration: underline; }
+  .nav-center { flex: 1; text-align: center; font-weight: 600; }
+  .module-hero { background: var(--accent); color: #fff; padding: 2rem 1.5rem 2.5rem; text-align: center; }
+  .module-badge { display: inline-block; background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.35); border-radius: 20px; font-size: 0.78rem; font-weight: 600; padding: 0.25em 0.9em; letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 0.75rem; }
+  .module-hero h1 { margin: 0 0 0.5rem; font-size: 1.9rem; font-weight: 700; }
+  .module-hero p { margin: 0; opacity: 0.85; font-size: 1rem; color: #fff; }
+  .objectives { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.4rem; margin-top: 1rem; }
+  .obj { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); border-radius: 4px; font-size: 0.78rem; padding: 0.2em 0.7em; }
 </style>
 <link rel="stylesheet" href="worksheet.css">
 </head>
 <body>
 
-<div class="hero">
-  <div class="module-num">Module 15 of 16</div>
+<nav class="top-nav">
+  <a href="module-16.html">← Module 16</a>
+  <span class="nav-center">Module 17 of 18</span>
+  <a href="module-18.html">Next: Module 18 →</a>
+</nav>
+
+<div class="module-hero">
+  <div class="module-badge">Project · Module 17</div>
   <h1>Technical Documentation</h1>
-  <p>Writing clear, complete, and useful engineering documentation - circuit diagrams, annotated code, test records, and user guides.</p>
-</div>
-<div class="meta-bar">
-  <span>&#128340; 75–90 min</span>
-  <span>&#127919; Group: Project</span>
-  <span>&#128268; Context: Your own robot arm project</span>
+  <p>Duration: 75–90 min &nbsp;·&nbsp; Prerequisites: Module 16 &nbsp;·&nbsp; Context: Your own robot arm project</p>
+  <div class="objectives">
+    <span class="obj">Explain why documentation matters</span>
+    <span class="obj">Identify types of technical document</span>
+    <span class="obj">Describe what makes documentation good</span>
+    <span class="obj">Document your own project</span>
+  </div>
 </div>
 
 <div class="container">
@@ -138,14 +152,14 @@
         <strong>System Block Diagram - Required Components</strong></br>
         A complete system block diagram for this arm must include ALL of the following, with the communication protocol labelled at each boundary:
         <ul style="margin:0.4rem 0 0;padding-left:1.2rem;">
-          <li><strong>Electron App</strong> (PC/laptop) → <strong>WebSocket / JSON TCP:8080</strong> → <strong>Server on Raspberry Pi</strong></li>
+          <li><strong>Electron App</strong> (PC/laptop) → <strong>WebSocket / JSON TCP:8080</strong> → <strong>Server on the onboard computer</strong></li>
           <li><strong>Server</strong> → <strong>UART serial bus (1 Mbps)</strong> → <strong>ST3215 Servos ×6</strong></li>
           <li><strong>Server</strong> → <strong>Serial bus</strong> → <strong>ESP32 End-Tool Node</strong> (gripper/pump/ADC)</li>
           <li><strong>Server</strong> → <strong>LED Status Strip</strong> (peripheral output, WS2812B)</li>
           <li><strong>USB Camera</strong> → <strong>Server</strong> → <strong>WebSocket</strong> (vision results proxied to app)</li>
-          <li><strong>AS5600 Magnetic Encoders</strong> → <strong>I²C bus</strong> → <strong>Raspberry Pi GPIO</strong></li>
+          <li><strong>AS5600 Magnetic Encoders</strong> → <strong>I²C bus</strong> → <strong>Onboard computer GPIO</strong></li>
         </ul>
-        Students who correctly draw all subsystems and label all protocol boundaries have demonstrated genuine understanding of the system architecture. Students who only draw "PC → Raspberry Pi → Arm" have missed critical subsystems.
+        Students who correctly draw all subsystems and label all protocol boundaries have demonstrated genuine understanding of the system architecture. Students who only draw "PC → onboard computer → Arm" have missed critical subsystems.
       </div>
     </div>
   </div>
@@ -213,9 +227,9 @@
     <h2>Activity - Document Your Project</h2>
     <p>Produce a documentation pack for your robot arm project. Use the checklist below to ensure nothing is missing.</p>
     <ul class="steps">
-      <li><strong>Block diagram:</strong> Draw a system block diagram showing all hardware components (Pi, servos, sensors, PSU, app) and how they connect. Label each connection with the protocol used (UART, WebSocket, I²C, etc.).</li>
-      <li><strong>Annotated program:</strong> Take your G-code or Blockly program from Module 12 and add annotations explaining each section - what it does and why (not line-by-line, just the important parts).</li>
-      <li><strong>Test record:</strong> Design three tests against your specification points (from Module 14). Run each test, record actual results, and state pass/fail against the specification.</li>
+      <li><strong>Block diagram:</strong> Draw a system block diagram showing all hardware components (onboard computer, servos, sensors, PSU, app) and how they connect. Label each connection with the protocol used (UART, WebSocket, I²C, etc.).</li>
+      <li><strong>Annotated program:</strong> Take your G-code or Blockly program from Module 13 and add annotations explaining each section - what it does and why (not line-by-line, just the important parts).</li>
+      <li><strong>Test record:</strong> Design three tests against your specification points (from Module 16). Run each test, record actual results, and state pass/fail against the specification.</li>
       <li><strong>User guide:</strong> Write a one-page user guide for operating your arm program. Assume the reader has never used the app. Include: how to connect, how to run the program, what to do if it does not work, how to shut down safely.</li>
       <li><strong>Revision log:</strong> Add a short revision history table to each document: date, version number, and what changed.</li>
     </ul>
@@ -234,8 +248,8 @@
       <li><label><input type="checkbox"> Annotated G-code, Blockly, or RAPID program</label></li>
       <li><label><input type="checkbox"> Three completed test records with actual measurements</label></li>
       <li><label><input type="checkbox"> One-page user guide / SOP</label></li>
-      <li><label><input type="checkbox"> Risk assessment (from Module 13)</label></li>
-      <li><label><input type="checkbox"> Project plan / Gantt chart (from Module 14)</label></li>
+      <li><label><input type="checkbox"> Risk assessment (from Module 14)</label></li>
+      <li><label><input type="checkbox"> Project plan / Gantt chart (from Module 16)</label></li>
       <li><label><input type="checkbox"> Revision history on each document</label></li>
     </ul>
 
@@ -304,8 +318,8 @@
   </div>
 
   <div class="nav-row">
-    <a class="nav-btn" href="module-14.html">&#8592; Module 14</a>
-    <a class="nav-btn primary" href="module-16.html">Module 16 &#8594;</a>
+    <a class="nav-btn" href="module-16.html">&#8592; Module 16</a>
+    <a class="nav-btn primary" href="module-18.html">Module 18 &#8594;</a>
   </div>
 </div>
 

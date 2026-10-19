@@ -59,34 +59,14 @@
     .tool-btn-danger:hover:not(:disabled) { background: var(--red); color: #fff; border-color: var(--red); }
   </style>
 <script src="worksheets-bundle.js"></script>
+<script src="worksheet.js"></script>
 </head>
 <body>
   <div class="hero">
-    <h1>Robot Arm - Interactive Curriculum</h1>
-    <p>BTEC Level 3 Engineering &nbsp;·&nbsp; 16 Modules &nbsp;·&nbsp; Theory, Practice &amp; Software Activities</p>
+    <h1><a href='https://matrixtsl.com' target="_blank" ><img src='images/Matrix-Logo-Software-Swatch-01.svg' alt='Matrix Logo' height='23px' /></a> Robot Arm 3 - Interactive Curriculum</h1>
+    <p>BTEC Level 3 Engineering &nbsp;·&nbsp; 18 Modules &nbsp;·&nbsp; Theory, Practice &amp; Software Activities</p>
   </div>
   <div class="wrap">
-
-    <div class="app-note">
-      <strong>Software required:</strong> These modules link directly to the <strong>Robot Arm Control Application</strong>. Launch the Electron app (or open via browser at your Pi's IP address) before starting any practical activity.
-    </div>
-
-    <div class="intro-card">
-      <h3>How each module works</h3>
-      <p>Each module has four parts: <strong>Theory</strong> - short explanations with diagrams · <strong>Software Activity</strong> - step-by-step tasks using the control app · <strong>Worksheet</strong> - questions and observations to record · <strong>Quick Check</strong> - two or three multiple-choice questions to test understanding.</p>
-    </div>
-
-    <div class="tools-card">
-      <h3>Worksheet Tools</h3>
-      <p>Actions apply to all saved worksheet answers on this computer.</p>
-      <div class="tools-row">
-        <button class="tool-btn" id="btn-print-all">Print All Worksheets</button>
-        <button class="tool-btn" id="btn-save">Save Answers to File</button>
-        <button class="tool-btn" id="btn-load">Load Answers from File</button>
-        <input type="file" id="ws-file-input" accept=".json" style="display:none">
-        <button class="tool-btn tool-btn-danger" id="btn-clear">Clear All Answers</button>
-      </div>
-    </div>
 
     <h2 class="section-title">Foundation Modules</h2>
     <div class="module-grid">
@@ -121,7 +101,7 @@
         <span class="module-num">03</span>
         <div class="module-info">
           <p class="module-title">Basic Electrical &amp; Electronic Systems</p>
-          <p class="module-desc">Power supply, Raspberry Pi, serial servos, sensors and open/closed-loop control.</p>
+          <p class="module-desc">Power supply, onboard computer, serial servos, sensors and open/closed-loop control.</p>
           <div class="module-tags">
             <span class="badge badge-foundation">Foundation</span>
             <span class="tag">Electronics</span><span class="tag">Servos</span><span class="tag">App: Connection</span><span class="tag">App: Joint Status</span>
@@ -216,6 +196,19 @@
       <a class="module-card" href="module-10.html">
         <span class="module-num">10</span>
         <div class="module-info">
+          <p class="module-title">Machine Vision &amp; Vision-Guided Picking</p>
+          <p class="module-desc">The camera as a sensor, colour detection, ArUco markers, pixel-to-mm mapping and picking blocks the camera finds.</p>
+          <div class="module-tags">
+            <span class="badge badge-intermediate">Intermediate</span>
+            <span class="tag">Vision</span><span class="tag">Sensors</span><span class="tag">App: Camera</span><span class="tag">App: Blockly</span>
+          </div>
+        </div>
+        <span class="arrow">→</span>
+      </a>
+
+      <a class="module-card" href="module-11.html">
+        <span class="module-num">11</span>
+        <div class="module-info">
           <p class="module-title">Data Logging &amp; Diagnostics</p>
           <p class="module-desc">Live servo telemetry, diagnostic thinking, load/temperature/voltage monitoring.</p>
           <div class="module-tags">
@@ -231,8 +224,8 @@
     <h2 class="section-title">Advanced Modules</h2>
     <div class="module-grid">
 
-      <a class="module-card" href="module-11.html">
-        <span class="module-num">11</span>
+      <a class="module-card" href="module-12.html">
+        <span class="module-num">12</span>
         <div class="module-info">
           <p class="module-title">Mechatronic System Integration</p>
           <p class="module-desc">Full system stack, integration challenges and tracing commands through all layers.</p>
@@ -240,8 +233,8 @@
         </div>
         <span class="arrow">→</span>
       </a>
-      <a class="module-card" href="module-12.html">
-        <span class="module-num">12</span>
+      <a class="module-card" href="module-13.html">
+        <span class="module-num">13</span>
         <div class="module-info">
           <p class="module-title">Automation Cell Design</p>
           <p class="module-desc">Workspace envelope, dead zones, teach-and-playback programming and cycle time.</p>
@@ -249,12 +242,21 @@
         </div>
         <span class="arrow">→</span>
       </a>
-      <a class="module-card" href="module-13.html">
-        <span class="module-num">13</span>
+      <a class="module-card" href="module-14.html">
+        <span class="module-num">14</span>
         <div class="module-info">
           <p class="module-title">Safety Standards &amp; Design for Safety</p>
           <p class="module-desc">ISO 10218, hierarchy of controls, speed/force limiting and safety audit.</p>
           <div class="module-tags"><span class="badge badge-advanced">Advanced</span><span class="tag">Safety</span><span class="tag">Standards</span><span class="tag">App: Dead Zones</span></div>
+        </div>
+        <span class="arrow">→</span>
+      </a>
+      <a class="module-card" href="module-15.html">
+        <span class="module-num">15</span>
+        <div class="module-info">
+          <p class="module-title">Maintenance &amp; Calibration</p>
+          <p class="module-desc">Inspection routines, spares, tools, safe isolation, SOPs, and calibrating a joint's zero with the alignment marks.</p>
+          <div class="module-tags"><span class="badge badge-advanced">Advanced</span><span class="tag">Maintenance</span><span class="tag">Calibration</span><span class="tag">App: Calibration</span></div>
         </div>
         <span class="arrow">→</span>
       </a>
@@ -264,8 +266,8 @@
     <h2 class="section-title">Project Modules</h2>
     <div class="module-grid">
 
-      <a class="module-card" href="module-14.html">
-        <span class="module-num">14</span>
+      <a class="module-card" href="module-16.html">
+        <span class="module-num">16</span>
         <div class="module-info">
           <p class="module-title">Project Planning &amp; Management</p>
           <p class="module-desc">Engineering project phases, Gantt charts, specifications and risk registers.</p>
@@ -273,8 +275,8 @@
         </div>
         <span class="arrow">→</span>
       </a>
-      <a class="module-card" href="module-15.html">
-        <span class="module-num">15</span>
+      <a class="module-card" href="module-17.html">
+        <span class="module-num">17</span>
         <div class="module-info">
           <p class="module-title">Technical Documentation</p>
           <p class="module-desc">Circuit diagrams, annotated code, test records, user guides and revision control.</p>
@@ -282,8 +284,8 @@
         </div>
         <span class="arrow">→</span>
       </a>
-      <a class="module-card" href="module-16.html">
-        <span class="module-num">16</span>
+      <a class="module-card" href="module-18.html">
+        <span class="module-num">18</span>
         <div class="module-info">
           <p class="module-title">Evaluation, Reflection &amp; Communication</p>
           <p class="module-desc">Critical evaluation, the design cycle, and presenting to technical and non-technical audiences.</p>
@@ -292,6 +294,19 @@
         <span class="arrow">→</span>
       </a>
 
+    </div>
+
+	<h2 class="section-title">Tools</h2>
+    <div class="tools-card">
+      <h3>Worksheet Tools</h3>
+      <p>Actions apply to all saved worksheet answers on this computer.</p>
+      <div class="tools-row">
+        <button class="tool-btn" id="btn-print-all">Print All Worksheets</button>
+        <button class="tool-btn" id="btn-save">Save Answers to File</button>
+        <button class="tool-btn" id="btn-load">Load Answers from File</button>
+        <input type="file" id="ws-file-input" accept=".json" style="display:none">
+        <button class="tool-btn tool-btn-danger" id="btn-clear">Clear All Answers</button>
+      </div>
     </div>
 
   </div>
@@ -324,7 +339,8 @@
     // Save all answers to a JSON file
     document.getElementById('btn-save').addEventListener('click', function () {
       var keys = getAnswerKeys();
-      var all = {};
+      // _layout marks which module numbering these answers use (see worksheet.js)
+      var all = { _layout: CURRICULUM_LAYOUT_VERSION };
       for (var i = 0; i < keys.length; i++) {
         var raw = localStorage.getItem(keys[i]);
         if (raw) try { all[keys[i]] = JSON.parse(raw); } catch (e) {}
@@ -337,9 +353,9 @@
           'No saved answers found.\n\n' +
           'This page\'s localStorage has ' + localStorage.length + ' total key(s).\n' +
           'Sample keys: ' + sample + '\n\n' +
-          'If the module pages were opened through the Pi (http://...) but this page\n' +
+          'If the module pages were opened through the onboard computer (http://...) but this page\n' +
           'is opened as a local file (file://), they use separate storage - open\n' +
-          'index.html through the Pi at the same address as the module pages.'
+          'index.html through the onboard computer at the same address as the module pages.'
         );
         return;
       }
@@ -366,10 +382,13 @@
           var data = JSON.parse(ev.target.result);
           var count = 0;
           var dataKeys = Object.keys(data);
+          // Files saved before Module 10 was inserted use the old numbering
+          var fileLayout = data._layout || 1;
           for (var i = 0; i < dataKeys.length; i++) {
             var key = dataKeys[i];
             if (key.indexOf(PREFIX) === 0) {
-              localStorage.setItem(key, JSON.stringify(data[key]));
+              var targetKey = remapOldModuleKey(key, fileLayout);
+              localStorage.setItem(targetKey, JSON.stringify(data[key]));
               count++;
             }
           }

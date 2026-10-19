@@ -1,10 +1,7 @@
 <svg viewBox="0 0 620 440" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, sans-serif">
   <defs>
-    <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+    <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto-start-reverse">
       <path d="M0,0 L0,6 L8,3 Z" fill="#475569"/>
-    </marker>
-    <marker id="arr2" markerWidth="8" markerHeight="8" refX="2" refY="3" orient="auto-start-reverse">
-      <path d="M8,0 L8,6 L0,3 Z" fill="#475569"/>
     </marker>
   </defs>
   <rect width="620" height="440" fill="#f8fafc" rx="8"/>
@@ -14,123 +11,116 @@
   <!-- ── LAYER 1: User / HMI ── -->
   <rect x="20" y="52" width="580" height="70" rx="8" fill="#eff6ff" stroke="#3b82f6" stroke-width="2"/>
   <text x="30" y="68" font-size="10" font-weight="700" fill="#1d4ed8">Layer 1 - User Interface (HMI)</text>
+  <rect x="40" y="74" width="130" height="40" rx="6" fill="#2563eb" stroke="#1d4ed8" stroke-width="1.5"/>
+  <text x="105" y="90" text-anchor="middle" font-size="10" font-weight="700" fill="white">Electron App</text>
+  <text x="105" y="104" text-anchor="middle" font-size="8.5" fill="#eff6ff">PC or arm touchscreen</text>
+  <g font-size="9" text-anchor="middle">
+    <rect x="190" y="74" width="90" height="40" rx="6" fill="#bfdbfe" stroke="#3b82f6" stroke-width="1"/>
+    <text x="235" y="91" fill="#1e293b">Pendant</text>
+    <text x="235" y="104" font-size="8.5" fill="#334155">tab</text>
+    <rect x="290" y="74" width="90" height="40" rx="6" fill="#bfdbfe" stroke="#3b82f6" stroke-width="1"/>
+    <text x="335" y="91" fill="#1e293b">Blockly</text>
+    <text x="335" y="104" font-size="8.5" fill="#334155">tab</text>
+    <rect x="390" y="74" width="100" height="40" rx="6" fill="#bfdbfe" stroke="#3b82f6" stroke-width="1"/>
+    <text x="440" y="91" fill="#1e293b">Joint Control</text>
+    <text x="440" y="104" font-size="8.5" fill="#334155">tab</text>
+    <rect x="500" y="74" width="90" height="40" rx="6" fill="#bfdbfe" stroke="#3b82f6" stroke-width="1"/>
+    <text x="545" y="91" fill="#1e293b">Telemetry</text>
+    <text x="545" y="104" font-size="8.5" fill="#334155">tab</text>
+  </g>
 
-  <!-- Electron App -->
-  <rect x="40"  y="72" width="130" height="40" rx="6" fill="#3b82f6" stroke="#1d4ed8" stroke-width="1.5"/>
-  <text x="105" y="88" text-anchor="middle" font-size="10" font-weight="700" fill="white">Electron App</text>
-  <text x="105" y="102" text-anchor="middle" font-size="8" fill="#bfdbfe">Windows / macOS</text>
+  <!-- ── Link 1: WebSocket (commands down, status back up) ── -->
+  <line x1="300" y1="126" x2="300" y2="148" stroke="#475569" stroke-width="2" marker-start="url(#arr)" marker-end="url(#arr)"/>
+  <text x="312" y="140.5" font-size="9" font-weight="700" fill="#475569">WebSocket · JSON · TCP :8080</text>
 
-  <!-- Pendant tab -->
-  <rect x="190" y="72" width="90" height="40" rx="6" fill="#93c5fd" stroke="#3b82f6" stroke-width="1"/>
-  <text x="235" y="88" text-anchor="middle" font-size="9" fill="#1e293b">Pendant</text>
-  <text x="235" y="100" text-anchor="middle" font-size="8" fill="#475569">tab</text>
-
-  <!-- Blockly tab -->
-  <rect x="290" y="72" width="90" height="40" rx="6" fill="#93c5fd" stroke="#3b82f6" stroke-width="1"/>
-  <text x="335" y="88" text-anchor="middle" font-size="9" fill="#1e293b">Blockly</text>
-  <text x="335" y="100" text-anchor="middle" font-size="8" fill="#475569">tab</text>
-
-  <!-- Joint Control tab -->
-  <rect x="390" y="72" width="100" height="40" rx="6" fill="#93c5fd" stroke="#3b82f6" stroke-width="1"/>
-  <text x="440" y="88" text-anchor="middle" font-size="9" fill="#1e293b">Joint Control</text>
-  <text x="440" y="100" text-anchor="middle" font-size="8" fill="#475569">tab</text>
-
-  <!-- Telemetry tab -->
-  <rect x="500" y="72" width="90" height="40" rx="6" fill="#93c5fd" stroke="#3b82f6" stroke-width="1"/>
-  <text x="545" y="88" text-anchor="middle" font-size="9" fill="#1e293b">Telemetry</text>
-  <text x="545" y="100" text-anchor="middle" font-size="8" fill="#475569">tab</text>
-
-  <!-- ── Protocol arrow 1: WebSocket ── -->
-  <line x1="310" y1="122" x2="310" y2="152" stroke="#475569" stroke-width="2" marker-end="url(#arr)" marker-start="url(#arr2)"/>
-  <rect x="228" y="130" width="164" height="20" rx="4" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
-  <text x="310" y="144" text-anchor="middle" font-size="9" font-weight="700" fill="#475569">WebSocket  JSON  TCP :8080</text>
-
-  <!-- ── LAYER 2: Raspberry Pi ── -->
+  <!-- ── LAYER 2: Onboard computer ── -->
   <rect x="20" y="152" width="580" height="90" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
-  <text x="30" y="168" font-size="10" font-weight="700" fill="#15803d">Layer 2 - Raspberry Pi Controller</text>
-
-  <!-- Pi box -->
+  <text x="30" y="168" font-size="10" font-weight="700" fill="#15803d">Layer 2 - Onboard Computer (Controller)</text>
   <rect x="40" y="174" width="130" height="58" rx="6" fill="#16a34a" stroke="#15803d" stroke-width="1.5"/>
-  <text x="105" y="196" text-anchor="middle" font-size="10" font-weight="700" fill="white">Raspberry Pi 4</text>
-  <text x="105" y="210" text-anchor="middle" font-size="8" fill="#bbf7d0">Python 3 / asyncio</text>
-  <text x="105" y="222" text-anchor="middle" font-size="8" fill="#bbf7d0">WebSocket server</text>
+  <text x="105" y="197" text-anchor="middle" font-size="10" font-weight="700" fill="white">Onboard computer</text>
+  <text x="105" y="211" text-anchor="middle" font-size="8.5" fill="#f0fdf4">Node.js</text>
+  <text x="105" y="223" text-anchor="middle" font-size="8.5" fill="#f0fdf4">WebSocket server</text>
+  <g text-anchor="middle">
+    <rect x="190" y="174" width="120" height="58" rx="6" fill="#dcfce7" stroke="#16a34a" stroke-width="1"/>
+    <text x="250" y="193" font-size="9" font-weight="600" fill="#1e293b">server.js</text>
+    <text x="250" y="207" font-size="8.5" fill="#475569">Command routing /</text>
+    <text x="250" y="219" font-size="8.5" fill="#475569">control session</text>
+    <rect x="320" y="174" width="120" height="58" rx="6" fill="#dcfce7" stroke="#16a34a" stroke-width="1"/>
+    <text x="380" y="193" font-size="9" font-weight="600" fill="#1e293b">servoWorker.js</text>
+    <text x="380" y="207" font-size="8.5" fill="#475569">Owns the serial port /</text>
+    <text x="380" y="219" font-size="8.5" fill="#475569">polls servo status</text>
+    <rect x="450" y="174" width="130" height="58" rx="6" fill="#dcfce7" stroke="#16a34a" stroke-width="1"/>
+    <text x="515" y="193" font-size="9" font-weight="600" fill="#1e293b">robotArmST3215.js</text>
+    <text x="515" y="207" font-size="8.5" fill="#475569">ST3215 protocol /</text>
+    <text x="515" y="219" font-size="8.5" fill="#475569">packet builder</text>
+  </g>
 
-  <!-- Python modules -->
-  <rect x="190" y="174" width="110" height="58" rx="6" fill="#dcfce7" stroke="#16a34a" stroke-width="1"/>
-  <text x="245" y="192" text-anchor="middle" font-size="9" fill="#1e293b">arm_controller.py</text>
-  <text x="245" y="206" text-anchor="middle" font-size="8" fill="#64748b">Parse G-code /</text>
-  <text x="245" y="218" text-anchor="middle" font-size="8" fill="#64748b">Blockly JSON</text>
-
-  <rect x="310" y="174" width="110" height="58" rx="6" fill="#dcfce7" stroke="#16a34a" stroke-width="1"/>
-  <text x="365" y="192" text-anchor="middle" font-size="9" fill="#1e293b">servo_driver.py</text>
-  <text x="365" y="206" text-anchor="middle" font-size="8" fill="#64748b">ST3215 protocol</text>
-  <text x="365" y="218" text-anchor="middle" font-size="8" fill="#64748b">packet builder</text>
-
-  <rect x="430" y="174" width="110" height="58" rx="6" fill="#dcfce7" stroke="#16a34a" stroke-width="1"/>
-  <text x="485" y="192" text-anchor="middle" font-size="9" fill="#1e293b">telemetry.py</text>
-  <text x="485" y="206" text-anchor="middle" font-size="8" fill="#64748b">Read encoders /</text>
-  <text x="485" y="218" text-anchor="middle" font-size="8" fill="#64748b">temp / load</text>
-
-  <!-- ── Protocol arrow 2: UART ── -->
-  <line x1="310" y1="242" x2="310" y2="272" stroke="#475569" stroke-width="2" marker-end="url(#arr)" marker-start="url(#arr2)"/>
-  <rect x="228" y="250" width="164" height="20" rx="4" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
-  <text x="310" y="264" text-anchor="middle" font-size="9" font-weight="700" fill="#475569">UART Serial  1 Mbaud  RS-485 bus</text>
+  <!-- ── Link 2: UART ── -->
+  <line x1="300" y1="246" x2="300" y2="268" stroke="#475569" stroke-width="2" marker-start="url(#arr)" marker-end="url(#arr)"/>
+  <text x="312" y="260.5" font-size="9" font-weight="700" fill="#475569">UART serial · 1 Mbaud · half-duplex bus</text>
 
   <!-- ── LAYER 3: Hardware ── -->
   <rect x="20" y="272" width="580" height="120" rx="8" fill="#faf5ff" stroke="#7c3aed" stroke-width="2"/>
   <text x="30" y="288" font-size="10" font-weight="700" fill="#6d28d9">Layer 3 - Hardware</text>
 
-  <!-- Servos -->
-  <rect x="40"  y="296" width="88" height="86" rx="6" fill="#7c3aed" stroke="#6d28d9" stroke-width="1.5"/>
-  <text x="84"  y="316" text-anchor="middle" font-size="10" font-weight="700" fill="white">Servo ID1</text>
-  <text x="84"  y="330" text-anchor="middle" font-size="8" fill="#ddd6fe">ST3215</text>
-  <text x="84"  y="344" text-anchor="middle" font-size="8" fill="#ddd6fe">J1 Base</text>
-  <text x="84"  y="358" text-anchor="middle" font-size="8" fill="#ddd6fe">12 V / 1 A</text>
-  <text x="84"  y="372" text-anchor="middle" font-size="7" fill="#c4b5fd">AS5600 enc.</text>
+  <!-- Daisy-chained servo bus (behind the servo boxes) -->
+  <line x1="61" y1="340" x2="381" y2="340" stroke="#94a3b8" stroke-width="2"/>
 
-  <rect x="138" y="296" width="88" height="86" rx="6" fill="#7c3aed" stroke="#6d28d9" stroke-width="1.5"/>
-  <text x="182" y="316" text-anchor="middle" font-size="10" font-weight="700" fill="white">Servo ID2</text>
-  <text x="182" y="330" text-anchor="middle" font-size="8" fill="#ddd6fe">ST3215</text>
-  <text x="182" y="344" text-anchor="middle" font-size="8" fill="#ddd6fe">J2 Shoulder</text>
-  <text x="182" y="358" text-anchor="middle" font-size="8" fill="#ddd6fe">12 V / 1 A</text>
-  <text x="182" y="372" text-anchor="middle" font-size="7" fill="#c4b5fd">AS5600 enc.</text>
+  <!-- Six ST3215 servos, IDs 1-6 -->
+  <g text-anchor="middle">
+    <rect x="32"  y="298" width="58" height="84" rx="6" fill="#7c3aed" stroke="#6d28d9" stroke-width="1.5"/>
+    <text x="61"  y="318" font-size="10" font-weight="700" fill="white">ID 1</text>
+    <text x="61"  y="336" font-size="8.5" fill="#f5f3ff">J1</text>
+    <text x="61"  y="348" font-size="8.5" fill="#f5f3ff">Base</text>
+    <text x="61"  y="370" font-size="8" fill="#ddd6fe">ST3215</text>
 
-  <rect x="236" y="296" width="88" height="86" rx="6" fill="#7c3aed" stroke="#6d28d9" stroke-width="1.5"/>
-  <text x="280" y="316" text-anchor="middle" font-size="10" font-weight="700" fill="white">Servo ID3</text>
-  <text x="280" y="330" text-anchor="middle" font-size="8" fill="#ddd6fe">ST3215</text>
-  <text x="280" y="344" text-anchor="middle" font-size="8" fill="#ddd6fe">J3 Elbow</text>
-  <text x="280" y="358" text-anchor="middle" font-size="8" fill="#ddd6fe">12 V / 1 A</text>
-  <text x="280" y="372" text-anchor="middle" font-size="7" fill="#c4b5fd">AS5600 enc.</text>
+    <rect x="96"  y="298" width="58" height="84" rx="6" fill="#7c3aed" stroke="#6d28d9" stroke-width="1.5"/>
+    <text x="125" y="318" font-size="10" font-weight="700" fill="white">ID 2</text>
+    <text x="125" y="336" font-size="8.5" fill="#f5f3ff">J2</text>
+    <text x="125" y="348" font-size="8.5" fill="#f5f3ff">Shoulder</text>
+    <text x="125" y="370" font-size="8" fill="#ddd6fe">ST3215</text>
 
-  <rect x="334" y="296" width="88" height="86" rx="6" fill="#7c3aed" stroke="#6d28d9" stroke-width="1.5"/>
-  <text x="378" y="316" text-anchor="middle" font-size="10" font-weight="700" fill="white">Servo ID4</text>
-  <text x="378" y="330" text-anchor="middle" font-size="8" fill="#ddd6fe">ST3215</text>
-  <text x="378" y="344" text-anchor="middle" font-size="8" fill="#ddd6fe">J4 Wrist</text>
-  <text x="378" y="358" text-anchor="middle" font-size="8" fill="#ddd6fe">12 V / 1 A</text>
-  <text x="378" y="372" text-anchor="middle" font-size="7" fill="#c4b5fd">AS5600 enc.</text>
+    <rect x="160" y="298" width="58" height="84" rx="6" fill="#7c3aed" stroke="#6d28d9" stroke-width="1.5"/>
+    <text x="189" y="318" font-size="10" font-weight="700" fill="white">ID 3</text>
+    <text x="189" y="336" font-size="8.5" fill="#f5f3ff">J3</text>
+    <text x="189" y="348" font-size="8.5" fill="#f5f3ff">Elbow</text>
+    <text x="189" y="370" font-size="8" fill="#ddd6fe">ST3215</text>
 
-  <!-- PSU -->
-  <rect x="432" y="296" width="80" height="86" rx="6" fill="#ea580c" stroke="#c2410c" stroke-width="1.5"/>
-  <text x="472" y="316" text-anchor="middle" font-size="10" font-weight="700" fill="white">PSU</text>
-  <text x="472" y="330" text-anchor="middle" font-size="8" fill="#fed7aa">230 V AC</text>
-  <text x="472" y="344" text-anchor="middle" font-size="8" fill="#fed7aa">→ 12 V DC</text>
-  <text x="472" y="358" text-anchor="middle" font-size="8" fill="#fed7aa">→ 5 V reg.</text>
-  <text x="472" y="372" text-anchor="middle" font-size="7" fill="#fdba74">(Pi power)</text>
+    <rect x="224" y="298" width="58" height="84" rx="6" fill="#7c3aed" stroke="#6d28d9" stroke-width="1.5"/>
+    <text x="253" y="318" font-size="10" font-weight="700" fill="white">ID 4</text>
+    <text x="253" y="336" font-size="8.5" fill="#f5f3ff">J4</text>
+    <text x="253" y="348" font-size="8.5" fill="#f5f3ff">Wrist</text>
+    <text x="253" y="370" font-size="8" fill="#ddd6fe">ST3215</text>
 
-  <!-- E-STOP -->
-  <rect x="522" y="296" width="68" height="86" rx="6" fill="#dc2626" stroke="#991b1b" stroke-width="2"/>
-  <text x="556" y="316" text-anchor="middle" font-size="10" font-weight="700" fill="white">E-STOP</text>
-  <text x="556" y="332" text-anchor="middle" font-size="8" fill="#fca5a5">Cuts 12 V</text>
-  <text x="556" y="346" text-anchor="middle" font-size="8" fill="#fca5a5">supply</text>
-  <text x="556" y="362" text-anchor="middle" font-size="8" fill="#fca5a5">instantly</text>
-  <text x="556" y="376" text-anchor="middle" font-size="7" fill="#fecaca">HW override</text>
+    <rect x="288" y="298" width="58" height="84" rx="6" fill="#7c3aed" stroke="#6d28d9" stroke-width="1.5"/>
+    <text x="317" y="318" font-size="10" font-weight="700" fill="white">ID 5</text>
+    <text x="317" y="336" font-size="8.5" fill="#f5f3ff">J5</text>
+    <text x="317" y="348" font-size="8.5" fill="#f5f3ff">Wrist pitch</text>
+    <text x="317" y="370" font-size="8" fill="#ddd6fe">ST3215</text>
 
-  <!-- Daisy-chain bus line -->
-  <line x1="128" y1="340" x2="138" y2="340" stroke="#94a3b8" stroke-width="2"/>
-  <line x1="226" y1="340" x2="236" y2="340" stroke="#94a3b8" stroke-width="2"/>
-  <line x1="324" y1="340" x2="334" y2="340" stroke="#94a3b8" stroke-width="2"/>
+    <rect x="352" y="298" width="58" height="84" rx="6" fill="#7c3aed" stroke="#6d28d9" stroke-width="1.5"/>
+    <text x="381" y="318" font-size="10" font-weight="700" fill="white">ID 6</text>
+    <text x="381" y="336" font-size="8.5" fill="#f5f3ff">J6</text>
+    <text x="381" y="348" font-size="8.5" fill="#f5f3ff">Wrist roll</text>
+    <text x="381" y="370" font-size="8" fill="#ddd6fe">ST3215</text>
 
-  <!-- ── Data flow note ── -->
-  <text x="310" y="408" text-anchor="middle" font-size="9" fill="#64748b">Bidirectional arrows = command + status/telemetry return path  |  E-Stop is hardware-level - overrides software at all times</text>
-  <text x="310" y="422" text-anchor="middle" font-size="9" fill="#64748b">AS5600 encoder feedback travels back via servo status packets over the same UART bus</text>
+    <!-- PSU -->
+    <rect x="422" y="298" width="80" height="84" rx="6" fill="#c2410c" stroke="#9a3412" stroke-width="1.5"/>
+    <text x="462" y="318" font-size="10" font-weight="700" fill="white">PSU</text>
+    <text x="462" y="333" font-size="8.5" fill="#fff7ed">Mains → 24 V DC</text>
+    <text x="462" y="349" font-size="8" fill="#ffedd5">Power PCB:</text>
+    <text x="462" y="361" font-size="8.5" fill="#fff7ed">12 V → servos</text>
+    <text x="462" y="373" font-size="8.5" fill="#fff7ed">5 V → computer</text>
+
+    <!-- E-STOP -->
+    <rect x="512" y="298" width="76" height="84" rx="6" fill="#b91c1c" stroke="#7f1d1d" stroke-width="2"/>
+    <text x="550" y="318" font-size="10" font-weight="700" fill="white">E-STOP</text>
+    <text x="550" y="336" font-size="8.5" fill="#fef2f2">Cuts the</text>
+    <text x="550" y="349" font-size="8.5" fill="#fef2f2">servo supply</text>
+    <text x="550" y="373" font-size="8" fill="#fecaca">HW override</text>
+  </g>
+
+  <!-- ── Notes ── -->
+  <text x="310" y="410" text-anchor="middle" font-size="9" fill="#64748b">Double-headed arrows: commands go down, status and telemetry come back up the same link.</text>
+  <text x="310" y="424" text-anchor="middle" font-size="9" fill="#64748b">Encoder feedback returns in servo status packets over the UART bus. E-Stop is hardware-level and overrides software.</text>
 </svg>

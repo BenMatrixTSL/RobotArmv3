@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Module 10 - Machine Vision &amp; Vision-Guided Picking</title>
+  <style>
+    :root {
+      --bg: #f0f2f5;
+      --card: #fff;
+      --text: #1a1d26;
+      --muted: #5c6370;
+      --accent: #1e5a8a;
+      --accent-light: #e8f0f8;
+      --border: #d8dde6;
+      --green: #1a7a4a;
+      --green-light: #e8f5ee;
+      --green-border: #a3d9bc;
+      --orange: #b85c00;
+      --orange-light: #fdf0e0;
+      --orange-border: #f0c88a;
+      --red: #c0392b;
+      --red-light: #fdecea;
+      --red-border: #f5b7b1;
+      --purple: #6b21a8;
+      --purple-light: #f3e8ff;
+      --purple-border: #d8b4fe;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, sans-serif; font-size: 16px; line-height: 1.65; color: var(--text); background: var(--bg); }
+    .top-nav { background: var(--accent); color: #fff; display: flex; align-items: center; gap: 1rem; padding: 0.75rem 1.5rem; font-size: 0.9rem; }
+    .top-nav a { color: rgba(255,255,255,0.85); text-decoration: none; }
+    .top-nav a:hover { color: #fff; text-decoration: underline; }
+    .nav-center { flex: 1; text-align: center; font-weight: 600; }
+    .module-hero { background: var(--accent); color: #fff; padding: 2rem 1.5rem 2.5rem; text-align: center; }
+    .module-badge { display: inline-block; background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.35); border-radius: 20px; font-size: 0.78rem; font-weight: 600; padding: 0.25em 0.9em; letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 0.75rem; }
+    .module-hero h1 { margin: 0 0 0.5rem; font-size: 1.9rem; font-weight: 700; }
+    .module-hero p { margin: 0; opacity: 0.85; font-size: 1rem; }
+    .objectives { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.4rem; margin-top: 1rem; }
+    .obj { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); border-radius: 4px; font-size: 0.78rem; padding: 0.2em 0.7em; }
+    .wrap { max-width: 52rem; margin: 0 auto; padding: 1.75rem 1.25rem 4rem; }
+    .section-label { display: flex; align-items: center; gap: 0.6rem; margin: 2.25rem 0 0.75rem; }
+    .section-label .pill { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; padding: 0.3em 0.8em; border-radius: 20px; }
+    .pill-theory   { background: var(--accent-light); color: var(--accent); border: 1px solid #b3cde0; }
+    .pill-activity { background: var(--green-light); color: var(--green); border: 1px solid var(--green-border); }
+    .pill-worksheet{ background: var(--purple-light); color: var(--purple); border: 1px solid var(--purple-border); }
+    .pill-sowhat   { background: var(--orange-light); color: var(--orange); border: 1px solid var(--orange-border); }
+    .pill-mcq      { background: #fff8e1; color: #856404; border: 1px solid #f0d060; }
+    .section-label hr { flex: 1; border: none; border-top: 1px solid var(--border); }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 1.25rem 1.5rem; margin-bottom: 1.25rem; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+    .card h3 { margin: 0 0 0.75rem; font-size: 1.05rem; color: var(--accent); }
+    .card h4 { margin: 1rem 0 0.35rem; font-size: 0.95rem; }
+    .card p, .card ul, .card ol { margin: 0 0 0.75rem; }
+    .card ul, .card ol { padding-left: 1.35rem; }
+    .card li { margin-bottom: 0.3rem; }
+    .callout { border-radius: 8px; padding: 0.875rem 1rem; margin: 0.75rem 0; font-size: 0.93rem; display: flex; gap: 0.75rem; }
+    .callout-icon { font-size: 1.25rem; flex-shrink: 0; line-height: 1.4; }
+    .callout-body { flex: 1; }
+    .callout-info    { background: var(--accent-light); border: 1px solid #b3cde0; }
+    .callout-warning { background: var(--orange-light); border: 1px solid var(--orange-border); }
+    .callout-tip     { background: var(--green-light); border: 1px solid var(--green-border); }
+    .activity-card { background: var(--green-light); border: 1px solid var(--green-border); border-radius: 10px; padding: 1.25rem 1.5rem; margin-bottom: 1.25rem; }
+    .activity-card h3 { margin: 0 0 0.3rem; color: var(--green); font-size: 1.05rem; }
+    .activity-card .app-tab { display: inline-block; background: var(--green); color: #fff; font-size: 0.75rem; font-weight: 600; padding: 0.15em 0.6em; border-radius: 4px; margin-bottom: 0.75rem; }
+    .steps { list-style: none; padding: 0; margin: 0.5rem 0 0; counter-reset: step; }
+    .steps li { counter-increment: step; display: flex; gap: 0.85rem; margin-bottom: 0.75rem; align-items: flex-start; }
+    .steps li::before { content: counter(step); display: inline-flex; align-items: center; justify-content: center; min-width: 1.75rem; height: 1.75rem; background: var(--green); color: #fff; border-radius: 50%; font-weight: 700; font-size: 0.8rem; flex-shrink: 0; }
+    .steps li p { margin: 0; font-size: 0.93rem; padding-top: 0.2rem; }
+    .ui-ref { display: inline; background: #1a7a4a22; border: 1px solid var(--green-border); border-radius: 4px; font-size: 0.8rem; font-weight: 600; padding: 0.1em 0.45em; color: var(--green); }
+    .worksheet-card { background: var(--purple-light); border: 1px solid var(--purple-border); border-radius: 10px; padding: 1.25rem 1.5rem; margin-bottom: 1.25rem; }
+    .worksheet-card h3 { margin: 0 0 0.75rem; color: var(--purple); font-size: 1.05rem; }
+    .ws-field { margin-bottom: 1rem; }
+    .ws-field label { display: block; font-size: 0.88rem; font-weight: 600; margin-bottom: 0.3rem; }
+    .ws-field textarea { width: 100%; border: 1px solid var(--purple-border); border-radius: 6px; padding: 0.5rem 0.65rem; font-size: 0.9rem; font-family: inherit; resize: vertical; min-height: 70px; background: rgba(255,255,255,0.7); }
+    .ws-field input[type="text"] { width: 100%; border: 1px solid var(--purple-border); border-radius: 6px; padding: 0.45rem 0.65rem; font-size: 0.9rem; font-family: inherit; background: rgba(255,255,255,0.7); }
+    .ws-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; margin: 0.5rem 0 1rem; }
+    .ws-table th { background: rgba(107,33,168,0.12); padding: 0.4rem 0.6rem; text-align: left; border: 1px solid var(--purple-border); font-size: 0.8rem; }
+    .ws-table td { border: 1px solid var(--purple-border); padding: 0; }
+    .ws-table td input[type="text"] { width: 100%; border: none; background: transparent; padding: 0.4rem 0.5rem; font-size: 0.85rem; font-family: inherit; }
+    .sowhat-card { background: var(--orange-light); border: 1px solid var(--orange-border); border-radius: 10px; padding: 1.25rem 1.5rem; margin-bottom: 1.25rem; }
+    .sowhat-card h3 { margin: 0 0 0.5rem; color: var(--orange); font-size: 1.05rem; }
+    .sowhat-card p { margin: 0 0 0.5rem; font-size: 0.95rem; }
+    .mcq-card { background: #fff8e1; border: 1px solid #f0d060; border-radius: 10px; padding: 1.25rem 1.5rem; margin-bottom: 1.25rem; }
+    .mcq-card h3 { margin: 0 0 1rem; color: #856404; font-size: 1.05rem; }
+    .mcq-q { margin-bottom: 1.25rem; }
+    .mcq-q p { font-weight: 600; margin: 0 0 0.5rem; font-size: 0.95rem; }
+    .mcq-options { display: flex; flex-direction: column; gap: 0.35rem; }
+    .mcq-opt { display: flex; align-items: flex-start; gap: 0.6rem; padding: 0.45rem 0.7rem; border-radius: 6px; border: 1px solid #e8d030; background: rgba(255,255,255,0.55); cursor: pointer; font-size: 0.9rem; }
+    .mcq-opt:hover { background: rgba(255,255,255,0.85); }
+    .mcq-opt input { margin-top: 0.15rem; flex-shrink: 0; cursor: pointer; }
+    .mcq-opt.correct { background: var(--green-light); border-color: var(--green-border); }
+    .mcq-opt.wrong   { background: var(--red-light); border-color: var(--red-border); }
+    .mcq-feedback { font-size: 0.83rem; margin-top: 0.4rem; padding: 0.4rem 0.6rem; border-radius: 5px; display: none; }
+    .mcq-feedback.show { display: block; }
+    .mcq-feedback.ok  { background: var(--green-light); color: var(--green); border: 1px solid var(--green-border); }
+    .mcq-feedback.bad { background: var(--red-light); color: var(--red); border: 1px solid var(--red-border); }
+    .check-btn { display: inline-block; margin-top: 0.5rem; padding: 0.45rem 1.1rem; background: #856404; color: #fff; border: none; border-radius: 6px; font-size: 0.88rem; font-weight: 600; cursor: pointer; }
+    .check-btn:hover { background: #6b4e03; }
+    .score-box { margin-top: 1rem; padding: 0.75rem 1rem; border-radius: 8px; font-weight: 600; font-size: 0.93rem; display: none; }
+    .score-box.show { display: block; }
+    .score-box.pass { background: var(--green-light); color: var(--green); border: 1px solid var(--green-border); }
+    .score-box.fail { background: var(--red-light); color: var(--red); border: 1px solid var(--red-border); }
+    .diagram-box { background: #f8f9fb; border: 1px solid var(--border); border-radius: 8px; padding: 1rem; margin: 0.75rem 0; font-family: Consolas, monospace; font-size: 0.82rem; color: var(--muted); white-space: pre; overflow-x: auto; }
+    .code-box { background: #1a1d26; color: #c8e1ff; border-radius: 8px; padding: 0.85rem 1rem; margin: 0.75rem 0; font-family: Consolas, monospace; font-size: 0.82rem; white-space: pre; overflow-x: auto; }
+    .code-box .c { color: #8b949e; }
+    .data-row { display: flex; gap: 0.5rem; flex-wrap: wrap; margin: 0.5rem 0; }
+    .data-chip { background: var(--accent-light); border: 1px solid #b3cde0; border-radius: 6px; padding: 0.3em 0.7em; font-size: 0.82rem; }
+    .data-chip strong { color: var(--accent); }
+    .table-scroll { overflow-x: auto; margin: 0.5rem 0 1rem; }
+    .ref-table { width: 100%; border-collapse: collapse; font-size: 0.86rem; }
+    .ref-table th { background: var(--accent-light); color: var(--accent); text-align: left; padding: 0.45rem 0.6rem; border: 1px solid var(--border); font-size: 0.8rem; }
+    .ref-table td { border: 1px solid var(--border); padding: 0.45rem 0.6rem; vertical-align: top; }
+    .ref-table td:first-child { font-weight: 600; }
+    .bottom-nav { display: flex; justify-content: space-between; align-items: center; margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border); }
+    .btn { display: inline-block; padding: 0.55rem 1.25rem; border-radius: 7px; font-weight: 600; font-size: 0.9rem; text-decoration: none; border: none; cursor: pointer; }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-outline { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
+    .btn:hover { opacity: 0.88; }
+  </style>
+<link rel="stylesheet" href="worksheet.css">
+</head>
+<body>
+
+<nav class="top-nav">
+  <a href="module-09.html">← Module 9</a>
+  <span class="nav-center">Module 10 of 18</span>
+  <a href="module-11.html">Next: Module 11 →</a>
+</nav>
+
+<div class="module-hero">
+  <div class="module-badge">Intermediate · Module 10</div>
+  <h1>Machine Vision &amp; Vision-Guided Picking</h1>
+  <p>Duration: 3–4 hours &nbsp;·&nbsp; Prerequisites: Modules 3, 7, 9</p>
+  <div class="objectives">
+    <span class="obj">Explain the camera as a non-tactile sensor</span>
+    <span class="obj">Describe inspection, identification &amp; guidance</span>
+    <span class="obj">Explain colour detection and its limits</span>
+    <span class="obj">Convert pixels to millimetres using markers</span>
+    <span class="obj">Measure vision accuracy</span>
+    <span class="obj">Program a vision-guided pick</span>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <!-- ══════════════════════════════════════════════════
+       SECTION 1 - VISION AS A SENSOR
+  ═══════════════════════════════════════════════════ -->
+  <div class="section-label"><span class="pill pill-theory">📖 Theory</span><hr></div>
+
+  <div class="card">
+    <h3>10.1 - The Camera as a Sensor</h3>
+    <p>In Module 3 you met tactile and non-tactile sensors. Most of them answer one simple question: <em>is something there?</em> or <em>how far away is it?</em> A camera is a <strong>non-tactile sensor</strong> that can answer far richer questions at the same time - <em>what</em> is there, <em>where</em> it is, <em>which way</em> it is facing, and <em>whether it looks right</em>.</p>
+    <p>Using cameras and software to make decisions in a machine is called <strong>machine vision</strong>. In industrial robotics it is used for three main jobs:</p>
+
+    <div class="table-scroll">
+      <table class="ref-table">
+        <thead>
+          <tr><th>Job</th><th>Question it answers</th><th>Industrial examples</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Inspection</td>
+            <td>Is this part correct?</td>
+            <td>Checking labels are straight, finding scratches or missing components, measuring that a hole is the right size, rejecting faulty bottles on a filling line.</td>
+          </tr>
+          <tr>
+            <td>Identification</td>
+            <td>What is this part?</td>
+            <td>Reading barcodes, QR codes and printed text (OCR), sorting parts by colour or shape, recognising which product variant has arrived.</td>
+          </tr>
+          <tr>
+            <td>Guidance &amp; navigation</td>
+            <td>Where is it, and how do I get there?</td>
+            <td>Robot picking of parts placed at random on a conveyor, bin picking, mobile robots (AMRs) finding their way around a factory, lining up a part before welding.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>The robot arm's camera does two of these jobs: <strong>identification</strong> (it recognises a block's colour) and <strong>guidance</strong> (it works out where the block is in millimetres so the arm can pick it). Inspection is something you will think about in the worksheet.</p>
+
+    <div class="callout callout-info">
+      <span class="callout-icon">🎯</span>
+      <div class="callout-body">
+        <strong>Why vision matters for robots</strong></br>
+        Without a sensor, a robot can only pick a part from a position it has been taught. If the part is 10 mm out of place, the robot misses it. Vision lets a robot handle <strong>variable part positions</strong> - the robot measures where each part actually is, then adapts its move. This is the step from simple automation to <em>adaptive</em> automation you met in Module 6.
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════
+       SECTION 2 - HOW THE ARM'S VISION SYSTEM WORKS
+  ═══════════════════════════════════════════════════ -->
+  <div class="section-label"><span class="pill pill-theory">📖 Theory</span><hr></div>
+
+  <div class="card">
+    <h3>10.2 - How the Arm's Vision System Works</h3>
+    <p>The arm uses an ordinary <strong>USB webcam</strong> plugged into the onboard computer, looking down at a mat on the work surface. A separate program on the onboard computer - the <strong>vision service</strong> - reads the camera, finds markers and blocks in each image, and makes the results available to the app.</p>
+
+    <div class="diagram-box">  USB camera  (looking down at the mat)
+        │
+        │  images (1280 × 720 pixels)
+        ▼
+  Vision service on the onboard computer   (port 8082)
+    1. Find the ArUco corner markers   → builds the mat's coordinate frame
+    2. Find coloured blocks            → position in pixels
+    3. Convert pixels → millimetres    → block X, Y on the mat
+    4. Draw overlays on the image
+        │
+        ├──► Camera tab: live picture + "Detected blocks" table
+        └──► Your programs: Blockly, G-code, RAPID vision commands</div>
+
+    <h4>An image is a grid of measurements</h4>
+    <p>A digital image is a grid of tiny squares called <strong>pixels</strong>. A 1280 × 720 image has 921,600 of them. Each pixel stores three numbers from 0 to 255 - how much <strong>R</strong>ed, <strong>G</strong>reen and <strong>B</strong>lue light reached that point of the sensor. So a single camera image is nearly 3 million measurements, and vision software's job is to turn all of those numbers into a few useful answers, such as <em>"one red block at X = 120 mm, Y = 85 mm"</em>.</p>
+
+    <div class="data-row">
+      <span class="data-chip"><strong>Resolution</strong> - more pixels means finer detail, but more processing</span>
+      <span class="data-chip"><strong>Detection rate</strong> - about 5 analyses per second</span>
+      <span class="data-chip"><strong>Field of view</strong> - how much of the table the camera can see</span>
+    </div>
+
+    <div class="callout callout-info">
+      <span class="callout-icon">⏱️</span>
+      <div class="callout-body">
+        <strong>Vision is slower than the servos</strong></br>
+        The servo status updates every 20 ms (50 times a second), but the vision system analyses about 5 images a second - one every 200 ms. Vision takes much more processing than reading a number from a servo. This is why robots usually <em>stop, look, then move</em> rather than steering continuously by camera.
+      </div>
+    </div>
+  </div>
+
+  <!-- ── ACTIVITY 10A ── -->
+  <div class="section-label"><span class="pill pill-activity">🔧 Software Activity</span><hr></div>
+
+  <div class="activity-card">
+    <h3>Activity 10A - Explore the Camera Tab</h3>
+    <span class="app-tab">App tab: Camera</span>
+    <p style="font-size:0.9rem;margin:0 0 0.75rem;">Get to know what the vision system can see and what it reports. You need the arm connected (Module 3) and the camera mat with its four corner markers in view.</p>
+    <ol class="steps">
+      <li><p>Open the <span class="ui-ref">Camera</span> tab. The camera starts automatically. Read the status line above the picture - it tells you how many ArUco markers and coloured blocks are visible.</p></li>
+      <li><p>Look at the overlays drawn on the image: a <strong>green outline and "id" label</strong> on each marker, a <strong>cyan outline</strong> around the mat, and two arrows - <strong>red for X</strong> and <strong>green for Y</strong>. Sketch where the origin (0, 0) is and which way X and Y point.</p></li>
+      <li><p>Place three or four blocks of <strong>different colours</strong> on the mat. Each one should get a yellow box and an index number. Record the <span class="ui-ref">Detected blocks</span> table (index, colour, X, Y, rotation) in the worksheet.</p></li>
+      <li><p>Slide one block towards the top of the picture, past another block. Watch the index numbers - blocks are numbered from the <strong>top of the picture downwards</strong>, so the numbers can swap when blocks move.</p></li>
+      <li><p>Cover <strong>one</strong> corner marker with a sheet of paper. What changes on screen? Now cover a <strong>second</strong> marker. Record what happens to the block positions.</p></li>
+    </ol>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════
+       SECTION 3 - FINDING COLOURED BLOCKS
+  ═══════════════════════════════════════════════════ -->
+  <div class="section-label"><span class="pill pill-theory">📖 Theory</span><hr></div>
+
+  <div class="card">
+    <h3>10.3 - Finding Coloured Blocks</h3>
+    <p>The vision service finds blocks in four steps:</p>
+    <ol>
+      <li><strong>Convert to HSV.</strong> Each pixel's RGB values are converted into <strong>Hue</strong> (which colour - red, yellow, green…), <strong>Saturation</strong> (how strong the colour is) and <strong>Value</strong> (how bright it is).</li>
+      <li><strong>Threshold.</strong> For each colour it looks for pixels whose hue, saturation and value fall inside a set range. The result is a black-and-white "mask" showing only the matching pixels. The arm looks for <strong>red, green, blue, yellow and purple</strong>.</li>
+      <li><strong>Filter by shape.</strong> Patches that are too small (noise) or too big (a shirt sleeve), not roughly square, or full of holes are thrown away, and so is anything outside the mat. What is left should be the top faces of blocks.</li>
+      <li><strong>Check it is stable.</strong> A block must be seen in <strong>5 frames in a row</strong> before it is reported, and missing for 5 frames before it is removed. This stops a block flickering in and out of the list.</li>
+    </ol>
+
+    <h4>Why HSV and not RGB?</h4>
+    <p>When light gets brighter or dimmer, all three RGB numbers change together, so a red block in shadow can have very different RGB values from the same block in sunlight. In HSV, a change in brightness mostly changes only the <strong>Value</strong> - the <strong>Hue</strong> stays roughly the same. That makes "find the red things" far more reliable.</p>
+
+    <div class="callout callout-warning">
+      <span class="callout-icon">💡</span>
+      <div class="callout-body">
+        <strong>Lighting is the biggest cause of vision problems</strong></br>
+        Shadows, glare from windows, reflections from shiny surfaces and coloured backgrounds can all break colour detection. This is why industrial vision systems use <strong>controlled lighting</strong> - ring lights around the lens, backlights behind the part, or a cover that blocks out daylight - instead of relying on room lights.
+      </div>
+    </div>
+  </div>
+
+  <!-- ── ACTIVITY 10B ── -->
+  <div class="section-label"><span class="pill pill-activity">🔧 Software Activity</span><hr></div>
+
+  <div class="activity-card">
+    <h3>Activity 10B - Test the Limits of Colour Detection</h3>
+    <span class="app-tab">App tab: Camera</span>
+    <p style="font-size:0.9rem;margin:0 0 0.75rem;">Find out when colour detection works and when it fails. Record each test in the worksheet.</p>
+    <ol class="steps">
+      <li><p>With normal room lighting, place one block of each colour on the mat and check they are all detected with the correct colour.</p></li>
+      <li><p><strong>Shadow:</strong> hold a book above the mat so a shadow falls across some blocks. Are they still detected? Is the colour still correct?</p></li>
+      <li><p><strong>Glare:</strong> shine a phone torch at the mat from the side. What happens to blocks in the bright spot?</p></li>
+      <li><p><strong>Distractors:</strong> put a coloured object that is <em>not</em> a block on the mat (a pen, a coloured sticky note, a crumpled wrapper). Is it wrongly detected as a block? Why or why not?</p></li>
+      <li><p><strong>Response time:</strong> place a new block on the mat and count how long it takes to appear in the table. Use the 5-frame rule and the detection rate to explain the delay.</p></li>
+    </ol>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════
+       SECTION 4 - PIXELS TO MILLIMETRES
+  ═══════════════════════════════════════════════════ -->
+  <div class="section-label"><span class="pill pill-theory">📖 Theory</span><hr></div>
+
+  <div class="card">
+    <h3>10.4 - From Pixels to Millimetres: ArUco Markers</h3>
+    <p>Finding a block at "pixel 640, 360" is no use to a robot - it needs to know where the block is in <strong>millimetres</strong>. To convert, the vision system needs some points in the picture whose real positions it already knows. That is the job of the <strong>ArUco markers</strong>.</p>
+
+    <h4>What is an ArUco marker?</h4>
+    <p>An ArUco marker is a black square with a pattern of black and white cells inside (the arm uses a 4 × 4 pattern). Each pattern encodes an <strong>ID number</strong>. Markers like this are called <strong>fiducial markers</strong> - reference points that are deliberately easy for software to find: very high contrast, sharp straight edges, and a code that cannot be confused with anything else in the scene.</p>
+
+    <h4>Building the mat's coordinate frame</h4>
+    <ul>
+      <li>Four markers sit at the corners of the mat. The software knows the real distance between their centres (by default <strong>240 mm across and 230 mm down</strong>).</li>
+      <li>It works out which marker is at which corner from where they appear in the picture, so <strong>only the four corner markers should be in view</strong> - an extra marker confuses it.</li>
+      <li>The <strong>top-left marker is the origin (0, 0)</strong>. X increases to the right and Y increases down the picture - the red and green arrows you saw in Activity 10A.</li>
+      <li>With all <strong>four</strong> markers visible it calculates a <strong>perspective transform</strong>. This corrects for the camera looking at the mat at an angle, where the far edge of the mat appears shorter than the near edge.</li>
+      <li>With only <strong>three</strong> markers it falls back to an <strong>affine transform</strong>, which can stretch and rotate but cannot correct perspective - positions become less accurate, and the screen warns you. With fewer than three markers it cannot convert to millimetres, so <strong>no blocks are reported at all</strong>.</li>
+    </ul>
+
+    <div class="callout callout-info">
+      <span class="callout-icon">📐</span>
+      <div class="callout-body">
+        <strong>Link to Module 7</strong></br>
+        This is the same idea as the coordinate frames in Module 7. The camera has its own frame (pixels, origin top-left of the picture), the mat has a frame (mm, origin at a marker), and the robot has a base frame (mm, origin at its base). Vision-guided picking only works if you can convert positions correctly from one frame to the next.
+      </div>
+    </div>
+
+    <div class="callout callout-tip">
+      <span class="callout-icon">🔍</span>
+      <div class="callout-body">
+        <strong>Research further: camera calibration</strong></br>
+        Real camera lenses bend straight lines slightly, especially near the edges of the picture (<em>lens distortion</em>). Industrial systems correct this with <strong>camera calibration</strong>: photographing a printed chessboard from many angles to measure the lens. This arm's system does <em>not</em> do lens calibration, so blocks near the edges of the picture may be less accurate. Search for "camera calibration chessboard OpenCV" to see how it is done.
+      </div>
+    </div>
+  </div>
+
+  <!-- ── ACTIVITY 10C ── -->
+  <div class="section-label"><span class="pill pill-activity">🔧 Practical Activity</span><hr></div>
+
+  <div class="activity-card">
+    <h3>Activity 10C - How Accurate Is the Camera?</h3>
+    <span class="app-tab">App tab: Camera</span>
+    <p style="font-size:0.9rem;margin:0 0 0.75rem;">Compare the camera's measurement with a ruler - the same way an engineer checks any sensor against a trusted reference.</p>
+    <ol class="steps">
+      <li><p>Place a single block on the mat. With a ruler, measure from the <strong>centre of the top-left marker</strong> to the <strong>centre of the block</strong>: X across, Y down. This is your reference measurement.</p></li>
+      <li><p>Read the block's X and Y from the <span class="ui-ref">Detected blocks</span> table. Record both in the worksheet.</p></li>
+      <li><p>Work out the error in each direction, then the total position error: <strong>error = √(ΔX² + ΔY²)</strong>.</p></li>
+      <li><p>Repeat with the block near the <strong>centre</strong> of the mat and near a <strong>far corner</strong>. Is the camera more accurate in some places than others?</p></li>
+      <li><p>Cover one marker so only three are visible, and measure the far-corner block again. How much worse is the three-marker result?</p></li>
+    </ol>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════
+       SECTION 5 - CAMERA TO ROBOT
+  ═══════════════════════════════════════════════════ -->
+  <div class="section-label"><span class="pill pill-theory">📖 Theory</span><hr></div>
+
+  <div class="card">
+    <h3>10.5 - From the Camera to the Robot</h3>
+    <p>Knowing where a block is <em>on the mat</em> is still not quite enough - the robot moves in <em>its own</em> base frame. Working out the exact relationship between the camera's frame and the robot's frame is called <strong>hand-eye calibration</strong> (or camera-to-robot calibration). In industry, this is done by moving the robot to several known points the camera can see, then calculating the transform between them.</p>
+    <p>This arm takes a simpler approach: it <strong>assumes the mat frame and the robot's frame are the same</strong> - the same origin and the same X and Y directions. When a program picks a block, the app takes the block's X and Y from the camera, adds a pick height Z that you choose, and uses <strong>inverse kinematics</strong> (working backwards from a tool position to the joint angles, the reverse of the forward kinematics in Module 7) to work out the joint angles.</p>
+
+    <div class="callout callout-warning">
+      <span class="callout-icon">⚠️</span>
+      <div class="callout-body">
+        <strong>Always check before you trust it</strong></br>
+        Nothing in the app checks that the mat is placed exactly where the robot thinks it is. If the mat is shifted or turned slightly, every pick will be off by the same amount - a <strong>systematic error</strong>. Always check one pick slowly, from above, before running a vision-guided program at speed.
+      </div>
+    </div>
+
+    <h4>What the camera does <em>not</em> tell the robot</h4>
+    <ul>
+      <li><strong>Height:</strong> the camera sees from above, so it cannot tell how tall a block is. You supply the pick height (Z) in your program; it defaults to table level.</li>
+      <li><strong>Orientation for the gripper:</strong> the camera measures each block's rotation (shown in the table), but the programming commands do not use it, so the gripper always approaches at the same angle.</li>
+    </ul>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════
+       SECTION 6 - PROGRAMMING
+  ═══════════════════════════════════════════════════ -->
+  <div class="section-label"><span class="pill pill-theory">📖 Theory</span><hr></div>
+
+  <div class="card">
+    <h3>10.6 - Programming a Vision-Guided Pick</h3>
+    <p>All three programming modes you met in Module 9 can read the camera. Blocks are numbered <strong>0, 1, 2…</strong> from the top of the picture downwards.</p>
+
+    <div class="table-scroll">
+      <table class="ref-table">
+        <thead>
+          <tr><th>Task</th><th>Blockly (Vision category)</th><th>G-code</th><th>RAPID</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>How many blocks?</td><td><code>detected block count</code></td><td><code>M780 V1</code> → count in <code>#1</code></td><td><code>GetBlockCount()</code></td></tr>
+          <tr><td>Block X (mm)</td><td><code>block X (mm) at index</code></td><td><code>M782 P0 V2</code> → X of block 0 in <code>#2</code></td><td><code>GetBlockX(0)</code></td></tr>
+          <tr><td>Block Y (mm)</td><td><code>block Y (mm) at index</code></td><td><code>M783 P0 V3</code> → Y of block 0 in <code>#3</code></td><td><code>GetBlockY(0)</code></td></tr>
+          <tr><td>Block colour</td><td><code>block colour at index</code></td><td>-</td><td>-</td></tr>
+          <tr><td>Save block as a stored position</td><td><code>save block at index … to position slot … at height (mm)</code></td><td><code>M781 P0 L10 Z50</code></td><td><code>SaveBlockToPos 0, 10, 50;</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>There are two ways to move to a block:</p>
+    <ul>
+      <li><strong>Read X and Y into variables</strong>, then do a Cartesian move to them - e.g. in G-code <code>G1 X#2 Y#3 Z60</code>.</li>
+      <li><strong>Save the block into a Stored Position slot</strong>, then move to that slot like any taught position - e.g. <code>G1 P10</code> or <code>MoveToPos 10;</code>.</li>
+    </ul>
+
+    <h4>Example - pick the first block (G-code)</h4>
+    <div class="code-box">M10                       <span class="c">; open the gripper</span>
+M780 V1                   <span class="c">; how many blocks can the camera see? → #1</span>
+M782 P0 V2                <span class="c">; X of block 0 → #2</span>
+M783 P0 V3                <span class="c">; Y of block 0 → #3</span>
+G1 X#2 Y#3 Z60 F1200      <span class="c">; move above the block</span>
+G1 X#2 Y#3 Z15 F600       <span class="c">; move down to grip height</span>
+M11                       <span class="c">; close the gripper</span>
+G1 X#2 Y#3 Z60 F600       <span class="c">; lift the block clear</span></div>
+    <p style="font-size:0.88rem;color:var(--muted);">The heights 60 mm and 15 mm are examples only. Your instructor will give you safe approach and grip heights for your arm, blocks and gripper.</p>
+
+    <div class="callout callout-info">
+      <span class="callout-icon">🎨</span>
+      <div class="callout-body">
+        <strong>Sorting by colour</strong></br>
+        Only Blockly can read a block's colour. To build a colour-sorting program, use Blockly: loop through each block index, check <code>block colour at index</code>, and choose a different drop-off position for each colour.
+      </div>
+    </div>
+  </div>
+
+  <!-- ── ACTIVITY 10D ── -->
+  <div class="section-label"><span class="pill pill-activity">🔧 Practical Activity</span><hr></div>
+
+  <div class="activity-card">
+    <h3>Activity 10D - Your First Vision-Guided Pick</h3>
+    <span class="app-tab">App tabs: Camera · G-Code Control · Blockly</span>
+    <p style="font-size:0.9rem;margin:0 0 0.75rem;">Check that the camera and robot agree, then pick a block that the robot has never been taught.</p>
+
+    <div class="callout callout-warning" style="margin-top:0;">
+      <span class="callout-icon">🛑</span>
+      <div class="callout-body">
+        <strong>Safety first</strong></br>
+        You have control of the arm. Use a <strong>low speed</strong>, keep everyone outside the arm's working envelope, and keep a hand near the emergency stop. Always move to a point <strong>above</strong> the block first - never straight down to the table on a first attempt.
+      </div>
+    </div>
+
+    <ol class="steps">
+      <li><p><strong>Check the frames agree.</strong> Place one block on the mat. Run <code>M781 P0 L10 Z60</code> to save a point 60 mm above it into slot 10, then move to slot 10 slowly (<code>G1 P10 F20</code>). Look down from above: is the gripper directly over the block? Measure and record any offset in X and Y.</p></li>
+      <li><p>Move the block to a different place on the mat and repeat. Is the offset the same each time (a systematic error - the mat is out of place) or different each time (a random error - the measurement is noisy)?</p></li>
+      <li><p>Tell your instructor if the offset is more than a few millimetres. The mat may need repositioning before you continue.</p></li>
+      <li><p><strong>Pick the block.</strong> Enter the example G-code from section 10.6 using your instructor's safe heights. Run it with the speed turned down and watch the first approach carefully.</p></li>
+      <li><p><strong>Extension:</strong> in Blockly, build a program that picks <em>every</em> block the camera can see and places each one at a drop-off position. Then try making it sort by colour.</p></li>
+    </ol>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════
+       WORKSHEET
+  ═══════════════════════════════════════════════════ -->
+  <div class="section-label"><span class="pill pill-worksheet">📝 Worksheet</span><hr></div>
+
+  <div class="worksheet-card">
+    <h3>Worksheet 10 - Machine Vision &amp; Vision-Guided Picking</h3>
+
+    <div class="ws-field">
+      <label>1. Activity 10A - Record the Detected blocks table:</label>
+    </div>
+
+    <table class="ws-table">
+      <thead>
+        <tr>
+          <th>Index</th>
+          <th>Colour</th>
+          <th>X (mm)</th>
+          <th>Y (mm)</th>
+          <th>Rotation (°)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td><input type="text" value="0"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td></tr>
+        <tr><td><input type="text" value="1"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td></tr>
+        <tr><td><input type="text" value="2"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td></tr>
+        <tr><td><input type="text" value="3"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td></tr>
+      </tbody>
+    </table>
+
+    <div class="ws-field">
+      <label>2. Activity 10A - What happened when you covered one marker? What happened when you covered two? Explain why.</label>
+      <textarea placeholder="One marker covered: ...&#10;Two markers covered: ...&#10;Because..."></textarea>
+    </div>
+
+    <div class="ws-field">
+      <label>3. Activity 10B - Record your colour detection tests:</label>
+    </div>
+
+    <table class="ws-table">
+      <thead>
+        <tr>
+          <th>Test</th>
+          <th>All blocks detected? (Y/N)</th>
+          <th>Colours correct? (Y/N)</th>
+          <th>Notes</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td><input type="text" value="Normal room lighting"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td></tr>
+        <tr><td><input type="text" value="Shadow across blocks"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td></tr>
+        <tr><td><input type="text" value="Torch glare"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td></tr>
+        <tr><td><input type="text" value="Non-block coloured object"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td></tr>
+      </tbody>
+    </table>
+
+    <div class="ws-field">
+      <label>4. Activity 10B - How long did a new block take to appear? Use the detection rate (about 5 per second) and the 5-frame rule to explain the delay. What is the advantage and disadvantage of this rule?</label>
+      <textarea placeholder="Time to appear: ___ s&#10;Explanation: ...&#10;Advantage: ...  Disadvantage: ..."></textarea>
+    </div>
+
+    <div class="ws-field">
+      <label>5. Explain why the vision system uses HSV rather than RGB to find coloured blocks.</label>
+      <textarea placeholder="When lighting changes, RGB values... whereas in HSV..."></textarea>
+    </div>
+
+    <div class="ws-field">
+      <label>6. Activity 10C - Record your accuracy measurements:</label>
+    </div>
+
+    <table class="ws-table">
+      <thead>
+        <tr>
+          <th>Block position</th>
+          <th>Ruler X</th>
+          <th>Ruler Y</th>
+          <th>Camera X</th>
+          <th>Camera Y</th>
+          <th>Error (mm)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td><input type="text" value="Near origin"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td></tr>
+        <tr><td><input type="text" value="Centre of mat"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td></tr>
+        <tr><td><input type="text" value="Far corner (4 markers)"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td></tr>
+        <tr><td><input type="text" value="Far corner (3 markers)"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td></tr>
+      </tbody>
+    </table>
+
+    <div class="ws-field">
+      <label>7. Activity 10C - Where on the mat was the camera most and least accurate? Suggest two reasons for the difference.</label>
+      <textarea placeholder="Most accurate: ...  Least accurate: ...&#10;Reasons: ..."></textarea>
+    </div>
+
+    <div class="ws-field">
+      <label>8. Activity 10D - Record the offset between the gripper and the block. Was it a systematic error or a random error? How do you know?</label>
+      <textarea placeholder="Offset X: ___ mm  Offset Y: ___ mm&#10;Type of error: ...  Because..."></textarea>
+    </div>
+
+    <div class="ws-field">
+      <label>9. The camera cannot measure a block's height. Explain why, and describe one way an industrial system could find the height of a part.</label>
+      <textarea placeholder="The camera cannot measure height because...&#10;An industrial system could..."></textarea>
+    </div>
+
+    <div class="ws-field">
+      <label>10. Machine vision is used for inspection, identification and guidance. Give one industrial example of each that is different from the examples in section 10.1. Which of the three could this arm's camera be extended to do next, and what would need to change?</label>
+      <textarea style="min-height:100px;" placeholder="Inspection: ...&#10;Identification: ...&#10;Guidance: ...&#10;Next step for this arm: ..."></textarea>
+    </div>
+
+    <div class="ws-field">
+      <label>11. Extension: Write or describe a program that picks every visible block and sorts them by colour into separate drop-off positions. Which programming mode did you use, and why?</label>
+      <textarea style="min-height:100px;" placeholder="Programming mode: ...  Reason: ...&#10;Program outline: ..."></textarea>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════
+       SO WHAT?
+  ═══════════════════════════════════════════════════ -->
+  <div class="section-label"><span class="pill pill-sowhat">💭 So What?</span><hr></div>
+
+  <div class="sowhat-card">
+    <h3>Why does this matter?</h3>
+    <p>Vision is one of the fastest-growing areas of industrial automation. A robot without vision needs every part presented in exactly the same place, which means expensive jigs, fixtures and feeders. A robot with vision can cope with parts that arrive in random positions - and the same camera can check the quality of every part at the same time.</p>
+    <p>The system you used today is simple, but every idea in it scales up to industry: <strong>controlled lighting</strong>, <strong>reference markers</strong> to calibrate the camera, <strong>coordinate transforms</strong> from pixels to the robot's frame, and <strong>checking accuracy against a trusted reference</strong>. Industrial systems add lens calibration, 3D cameras that measure height, and hand-eye calibration routines - but the reasoning is exactly what you have just practised.</p>
+    <p>Notice, too, that vision did not replace the other sensors. The servos' encoders still close the loop on every joint; the camera only decides <em>where</em> to go. Real robot cells combine several types of sensor, each doing the job it is best at.</p>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════
+       MCQ
+  ═══════════════════════════════════════════════════ -->
+  <div class="section-label"><span class="pill pill-mcq">✅ Quick Check</span><hr></div>
+
+  <div class="mcq-card" id="mcq-section">
+    <h3>Quick Check - Module 10</h3>
+
+    <div class="mcq-q" id="q1">
+      <p>1. Why does the vision system need the ArUco markers on the mat?</p>
+      <div class="mcq-options">
+        <label class="mcq-opt"><input type="radio" name="q1" value="a"> <span>They tell the camera what colour each block is</span></label>
+        <label class="mcq-opt"><input type="radio" name="q1" value="b"> <span>They provide points with known real positions, so pixel positions can be converted into millimetres</span></label>
+        <label class="mcq-opt"><input type="radio" name="q1" value="c"> <span>They switch the camera on when the mat is in view</span></label>
+        <label class="mcq-opt"><input type="radio" name="q1" value="d"> <span>They stop the robot from moving outside the mat</span></label>
+      </div>
+      <div class="mcq-feedback" id="q1-fb"></div>
+    </div>
+
+    <div class="mcq-q" id="q2">
+      <p>2. A barcode reader on a production line that checks which product variant has arrived is an example of which machine vision job?</p>
+      <div class="mcq-options">
+        <label class="mcq-opt"><input type="radio" name="q2" value="a"> <span>Inspection</span></label>
+        <label class="mcq-opt"><input type="radio" name="q2" value="b"> <span>Guidance</span></label>
+        <label class="mcq-opt"><input type="radio" name="q2" value="c"> <span>Identification</span></label>
+        <label class="mcq-opt"><input type="radio" name="q2" value="d"> <span>Navigation</span></label>
+      </div>
+      <div class="mcq-feedback" id="q2-fb"></div>
+    </div>
+
+    <div class="mcq-q" id="q3">
+      <p>3. Why are block positions more accurate with four markers visible than with three?</p>
+      <div class="mcq-options">
+        <label class="mcq-opt"><input type="radio" name="q3" value="a"> <span>Four markers allow a perspective transform, which corrects for the camera viewing the mat at an angle</span></label>
+        <label class="mcq-opt"><input type="radio" name="q3" value="b"> <span>The camera takes pictures faster when more markers are visible</span></label>
+        <label class="mcq-opt"><input type="radio" name="q3" value="c"> <span>The fourth marker measures the height of the blocks</span></label>
+        <label class="mcq-opt"><input type="radio" name="q3" value="d"> <span>With three markers the colour detection is switched off</span></label>
+      </div>
+      <div class="mcq-feedback" id="q3-fb"></div>
+    </div>
+
+    <div class="mcq-q" id="q4">
+      <p>4. Every vision-guided pick lands about 12 mm to the left of the block, wherever the block is placed. What is the most likely cause?</p>
+      <div class="mcq-options">
+        <label class="mcq-opt"><input type="radio" name="q4" value="a"> <span>Random noise in the camera image</span></label>
+        <label class="mcq-opt"><input type="radio" name="q4" value="b"> <span>The block is the wrong colour</span></label>
+        <label class="mcq-opt"><input type="radio" name="q4" value="c"> <span>The servo PID gains are too low</span></label>
+        <label class="mcq-opt"><input type="radio" name="q4" value="d"> <span>The mat's frame does not line up with the robot's frame - a systematic calibration error</span></label>
+      </div>
+      <div class="mcq-feedback" id="q4-fb"></div>
+    </div>
+
+    <button class="check-btn" onclick="checkMCQ()">Check answers</button>
+    <div class="score-box" id="score-box"></div>
+  </div>
+
+  <div class="bottom-nav">
+    <a class="btn btn-outline" href="module-09.html">← Module 9</a>
+    <a class="btn btn-primary" href="module-11.html">Next: Module 11 →</a>
+  </div>
+
+</div>
+
+<script>
+  const answers = { q1: 'b', q2: 'c', q3: 'a', q4: 'd' };
+  const feedback = {
+    q1: { b: 'Correct! The markers are fiducials: the software knows their real spacing, so it can calculate how pixels map to millimetres on the mat.', wrong: 'Not quite. The markers are reference points with known real positions. Without them the camera can find a block in pixels but cannot say where it is in millimetres.' },
+    q2: { c: 'Correct! Working out what a part is - from a barcode, text, colour or shape - is identification.', wrong: 'Reading a barcode to find out which product has arrived answers "what is this?", which is identification. Inspection asks "is it correct?" and guidance asks "where is it?".' },
+    q3: { a: 'Correct! Four points are needed for a perspective transform, which corrects the "far edge looks smaller" effect of an angled camera. Three points only allow an affine transform.', wrong: 'With four markers the software can calculate a perspective transform, which corrects for the camera viewing the mat at an angle. Three markers only allow an affine transform, which cannot correct perspective.' },
+    q4: { d: 'Correct! An error that is the same size and direction every time is systematic - here the mat is offset from where the robot assumes it is.', wrong: 'Random noise would change from pick to pick. An error that is the same every time is systematic - the most likely cause is that the mat frame and the robot frame do not line up.' }
+  };
+
+  function checkMCQ() {
+    let score = 0;
+    ['q1','q2','q3','q4'].forEach(q => {
+      const selected = document.querySelector(`input[name="${q}"]:checked`);
+      const fb = document.getElementById(`${q}-fb`);
+      const opts = document.querySelectorAll(`input[name="${q}"]`);
+      opts.forEach(o => o.closest('.mcq-opt').classList.remove('correct','wrong'));
+      if (!selected) { fb.className = 'mcq-feedback show bad'; fb.textContent = 'Please select an answer.'; return; }
+      const val = selected.value;
+      const correct = answers[q];
+      if (val === correct) {
+        selected.closest('.mcq-opt').classList.add('correct');
+        fb.className = 'mcq-feedback show ok';
+        fb.textContent = '✓ ' + feedback[q][correct];
+        score++;
+      } else {
+        selected.closest('.mcq-opt').classList.add('wrong');
+        document.querySelector(`input[name="${q}"][value="${correct}"]`).closest('.mcq-opt').classList.add('correct');
+        fb.className = 'mcq-feedback show bad';
+        fb.textContent = '✗ ' + feedback[q].wrong;
+      }
+    });
+    const box = document.getElementById('score-box');
+    box.className = 'score-box show ' + (score >= 3 ? 'pass' : 'fail');
+    box.textContent = `You scored ${score}/4. ` + (score === 4 ? 'Excellent - full marks!' : score === 3 ? 'Good - review the question you missed.' : 'Review the theory sections and try again.');
+  }
+</script>
+<script src="worksheet.js"></script>
+</body>
+</html>

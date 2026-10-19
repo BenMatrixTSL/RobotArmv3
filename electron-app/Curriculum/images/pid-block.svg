@@ -1,81 +1,80 @@
-<svg viewBox="0 0 620 340" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, sans-serif">
+<svg viewBox="0 0 640 340" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, sans-serif">
   <defs>
     <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
       <path d="M0,0 L0,6 L8,3 Z" fill="#475569"/>
+    </marker>
+    <marker id="arr-r" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 Z" fill="#ef4444"/>
     </marker>
     <marker id="arr-b" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
       <path d="M0,0 L0,6 L8,3 Z" fill="#3b82f6"/>
     </marker>
   </defs>
-  <rect width="620" height="340" fill="#f8fafc" rx="8"/>
-  <text x="310" y="26" text-anchor="middle" font-size="15" font-weight="700" fill="#1e293b">PID Control Block Diagram</text>
+  <rect width="640" height="340" fill="#f8fafc" rx="8"/>
+  <text x="320" y="26" text-anchor="middle" font-size="15" font-weight="700" fill="#1e293b">PID Control Block Diagram</text>
 
   <!-- Setpoint input -->
-  <text x="22" y="160" font-size="11" fill="#92400e" font-weight="600">Setpoint</text>
-  <text x="22" y="173" font-size="10" fill="#92400e">(desired °)</text>
-  <line x1="72" y1="165" x2="100" y2="165" stroke="#475569" stroke-width="2" marker-end="url(#arr)"/>
+  <text x="16" y="160" font-size="11" fill="#92400e" font-weight="600">Setpoint</text>
+  <text x="16" y="173" font-size="10" fill="#92400e">(desired °)</text>
+  <line x1="74" y1="165" x2="100" y2="165" stroke="#475569" stroke-width="2" marker-end="url(#arr)"/>
 
-  <!-- Sum circle -->
-  <circle cx="118" cy="165" r="18" fill="#fef3c7" stroke="#d97706" stroke-width="2"/>
-  <text x="118" y="170" text-anchor="middle" font-size="16" fill="#92400e">Σ</text>
-  <text x="106" y="160" font-size="10" fill="#92400e">+</text>
-  <text x="106" y="178" font-size="10" fill="#ef4444">−</text>
+  <!-- Error summing junction -->
+  <circle cx="120" cy="165" r="18" fill="#fef3c7" stroke="#d97706" stroke-width="2"/>
+  <text x="120" y="171" text-anchor="middle" font-size="16" fill="#92400e">Σ</text>
+  <text x="94" y="158" text-anchor="middle" font-size="11" font-weight="700" fill="#92400e">+</text>
+  <text x="130" y="199" font-size="12" font-weight="700" fill="#dc2626">−</text>
 
-  <!-- Error label -->
-  <line x1="136" y1="165" x2="170" y2="165" stroke="#ef4444" stroke-width="2" marker-end="url(#arr)"/>
-  <text x="153" y="158" text-anchor="middle" font-size="10" fill="#ef4444" font-weight="600">error e(t)</text>
+  <!-- Error -->
+  <line x1="138" y1="165" x2="200" y2="165" stroke="#ef4444" stroke-width="2"/>
+  <text x="169" y="157" text-anchor="middle" font-size="10" fill="#dc2626" font-weight="600">error e(t)</text>
 
-  <!-- Three branches split point -->
-  <circle cx="180" cy="165" r="4" fill="#475569"/>
-  <line x1="180" y1="165" x2="180" y2="90" stroke="#475569" stroke-width="1.5"/>
-  <line x1="180" y1="165" x2="180" y2="240" stroke="#475569" stroke-width="1.5"/>
+  <!-- Split into three branches -->
+  <circle cx="200" cy="165" r="4" fill="#475569"/>
+  <line x1="200" y1="90" x2="200" y2="240" stroke="#475569" stroke-width="1.5"/>
 
   <!-- P branch -->
-  <line x1="180" y1="90" x2="230" y2="90" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
-  <rect x="230" y="68" width="120" height="44" rx="6" fill="#eff6ff" stroke="#3b82f6" stroke-width="2"/>
-  <text x="290" y="88" text-anchor="middle" font-size="12" font-weight="700" fill="#1d4ed8">P</text>
-  <text x="290" y="103" text-anchor="middle" font-size="10" fill="#3b82f6">Kp × e(t)</text>
-  <text x="192" y="87" font-size="10" fill="#64748b">Proportional</text>
-  <line x1="350" y1="90" x2="400" y2="90" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="200" y1="90" x2="268" y2="90" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="206" y="84" font-size="10" fill="#64748b">Proportional</text>
+  <rect x="270" y="68" width="120" height="44" rx="6" fill="#eff6ff" stroke="#3b82f6" stroke-width="2"/>
+  <text x="330" y="88" text-anchor="middle" font-size="12" font-weight="700" fill="#1d4ed8">P</text>
+  <text x="330" y="103" text-anchor="middle" font-size="10" fill="#2563eb">Kp × e(t)</text>
 
   <!-- I branch -->
-  <line x1="180" y1="165" x2="230" y2="165" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
-  <rect x="230" y="143" width="120" height="44" rx="6" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
-  <text x="290" y="163" text-anchor="middle" font-size="12" font-weight="700" fill="#166534">I</text>
-  <text x="290" y="178" text-anchor="middle" font-size="10" fill="#16a34a">Ki × ∫e(t)dt</text>
-  <text x="192" y="163" font-size="10" fill="#64748b">Integral</text>
-  <line x1="350" y1="165" x2="400" y2="165" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="204" y1="165" x2="268" y2="165" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="212" y="159" font-size="10" fill="#64748b">Integral</text>
+  <rect x="270" y="143" width="120" height="44" rx="6" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+  <text x="330" y="163" text-anchor="middle" font-size="12" font-weight="700" fill="#166534">I</text>
+  <text x="330" y="178" text-anchor="middle" font-size="10" fill="#15803d">Ki × ∫e(t)dt</text>
 
   <!-- D branch -->
-  <line x1="180" y1="240" x2="230" y2="240" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
-  <rect x="230" y="218" width="120" height="44" rx="6" fill="#faf5ff" stroke="#7c3aed" stroke-width="2"/>
-  <text x="290" y="238" text-anchor="middle" font-size="12" font-weight="700" fill="#6d28d9">D</text>
-  <text x="290" y="253" text-anchor="middle" font-size="10" fill="#7c3aed">Kd × de(t)/dt</text>
-  <text x="192" y="238" font-size="10" fill="#64748b">Derivative</text>
-  <line x1="350" y1="240" x2="400" y2="240" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="200" y1="240" x2="268" y2="240" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="206" y="234" font-size="10" fill="#64748b">Derivative</text>
+  <rect x="270" y="218" width="120" height="44" rx="6" fill="#faf5ff" stroke="#7c3aed" stroke-width="2"/>
+  <text x="330" y="238" text-anchor="middle" font-size="12" font-weight="700" fill="#6d28d9">D</text>
+  <text x="330" y="253" text-anchor="middle" font-size="10" fill="#7c3aed">Kd × de(t)/dt</text>
 
-  <!-- Sum point on right -->
-  <line x1="400" y1="90" x2="420" y2="90" stroke="#475569" stroke-width="1.5"/>
-  <line x1="400" y1="165" x2="420" y2="165" stroke="#475569" stroke-width="1.5"/>
-  <line x1="400" y1="240" x2="420" y2="240" stroke="#475569" stroke-width="1.5"/>
-  <line x1="420" y1="90" x2="420" y2="240" stroke="#475569" stroke-width="1.5"/>
-  <line x1="420" y1="165" x2="448" y2="165" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
-  <text x="432" y="158" font-size="10" fill="#64748b">u(t)</text>
+  <!-- Output summing junction: u(t) = P + I + D -->
+  <circle cx="450" cy="165" r="14" fill="#f1f5f9" stroke="#475569" stroke-width="2"/>
+  <text x="450" y="170" text-anchor="middle" font-size="13" fill="#334155">Σ</text>
+  <polyline points="390,90 450,90 450,147" fill="none" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="390" y1="165" x2="432" y2="165" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
+  <polyline points="390,240 450,240 450,183" fill="none" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- u(t) to plant -->
+  <line x1="464" y1="165" x2="498" y2="165" stroke="#475569" stroke-width="2" marker-end="url(#arr)"/>
+  <text x="481" y="157" text-anchor="middle" font-size="10" fill="#475569">u(t)</text>
 
   <!-- Plant -->
-  <rect x="448" y="143" width="100" height="44" rx="6" fill="#fff7ed" stroke="#ea580c" stroke-width="2"/>
-  <text x="498" y="163" text-anchor="middle" font-size="11" font-weight="600" fill="#c2410c">Plant</text>
-  <text x="498" y="178" text-anchor="middle" font-size="10" fill="#ea580c">Servo Motor</text>
-  <line x1="548" y1="165" x2="590" y2="165" stroke="#475569" stroke-width="2" marker-end="url(#arr)"/>
-  <text x="575" y="158" font-size="10" fill="#6d28d9">y(t)</text>
-  <text x="565" y="175" font-size="9" fill="#64748b">(actual °)</text>
+  <rect x="500" y="143" width="100" height="44" rx="6" fill="#fff7ed" stroke="#ea580c" stroke-width="2"/>
+  <text x="550" y="163" text-anchor="middle" font-size="11" font-weight="600" fill="#c2410c">Plant</text>
+  <text x="550" y="178" text-anchor="middle" font-size="10" fill="#c2410c">Servo Motor</text>
+  <line x1="600" y1="165" x2="628" y2="165" stroke="#475569" stroke-width="2" marker-end="url(#arr)"/>
+  <text x="608" y="157" font-size="10" font-weight="600" fill="#6d28d9">y(t)</text>
 
-  <!-- Feedback -->
-  <line x1="580" y1="165" x2="580" y2="300" stroke="#3b82f6" stroke-width="2"/>
-  <line x1="118" y1="300" x2="580" y2="300" stroke="#3b82f6" stroke-width="2"/>
-  <line x1="118" y1="183" x2="118" y2="300" stroke="#3b82f6" stroke-width="2" marker-end="url(#arr-b)"/>
-  <text x="349" y="316" text-anchor="middle" font-size="10" fill="#1d4ed8">Feedback (AS5600 encoder reads actual joint angle)</text>
+  <!-- Feedback: from output back up into the − input of the error junction -->
+  <circle cx="614" cy="165" r="3" fill="#3b82f6"/>
+  <polyline points="614,165 614,290 120,290 120,186" fill="none" stroke="#3b82f6" stroke-width="2" marker-end="url(#arr-b)"/>
+  <text x="367" y="306" text-anchor="middle" font-size="10" fill="#1d4ed8">Feedback: AS5600 encoder reads the actual joint angle y(t)</text>
 
-  <!-- Labels -->
-  <text x="22" y="310" font-size="10" fill="#64748b">Kp, Ki, Kd = tunable gain parameters set inside servo firmware</text>
+  <text x="320" y="328" text-anchor="middle" font-size="10" fill="#64748b">Kp, Ki, Kd = tunable gain parameters set inside the servo firmware</text>
 </svg>

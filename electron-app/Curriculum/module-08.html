@@ -26,7 +26,7 @@
 <body>
 <nav class="top-nav">
   <a href="index.html">← All Modules</a>
-  <span class="nav-center">Module 8 of 16</span>
+  <span class="nav-center">Module 8 of 18</span>
   <a href="module-09.html">Next: Module 9 →</a>
 </nav>
 <div class="module-hero">
@@ -81,13 +81,13 @@
     </ul>
     <div class="callout callout-tip">
       <span class="callout-icon">🛤️</span>
-      <div class="callout-body">The Raspberry Pi server in our system supports linear path interpolation - you can see this in the G-Code control tab, where linear moves (G01 commands) are translated into step-by-step interpolated joint movements.</div>
+      <div class="callout-body">The server on the onboard computer in our system supports linear path interpolation - you can see this in the G-Code control tab, where linear moves (G01 commands) are translated into step-by-step interpolated joint movements.</div>
     </div>
     <div class="callout callout-info">
       <span class="callout-icon">⏱️</span>
       <div class="callout-body">
         <strong>Communication Latency Chain</strong></br>
-        A command travels through several stages, each adding latency: <strong>App UI event</strong> → <strong>WebSocket send</strong> → <strong>TCP/IP over network (~1–5 ms on LAN)</strong> → <strong>Server on Pi</strong> (parses command, queues serial write) → <strong>UART serial write</strong> → <strong>Servo internal PID loop</strong> (runs at ~50 Hz, ~20 ms cycle). Crucially, PID runs <em>inside the ST3215 servo IC</em> - not in the app or server. This means the servo actively holds its target position even if the network drops temporarily.
+        A command travels through several stages, each adding latency: <strong>App UI event</strong> → <strong>WebSocket send</strong> → <strong>TCP/IP over network (~1–5 ms on LAN)</strong> → <strong>Server on the onboard computer</strong> (parses command, queues serial write) → <strong>UART serial write</strong> → <strong>Servo internal PID loop</strong> (runs at ~50 Hz, ~20 ms cycle). Crucially, PID runs <em>inside the ST3215 servo IC</em> - not in the app or server. This means the servo actively holds its target position even if the network drops temporarily.
       </div>
     </div>
     <div class="callout callout-info">
@@ -138,15 +138,15 @@
       <textarea placeholder="Joint interpolation: ... best for...&#10;Linear interpolation: ... best for..."></textarea>
     </div>
     <div class="ws-field">
-      <label>4. The full communication path for a move command goes: App → WebSocket → Pi → Serial bus → Servo. At each step, describe what form the data takes and any key parameters (e.g. JSON, angle value, servo ID).</label>
-      <textarea placeholder="App: click 'Move to 60°' → generates JSON message {joint:2, angle:60, speed:50}&#10;WebSocket: transmits JSON over TCP to port 8080&#10;Pi: receives JSON, parses it, formats ST3215 serial packet...&#10;Serial bus: ...&#10;Servo: ..."></textarea>
+      <label>4. The full communication path for a move command goes: App → WebSocket → Onboard computer → Serial bus → Servo. At each step, describe what form the data takes and any key parameters (e.g. JSON, angle value, servo ID).</label>
+      <textarea placeholder="App: click 'Move to 60°' → generates JSON message {joint:2, angle:60, speed:50}&#10;WebSocket: transmits JSON over TCP to port 8080&#10;Onboard computer: receives JSON, parses it, formats ST3215 serial packet...&#10;Serial bus: ...&#10;Servo: ..."></textarea>
     </div>
     <div class="ws-field">
       <label>5. If the D (derivative) gain is set too high, what would you expect to see in the arm's motion? Why?</label>
       <input type="text" placeholder="Too high D gain would cause... because D reacts to...">
     </div>
     <div class="ws-field">
-      <label>6. Extension: The Raspberry Pi polls each servo at a set interval. If the interval is 100 ms, what is the maximum frequency at which position updates are received? Could this cause problems for high-speed moves?</label>
+      <label>6. Extension: The onboard computer polls each servo at a set interval. If the interval is 100 ms, what is the maximum frequency at which position updates are received? Could this cause problems for high-speed moves?</label>
       <textarea placeholder="100 ms interval = ___ Hz update rate. For a fast move this could cause... because..."></textarea>
     </div>
   </div>
@@ -155,7 +155,7 @@
   <div class="sowhat-card">
     <h3>Why does this matter?</h3>
     <p>PID control is everywhere: thermostats, aircraft autopilots, cruise control, hard drive heads, injection moulding machines. Understanding what each term does and how to tune it is one of the most practically useful skills in control engineering. A poorly tuned PID loop wastes energy, damages hardware, and produces inconsistent results. A well-tuned loop is nearly invisible - it just works.</p>
-    <p>Path interpolation matters the moment you need the robot to do something more precise than "move from here to there." In welding, the difference between joint interpolation and linear interpolation is the difference between a good weld and a scrapped part. The fact that the communication stack supports this - all the way down to the Raspberry Pi calculating intermediate points and sending them over the serial bus - reflects how industrial robot control systems work at a fundamental level.</p>
+    <p>Path interpolation matters the moment you need the robot to do something more precise than "move from here to there." In welding, the difference between joint interpolation and linear interpolation is the difference between a good weld and a scrapped part. The fact that the communication stack supports this - all the way down to the onboard computer calculating intermediate points and sending them over the serial bus - reflects how industrial robot control systems work at a fundamental level.</p>
   </div>
 
   <div class="section-label"><span class="pill pill-mcq">✅ Quick Check</span><hr></div>

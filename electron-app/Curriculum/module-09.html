@@ -25,7 +25,7 @@
 <body>
 <nav class="top-nav">
   <a href="index.html">← All Modules</a>
-  <span class="nav-center">Module 9 of 16</span>
+  <span class="nav-center">Module 9 of 18</span>
   <a href="module-10.html">Next: Module 10 →</a>
 </nav>
 <div class="module-hero">
@@ -48,13 +48,13 @@
     <p>The robot arm system has multiple software layers, each with a specific responsibility. Understanding how they relate helps you debug problems, extend the system, and understand commercial robot software.</p>
     <ul>
       <li><strong>Application layer (Electron app)</strong> - the user interface. Handles tab navigation, user input, and display. Written in JavaScript/HTML/CSS. Runs on your PC.</li>
-      <li><strong>Communication layer (WebSocket client)</strong> - serialises commands to JSON and transmits them to the Pi. Handles reconnection and request/response matching.</li>
-      <li><strong>Server layer (server on the Raspberry Pi)</strong> - receives commands, translates them into servo instructions, and manages the servo bus. The "brain" of the system.</li>
+      <li><strong>Communication layer (WebSocket client)</strong> - serialises commands to JSON and transmits them to the onboard computer. Handles reconnection and request/response matching.</li>
+      <li><strong>Server layer (server on the onboard computer)</strong> - receives commands, translates them into servo instructions, and manages the servo bus. The "brain" of the system.</li>
       <li><strong>Hardware layer (Serial bus + ST3215 servos)</strong> - physical actuators executing commands. Each servo has its own PID controller (see Module 8).</li>
     </ul>
     <div class="callout callout-info">
       <span class="callout-icon">🏗️</span>
-      <div class="callout-body"><strong>Client-server architecture:</strong></br> The Electron app is the <em>client</em> - it requests actions. The Pi is the <em>server</em> - it fulfils requests and reports state. This split allows the control app to run on any device on the network, not just the Pi itself. You could control the arm from a phone browser if needed.</div>
+      <div class="callout-body"><strong>Client-server architecture:</strong></br> The Electron app is the <em>client</em> - it requests actions. The onboard computer is the <em>server</em> - it fulfils requests and reports state. This split allows the control app to run on any device on the network, not just the onboard computer itself. You could control the arm from a phone browser if needed.</div>
     </div>
     <div class="callout callout-info">
       <span class="callout-icon">🏗️</span>
@@ -64,8 +64,8 @@
         <ol style="margin:0.5rem 0 0;padding-left:1.2rem;">
           <li><strong>Electron App</strong> (UI, runs on your PC) - HTML/CSS/JavaScript, handles all user interaction</li>
           <li><strong>WebSocket / JSON over TCP port 8080</strong> - bi-directional, low-latency messaging over Wi-Fi or Ethernet</li>
-          <li><strong>Server on Raspberry Pi</strong> - receives commands, manages the control session, runs the kinematics solver, enforces safety checks, handles G-code and RAPID execution</li>
-          <li><strong>Serial bus interface at 1 Mbps half-duplex</strong> - daisy-chained UART cable connecting the Pi to all servos</li>
+          <li><strong>Server on the onboard computer</strong> - receives commands, manages the control session, runs the kinematics solver, enforces safety checks, handles G-code and RAPID execution</li>
+          <li><strong>Serial bus interface at 1 Mbps half-duplex</strong> - daisy-chained UART cable connecting the onboard computer to all servos</li>
           <li><strong>ST3215 servo hardware</strong> - internal PID loop, position/velocity/load/temperature sensors</li>
         </ol>
         Label each protocol boundary in your block diagram. A fault at any one layer typically produces symptoms at a different layer - understanding the stack is essential for systematic fault diagnosis.
@@ -171,7 +171,7 @@ M30</div></li>
     <h3>Worksheet 9 - Software Architecture &amp; G-code</h3>
     <div class="ws-field">
       <label>1. Draw a diagram of the software layers in the robot arm system. Label each layer and the communication mechanism between them.</label>
-      <textarea style="min-height:100px;" placeholder="Layers (top to bottom):&#10;1. Electron App (JavaScript) ← runs on PC&#10;2. WebSocket (JSON over TCP/8080)&#10;3. Server (Raspberry Pi)&#10;4. Serial bus (UART, 1 Mbaud)&#10;5. ST3215 Servos"></textarea>
+      <textarea style="min-height:100px;" placeholder="Layers (top to bottom):&#10;1. Electron App (JavaScript) ← runs on PC&#10;2. WebSocket (JSON over TCP/8080)&#10;3. Server (onboard computer)&#10;4. Serial bus (UART, 1 Mbaud)&#10;5. ST3215 Servos"></textarea>
     </div>
     <div class="ws-field">
       <label>2. Write a G-code program that moves the arm from home to three positions (A, B, C) and back to home, with a 1-second dwell at each position. Use the joint angles you used as stored positions in Module 6.</label>
@@ -186,7 +186,7 @@ M30</div></li>
       <textarea placeholder="Blockly: best when... limitation: ...&#10;G-code: best when... limitation: ..."></textarea>
     </div>
     <div class="ws-field">
-      <label>5. The app uses a WebSocket rather than a simple HTTP request to communicate with the Pi. What is the key advantage of WebSocket over HTTP for this application?</label>
+      <label>5. The app uses a WebSocket rather than a simple HTTP request to communicate with the onboard computer. What is the key advantage of WebSocket over HTTP for this application?</label>
       <textarea placeholder="WebSocket is better here because... HTTP would be a problem because..."></textarea>
     </div>
     <div class="ws-field">
@@ -199,7 +199,7 @@ M30</div></li>
   <div class="sowhat-card">
     <h3>Why does this matter?</h3>
     <p>G-code is used in virtually every CNC machine on earth - from small desktop mills to multi-million-pound machining centres. The commands you wrote in this module are structurally identical to programs running on industrial production equipment today. If you can read and write G-code, you can communicate with CNC operators and understand their programs.</p>
-    <p>The client-server split between the app and the Pi is a fundamental design pattern used throughout industry. It means the intelligence of the control system is in the software, not wired into hardware - so you can update, extend, or replace the app without changing any hardware. This is how modern machine tools and robots are increasingly designed: the physical machine is a "dumb" server, and the smart logic runs on software that can be updated remotely.</p>
+    <p>The client-server split between the app and the onboard computer is a fundamental design pattern used throughout industry. It means the intelligence of the control system is in the software, not wired into hardware - so you can update, extend, or replace the app without changing any hardware. This is how modern machine tools and robots are increasingly designed: the physical machine is a "dumb" server, and the smart logic runs on software that can be updated remotely.</p>
   </div>
 
   <div class="section-label"><span class="pill pill-mcq">✅ Quick Check</span><hr></div>
@@ -216,11 +216,11 @@ M30</div></li>
       <div class="mcq-feedback" id="q1-fb"></div>
     </div>
     <div class="mcq-q" id="q2">
-      <p>2. Why is the Electron app described as the "client" and the Raspberry Pi as the "server"?</p>
+      <p>2. Why is the Electron app described as the "client" and the onboard computer as the "server"?</p>
       <div class="mcq-options">
-        <label class="mcq-opt"><input type="radio" name="q2" value="a"> <span>The app is more powerful than the Pi</span></label>
-        <label class="mcq-opt"><input type="radio" name="q2" value="b"> <span>The app requests actions; the Pi fulfils them and reports state</span></label>
-        <label class="mcq-opt"><input type="radio" name="q2" value="c"> <span>The Pi needs a client to turn it on</span></label>
+        <label class="mcq-opt"><input type="radio" name="q2" value="a"> <span>The app is more powerful than the onboard computer</span></label>
+        <label class="mcq-opt"><input type="radio" name="q2" value="b"> <span>The app requests actions; the onboard computer fulfils them and reports state</span></label>
+        <label class="mcq-opt"><input type="radio" name="q2" value="c"> <span>The onboard computer needs a client to turn it on</span></label>
         <label class="mcq-opt"><input type="radio" name="q2" value="d"> <span>The app stores all the robot programs</span></label>
       </div>
       <div class="mcq-feedback" id="q2-fb"></div>
@@ -248,7 +248,7 @@ M30</div></li>
   const answers={q1:'a',q2:'b',q3:'c'};
   const feedback={
     q1:{a:'Correct! F is the feed rate - the speed of the move. Higher F = faster movement.',wrong:'F stands for feed rate - the speed at which the joints move during the G01 linear move.'},
-    q2:{b:'Correct! Client-server: the app (client) makes requests, the Pi (server) executes them and returns status. This separation means any network device can be the client.',wrong:'Client-server describes who makes requests (client = app) and who fulfils them (server = Pi). It\'s not about computational power.'},
+    q2:{b:'Correct! Client-server: the app (client) makes requests, the onboard computer (server) executes them and returns status. This separation means any network device can be the client.',wrong:'Client-server describes who makes requests (client = app) and who fulfils them (server = onboard computer). It\'s not about computational power.'},
     q3:{c:'Correct! Complex conditionals and sensor-driven logic need a full programming language. Blockly supports basic conditionals but is limited; G-code has minimal conditional capability.',wrong:'For sensor-based decision trees, you need a full programming language (RAPID, Python, etc.). G-code has very limited conditional support; Blockly is better but still limited for complex logic.'}
   };
   function checkMCQ(){

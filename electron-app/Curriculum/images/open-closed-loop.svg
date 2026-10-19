@@ -147,7 +147,7 @@
      text-anchor="middle"
      font-size="9px"
      fill="#1d4ed8"
-     id="text30">(Python / Pi)</text>
+     id="text30">(onboard computer)</text>
   <!-- Arrow -->
   <line
      x1="255"
@@ -230,11 +230,9 @@
      stroke-width="2"
      stroke-dasharray="4, 3"
      id="line48" />
-  <line
-     x1="403.51239"
-     y1="351"
-     x2="77.625832"
-     y2="351"
+  <polyline
+     points="403.5,351 75,351 75,316"
+     fill="none"
      stroke="#3b82f6"
      stroke-width="2"
      marker-end="url(#arrow-b)"
@@ -453,15 +451,7 @@
      font-weight="600"
      fill="#9d174d"
      id="text98">Sensor</text>
-  <!-- Feedback arrows -->
-  <line
-     x1="75"
-     y1="310"
-     x2="75"
-     y2="350.61984"
-     stroke="#3b82f6"
-     stroke-width="2"
-     id="line106" />
+  <!-- Feedback arrow: drawn as one polyline (line104) from the sensor back up into the summing junction -->
   <text
      x="234"
      y="363"
@@ -469,4 +459,21 @@
      font-size="10px"
      fill="#1d4ed8"
      id="text108">Feedback signal (magnetic encoder reading)</text>
+  <!-- Summing junction signs (drawn on top of the circle) -->
+  <text
+     x="63"
+     y="294"
+     text-anchor="middle"
+     font-size="11px"
+     font-weight="700"
+     fill="#92400e"
+     id="text-plus">+</text>
+  <text
+     x="75"
+     y="308"
+     text-anchor="middle"
+     font-size="12px"
+     font-weight="700"
+     fill="#dc2626"
+     id="text-minus">−</text>
 </svg>

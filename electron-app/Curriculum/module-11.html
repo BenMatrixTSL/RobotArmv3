@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Module 10 - Data Logging & Diagnostics</title>
+<title>Module 11 - Data Logging & Diagnostics</title>
 <style>
   :root {
-    --bg: #f8fafc; --card: #ffffff; --border: #e2e8f0;
+    --bg: #f0f2f5; --card: #ffffff; --border: #e2e8f0;
     --text: #1e293b; --muted: #64748b;
-    --accent: #3b82f6; --accent-light: #eff6ff;
+    --accent: #1e5a8a; --accent-light: #e8f0f8;
     --green: #16a34a; --green-light: #f0fdf4;
     --purple: #7c3aed; --purple-light: #faf5ff;
     --orange: #ea580c; --orange-light: #fff7ed;
@@ -17,11 +17,6 @@
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
-  .hero { background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%); color: white; padding: 3rem 2rem; text-align: center; }
-  .hero .module-num { font-size: 0.85rem; opacity: 0.6; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 0.5rem; }
-  .hero h1 { font-size: 2rem; font-weight: 700; margin-bottom: 0.75rem; }
-  .hero p { font-size: 1.05rem; opacity: 0.85; max-width: 600px; margin: 0 auto; }
-  .meta-bar { display: flex; justify-content: center; gap: 2rem; padding: 1rem; background: #1e293b; color: #94a3b8; font-size: 0.85rem; flex-wrap: wrap; }
   .container { max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem; }
   .section-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.75rem; margin-bottom: 1.5rem; }
   .pill { display: inline-block; font-size: 0.75rem; font-weight: 600; padding: 0.2rem 0.65rem; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.9rem; }
@@ -59,14 +54,14 @@
   .feedback-correct { background: var(--green-light); color: var(--green); }
   .feedback-wrong   { background: var(--red-light);   color: var(--red); }
   .check-btn { background: var(--accent); color: white; border: none; padding: 0.7rem 1.6rem; border-radius: 8px; font-size: 0.95rem; font-weight: 600; cursor: pointer; margin-top: 0.5rem; }
-  .check-btn:hover { background: #2563eb; }
+  .check-btn:hover { background: #17476e; }
   .score-bar-wrap { height: 8px; background: var(--border); border-radius: 4px; margin: 1rem 0 0.4rem; }
   .score-bar { height: 100%; background: var(--green); border-radius: 4px; transition: width 0.4s; width: 0%; }
   .score-text { font-size: 0.9rem; color: var(--muted); }
   .nav-row { display: flex; justify-content: space-between; margin-top: 2rem; }
   .nav-btn { display: inline-block; padding: 0.6rem 1.4rem; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 0.9rem; border: 2px solid var(--border); color: var(--text); }
   .nav-btn.primary { background: var(--accent); color: white; border-color: var(--accent); }
-  @media(max-width:600px){ .grid-2,.grid-3{ grid-template-columns:1fr; } .meta-bar{ gap:1rem; } }
+  @media(max-width:600px){ .grid-2,.grid-3{ grid-template-columns:1fr; } }
   .callout{border-radius:8px;padding:.875rem 1rem;margin:.75rem 0;font-size:.93rem;display:flex;gap:.75rem}
   .callout-icon{font-size:1.25rem;flex-shrink:0;line-height:1.4}
   .callout-body{flex:1}
@@ -75,20 +70,40 @@
   .callout-warning{background:var(--orange-light);border:1px solid #fed7aa}
   .callout-danger{background:var(--red-light);border:1px solid #fecaca}
   .ui-ref{display:inline;background:rgba(22,163,74,0.13);border:1px solid #bbf7d0;border-radius:4px;font-size:.8rem;font-weight:600;padding:.1em .45em;color:var(--green)}
+
+  /* Header - same as modules 1-10 */
+  .top-nav { background: var(--accent); color: #fff; display: flex; align-items: center; gap: 1rem; padding: 0.75rem 1.5rem; font-size: 0.9rem; }
+  .top-nav a { color: rgba(255,255,255,0.85); text-decoration: none; }
+  .top-nav a:hover { color: #fff; text-decoration: underline; }
+  .nav-center { flex: 1; text-align: center; font-weight: 600; }
+  .module-hero { background: var(--accent); color: #fff; padding: 2rem 1.5rem 2.5rem; text-align: center; }
+  .module-badge { display: inline-block; background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.35); border-radius: 20px; font-size: 0.78rem; font-weight: 600; padding: 0.25em 0.9em; letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 0.75rem; }
+  .module-hero h1 { margin: 0 0 0.5rem; font-size: 1.9rem; font-weight: 700; }
+  .module-hero p { margin: 0; opacity: 0.85; font-size: 1rem; color: #fff; }
+  .objectives { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.4rem; margin-top: 1rem; }
+  .obj { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); border-radius: 4px; font-size: 0.78rem; padding: 0.2em 0.7em; }
 </style>
 <link rel="stylesheet" href="worksheet.css">
 </head>
 <body>
 
-<div class="hero">
-  <div class="module-num">Module 10 of 16</div>
+<nav class="top-nav">
+  <a href="module-10.html">← Module 10</a>
+  <span class="nav-center">Module 11 of 18</span>
+  <a href="module-12.html">Next: Module 12 →</a>
+</nav>
+
+<div class="module-hero">
+  <div class="module-badge">Intermediate · Module 11</div>
   <h1>Data Logging &amp; Diagnostics</h1>
-  <p>Capturing, interpreting, and using live data from the robot arm to monitor health and diagnose faults.</p>
-</div>
-<div class="meta-bar">
-  <span>&#128340; 60–75 min</span>
-  <span>&#127919; Group: Intermediate</span>
-  <span>&#128268; App tabs: Joint Control · Settings · Connection</span>
+  <p>Duration: 60–75 min &nbsp;·&nbsp; Prerequisites: Modules 3, 8 &nbsp;·&nbsp; App tabs: Joint Control · Settings · Connection</p>
+  <div class="objectives">
+    <span class="obj">Explain why engineers log data</span>
+    <span class="obj">Interpret live servo telemetry</span>
+    <span class="obj">Apply symptom → hypothesis → test</span>
+    <span class="obj">Diagnose thermal and bus faults</span>
+    <span class="obj">Relate monitoring to predictive maintenance</span>
+  </div>
 </div>
 
 <div class="container">
@@ -153,7 +168,7 @@
       <tr><td>Temperature rising fast</td><td>Sustained high load, poor ventilation</td><td>Check load %, reduce payload</td></tr>
       <tr><td>Voltage drops under move</td><td>PSU current-limited, thin wiring</td><td>Measure V at servo headers during move</td></tr>
       <tr><td>Position error accumulates</td><td>Backlash, encoder slipping</td><td>Command same pose 10×, log final position</td></tr>
-      <tr><td>WebSocket disconnects</td><td>Network jitter, Pi overloaded</td><td>Check Pi CPU usage, ping latency</td></tr>
+      <tr><td>WebSocket disconnects</td><td>Network jitter, onboard computer overloaded</td><td>Check the onboard computer's CPU usage, ping latency</td></tr>
     </table>
     <div class="callout callout-warning">
       <span class="callout-icon">🌡️</span>
@@ -172,7 +187,7 @@
         <strong>Symptom:</strong> LED strip pulsing red; all joints frozen; Joint Control shows stale data.<br>
         <strong>Cause:</strong> The server lost contact with the serial bus (cable fault, power interruption, or hardware error). It is attempting to reconnect automatically with exponential backoff (waits 2 s → 4 s → 8 s → max 30 s between attempts).<br>
         <strong>Test:</strong> Check the Connection tab diagnostics panel for bus health status.<br>
-        <strong>Resolution:</strong> Wait up to 30 seconds for auto-recovery. If it does not recover, check the serial bus cable connections and cycle the Pi's power.
+        <strong>Resolution:</strong> Wait up to 30 seconds for auto-recovery. If it does not recover, check the serial bus cable connections and cycle the onboard computer's power.
       </div>
     </div>
   </div>
@@ -270,8 +285,8 @@
   </div>
 
   <div class="nav-row">
-    <a class="nav-btn" href="module-09.html">&#8592; Module 9</a>
-    <a class="nav-btn primary" href="module-11.html">Module 11 &#8594;</a>
+    <a class="nav-btn" href="module-10.html">&#8592; Module 10</a>
+    <a class="nav-btn primary" href="module-12.html">Module 12 &#8594;</a>
   </div>
 </div>
 
