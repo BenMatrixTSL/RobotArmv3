@@ -950,6 +950,12 @@
         <!-- Kinematics Tab -->
         <div id="kinematics-tab" class="tab-content">
             <h2>Kinematics and Transform Matrices</h2>
+            <p class="info-text">
+                Every link length, joint axis and limit used here comes from the arm's URDF (Unified Robot
+                Description Format) file, <code>kinematics.urdf</code>.
+                <a href="#" id="kinematicsViewUrdfLink" onclick="openUrdfFileWindow(); return false;">View the URDF file</a>
+                to read the actual geometry (the URDF uses metres for lengths and radians for joint limits).
+            </p>
 
             <div class="simulation-panel kinematics-source-panel">
                 <div class="simulation-controls">

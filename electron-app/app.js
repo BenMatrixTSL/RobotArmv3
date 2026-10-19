@@ -2089,6 +2089,44 @@ function openVisualisationPopup() {
     }
 }
 
+// ===== URDF file viewer =====
+
+/**
+ * Opens the loaded kinematics.urdf text in a separate read-only window, from
+ * the "View the URDF file" link on the Kinematics tab (curriculum Module 2
+ * sends students here for the real link lengths). The text is written into
+ * the popup directly rather than linking to the file, so it works the same
+ * in Electron (file://, where a bare .urdf link would download) and in the
+ * browser-served kiosk, and always shows exactly what the app has loaded.
+ */
+function openUrdfFileWindow() {
+    const text = (typeof cachedUrdfText === 'string' && cachedUrdfText.trim())
+        ? cachedUrdfText
+        : (typeof DEFAULT_URDF === 'string' ? DEFAULT_URDF : '');
+    if (!text) {
+        showAppMessage('The URDF has not loaded yet - try again in a moment.');
+        return;
+    }
+    const popup = window.open('', 'robotArmUrdfFile', 'width=900,height=700,resizable=yes,scrollbars=yes');
+    if (!popup) {
+        showAppMessage('Pop-up was blocked. Please allow pop-ups for this page and try again.');
+        return;
+    }
+    const escaped = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    popup.document.open();
+    popup.document.write(
+        '<!DOCTYPE html><html><head><meta charset="utf-8"><title>kinematics.urdf</title>' +
+        '<style>body{margin:0;font-family:system-ui,sans-serif;background:#1e1e1e;color:#ddd;}' +
+        'header{padding:10px 16px;background:#2b2b2b;border-bottom:1px solid #444;font-size:14px;}' +
+        'header b{color:#fff;} pre{margin:0;padding:16px;font:13px/1.45 Consolas,Menlo,monospace;white-space:pre;overflow:auto;}</style></head>' +
+        '<body><header><b>kinematics.urdf</b> - the arm geometry the app has loaded. Link lengths are the ' +
+        '<code>origin xyz</code> values on each joint, in <b>metres</b> (multiply by 1000 for mm); joint ' +
+        '<code>limit lower/upper</code> values are in <b>radians</b> (multiply by 57.3 for degrees).</header>' +
+        '<pre>' + escaped + '</pre></body></html>'
+    );
+    popup.document.close();
+}
+
 // ===== Simple Message Helper =====
 
 let appMessageTimeoutId = null;
@@ -2963,7 +3001,8 @@ function updateTakeControlButtonState() {
 
     // Commissioning writes/reads are bus commands like moves - they need this
     // app to hold arm control, same requirement as the buttons above.
-    const commissionButtonIds = ['commissionAllButton', 'calibrationReadButton', 'posCorrectionUpButton', 'posCorrectionDownButton'];
+    const commissionButtonIds = ['commissionAllButton', 'calibrationReadButton', 'posCorrectionUpButton', 'posCorrectionDownButton',
+        'zeroTrimSetButton', 'zeroTrimResetButton', 'zeroTrimResetAllButton'];
     const commissionEnabled = robotArmClient.isConnected && robotArmClient.hasArmControl;
     for (const id of commissionButtonIds) {
         const btn = document.getElementById(id);
@@ -7285,11 +7324,15 @@ function onJointConfigsLoaded(configs) {
         
         // Update the number of joints setting based on discovered servos
         const numJointsInput = document.getElementById('numJoints');
-        if (numJointsInput && servoCount > 0) {
+        // Only rebuild the joint UI when the count actually changes - joint
+        // configs are re-broadcast for other reasons too (e.g. a trainee zero
+        // trim changing), and a rebuild on every one of those is disruptive
+        if (numJointsInput && servoCount > 0 && parseInt(numJointsInput.value, 10) !== servoCount) {
             numJointsInput.value = servoCount;
             // Trigger change event to update UI
             numJointsInput.dispatchEvent(new Event('change'));
         }
+        if (typeof renderTraineeZeroTrims === 'function') renderTraineeZeroTrims();
         
         // Update kinematics status
         document.getElementById('kinematicsStatus').textContent = `✓ ${servoCount} servos discovered`;
