@@ -430,6 +430,38 @@ sudo ROBOT_ARM_CAMERA_EXPOSURE=80 ROBOT_ARM_CAMERA_BRIGHTNESS=30 ROBOT_ARM_CAMER
 All three are unset (camera default/auto) unless configured — see
 `camera-vision.py`'s module docstring for the full list of tuning env vars.
 
+### Lens distortion (wide-angle / fish-eye) calibration
+
+A wide-angle lens bends the mat's straight edges and skews the marker-to-mm
+mapping away from the image centre. `camera-vision.py` undistorts every frame
+before detection when a calibration file exists. Make one with a printed
+chessboard (OpenCV's `pattern.png`, 9x6 inner corners):
+
+```bash
+cd /opt/RobotArm/electron-app
+sudo systemctl stop robot-arm-camera            # the service holds the camera
+python3 calibrate-camera.py capture --count 15  # show the board, tilt it, cover the corners of the frame
+python3 calibrate-camera.py solve --images /tmp/calib --preview --output /tmp/camera-calibration.json
+sudo mkdir -p /etc/robot-arm-st3215
+sudo cp /tmp/camera-calibration.json /etc/robot-arm-st3215/camera-calibration.json
+sudo systemctl start robot-arm-camera
+```
+
+The solve step prints the RMS reprojection error (aim for under 1 px; add
+`--fisheye` for a very wide lens) and `--preview` writes an original-vs-
+undistorted image to check by eye. Without a calibration file you can set a
+rough manual correction instead: `ROBOT_ARM_LENS_K1=-0.2` (negative = barrel,
+try -0.1 to -0.4) in the camera service environment.
+
+### Blocks seen from the side
+
+With the camera low and looking across the mat rather than down on it, the
+vision script measures each block from the edges where it touches the mat:
+`world_x_mm`/`world_y_mm` are the centre of the cube's base, `rotation_deg`
+is its turn about the vertical in the mat's frame (-45..45°), and a candidate is
+only accepted if its ground footprint is cube-sized (`ROBOT_ARM_BLOCK_SIZE_MM`,
+default 30 mm, ±45%). Set the size to match your cubes if they differ.
+
 ---
 
 ## Quick Setup Checklist

@@ -42,6 +42,21 @@ Environment:
                                                  0 disables the fallback)
   ROBOT_ARM_ARUCO_FAR_BAND       default 0.6   (fraction of the frame, from the
                                                  top, the fallback searches)
+  ROBOT_ARM_BLOCK_SIZE_MM        default 30    (cube side length; a candidate's
+                                                 ground footprint must be within
+                                                 ROBOT_ARM_BLOCK_SIZE_TOLERANCE
+                                                 (default 0.45) of it)
+  ROBOT_ARM_CAMERA_CALIBRATION   default /etc/robot-arm-st3215/camera-calibration.json
+                                                 (lens model from calibrate-camera.py;
+                                                 frames are undistorted when it exists)
+  ROBOT_ARM_LENS_K1 / _K2        default 0     (manual radial distortion fallback
+                                                 when there is no calibration file;
+                                                 negative k1 = barrel/fish-eye)
+
+Block positions (world_x_mm/world_y_mm) are the centre of the cube's base on
+the mat, and rotation_deg is its turn about the vertical in the mat's frame
+(-45..45°), both measured from the silhouette's ground-contact edges so they
+stay right when the camera looks across the mat rather than down on it.
   ROBOT_ARM_CAMERA_EXPOSURE      unset by default (auto-exposure). Set to a
                                   manual exposure value (V4L2 driver units,
                                   try 100-300) to stop glare off the mat from
@@ -100,18 +115,39 @@ MARKER_SPACING_Y_MM = float(os.environ.get("ROBOT_ARM_MARKER_SPACING_Y_MM", "230
 BLOCK_WORKSPACE_MARGIN_MM = float(os.environ.get("ROBOT_ARM_BLOCK_WORKSPACE_MARGIN_MM", "15"))
 JPEG_QUALITY = 80
 MIN_BLOCK_AREA = 300
-# Upper area bound (px² on the 640x480 detection frame) - a real block is
-# small and close to the camera's ground plane; anything bigger is more
-# likely an arm part or a large patch of background matching by colour.
-MAX_BLOCK_AREA = float(os.environ.get("ROBOT_ARM_MAX_BLOCK_AREA", "6000"))
-# A cube viewed from above (at any rotation) has a roughly square footprint.
-# long-side/short-side of the rotated bounding rect must stay under this to
-# reject elongated shapes (arm links, cables, reflections).
-BLOCK_MAX_ASPECT_RATIO = float(os.environ.get("ROBOT_ARM_BLOCK_MAX_ASPECT_RATIO", "1.6"))
+# Upper area bound (px² on the 640x480 detection frame). Only a coarse
+# sanity limit now: with the camera looking across the mat a near cube is
+# several times bigger in the image than a far one, so the real size test is
+# done in world mm from the cube's ground-contact edges (see
+# measure_block_footprint()). Keep this well above any real cube.
+MAX_BLOCK_AREA = float(os.environ.get("ROBOT_ARM_MAX_BLOCK_AREA", "40000"))
+# Side length of the cubes on the mat, mm. The purple cube's ground-contact
+# edge measured 29-30 mm with the camera in its current position (its
+# rounded corners make the visible edge a little shorter than the cube).
+# A candidate whose footprint is outside BLOCK_SIZE_TOLERANCE of this (as a
+# fraction) is rejected - arm parts, cables and background patches rarely
+# have a cube-sized footprint on the ground plane.
+BLOCK_SIZE_MM = float(os.environ.get("ROBOT_ARM_BLOCK_SIZE_MM", "30"))
+BLOCK_SIZE_TOLERANCE = float(os.environ.get("ROBOT_ARM_BLOCK_SIZE_TOLERANCE", "0.45"))
+# Silhouette aspect limit (long/short side of the image-space rotated rect).
+# Looser than it was for the overhead view: seen from the side a cube shows
+# its top and front faces stacked, so the silhouette is taller than wide.
+BLOCK_MAX_ASPECT_RATIO = float(os.environ.get("ROBOT_ARM_BLOCK_MAX_ASPECT_RATIO", "2.2"))
 # contourArea / rotated-bounding-rect-area. A solid cube fills most of its
 # own bounding rect; irregular silhouettes (the arm's joints, screws, gaps
 # between parts) leave a lot of the rect empty and score low here.
-BLOCK_MIN_SOLIDITY = float(os.environ.get("ROBOT_ARM_BLOCK_MIN_SOLIDITY", "0.65"))
+BLOCK_MIN_SOLIDITY = float(os.environ.get("ROBOT_ARM_BLOCK_MIN_SOLIDITY", "0.6"))
+# Lens distortion correction. The frame is undistorted before any detection
+# when a calibration file exists (made with calibrate-camera.py from a few
+# chessboard photos - the proper fix for a wide-angle / fish-eye lens), or,
+# as a rough manual fallback, when ROBOT_ARM_LENS_K1 is set (negative =
+# barrel distortion; try -0.1 .. -0.4 while watching the mat's straight
+# edges in the stream). The calibration file wins if both are present.
+CAMERA_CALIBRATION_FILE = os.environ.get(
+    "ROBOT_ARM_CAMERA_CALIBRATION", "/etc/robot-arm-st3215/camera-calibration.json"
+).strip()
+LENS_K1 = float(os.environ.get("ROBOT_ARM_LENS_K1", "0") or 0)
+LENS_K2 = float(os.environ.get("ROBOT_ARM_LENS_K2", "0") or 0)
 # A marker/block must be detected (or absent) this many consecutive frames
 # before it is added to (or removed from) the output - smooths out one-off
 # missed detections instead of letting overlays flicker on and off.
@@ -883,8 +919,14 @@ def normalize_brightness(hsv):
 
 
 def detect_color_blocks(frame):
-    """Detect coloured blocks using HSV thresholds. Returns list of block dicts.
-    Does NOT draw on the frame - call draw_color_blocks() separately."""
+    """
+    Find coloured-block candidates using HSV thresholds. Returns a list of
+    block dicts with the silhouette's bounding box (normalised) and its
+    contour (pixels, in this frame's coordinates) under "_contour". The
+    world position, size check and rotation are added afterwards by
+    measure_block_footprint(), which needs the marker homography.
+    Does NOT draw on the frame - call draw_color_blocks() separately.
+    """
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
     hsv = normalize_brightness(hsv)
     frame_height, frame_width = frame.shape[:2]
@@ -905,10 +947,10 @@ def detect_color_blocks(frame):
             if contour_area < MIN_BLOCK_AREA or contour_area > MAX_BLOCK_AREA:
                 continue
 
-            # Shape check: a cube's footprint is a roughly-filled square at
-            # any rotation, so use the rotated (not axis-aligned) bounding
-            # rect for both the aspect-ratio and solidity tests below.
-            (_, _), (rot_w, rot_h), angle = cv2.minAreaRect(contour)
+            # Coarse silhouette checks on the rotated bounding rect: a cube
+            # (top + front face, from the side) is still a compact, mostly
+            # filled shape, unlike arm links, cables or reflections.
+            (_, _), (rot_w, rot_h), _angle = cv2.minAreaRect(contour)
             if rot_w <= 0 or rot_h <= 0:
                 continue
             long_side, short_side = max(rot_w, rot_h), min(rot_w, rot_h)
@@ -917,10 +959,6 @@ def detect_color_blocks(frame):
             solidity = contour_area / (rot_w * rot_h)
             if solidity < BLOCK_MIN_SOLIDITY:
                 continue
-
-            # A square footprint repeats every 90°, so fold into 0-90 range
-            # regardless of OpenCV's minAreaRect angle sign convention.
-            rotation_deg = round(angle % 90.0, 1)
 
             x, y, w, h = cv2.boundingRect(contour)
             center_x = x + (w / 2.0)
@@ -934,11 +972,126 @@ def detect_color_blocks(frame):
                     "height": round(h / frame_height, 4),
                     "pixel_x": round(center_x, 1),
                     "pixel_y": round(center_y, 1),
-                    "rotation_deg": rotation_deg,
+                    "_contour": contour,
                 }
             )
 
     return blocks
+
+
+def contour_bottom_envelope(contour, bin_px=2):
+    """
+    The lowest contour point in every `bin_px`-wide column: for a cube seen
+    from the side these are the edges where it touches the ground, which is
+    the only part of the silhouette the ground-plane homography maps
+    correctly (the top face sits a cube-height above the plane and would
+    land too far away). Returns an (N, 2) float32 array in pixel coords,
+    ordered left to right.
+    """
+    # Rasterise the filled silhouette rather than using the contour's own
+    # vertices: findContours' simplified contours have whole columns with
+    # only a top-edge vertex, which would read as the "lowest point" there
+    # and drag the footprint up onto the cube's top face.
+    x, y, w, h = cv2.boundingRect(contour)
+    if w <= 0 or h <= 0:
+        return np.zeros((0, 2), dtype=np.float32)
+    mask = np.zeros((h, w), dtype=np.uint8)
+    cv2.drawContours(mask, [contour - np.array([[x, y]])], -1, 255, thickness=cv2.FILLED)
+    points = []
+    for column in range(0, w, bin_px):
+        strip = mask[:, column:column + bin_px]
+        rows = np.nonzero(strip.any(axis=1))[0]
+        if len(rows) == 0:
+            continue
+        points.append([x + column + min(bin_px, w - column) / 2.0, y + int(rows.max())])
+    return np.array(points, dtype=np.float32)
+
+
+def measure_block_footprint(block, homography, frame_width, frame_height):
+    """
+    Work out where a block candidate sits on the mat and how it is turned,
+    from the ground-contact edges of its silhouette (see
+    contour_bottom_envelope()). Seen obliquely, those edges form the two
+    front sides of the cube's square base (an "L"/"V" when the cube is
+    turned, a single line when a face squarely faces the camera). Mapped
+    through the marker homography into mat millimetres and fitted with a
+    minimum-area rectangle:
+
+      - the rectangle's long side is the cube size - the size check that
+        replaces the old pixel-area limits, which can't work when a near
+        cube is several times bigger in the image than a far one;
+      - its orientation is the cube's rotation about the vertical, in the
+        mat's frame (folded to -45..45° - a square repeats every 90°);
+      - its centre is the base centre, except that the back edges are hidden
+        behind the cube, so a squarely-facing cube only shows its front
+        edge: the fitted rectangle is then thin and its centre lies on that
+        edge. The centre is pushed away from the camera by the missing depth
+        ((size - visible depth) / 2) along the viewing direction, which is
+        the ground-plane direction from the point at the bottom of the
+        image in the same image column (every image column of an unrolled
+        camera is a vertical plane through the camera, so that direction
+        is exactly "away from the camera" for this block).
+
+    Fills in world_x_mm/world_y_mm (base centre), rotation_deg, size_mm and
+    base_corners (normalised image coords of the estimated base square, for
+    the overlay). Returns False if the footprint isn't cube-sized.
+    """
+    contour = block.get("_contour")
+    if contour is None or homography is None:
+        return False
+    bottom = contour_bottom_envelope(contour)
+    if len(bottom) < 3:
+        return False
+    norm = bottom / np.array([frame_width, frame_height], dtype=np.float32)
+    world = cv2.perspectiveTransform(norm.reshape(-1, 1, 2), homography).reshape(-1, 2)
+    (cx, cy), (rw, rh), angle = cv2.minAreaRect(world.astype(np.float32).reshape(-1, 1, 2))
+    long_side, short_side = max(rw, rh), min(rw, rh)
+    if long_side <= 0:
+        return False
+    if abs(long_side - BLOCK_SIZE_MM) > BLOCK_SIZE_TOLERANCE * BLOCK_SIZE_MM:
+        return False
+
+    # Viewing direction on the ground plane for this block's image column.
+    mid_index = len(bottom) // 2
+    front_mid = world[mid_index]
+    column_nx = float(norm[mid_index][0])
+    toward_camera_pt = np.array(transform_to_world(homography, column_nx, 1.0), dtype=np.float64)
+    view_dir = front_mid.astype(np.float64) - toward_camera_pt
+    view_len = float(np.linalg.norm(view_dir))
+    if view_len > 1e-6:
+        view_dir /= view_len
+    else:
+        view_dir = np.array([0.0, -1.0])
+
+    hidden_depth = max(0.0, BLOCK_SIZE_MM - short_side)
+    base_center = np.array([cx, cy], dtype=np.float64) + view_dir * (hidden_depth / 2.0)
+
+    block["world_x_mm"] = round(float(base_center[0]), 1)
+    block["world_y_mm"] = round(float(base_center[1]), 1)
+    # A square repeats every 90°; fold to -45..45 so a cube that is nearly
+    # aligned with the mat reads as a small +/- angle rather than jittering
+    # between ~2° and ~88° from frame to frame.
+    block["rotation_deg"] = round(((float(angle) + 45.0) % 90.0) - 45.0, 1)
+    block["size_mm"] = round(float(long_side), 1)
+
+    # Estimated base square, back in image space for the overlay.
+    try:
+        half = BLOCK_SIZE_MM / 2.0
+        theta = math.radians(float(angle))
+        ux = np.array([math.cos(theta), math.sin(theta)])
+        uy = np.array([-math.sin(theta), math.cos(theta)])
+        square = np.array([
+            base_center + ux * half + uy * half,
+            base_center - ux * half + uy * half,
+            base_center - ux * half - uy * half,
+            base_center + ux * half - uy * half,
+        ], dtype=np.float32)
+        inv = np.linalg.inv(homography)
+        img_pts = cv2.perspectiveTransform(square.reshape(-1, 1, 2), inv).reshape(-1, 2)
+        block["base_corners"] = [[round(float(px), 4), round(float(py), 4)] for px, py in img_pts]
+    except Exception:
+        block["base_corners"] = None
+    return True
 
 
 def draw_color_blocks(frame, blocks):
@@ -955,6 +1108,12 @@ def draw_color_blocks(frame, blocks):
         w = int(block["width"] * fw)
         h = int(block["height"] * fh)
         cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 255), 2)
+        # Estimated base square on the mat (shows the position/rotation
+        # actually being reported, not just the silhouette).
+        corners = block.get("base_corners")
+        if corners:
+            pts = np.array([[int(px * fw), int(py * fh)] for px, py in corners], dtype=np.int32)
+            cv2.polylines(frame, [pts.reshape(-1, 1, 2)], True, (255, 0, 255), 2)
 
         label = str(block["index"])
         (tw, th), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.7, 2)
@@ -1051,7 +1210,85 @@ def prepare_gray_for_aruco(frame):
     return gray
 
 
+_undistort_maps = {}
+_calibration = None
+_calibration_loaded = False
+
+
+def load_camera_calibration():
+    """
+    Lens model used to undistort every frame, or None for no correction.
+    Prefers CAMERA_CALIBRATION_FILE (written by calibrate-camera.py: keys
+    "camera_matrix" 3x3, "dist_coeffs" list, "image_width"/"image_height",
+    optional "model": "fisheye"), then the manual ROBOT_ARM_LENS_K1/K2
+    fallback, which assumes the optical centre is the image centre and a
+    focal length of half the frame width.
+    """
+    global _calibration, _calibration_loaded
+    if _calibration_loaded:
+        return _calibration
+    _calibration_loaded = True
+    if CAMERA_CALIBRATION_FILE and os.path.isfile(CAMERA_CALIBRATION_FILE):
+        try:
+            with open(CAMERA_CALIBRATION_FILE, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            _calibration = {
+                "model": data.get("model", "pinhole"),
+                "camera_matrix": np.array(data["camera_matrix"], dtype=np.float64).reshape(3, 3),
+                "dist_coeffs": np.array(data["dist_coeffs"], dtype=np.float64).reshape(-1, 1),
+                "image_width": int(data.get("image_width", 0)),
+                "image_height": int(data.get("image_height", 0)),
+                "source": CAMERA_CALIBRATION_FILE,
+            }
+            print(f"Lens calibration loaded from {CAMERA_CALIBRATION_FILE} ({_calibration['model']})", file=sys.stderr)
+            return _calibration
+        except Exception as exc:
+            print(f"Lens calibration file {CAMERA_CALIBRATION_FILE} ignored: {exc}", file=sys.stderr)
+    if LENS_K1 != 0 or LENS_K2 != 0:
+        _calibration = {"model": "manual", "k1": LENS_K1, "k2": LENS_K2, "source": "ROBOT_ARM_LENS_K1/K2"}
+        print(f"Lens correction: manual k1={LENS_K1} k2={LENS_K2}", file=sys.stderr)
+    return _calibration
+
+
+def undistort_frame(frame):
+    """Apply the lens correction (if any) with a cached remap for this frame size."""
+    calibration = load_camera_calibration()
+    if calibration is None:
+        return frame
+    h, w = frame.shape[:2]
+    maps = _undistort_maps.get((w, h))
+    if maps is None:
+        try:
+            if calibration["model"] == "manual":
+                f = w / 2.0
+                K = np.array([[f, 0, w / 2.0], [0, f, h / 2.0], [0, 0, 1]], dtype=np.float64)
+                D = np.array([calibration["k1"], calibration["k2"], 0, 0, 0], dtype=np.float64)
+                maps = cv2.initUndistortRectifyMap(K, D, None, K, (w, h), cv2.CV_16SC2)
+            else:
+                K = calibration["camera_matrix"].copy()
+                cw, ch = calibration["image_width"], calibration["image_height"]
+                if cw and ch and (cw != w or ch != h):
+                    # Calibrated at a different resolution - scale the intrinsics.
+                    K[0, :] *= w / float(cw)
+                    K[1, :] *= h / float(ch)
+                D = calibration["dist_coeffs"]
+                if calibration["model"] == "fisheye":
+                    maps = cv2.fisheye.initUndistortRectifyMap(K, D[:4], np.eye(3), K, (w, h), cv2.CV_16SC2)
+                else:
+                    maps = cv2.initUndistortRectifyMap(K, D, None, K, (w, h), cv2.CV_16SC2)
+        except Exception as exc:
+            print(f"Lens correction disabled (could not build remap): {exc}", file=sys.stderr)
+            maps = False
+        _undistort_maps[(w, h)] = maps
+    if not maps:
+        return frame
+    return cv2.remap(frame, maps[0], maps[1], cv2.INTER_LINEAR)
+
+
 def process_frame(frame, detectors):
+    # Lens correction first, so markers, blocks and the overlay all live in
+    # the same (straightened) image and the homography is a true plane map.
+    frame = undistort_frame(frame)
     annotated = frame.copy()
     frame_height, frame_width = annotated.shape[:2]
     dictionary_name = None
@@ -1118,14 +1355,18 @@ def process_frame(frame, detectors):
                 in_bounds = []
                 margin = BLOCK_WORKSPACE_MARGIN_MM
                 for block in raw_blocks:
-                    wx, wy = transform_to_world(homography, block["center_x"], block["center_y"])
+                    # Position/size/rotation from the ground-contact edges -
+                    # also the cube-size check that rejects non-blocks.
+                    if not measure_block_footprint(block, homography, STREAM_WIDTH, STREAM_HEIGHT):
+                        continue
+                    wx, wy = block["world_x_mm"], block["world_y_mm"]
                     if -margin <= wx <= MARKER_SPACING_X_MM + margin and -margin <= wy <= MARKER_SPACING_Y_MM + margin:
-                        block["world_x_mm"] = round(wx, 1)
-                        block["world_y_mm"] = round(wy, 1)
                         in_bounds.append(block)
                 filtered_blocks = in_bounds
             else:
                 filtered_blocks = []
+            for block in filtered_blocks:
+                block.pop("_contour", None)
             blocks = update_block_tracks(filtered_blocks)
             draw_color_blocks(stream_frame, blocks)
         except Exception as exc:
