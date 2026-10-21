@@ -25,9 +25,23 @@ Environment:
   ROBOT_ARM_STREAM_HEIGHT        default 480
   ROBOT_ARM_DETECTION_FPS        default 5     (camera + processing rate)
   ROBOT_ARM_COLOR_DETECTION      default 1     (set 0 to disable colour block detection)
-  ROBOT_ARM_TRACK_STABILITY_FRAMES  default 5  (frames a marker/block must be
+  ROBOT_ARM_TRACK_STABILITY_FRAMES  default 5  (frames a colour block must be
                                                  consistently present/absent
                                                  before it is shown/hidden)
+  ROBOT_ARM_MARKER_CONFIRM_FRAMES  default 2   (consecutive sightings before an
+                                                 ArUco marker is shown)
+  ROBOT_ARM_MARKER_HOLD_FRAMES   default 25    (consecutive misses before an
+                                                 ArUco marker is dropped - ~5 s)
+  ROBOT_ARM_ARUCO_EXPECTED_IDS   default 0,1,2,3 (the mat's marker IDs; other
+                                                 IDs are ignored, a missing one
+                                                 triggers the far-marker pass)
+  ROBOT_ARM_ARUCO_FAR_GAMMA      default 2.2   (far-marker fallback: gamma to
+                                                 darken washed-out blacks)
+  ROBOT_ARM_ARUCO_FAR_STRETCH    default 2.0   (far-marker fallback: vertical
+                                                 stretch to undo foreshortening;
+                                                 0 disables the fallback)
+  ROBOT_ARM_ARUCO_FAR_BAND       default 0.6   (fraction of the frame, from the
+                                                 top, the fallback searches)
   ROBOT_ARM_CAMERA_EXPOSURE      unset by default (auto-exposure). Set to a
                                   manual exposure value (V4L2 driver units,
                                   try 100-300) to stop glare off the mat from
@@ -102,6 +116,34 @@ BLOCK_MIN_SOLIDITY = float(os.environ.get("ROBOT_ARM_BLOCK_MIN_SOLIDITY", "0.65"
 # before it is added to (or removed from) the output - smooths out one-off
 # missed detections instead of letting overlays flicker on and off.
 TRACK_STABILITY_FRAMES = max(1, int(os.environ.get("ROBOT_ARM_TRACK_STABILITY_FRAMES", "5")))
+# ArUco corner markers are static, so they get their own, more forgiving
+# debounce than the colour blocks: confirmed after MARKER_CONFIRM_FRAMES
+# consecutive sightings, and only dropped after MARKER_HOLD_FRAMES
+# consecutive misses (~5 s at the default 5 fps). A marker at the far edge
+# of a low-mounted camera's view decodes only every few frames, and this
+# keeps it (and the homography built from it) from flickering in and out.
+MARKER_CONFIRM_FRAMES = max(1, int(os.environ.get("ROBOT_ARM_MARKER_CONFIRM_FRAMES", "2")))
+MARKER_HOLD_FRAMES = max(1, int(os.environ.get("ROBOT_ARM_MARKER_HOLD_FRAMES", "25")))
+# The marker IDs that make up the mat. Anything else that decodes is dropped
+# (the far-marker fallback below is deliberately permissive and occasionally
+# produces a stray ID), and a missing one of these is what triggers the
+# fallback pass. Set to "" to accept every ID and never run the fallback.
+ARUCO_EXPECTED_IDS = {
+    int(v) for v in os.environ.get("ROBOT_ARM_ARUCO_EXPECTED_IDS", "0,1,2,3").split(",") if v.strip() != ""
+}
+# Far-marker fallback pass. When the camera sits low and looks across the
+# mat, the markers at the far edge are foreshortened to ~25 px tall (each
+# cell ~4 px) and their blacks wash out to grey, and the normal CLAHE pass
+# can't decode them. If any expected ID is missing after the normal pass,
+# the upper ARUCO_FAR_BAND fraction of the frame is re-run through a gamma
+# curve (darkens the washed-out blacks back to black) and a vertical
+# stretch (undoes the foreshortening so the cells are square again).
+# Measured on real frames from the current camera position: the normal pass
+# found marker 1 in 0/7 frames; gamma 2.2 + 2x stretch found it in 6/7 and
+# marker 0 in 7/7. Stretch 0 disables the fallback.
+ARUCO_FAR_GAMMA = float(os.environ.get("ROBOT_ARM_ARUCO_FAR_GAMMA", "2.2"))
+ARUCO_FAR_STRETCH = float(os.environ.get("ROBOT_ARM_ARUCO_FAR_STRETCH", "2.0"))
+ARUCO_FAR_BAND = min(1.0, max(0.1, float(os.environ.get("ROBOT_ARM_ARUCO_FAR_BAND", "0.6"))))
 # Max centroid distance (normalised 0-1 image coords) for matching a colour
 # block detection to an existing track between frames.
 BLOCK_MATCH_MAX_DIST = float(os.environ.get("ROBOT_ARM_BLOCK_MATCH_MAX_DIST", "0.08"))
@@ -370,6 +412,79 @@ def find_aruco_markers(gray, detectors):
         if ids is not None and len(ids) > 0:
             return corners, ids, label
     return None, None, None
+
+
+def filter_expected_markers(corners, ids):
+    """Drop any decoded ID that isn't one of ARUCO_EXPECTED_IDS (no-op if unset)."""
+    if ids is None or not ARUCO_EXPECTED_IDS:
+        return corners, ids
+    keep = [i for i, marker_id in enumerate(ids.flatten()) if int(marker_id) in ARUCO_EXPECTED_IDS]
+    if len(keep) == len(ids):
+        return corners, ids
+    if not keep:
+        return None, None
+    return [corners[i] for i in keep], np.array([int(ids.flatten()[i]) for i in keep]).reshape(-1, 1)
+
+
+_far_gamma_lut = None
+
+
+def far_marker_gray(frame_gray):
+    """
+    The far-marker fallback's input: gamma-darkened and vertically stretched
+    copy of the top ARUCO_FAR_BAND of the plain grey frame (see the
+    ARUCO_FAR_* settings). Returns (image, stretch_y) - corners found in it
+    map back to the original frame by dividing y by stretch_y.
+    """
+    global _far_gamma_lut
+    if _far_gamma_lut is None:
+        _far_gamma_lut = np.array(
+            [((i / 255.0) ** ARUCO_FAR_GAMMA) * 255 for i in range(256)]
+        ).astype("uint8")
+    band_rows = max(1, int(frame_gray.shape[0] * ARUCO_FAR_BAND))
+    band = cv2.LUT(frame_gray[0:band_rows, :], _far_gamma_lut)
+    stretched = cv2.resize(band, None, fx=1.0, fy=ARUCO_FAR_STRETCH, interpolation=cv2.INTER_LINEAR)
+    return stretched, ARUCO_FAR_STRETCH
+
+
+def find_far_markers(frame, detectors, found_ids):
+    """
+    Second detection pass for expected markers the normal pass missed (see
+    ARUCO_FAR_GAMMA/STRETCH/BAND). Returns (corners, ids) for only the
+    missing IDs, with corners mapped back to the original frame, or
+    (None, None) if nothing new was found or the fallback is disabled.
+    """
+    if ARUCO_FAR_STRETCH <= 0 or not ARUCO_EXPECTED_IDS or not detectors:
+        return None, None
+    missing = ARUCO_EXPECTED_IDS - set(found_ids)
+    if not missing:
+        return None, None
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    far_gray, stretch_y = far_marker_gray(gray)
+    corners, ids, _label = find_aruco_markers(far_gray, detectors)
+    if ids is None:
+        return None, None
+    new_corners, new_ids = [], []
+    for index, marker_id in enumerate(ids.flatten()):
+        marker_id = int(marker_id)
+        if marker_id not in missing or marker_id in new_ids:
+            continue
+        mapped = corners[index].copy()
+        mapped[..., 1] /= stretch_y
+        new_corners.append(mapped)
+        new_ids.append(marker_id)
+    if not new_ids:
+        return None, None
+    return new_corners, np.array(new_ids).reshape(-1, 1)
+
+
+def merge_marker_detections(corners_a, ids_a, corners_b, ids_b):
+    """Concatenate two (corners, ids) detection results (either may be empty)."""
+    if ids_b is None:
+        return corners_a, ids_a
+    if ids_a is None:
+        return corners_b, ids_b
+    return list(corners_a) + list(corners_b), np.vstack([ids_a.reshape(-1, 1), ids_b.reshape(-1, 1)])
 
 
 def draw_aruco_overlays(frame, corners, ids):
@@ -648,10 +763,11 @@ marker_tracks = {}
 def update_marker_tracks(corners, ids):
     """
     Debounce ArUco detections across frames: a marker only enters the
-    confirmed set after being seen TRACK_STABILITY_FRAMES times in a row,
-    and only leaves it after being missing that many frames in a row (using
-    its last known corners in between). Returns (corners, ids) built from
-    the confirmed set only, in the same shapes detectMarkers() returns.
+    confirmed set after being seen MARKER_CONFIRM_FRAMES times in a row,
+    and only leaves it after being missing MARKER_HOLD_FRAMES frames in a
+    row (using its last known corners in between - the markers are static,
+    so a stale position is still the right one). Returns (corners, ids)
+    built from the confirmed set only, in the shapes detectMarkers() returns.
     """
     seen_ids = set()
     if ids is not None:
@@ -661,10 +777,10 @@ def update_marker_tracks(corners, ids):
             track = marker_tracks.setdefault(
                 marker_id, {"present": 0, "absent": 0, "confirmed": False, "corners": None}
             )
-            track["present"] = min(track["present"] + 1, TRACK_STABILITY_FRAMES)
+            track["present"] = min(track["present"] + 1, MARKER_CONFIRM_FRAMES)
             track["absent"] = 0
             track["corners"] = corners[index]
-            if track["present"] >= TRACK_STABILITY_FRAMES:
+            if track["present"] >= MARKER_CONFIRM_FRAMES:
                 track["confirmed"] = True
 
     for marker_id, track in list(marker_tracks.items()):
@@ -672,7 +788,7 @@ def update_marker_tracks(corners, ids):
             continue
         track["present"] = 0
         track["absent"] += 1
-        if track["absent"] >= TRACK_STABILITY_FRAMES:
+        if track["absent"] >= MARKER_HOLD_FRAMES:
             del marker_tracks[marker_id]
 
     confirmed_ids = [mid for mid, track in marker_tracks.items() if track["confirmed"]]
@@ -949,6 +1065,12 @@ def process_frame(frame, detectors):
         gray = prepare_gray_for_aruco(annotated)
         if detectors:
             corners, ids, dictionary_name = find_aruco_markers(gray, detectors)
+            corners, ids = filter_expected_markers(corners, ids)
+            # Far-marker fallback for any expected ID the normal pass missed
+            # (runs on the clean frame, not the annotated copy).
+            found_ids = [int(v) for v in ids.flatten()] if ids is not None else []
+            far_corners, far_ids = find_far_markers(frame, detectors, found_ids)
+            corners, ids = merge_marker_detections(corners, ids, far_corners, far_ids)
         corners, ids = update_marker_tracks(corners, ids)
         if ids is not None and len(ids) > 0:
             draw_aruco_overlays(annotated, corners, ids)
