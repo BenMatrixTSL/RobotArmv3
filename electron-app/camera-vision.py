@@ -108,11 +108,13 @@ MARKER_SPACING_X_MM = float(os.environ.get("ROBOT_ARM_MARKER_SPACING_X_MM", "240
 MARKER_SPACING_Y_MM = float(os.environ.get("ROBOT_ARM_MARKER_SPACING_Y_MM", "230"))
 # Colour blocks are only reported when their world position falls within the
 # marker-defined mat (0..MARKER_SPACING_X_MM, 0..MARKER_SPACING_Y_MM), plus
-# this margin. Keeps the arm itself (or anything else outside the mat) from
-# being picked up as a false-positive block. Requires at least 3 markers
-# visible (a homography) - with fewer, no world position can be computed and
-# every colour blob is discarded rather than reported unfiltered.
-BLOCK_WORKSPACE_MARGIN_MM = float(os.environ.get("ROBOT_ARM_BLOCK_WORKSPACE_MARGIN_MM", "15"))
+# this margin. The mat extends well past the markers, so the margin is
+# generous - rejecting the arm itself and background colour patches is now
+# mainly the job of the cube-size footprint test (BLOCK_SIZE_MM below), not
+# this bound. Requires at least 3 markers visible (a homography) - with
+# fewer, no world position can be computed and every colour blob is
+# discarded rather than reported unfiltered.
+BLOCK_WORKSPACE_MARGIN_MM = float(os.environ.get("ROBOT_ARM_BLOCK_WORKSPACE_MARGIN_MM", "60"))
 JPEG_QUALITY = 80
 MIN_BLOCK_AREA = 300
 # Upper area bound (px² on the 640x480 detection frame). Only a coarse
