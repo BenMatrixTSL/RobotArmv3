@@ -1033,7 +1033,7 @@
             </p>
             <p class="info-text">
                 The tab shows how forward kinematics builds up from the base to the end effector. For each joint
-                one transform T<sub>i</sub> = Origin<sub>i</sub> &middot; Rotation(axis<sub>i</sub>, angle<sub>i</sub>) is
+                one transform Combined<sub>i</sub> = Translation<sub>i</sub> &middot; Rotation(axis<sub>i</sub>, angle<sub>i</sub>) is
                 formed, and multiplying them in order gives the cumulative transform - where that joint's frame,
                 and finally the tool tip, sits in base coordinates. Every matrix below updates live as the arm
                 moves, or from typed angles when Simulate joint angles is ticked.
@@ -1063,8 +1063,8 @@
                     The last column holds the translation in millimetres (from each joint's origin; internally stored in metres).
                     The bottom row is always 0 0 0 1 - it is what lets one 4&times;4 matrix carry both a rotation and a
                     translation, so chaining frames becomes plain matrix multiplication.
-                    In each step below: <strong>Origin &times; Rotation(axis, &theta;) = T<sub>i</sub></strong>, then the running product
-                    multiplies T<sub>i</sub> onto everything before it to give that frame's position in the base frame.
+                    In each step below: <strong>Translation &times; Rotation(axis, &theta;) = Combined<sub>i</sub></strong>, then the running product
+                    multiplies Combined<sub>i</sub> onto everything before it to give that frame's position in the base frame.
                 </p>
                 <table class="kinematics-matrix">
                     <tbody>
@@ -1837,7 +1837,7 @@
     <script src="cameraView.js?v=20260616"></script>
     <!-- Main Application: UI logic and event handlers -->
     <script src="tabIcons.js?v=20261028"></script>
-    <script src="app.js?v=20261028g"></script>
+    <script src="app.js?v=20261028h"></script>
     <!-- On-Screen Keyboard: touch keyboard for kiosk mode (no system OSK in Chromium kiosk) -->
     <script src="keyboard.js?v=20260930"></script>
 

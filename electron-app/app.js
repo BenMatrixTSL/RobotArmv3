@@ -440,8 +440,8 @@ function buildKinematicsStepCards(display, steps, revoluteCount) {
     html += '<div class="kinematics-steps">';
     const infoAttr = (text) => ` data-info="${String(text).replace(/&/g, '&amp;').replace(/"/g, '&quot;')}"`;
     html += `<h3${infoAttr(
-        'Each joint contributes one transform T<sub>i</sub> = Origin<sub>i</sub> × Rotation(axis<sub>i</sub>, θ<sub>i</sub>). ' +
-        'The running product T<sub>0…i</sub> = T<sub>0…i−1</sub> × T<sub>i</sub> is where that joint\'s frame ends up in the base frame, ' +
+        'Each joint contributes one transform Combined<sub>i</sub> = Translation<sub>i</sub> × Rotation(axis<sub>i</sub>, θ<sub>i</sub>). ' +
+        'The running product T<sub>0…i</sub> = T<sub>0…i−1</sub> × Combined<sub>i</sub> is where that joint\'s frame ends up in the base frame, ' +
         'and the last card\'s running product is the tool-tip pose the rest of the app uses. ' +
         'Rotation entries are unitless; the last column is translation in millimetres. ' +
         'Each card is colour-coded: origin values from the URDF, the axis the joint turns about, the entries the angle θ changes, ' +
@@ -474,7 +474,7 @@ function buildKinematicsStepCards(display, steps, revoluteCount) {
             return '';
         };
         const originClass = (r, c) => (r < 3 && c === 3) ? 'kin-hl-origin' : (hasRpy && r < 3 && c < 3 ? 'kin-hl-origin-rot' : '');
-        // T_i = Origin × Rotation: the translation is the origin's (a pure
+        // Combined_i = Translation × Rotation: the translation is the origin's (a pure
         // rotation adds none); the 3×3 is Origin's rpy rotation × Rotation(axis, θ).
         const jointClass = (r, c) => (r < 3 && c === 3) ? 'kin-hl-origin' : (r < 3 && c < 3 ? 'kin-hl-angle' : '');
         const runningClass = (r, c) => (r < 3 && c === 3) ? 'kin-hl-position' : '';
@@ -515,14 +515,14 @@ function buildKinematicsStepCards(display, steps, revoluteCount) {
             html += kinematicsRotationDerivationHtml(s, axis, nonZero, k, rotationClass);
         }
 
-        // Joint transform: Origin × Rotation = T_i   (tool steps have no rotation)
+        // Joint transform: Translation × Rotation = Combined_i   (tool steps have no rotation)
         html += '<div class="kin-matrix-row">';
         if (isJoint) {
-            html += kinematicsMatrixHtml(`kinStep${s}O`, 'Origin<sub>' + (s + 1) + '</sub>', originClass);
+            html += kinematicsMatrixHtml(`kinStep${s}O`, 'Translation<sub>' + (s + 1) + '</sub> (URDF origin)', originClass);
             html += '<div class="kin-op">×</div>';
             html += kinematicsMatrixHtml(`kinStep${s}R`, `Rotation(axis, <span id="kinStep${s}Theta">–</span>)`, rotationClass);
             html += '<div class="kin-op">=</div>';
-            html += kinematicsMatrixHtml(`kinStep${s}J`, 'T<sub>' + (s + 1) + '</sub> (this joint)', jointClass);
+            html += kinematicsMatrixHtml(`kinStep${s}J`, 'Combined<sub>' + (s + 1) + '</sub> (this joint)', jointClass);
         } else {
             html += kinematicsMatrixHtml(`kinStep${s}J`, 'T<sub>tool</sub> (fixed offset)', originClass);
         }
@@ -530,7 +530,7 @@ function buildKinematicsStepCards(display, steps, revoluteCount) {
 
         // Running product
         html += '<div class="kin-matrix-row kin-running-row">';
-        html += `<div class="kin-op kin-running-label">${s === 0 ? 'T<sub>0…1</sub> = T<sub>1</sub>' : `T<sub>0…${isJoint ? s + 1 : 'tool'}</sub> = T<sub>0…${s}</sub> × T<sub>${isJoint ? s + 1 : 'tool'}</sub>`} →</div>`;
+        html += `<div class="kin-op kin-running-label">${s === 0 ? 'T<sub>0…1</sub> = Combined<sub>1</sub>' : `T<sub>0…${isJoint ? s + 1 : 'tool'}</sub> = T<sub>0…${s}</sub> × Combined<sub>${isJoint ? s + 1 : 'tool'}</sub>`} →</div>`;
         html += kinematicsMatrixHtml(`kinStep${s}M`, 'Running product (base → this frame)', runningClass);
         html += '</div>';
 
@@ -681,16 +681,16 @@ function kinematicsStepInfoText(s, isJoint, name, axis, nonZero, k, hasRpy, isLa
     } else {
         text += 'a tilted axis, so its rotation matrix uses Rodrigues\' formula with c = cos θ, s = sin θ and v = 1 − c. ';
     }
-    text += '<strong>Origin<sub>' + n + '</sub></strong> is the fixed offset from ' + prev + ' given by the URDF: the xyz (in metres, ' +
+    text += '<strong>Translation<sub>' + n + '</sub></strong> is the fixed offset from ' + prev + ' given by the URDF origin: the xyz (in metres, ' +
         'shown here in mm) is the link length' + (hasRpy ? ', and its rpy turns the frame before the joint rotates' : '') + '. ';
     text += '<strong>Rotation(axis, θ)</strong> is built from the joint angle, θ = angle × π/180. ';
     if (nonZero === 1) {
         text += 'The ' + axisName + ' row and column stay fixed (the diagonal entry is 1) and cos θ and sin θ fill the other 2×2 block' +
             (neg ? ' with the sine signs swapped, because a negative axis direction rotates by −θ' : '') + '. ';
     }
-    text += '<strong>T<sub>' + n + '</sub> = Origin<sub>' + n + '</sub> × Rotation</strong> is this joint\'s complete transform. ' +
-        'The <strong>running product</strong> ' + (s === 0 ? 'T<sub>0…1</sub> = T<sub>1</sub>' :
-            'T<sub>0…' + n + '</sub> = T<sub>0…' + s + '</sub> × T<sub>' + n + '</sub>') +
+    text += '<strong>Combined<sub>' + n + '</sub> = Translation<sub>' + n + '</sub> × Rotation</strong> is this joint\'s complete transform. ' +
+        'The <strong>running product</strong> ' + (s === 0 ? 'T<sub>0…1</sub> = Combined<sub>1</sub>' :
+            'T<sub>0…' + n + '</sub> = T<sub>0…' + s + '</sub> × Combined<sub>' + n + '</sub>') +
         ' chains every transform from the base; its last column is where this joint\'s frame sits in base coordinates (the Position row). ' +
         'Change the angle and only the highlighted entries move' + (isLast ? '; this is the final frame, so it is the tool-tip pose' : '') + '.';
     return text;
