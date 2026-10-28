@@ -25,6 +25,7 @@ class RobotArmClient {
         this.serverStatusIntervalMs = 100;
         this.lastStatusPushAt = 0;
         this.hasArmControl = false;
+        this.hadArmControlBeforeDrop = false;
         this.controlHolder = null;
         this.controlLocked = false;
         this.controlLockedUntil = null;
@@ -116,6 +117,9 @@ class RobotArmClient {
                     this.clearPendingRequests('Connection closed');
                     this.isConnected = false;
                     this.isConnecting = false;
+                    // Remembered so a reconnect can restore a session this
+                    // client owned, without taking control it never had.
+                    this.hadArmControlBeforeDrop = this.hasArmControl;
                     this.hasArmControl = false;
                     this.controlHolder = null;
                     this.controlLocked = false;

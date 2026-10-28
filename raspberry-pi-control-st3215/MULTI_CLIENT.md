@@ -44,20 +44,35 @@ When a client disconnects, control is released automatically (including a locked
 duration (`durationMs`, default 15 min, capped at 60 min). While locked:
 
 - Other clients' `takeControl` — even with `force: true` — is rejected unless they supply
-  the correct `password` (hardcoded server-side as `MatrixRA123`, same lightweight/local-network
-  style as the Pi SSH credentials in the root `CLAUDE.md`).
+  the correct `password` (the control password - see below).
 - The 5-minute idle-control timeout is suspended, so the lock survives periods with no
   movement commands.
 - The lock ends when the holder calls `releaseControl`/`unlockControl`, when its duration
   elapses, or when the holder disconnects — whichever comes first.
 
-`lockControl` and `unlockControl` both require `password: "MatrixRA123"` (the holder can
+`lockControl` and `unlockControl` both require the control password (the holder can
 `unlockControl` without one — it's their own lock).
+
+### Control password
+
+The same password locks control and allows servo EEPROM writes (`writeServoEeprom`,
+`writeServoEepromRaw` - the Calibration tab). It is **not in the repo**: it lives on the Pi
+in `/etc/robot-arm-st3215/control-password`, readable only by root and the service user,
+so students who can read the source cannot find it. Override the path with
+`ROBOT_ARM_CONTROL_PASSWORD_FILE` if needed.
+
+- Set or change it on the Pi: `sudo bash set-control-password.sh` (install-service.sh
+  asks for one on first install). The server reads the file on every check, so a change
+  takes effect without a restart.
+- If the file is missing, every password check fails - lock and EEPROM writes are
+  disabled rather than left open, and `verifyPassword` says no password is set up.
 
 ### Electron app
 
-- Normal desktop app: calls **`takeControl('electron')`** on connect.
-- **Kiosk** (`?kiosk=1`): does **not** take control (read-only display).
+- Normal desktop app: connecting does **not** take control. The user presses
+  **Take control** on the Connection tab (`takeControl('electron')`). If the link drops
+  and comes back, the app re-takes control only if it held control before the drop.
+- **Kiosk** (`?kiosk=1`): never takes control (read-only display).
 
 ### Multiple kiosks
 
@@ -66,7 +81,9 @@ Safe: they only receive pushed status. They should not call `takeControl`.
 ### Desktop + kiosk
 
 1. Open kiosk displays first (read-only).
-2. Open desktop app and connect — it takes control and can move the arm.
+2. Open desktop app, connect, then press Take control to move the arm. Other desktop
+   apps can connect at the same time and watch; refreshing one of them no longer
+   steals control.
 
 ## Client polling
 

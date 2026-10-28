@@ -2576,10 +2576,15 @@ function initializeConnection() {
 
             robotArmClient.onControlUpdate = updateArmControlDisplay;
 
+            // Connecting never takes control: a page refresh on a remote
+            // device used to grab the arm from whoever had it. Control is
+            // taken only by the Take control button (or restored below if
+            // this same client held it when the link dropped).
             robotArmClient.onReconnected = async function() {
                 const isKioskView = window.location.search.indexOf('kiosk=1') >= 0;
-                if (isKioskView) {
+                if (isKioskView || !robotArmClient.hadArmControlBeforeDrop) {
                     await refreshArmControlStatus();
+                    showAppMessage('Reconnected');
                     return;
                 }
                 try {
@@ -2587,33 +2592,21 @@ function initializeConnection() {
                     updateArmControlDisplay(control);
                     showAppMessage('Reconnected - arm control restored');
                 } catch (reconnectControlError) {
-                    console.warn('Reconnect: could not take arm control:', reconnectControlError.message);
+                    console.warn('Reconnect: could not restore arm control:', reconnectControlError.message);
                     await refreshArmControlStatus();
                     showAppMessage('Reconnected (read-only): ' + reconnectControlError.message);
                 }
             };
 
             const isKioskView = window.location.search.indexOf('kiosk=1') >= 0;
-            if (!isKioskView) {
-                try {
-                    const control = await robotArmClient.takeControl('electron');
-                    updateArmControlDisplay(control);
-                    if (control && (control.youHaveControl || control.hasControl)) {
-                        console.log('Arm control acquired');
-                    } else if (anotherClientHasControl(control)) {
-                        showAppMessage('Connected (read-only): arm is controlled by ' + formatControlHolderLabel(control));
-                    } else {
-                        showAppMessage('Connected: robot is available for control');
-                    }
-                } catch (controlError) {
-                    console.warn('Could not take arm control (another app may be controlling):', controlError.message);
-                    showAppMessage('Connected (read-only): ' + controlError.message);
-                    await refreshArmControlStatus();
-                }
-            } else {
+            const control = await refreshArmControlStatus();
+            if (isKioskView) {
                 console.log('Kiosk view: read-only - not taking arm control');
-                await refreshArmControlStatus();
                 showAppMessage('Connected (read-only): kiosk view does not take arm control');
+            } else if (control && anotherClientHasControl(control)) {
+                showAppMessage('Connected (read-only): arm is controlled by ' + formatControlHolderLabel(control));
+            } else {
+                showAppMessage('Connected - press Take control on the Connection tab to move the arm');
             }
 
             startControlStatusUpdates();
@@ -3135,15 +3128,17 @@ async function unlockArmControl() {
 async function refreshArmControlStatus() {
     if (!robotArmClient.isConnected) {
         updateArmControlDisplay(null);
-        return;
+        return null;
     }
 
     try {
         const info = await robotArmClient.getControlStatus();
         updateArmControlDisplay(info);
+        return info;
     } catch (error) {
         console.warn('Could not refresh arm control status:', error.message);
         updateArmControlDisplay(null);
+        return null;
     }
 }
 
