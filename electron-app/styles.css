@@ -4870,3 +4870,49 @@ body.kiosk-mode .tab-button.active {
     margin: 0 0 8px 0;
     color: #2c3e50;
 }
+
+/* ---- Kinematics step schematic ----
+   Static side view of the arm beside each step card's table, with the
+   card's joint (or the tool) highlighted. */
+.kin-step-top {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.kin-step-top .kinematics-step-info {
+    flex: 1 1 320px;
+    min-width: 0;
+}
+
+.kin-schematic-wrap {
+    flex: 0 0 auto;
+    background: #fff;
+    border: 1px solid #e3e6ea;
+    border-radius: 6px;
+    padding: 4px;
+}
+
+.kin-schematic {
+    display: block;
+}
+
+.kin-sch-ground { stroke: #b0b7bd; stroke-width: 2; stroke-linecap: round; }
+.kin-sch-base   { fill: #8c959d; }
+.kin-sch-link   { stroke: #95a5a6; stroke-width: 7; stroke-linecap: round; }
+.kin-sch-link-active { stroke: #7f8c8d; }
+.kin-sch-joint  { fill: #fff; stroke: #5d6d7e; stroke-width: 2.5; }
+.kin-sch-fixed  { fill: #5d6d7e; }
+.kin-sch-tool   { fill: #fff; stroke: #5d6d7e; stroke-width: 2.5; stroke-linejoin: round; }
+.kin-sch-active { fill: #ffe4c4; stroke: #e67e22; stroke-width: 3; }
+.kin-sch-ring   { fill: none; stroke: #e67e22; stroke-width: 2; opacity: 0.45; }
+.kin-sch-axis   { fill: none; stroke: #1e6b2a; stroke-width: 2; stroke-linecap: round; }
+.kin-sch-axis-line { stroke-dasharray: 4 3; }
+.kin-sch-axis-head { fill: #1e6b2a; stroke: none; }
+.kin-sch-label  { font: 700 13px 'Segoe UI', Arial, sans-serif; fill: #8a4a0f; text-anchor: middle; }
+.kin-sch-key    { font: 10px 'Segoe UI', Arial, sans-serif; fill: #95a5a6; }
+
+body.touch-mode .kin-schematic-wrap {
+    margin: 0 auto;
+}

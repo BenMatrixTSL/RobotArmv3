@@ -488,6 +488,7 @@ function buildKinematicsStepCards(display, steps, revoluteCount) {
         } else {
             html += `<h4${stepInfo}>${isJoint ? `Joint ${s + 1}` : 'Tool'} - ${name} (step ${step.index})</h4>`;
         }
+        html += '<div class="kin-step-top">';
         html += '<table class="kinematics-step-info"><tbody>';
         if (isJoint) {
             if (useSimulatedAngles) {
@@ -505,6 +506,8 @@ function buildKinematicsStepCards(display, steps, revoluteCount) {
         }
         html += `<tr><td>${swatch('kin-hl-position', 'Position')} (mm)</td><td id="kinStep${s}Pos">–</td></tr>`;
         html += '</tbody></table>';
+        html += '<div class="kin-schematic-wrap">' + kinematicsArmSchematicSvg(steps, s, revoluteCount) + '</div>';
+        html += '</div>';
 
         // How θ produces the nine rotation entries: the symbolic R for this axis,
         // with the live cos θ / sin θ values it is evaluated from.
@@ -542,6 +545,109 @@ function buildKinematicsStepCards(display, steps, revoluteCount) {
 
     // The status span was just re-created - fill it in
     if (typeof renderEndToolPanel === 'function') renderEndToolPanel();
+}
+
+/**
+ * A small static side-view schematic of the arm (URDF X to the right, Z up,
+ * zero pose) for a Kinematics step card, with one joint - or the tool tip -
+ * highlighted. Link positions are accumulated from the step origins, so the
+ * drawing follows whatever URDF is loaded. Nothing animates.
+ * @param {Array} steps - FK steps (origin xyz in metres, axis)
+ * @param {number} highlight - index into steps to highlight
+ * @param {number} revoluteCount - steps before this index are joints
+ * @returns {string} SVG markup
+ */
+function kinematicsArmSchematicSvg(steps, highlight, revoluteCount) {
+    // Frame positions at zero pose: running sum of the origins (x and z only).
+    const pts = [];
+    let x = 0, z = 0;
+    steps.forEach(function (step) {
+        const o = step.origin || {};
+        x += (o.x || 0) * 1000;
+        z += (o.z || 0) * 1000;
+        pts.push({ x: x, z: z });
+    });
+    if (!pts.length) return '';
+
+    // Fit into the view box with a margin, keeping the base at the bottom.
+    const W = 180, H = 200, M = 22;
+    const xs = pts.map(function (p) { return p.x; }).concat([0]);
+    const zs = pts.map(function (p) { return p.z; }).concat([0]);
+    const minX = Math.min.apply(null, xs), maxX = Math.max.apply(null, xs);
+    const minZ = Math.min.apply(null, zs), maxZ = Math.max.apply(null, zs);
+    const scale = Math.min((W - 2 * M) / Math.max(maxX - minX, 1), (H - 2 * M) / Math.max(maxZ - minZ, 1));
+    const sx = function (v) { return M + (v - minX) * scale + ((W - 2 * M) - (maxX - minX) * scale) / 2; };
+    const sz = function (v) { return H - M - (v - minZ) * scale; };
+
+    const hl = steps[highlight];
+    const hlIsJoint = highlight < revoluteCount;
+    const hlPt = pts[highlight];
+    const baseX = sx(0), baseZ = sz(0);
+
+    let svg = '<svg class="kin-schematic" viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" ' +
+        'role="img" aria-label="Arm schematic highlighting ' + (hlIsJoint ? 'joint ' + (highlight + 1) : 'the tool') + '">';
+
+    // Ground and base plinth
+    svg += '<line x1="' + (baseX - 40) + '" y1="' + baseZ + '" x2="' + (baseX + 40) + '" y2="' + baseZ + '" class="kin-sch-ground"/>';
+    svg += '<rect x="' + (baseX - 14) + '" y="' + (baseZ - 6) + '" width="28" height="6" rx="2" class="kin-sch-base"/>';
+
+    // Links: base -> frame 1 -> ... -> last frame
+    let prev = { x: baseX, z: baseZ };
+    pts.forEach(function (p, i) {
+        const cx = sx(p.x), cz = sz(p.z);
+        const active = i === highlight || i === highlight - 1 && false;
+        svg += '<line x1="' + prev.x + '" y1="' + prev.z + '" x2="' + cx + '" y2="' + cz + '" class="kin-sch-link' +
+            (i === highlight ? ' kin-sch-link-active' : '') + '"/>';
+        prev = { x: cx, z: cz };
+    });
+
+    // Joints (circles) and tool tip (triangle)
+    pts.forEach(function (p, i) {
+        const cx = sx(p.x), cz = sz(p.z);
+        const isJoint = i < revoluteCount;
+        const active = i === highlight;
+        if (isJoint) {
+            svg += '<circle cx="' + cx + '" cy="' + cz + '" r="' + (active ? 7 : 4.5) + '" class="kin-sch-joint' + (active ? ' kin-sch-active' : '') + '"/>';
+        } else if (i === pts.length - 1) {
+            svg += '<path d="M' + (cx - 6) + ' ' + (cz - 9) + ' L' + (cx + 6) + ' ' + (cz - 9) + ' L' + cx + ' ' + (cz + 3) + ' Z" class="kin-sch-tool' +
+                (active ? ' kin-sch-active' : '') + '"/>';
+        } else {
+            svg += '<circle cx="' + cx + '" cy="' + cz + '" r="3" class="kin-sch-fixed' + (active ? ' kin-sch-active' : '') + '"/>';
+        }
+    });
+
+    // Highlight: glow ring, axis cue and label
+    if (hlPt) {
+        const cx = sx(hlPt.x), cz = sz(hlPt.z);
+        svg += '<circle cx="' + cx + '" cy="' + cz + '" r="13" class="kin-sch-ring"/>';
+        if (hlIsJoint && hl.axis) {
+            const a = hl.axis;
+            const comps = [Math.abs(a.x || 0), Math.abs(a.y || 0), Math.abs(a.z || 0)];
+            const k = comps.indexOf(Math.max.apply(null, comps));
+            if (k === 1) {
+                // Pitch about Y (out of the page): rotation arc in the drawing plane
+                svg += '<path d="M' + (cx - 17) + ' ' + (cz + 6) + ' A18 18 0 1 1 ' + (cx + 17) + ' ' + (cz + 6) + '" class="kin-sch-axis"/>';
+                svg += '<path d="M' + (cx + 17) + ' ' + (cz + 6) + ' l-6 -1 l4 5 z" class="kin-sch-axis-head"/>';
+            } else if (k === 2) {
+                // Yaw/roll about Z: vertical dashed axis with a small ellipse
+                svg += '<line x1="' + cx + '" y1="' + (cz - 26) + '" x2="' + cx + '" y2="' + (cz + 26) + '" class="kin-sch-axis kin-sch-axis-line"/>';
+                svg += '<ellipse cx="' + cx + '" cy="' + (cz - 18) + '" rx="12" ry="4" class="kin-sch-axis"/>';
+            } else {
+                // Roll about X: horizontal dashed axis with a small ellipse
+                svg += '<line x1="' + (cx - 26) + '" y1="' + cz + '" x2="' + (cx + 26) + '" y2="' + cz + '" class="kin-sch-axis kin-sch-axis-line"/>';
+                svg += '<ellipse cx="' + (cx + 18) + '" cy="' + cz + '" rx="4" ry="12" class="kin-sch-axis"/>';
+            }
+        }
+        const label = hlIsJoint ? 'J' + (highlight + 1) : 'Tool';
+        const lx = Math.min(W - 22, Math.max(18, cx + (cx > W / 2 ? -30 : 30)));
+        const lz = Math.max(12, cz - 20);
+        svg += '<text x="' + lx + '" y="' + lz + '" class="kin-sch-label">' + label + '</text>';
+    }
+
+    // Axis key in the corner
+    svg += '<text x="6" y="' + (H - 5) + '" class="kin-sch-key">X →  Z ↑</text>';
+    svg += '</svg>';
+    return svg;
 }
 
 /**
