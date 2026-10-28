@@ -9876,16 +9876,20 @@ function initializeInfoPopovers() {
         return el && el.tagName === 'P' && el.classList.contains('info-text')
             && !el.id && !el.querySelector('[id]');
     };
+    // A title can also carry its text in a data-info attribute, for cards
+    // that never had a paragraph (pendant cards, table headings).
     const groups = [];
-    document.querySelectorAll('h2, h3, h4').forEach(function (heading) {
+    document.querySelectorAll('h2, h3, h4, .pendant2-card-title, .pendant2-jog-label').forEach(function (heading) {
         const paragraphs = [];
         let next = heading.nextElementSibling;
         while (isInfoParagraph(next)) {
             paragraphs.push(next);
             next = next.nextElementSibling;
         }
-        if (paragraphs.length && paragraphs.some(function (p) { return p.textContent.trim(); })) {
-            groups.push({ heading: heading, paragraphs: paragraphs });
+        const extra = (heading.dataset.info || '').trim();
+        const hasText = paragraphs.some(function (p) { return p.textContent.trim(); });
+        if (hasText || extra) {
+            groups.push({ heading: heading, paragraphs: paragraphs, extra: extra });
         }
     });
 
@@ -9901,9 +9905,13 @@ function initializeInfoPopovers() {
         btn.setAttribute('aria-label', 'About ' + label);
         btn.setAttribute('aria-haspopup', 'true');
         btn.setAttribute('aria-expanded', 'false');
-        btn.dataset.infoHtml = group.paragraphs
-            .map(function (p) { return '<p>' + p.innerHTML + '</p>'; })
-            .join('');
+        const parts = group.paragraphs
+            .filter(function (p) { return p.textContent.trim(); })
+            .map(function (p) { return '<p>' + p.innerHTML + '</p>'; });
+        if (group.extra) {
+            parts.push('<p>' + group.extra + '</p>');
+        }
+        btn.dataset.infoHtml = parts.join('');
 
         heading.appendChild(btn);
         group.paragraphs.forEach(function (p) { p.remove(); });

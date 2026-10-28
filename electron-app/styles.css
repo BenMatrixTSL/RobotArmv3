@@ -4752,3 +4752,23 @@ body.kiosk-mode .info-popover {
 .info-popover p + p {
     margin-top: 10px;
 }
+
+.pendant2-card-title .info-btn,
+.pendant2-jog-label .info-btn {
+    width: 18px;
+    height: 18px;
+    font-size: 12px;
+    margin-left: 6px;
+    text-transform: none;
+    letter-spacing: 0;
+    top: -2px;
+}
+
+body.touch-mode .pendant2-card-title .info-btn,
+body.touch-mode .pendant2-jog-label .info-btn,
+body.kiosk-mode .pendant2-card-title .info-btn,
+body.kiosk-mode .pendant2-jog-label .info-btn {
+    width: 28px;
+    height: 28px;
+    font-size: 16px;
+}

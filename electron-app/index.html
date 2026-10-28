@@ -19,7 +19,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Robot Arm Control - Pendant & G-Code</title>
-    <link rel="stylesheet" href="styles.css?v=20261028b">
+    <link rel="stylesheet" href="styles.css?v=20261028c">
     <script>
     // Kiosk mode on the Pi: show a loading screen and reload until the UI is really loaded.
     (function () {
@@ -197,10 +197,12 @@
         <!-- Connection Tab -->
         <div id="connection-tab" class="tab-content active">
             <h2>Connection</h2>
+            <p class="info-text">
+                Connect to the robot arm control server on port 8080. Type the controller's address, or use
+                Auto-Detect to search the local network for it. The indicator at the top of the window shows
+                the link state, and most tabs need a connection before their buttons do anything.
+            </p>
             <div class="connection-panel">
-                <p class="info-text">
-                    Connect to the robot arm control server on port 8080.
-                </p>
                 <div class="connection-form">
                     <label>
                         Controller Address:
@@ -258,7 +260,7 @@
 
         <!-- Joint Control Tab -->
         <div id="pendant-tab" class="tab-content">
-            <h2>Joint Control</h2>
+            <h2 data-info="Live control of each servo joint. The J1-J6 cards show the current angle, whether the joint is moving and whether its torque is on; press + Details for load, voltage, temperature, speed and acceleration. Emergency Stop halts every joint at once, Home All Joints returns them all to 0 degrees, and the Torque button switches holding power on all servos - with torque off the arm can be positioned by hand.">Joint Control</h2>
 
             <!-- kiosk-joints-row: two-column layout in kiosk mode (status+controls | movement buttons).
                  In normal desktop mode these divs are transparent block containers. -->
@@ -284,7 +286,7 @@
                 <div class="kiosk-joints-right">
                     <!-- Quick Joint Movement Controls -->
                     <div class="joystick-area pendant2-card joint-jog-card">
-                        <div class="pendant2-card-title">Quick Joint Movement</div>
+                        <div class="pendant2-card-title" data-info="Jogs one joint at a time by the selected step. Pick a step size (1, 5, 10 or 45 degrees), then press the minus or plus button for a joint. Each press sends one relative move, so let the joint settle before pressing again.">Quick Joint Movement</div>
                         <div class="joystick-controls">
                             <div class="direction-grid" id="quickMovementButtons">
                                 <!-- Quick movement buttons will be generated dynamically -->
@@ -308,7 +310,7 @@
             <div class="pendant2-end-tools-row">
 
                 <div class="pendant2-card pendant2-end-tool-card" id="endToolServoPanel" data-end-tool-control="servo">
-                    <div class="pendant2-card-title">End Tool - Servo</div>
+                    <div class="pendant2-card-title" data-info="The gripper servo on the end tool (bus ID 64). Enable powers the servo and Disable lets it go slack. The preset buttons move it to a fixed angle: 0 degrees is closed and 180 degrees fully open. In G-code use M10, M11 or M12 P&lt;angle&gt;.">End Tool - Servo</div>
                     <div class="pendant2-end-tool-btns">
                         <button class="btn btn-secondary pendant2-tool-btn end-tool-on-btn" id="endToolServoEnableBtn" data-end-tool-action="servo-enable" onclick="setEndToolServoEnabled(true)">Enable</button>
                         <button class="btn btn-secondary pendant2-tool-btn end-tool-off-btn" id="endToolServoDisableBtn" data-end-tool-action="servo-disable" onclick="setEndToolServoEnabled(false)">Disable</button>
@@ -323,7 +325,7 @@
                 </div>
 
                 <div class="pendant2-card pendant2-end-tool-card" id="endToolPneumaticPanel" data-end-tool-control="pump">
-                    <div class="pendant2-card-title">End Tool - Pump</div>
+                    <div class="pendant2-card-title" data-info="Vacuum pump on the end tool. Pump On starts it and Pump Off stops it. For a suction pick the pump and the solenoid valve are normally switched together - G-code M62 and M63 do both in one step.">End Tool - Pump</div>
                     <div class="pendant2-end-tool-btns">
                         <button class="btn btn-secondary pendant2-tool-btn end-tool-on-btn" id="endToolPumpEnableBtn" data-end-tool-action="pump-enable" onclick="setEndToolPumpEnabled(true)">Pump ON</button>
                         <button class="btn btn-secondary pendant2-tool-btn end-tool-off-btn" id="endToolPumpDisableBtn" data-end-tool-action="pump-disable" onclick="setEndToolPumpEnabled(false)">Pump OFF</button>
@@ -331,7 +333,7 @@
                 </div>
 
                 <div class="pendant2-card pendant2-end-tool-card" data-end-tool-control="solenoid">
-                    <div class="pendant2-card-title">End Tool - Solenoid Valve</div>
+                    <div class="pendant2-card-title" data-info="Air valve between the pump and the suction cup. Open it with the pump running to hold a part and close it to release. G-code M64 and M65 control the valve on its own.">End Tool - Solenoid Valve</div>
                     <div class="pendant2-end-tool-btns">
                         <button class="btn btn-secondary pendant2-tool-btn end-tool-on-btn" id="endToolSolenoidEnableBtn" data-end-tool-action="solenoid-enable" onclick="setEndToolSolenoidEnabled(true)">Valve ON</button>
                         <button class="btn btn-secondary pendant2-tool-btn end-tool-off-btn" id="endToolSolenoidDisableBtn" data-end-tool-action="solenoid-disable" onclick="setEndToolSolenoidEnabled(false)">Valve OFF</button>
@@ -364,7 +366,7 @@
 
                 <!-- XYZ Jog pad -->
                 <div class="pendant2-jog-card">
-                    <div class="pendant2-jog-label">XYZ JOG</div>
+                    <div class="pendant2-jog-label" data-info="Moves the tool tip in straight-line steps along the world X, Y and Z axes. Choose a step in millimetres, then press a direction; each press is one move of that distance. Needs kinematics loaded and a control session. Moves that would pass through a dead zone are routed around it.">XYZ JOG</div>
                     <div class="pendant2-jog-cluster">
                         <!-- XY D-pad (3×3 grid) -->
                         <div class="pendant2-dpad">
@@ -401,7 +403,7 @@
                 <div class="pendant2-side-panels">
 
                     <div class="pendant2-card">
-                        <div class="pendant2-card-title">Tool Orientation</div>
+                        <div class="pendant2-card-title" data-info="Chooses how the tool is pointed while jogging and when moving to XYZ. Free uses all six joints for position only, and the spin field drives joint 6 directly. Tool Down and Tool Up lock the tool to point straight down or up and keep that orientation through XYZ moves; spin rotation then turns the tool about its own axis.">Tool Orientation</div>
                         <button id="pendantOrientBtn_free" class="btn btn-secondary pendant2-wide-btn active" onclick="pendantSetOrientation('free')">Free (No Lock)</button>
                         <button id="pendantOrientBtn_down" class="btn btn-secondary pendant2-wide-btn" onclick="pendantSetOrientation('down')">Tool Down</button>
                         <button id="pendantOrientBtn_up" class="btn btn-secondary pendant2-wide-btn" onclick="pendantSetOrientation('up')">Tool Up</button>
@@ -414,7 +416,7 @@
                     </div>
 
                     <div class="pendant2-card" id="pendantMovementModeCard">
-                        <div class="pendant2-card-title">Movement Mode</div>
+                        <div class="pendant2-card-title" data-info="PTP (point to point) moves every joint to its target at once, so the tool tip follows a curved path. Linear makes the tool tip travel in a straight line by stepping through waypoints every path-step millimetres. Tool speed sets the tool-tip speed in mm/s for XYZ jog and Move to XYZ in both modes; programs set their own speed with G-code F or RAPID speed values.">Movement Mode</div>
                         <button id="movementModePtp" class="btn btn-secondary pendant2-wide-btn active" onclick="setMovementMode('ptp')" title="All joints move to their targets at once - the tool tip follows a curved path">Point to Point (PTP)</button>
                         <button id="movementModeLinear" class="btn btn-secondary pendant2-wide-btn" onclick="setMovementMode('linear')" title="The tool tip travels in a straight line through space (XYZ jog, G1, MoveL, Move TCP)">Linear Cartesian</button>
                         <div style="display:flex;align-items:center;gap:6px;margin-top:6px;">
@@ -432,7 +434,7 @@
                     </div>
 
                     <div class="pendant2-card">
-                        <div class="pendant2-card-title">Move to Stored Position</div>
+                        <div class="pendant2-card-title" data-info="Sends the arm to a position saved on the Stored Positions tab. Pick a slot from the list and press Move to Position. The move uses the current Movement Mode and tool speed.">Move to Stored Position</div>
                         <select id="pendantPositionSelect" class="pendant2-select">
                             <option value="">Select position…</option>
                         </select>
@@ -446,7 +448,7 @@
             <div class="pendant2-end-tools-row">
 
                 <div class="pendant2-card pendant2-end-tool-card" data-end-tool-control="servo">
-                    <div class="pendant2-card-title">End Tool - Servo</div>
+                    <div class="pendant2-card-title" data-info="The gripper servo on the end tool (bus ID 64). Enable powers the servo and Disable lets it go slack. The preset buttons move it to a fixed angle: 0 degrees is closed and 180 degrees fully open. In G-code use M10, M11 or M12 P&lt;angle&gt;.">End Tool - Servo</div>
                     <div class="pendant2-end-tool-btns">
                         <button class="btn btn-secondary pendant2-tool-btn end-tool-on-btn" data-end-tool-action="servo-enable" onclick="setEndToolServoEnabled(true)">Enable</button>
                         <button class="btn btn-secondary pendant2-tool-btn end-tool-off-btn" data-end-tool-action="servo-disable" onclick="setEndToolServoEnabled(false)">Disable</button>
@@ -461,7 +463,7 @@
                 </div>
 
                 <div class="pendant2-card pendant2-end-tool-card" data-end-tool-control="pump">
-                    <div class="pendant2-card-title">End Tool - Pump</div>
+                    <div class="pendant2-card-title" data-info="Vacuum pump on the end tool. Pump On starts it and Pump Off stops it. For a suction pick the pump and the solenoid valve are normally switched together - G-code M62 and M63 do both in one step.">End Tool - Pump</div>
                     <div class="pendant2-end-tool-btns">
                         <button class="btn btn-secondary pendant2-tool-btn end-tool-on-btn" data-end-tool-action="pump-enable" onclick="setEndToolPumpEnabled(true)">Pump ON</button>
                         <button class="btn btn-secondary pendant2-tool-btn end-tool-off-btn" data-end-tool-action="pump-disable" onclick="setEndToolPumpEnabled(false)">Pump OFF</button>
@@ -469,7 +471,7 @@
                 </div>
 
                 <div class="pendant2-card pendant2-end-tool-card" data-end-tool-control="solenoid">
-                    <div class="pendant2-card-title">End Tool - Solenoid Valve</div>
+                    <div class="pendant2-card-title" data-info="Air valve between the pump and the suction cup. Open it with the pump running to hold a part and close it to release. G-code M64 and M65 control the valve on its own.">End Tool - Solenoid Valve</div>
                     <div class="pendant2-end-tool-btns">
                         <button class="btn btn-secondary pendant2-tool-btn end-tool-on-btn" data-end-tool-action="solenoid-enable" onclick="setEndToolSolenoidEnabled(true)">Valve ON</button>
                         <button class="btn btn-secondary pendant2-tool-btn end-tool-off-btn" data-end-tool-action="solenoid-disable" onclick="setEndToolSolenoidEnabled(false)">Valve OFF</button>
@@ -487,7 +489,7 @@
             
             <!-- File Selection -->
             <div class="file-panel">
-                <h3>Load G-Code File</h3>
+                <h3 data-info="Select G-Code File opens a .gcode, .nc or .txt program from disk. Save Program keeps the editor contents in this app so they survive a restart, and offers a download. Load Default Example fills the editor with a short demonstration program.">Load G-Code File</h3>
                 <div class="file-controls">
                     <input type="file" id="gcodeFileInput" accept=".gcode,.nc,.txt" style="display: none;">
                     <button class="btn btn-primary" onclick="document.getElementById('gcodeFileInput').click()">Select G-Code File</button>
@@ -499,7 +501,7 @@
 
             <!-- G-Code Control -->
             <div class="gcode-controls">
-                <h3>Execution Control</h3>
+                <h3 data-info="Start Execution runs the program currently in the editor from the first line. Pause holds the program after the current command and the same button then resumes. Stop ends the run; a move already sent to the arm completes. Status, current line and progress update as it runs.">Execution Control</h3>
                 <div class="control-buttons">
                     <button class="btn btn-primary btn-motion" id="startGcodeButton" onclick="startGcode()">Start Execution</button>
                     <button class="btn btn-warning btn-motion" id="pauseGcodeButton" onclick="togglePauseResume()" disabled>Pause</button>
@@ -524,7 +526,7 @@
                 </p>
                 <div class="gcode-builder-columns">
                     <div class="gcode-builder-group">
-                        <h4>Line Edit</h4>
+                        <h4 data-info="Moves the selected line up or down, inserts an empty line before or after it, or deletes it. The readout underneath shows which line the command buttons will write to.">Line Edit</h4>
                         <div class="gcode-builder-grid gcode-builder-grid-2">
                             <button type="button" class="btn btn-secondary" onclick="gcodeBuilderCursor('up')">▲ Up</button>
                             <button type="button" class="btn btn-secondary" onclick="gcodeBuilderCursor('top')">Top</button>
@@ -539,7 +541,7 @@
                         </div>
                     </div>
                     <div class="gcode-builder-group gcode-builder-commands">
-                        <h4>Command</h4>
+                        <h4 data-info="One button per supported command. Commands that need values open a form which shows the finished line before it is added; a blank field leaves that parameter out.">Command</h4>
                         <div class="gcode-builder-grid gcode-builder-grid-3">
                             <button type="button" class="btn btn-secondary gcode-builder-span-3" onclick="gcodeBuilderCommand('G28')">G28 Home All Joints</button>
                             <button type="button" class="btn btn-secondary" onclick="gcodeBuilderCommand('G0')">G0 Rapid Move</button>
@@ -570,7 +572,7 @@
 
             <!-- G-Code Preview -->
             <div class="gcode-preview">
-                <h3>G-Code Editor</h3>
+                <h3 data-info="The program itself, one command per line. Type directly, use the G-Code Builder buttons above, or load a file. Whatever is in the editor is what Start Execution runs, and the line being executed is highlighted. Reload from File puts back the version last loaded from disk.">G-Code Editor</h3>
                 <div class="gcode-editor-controls">
                     <button class="btn btn-small" onclick="reloadGCodeFromEditor()">Reload from File</button>
                 </div>
@@ -584,7 +586,7 @@
 
             <!-- G-Code Log -->
             <div class="gcode-log">
-                <h3>Execution Log</h3>
+                <h3 data-info="A running record of each command as it executes, with any warnings or errors. Use it to see why a line was skipped or a move was refused.">Execution Log</h3>
                 <div id="gcodeLog" class="log-content"></div>
             </div>
 
@@ -740,7 +742,7 @@
             </p>
 
             <div class="gcode-controls">
-                <h3>Execution Control</h3>
+                <h3 data-info="Run RAPID Program parses the editor contents and runs them from the top; Stop ends the run after the current instruction. The current line is shown while it runs.">Execution Control</h3>
                 <div class="control-buttons">
                     <button class="btn btn-primary btn-motion" id="rapidRunButton" onclick="runRapidProgram()">Run RAPID Program</button>
                     <button class="btn btn-danger btn-motion" id="rapidStopButton" onclick="stopRapidProgram()" disabled>Stop</button>
@@ -752,7 +754,7 @@
             </div>
 
             <div class="gcode-preview">
-                <h3>RAPID Editor</h3>
+                <h3 data-info="Type a RAPID program here. Save Program keeps it in this app and offers a download, Open Program File loads one from disk and Load RAPID Example fills the editor with a demonstration. Only the subset in the cheat sheet below is understood.">RAPID Editor</h3>
                 <div class="gcode-editor-controls">
                     <button class="btn btn-primary btn-major" onclick="saveRapidProgram()">Save Program</button>
                     <button class="btn btn-secondary" onclick="loadRapidProgramFile()">Open Program File</button>
@@ -762,7 +764,7 @@
             </div>
 
             <div class="gcode-log">
-                <h3>Execution Log</h3>
+                <h3 data-info="Each instruction is logged as it executes, along with any parse or runtime errors and the line they occurred on.">Execution Log</h3>
                 <div id="rapidOutput" class="log-content"></div>
             </div>
 
@@ -941,14 +943,14 @@
         <!-- 3D Visualisation Tab -->
         <div id="visualization-tab" class="tab-content">
             <h2>3D Robot Arm Visualisation</h2>
-            
-            <div class="visualization-panel">
+            <p class="info-text">
+                The 3D model is drawn from the kinematics parameters (URDF) and the live joint angles. Drag to orbit
+                and scroll to zoom. The view buttons jump to standard camera angles and Orthographic removes
+                perspective. The tick boxes overlay dead zones, stored positions, the movement envelope and traces
+                of the tool tip and joints as the arm moves.
+            </p>
 
-                <div class="visualization-info">
-                    <p class="info-text">
-                        The 3D visualization shows the robot arm based on kinematics parameters and current joint angles.
-                    </p>
-                </div>
+            <div class="visualization-panel">
 
                 <div id="robotArm3DContainer" class="robot-arm-3d-container">
                     <!-- Three.js canvas will be inserted here -->
@@ -995,7 +997,7 @@
                 
                 <!-- Simulation Mode Controls -->
                 <div class="simulation-panel">
-                    <h3>Joint Angle Control</h3>
+                    <h3 data-info="Switches the 3D model between the real robot and simulated angles. With simulation on, the controls below drive the model only - the real arm does not move - which is useful for exploring poses or checking a program with the arm powered off.">Joint Angle Control</h3>
                     <div class="simulation-controls">
                         <label class="simulation-toggle">
                             <input type="checkbox" id="useSimulatedAngles" onchange="toggleSimulationMode()">
@@ -1128,14 +1130,14 @@
                 </div>
 
                 <div class="positions-joints">
-                    <h3>Joint Angles (degrees)</h3>
+                    <h3 data-info="Saves the position as a set of joint angles. Type each angle, or copy the arm&#x27;s live angles with the load button. A joint-angle position always reproduces exactly the same pose.">Joint Angles (degrees)</h3>
                     <div id="positionJointsGrid" class="positions-joints-grid">
                         <!-- Joint angle inputs will be generated dynamically -->
                     </div>
                 </div>
 
                 <div class="positions-xyz">
-                    <h3>Tool Position - XYZ (mm)</h3>
+                    <h3 data-info="Saves the position as a tool-tip coordinate instead of joint angles. At move time the XYZ is turned into joint angles by inverse kinematics using the active end tool and the current Tool Orientation, so the same slot still works if the tool changes.">Tool Position - XYZ (mm)</h3>
                     <div class="positions-xyz-row">
                         <div class="xyz-item">
                             <label>X:</label>
@@ -1158,7 +1160,7 @@
                 </div>
 
                 <div class="positions-list">
-                    <h3>Saved Positions</h3>
+                    <h3 data-info="All 100 slots (0-99) with their names. Tap a position to select it, Load to copy it into the editor above, Delete to clear it. Export All downloads every slot as a JSON file and Import All reads one back, so position sets can be shared between machines.">Saved Positions</h3>
                     <div class="positions-list-controls">
                         <button class="btn btn-small" onclick="refreshPositionsList()">Refresh List</button>
                         <button class="btn btn-small" onclick="exportPositions()">Export All</button>
@@ -1237,7 +1239,7 @@
                 <p class="info-text" id="zeroTrimSummary">Trainee trims: -</p>
             </div>
 
-            <h3 class="calibration-section-heading">EEPROM (persistent configuration)</h3>
+            <h3 class="calibration-section-heading" data-info="The servo&#x27;s non-volatile settings: ID, baud rate, angle limits, torque and temperature limits, PID gains and the position correction (zero offset). They survive power-off. Read them with Read EEPROM; editing writes straight to the servo and needs the control lock, so change values deliberately and one at a time.">EEPROM (persistent configuration)</h3>
             <div class="table-wrap">
                 <table class="calibration-table" id="calibrationTable">
                     <thead>
@@ -1259,7 +1261,7 @@
                 </table>
             </div>
 
-            <h3 class="calibration-section-heading" id="calibrationSramHeading">SRAM (live/runtime state - resets on power-off, read-only here)</h3>
+            <h3 class="calibration-section-heading" id="calibrationSramHeading" data-info="The servo&#x27;s live working registers: torque enable, target position, speed, acceleration, present position, load, voltage, temperature and the moving flag. These reset at power-on and are shown here for diagnosis.">SRAM (live/runtime state - resets on power-off, read-only here)</h3>
             <div class="table-wrap">
                 <table class="calibration-table" id="calibrationSramTable">
                     <thead>
@@ -1328,7 +1330,7 @@
             </p>
 
             <div class="settings-panel">
-                <h3>Add / Edit Dead Zone</h3>
+                <h3 data-info="Defines a box the tool tip must not enter, as min and max X, Y and Z in millimetres, with a name. Safe Z Height is the height the planner lifts to when a straight move would pass through a zone: it climbs to Safe Z, crosses, then descends. Entering an existing name updates that zone.">Add / Edit Dead Zone</h3>
                 <div class="settings-grid">
                     <div class="setting-item">
                         <label>Name:</label>
@@ -1423,6 +1425,12 @@
         <!-- Camera Tab -->
         <div id="camera-tab" class="tab-content">
             <h2>USB Camera</h2>
+            <p class="info-text camera-help-text">
+                    Point the camera at the workspace. ArUco markers will be detected automatically
+                    and coloured blocks will be highlighted. The four corner markers define the workspace
+                    coordinate frame: each marker's corner is taken from where it sits in the picture, and
+                    the top-left marker is the origin. Keep only the four corner markers in view.
+                </p>
             <div class="camera-panel">
                 <div class="camera-toolbar camera-toolbar-hidden">
                     <button type="button" id="cameraStartButton" class="btn btn-primary">Start camera</button>
@@ -1436,7 +1444,7 @@
                         <p class="camera-stream-placeholder">Press Start camera to view the USB camera.</p>
                     </div>
                     <div class="camera-detections-panel">
-                        <h3 class="camera-detections-title">Detected blocks</h3>
+                        <h3 class="camera-detections-title" data-info="Coloured blocks found in the camera picture, measured in workspace millimetres from the ArUco marker frame. Index 0 is the block nearest the top of the picture and numbering continues downwards - the same indexes that G-code M780 and M781 use. Rotation is the block&#x27;s turn in the workspace frame.">Detected blocks</h3>
                         <table class="camera-detections-table">
                             <thead>
                                 <tr><th>Index</th><th>Colour</th><th>X (mm)</th><th>Y (mm)</th><th>Rotation</th></tr>
@@ -1447,12 +1455,6 @@
                         </table>
                     </div>
                 </div>
-                <p class="info-text camera-help-text">
-                    Point the camera at the workspace. ArUco markers will be detected automatically
-                    and coloured blocks will be highlighted. The four corner markers define the workspace
-                    coordinate frame: each marker's corner is taken from where it sits in the picture, and
-                    the top-left marker is the origin. Keep only the four corner markers in view.
-                </p>
             </div>
         </div>
 
@@ -1462,7 +1464,7 @@
             <!-- Movement Mode (PTP / Linear Cartesian) lives on the Pendant Control tab -->
 
             <div class="settings-panel">
-                <h3>Connection Settings</h3>
+                <h3 data-info="Number of Joints sets how many servos the app expects on the bus and how many joint cards it draws. Fallback status poll is only used if the Pi cannot push live status. Default Step Size is the jog step selected when the app starts.">Connection Settings</h3>
                 <div class="settings-grid">
                     <div class="setting-item">
                         <label>Number of Joints (servos):</label>
@@ -1483,7 +1485,7 @@
 
             <!-- Kinematics Configuration Panel -->
             <div class="settings-panel">
-                <h3>Joint Kinematics Configuration</h3>
+                <h3 data-info="The link lengths, joint axes and limits used for forward and inverse kinematics. Load from Robot reads them from the controller, Load Demo Configuration loads the built-in six-joint URDF, and Apply to Kinematics puts the shown values into use.">Joint Kinematics Configuration</h3>
                 <div class="kinematics-controls">
                     <button class="btn btn-primary" onclick="loadJointConfigs()">Load from Robot</button>
                     <button class="btn btn-primary" onclick="loadDemoConfig()">Load Demo Configuration</button>
@@ -1502,11 +1504,11 @@
 
             <!-- Forward/Inverse Kinematics Test Panel -->
             <div class="settings-panel">
-                <h3>Kinematics Testing</h3>
+                <h3 data-info="Quick checks of the maths without moving the arm. Forward kinematics turns a set of joint angles into a tool position; inverse kinematics turns a target position into joint angles, or reports that it is unreachable.">Kinematics Testing</h3>
                 <div class="kinematics-test">
                     <div class="test-section">
                         <h4>Forward Kinematics</h4>
-                        <p>Calculate end effector position from joint angles:</p>
+                        <p class="info-text">Calculate end effector position from joint angles: enter the angles and the tool-tip X, Y, Z is worked out from the kinematics without moving the arm.</p>
                         <div class="test-inputs">
                             <label>Joint Angles (degrees, comma-separated):</label>
                             <input type="text" id="fkAngles" placeholder="0, 90, 45, 0" style="width: 300px;">
@@ -1517,7 +1519,7 @@
                     
                     <div class="test-section">
                         <h4>Inverse Kinematics</h4>
-                        <p>Calculate joint angles from end effector position:</p>
+                        <p class="info-text">Calculate joint angles from end effector position: enter a target X, Y, Z and the solver returns the joint angles that reach it, or reports that it is out of reach.</p>
                         <div class="test-inputs">
                             <label>Target Position (mm):</label>
                             <input type="text" id="ikX" placeholder="X" style="width: 80px;">,
@@ -1831,7 +1833,7 @@
     <script src="calibrationPage.js"></script>
     <script src="cameraView.js?v=20260616"></script>
     <!-- Main Application: UI logic and event handlers -->
-    <script src="app.js?v=20261028b"></script>
+    <script src="app.js?v=20261028c"></script>
     <!-- On-Screen Keyboard: touch keyboard for kiosk mode (no system OSK in Chromium kiosk) -->
     <script src="keyboard.js?v=20260930"></script>
 
