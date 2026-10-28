@@ -19,7 +19,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Robot Arm Control - Pendant & G-Code</title>
-    <link rel="stylesheet" href="styles.css?v=20260930">
+    <link rel="stylesheet" href="styles.css?v=20261028">
     <script>
     // Kiosk mode on the Pi: show a loading screen and reload until the UI is really loaded.
     (function () {
@@ -501,7 +501,7 @@
             <div class="gcode-controls">
                 <h3>Execution Control</h3>
                 <div class="control-buttons">
-                    <button class="btn btn-primary btn-motion" id="startGcodeButton" onclick="startGcode()" disabled>Start Execution</button>
+                    <button class="btn btn-primary btn-motion" id="startGcodeButton" onclick="startGcode()">Start Execution</button>
                     <button class="btn btn-warning btn-motion" id="pauseGcodeButton" onclick="togglePauseResume()" disabled>Pause</button>
                     <button class="btn btn-danger btn-motion" id="stopGcodeButton" onclick="stopGcode()" disabled>Stop</button>
                 </div>
@@ -512,18 +512,73 @@
                 </div>
             </div>
 
+            <!-- G-Code Builder: pendant-style buttons that write commands into the editor.
+                 Mirrors the Robot Arm 2 Flowcode pendant (OnButtonClick / AddToLine):
+                 Line Edit on the left, one button per command on the right. -->
+            <div class="gcode-builder">
+                <h3>G-Code Builder</h3>
+                <p class="info-text">
+                    Build a program without typing. Tap a line in the editor to select it, then tap a command.
+                    An empty line is filled in; a line that already has a command gets the new one inserted after it.
+                    Commands that need values open a small form - leave a field blank to leave that parameter out.
+                </p>
+                <div class="gcode-builder-columns">
+                    <div class="gcode-builder-group">
+                        <h4>Line Edit</h4>
+                        <div class="gcode-builder-grid gcode-builder-grid-2">
+                            <button type="button" class="btn btn-secondary" onclick="gcodeBuilderCursor('up')">▲ Up</button>
+                            <button type="button" class="btn btn-secondary" onclick="gcodeBuilderCursor('top')">Top</button>
+                            <button type="button" class="btn btn-secondary" onclick="gcodeBuilderCursor('down')">▼ Down</button>
+                            <button type="button" class="btn btn-secondary" onclick="gcodeBuilderCursor('bottom')">Bottom</button>
+                            <button type="button" class="btn btn-primary" onclick="gcodeBuilderInsertLine('before')">Insert Before</button>
+                            <button type="button" class="btn btn-primary" onclick="gcodeBuilderInsertLine('after')">Insert After</button>
+                            <button type="button" class="btn btn-danger gcode-builder-span-2" onclick="gcodeBuilderDeleteLine()">Delete Line</button>
+                        </div>
+                        <div class="gcode-builder-current">
+                            Line <span id="gcodeBuilderLineNo">-</span>: <code id="gcodeBuilderLineText">(empty)</code>
+                        </div>
+                    </div>
+                    <div class="gcode-builder-group gcode-builder-commands">
+                        <h4>Command</h4>
+                        <div class="gcode-builder-grid gcode-builder-grid-3">
+                            <button type="button" class="btn btn-secondary gcode-builder-span-3" onclick="gcodeBuilderCommand('G28')">G28 Home All Joints</button>
+                            <button type="button" class="btn btn-secondary" onclick="gcodeBuilderCommand('G0')">G0 Rapid Move</button>
+                            <button type="button" class="btn btn-secondary" onclick="gcodeBuilderCommand('G1')">G1 Move XYZ</button>
+                            <button type="button" class="btn btn-secondary" onclick="gcodeBuilderCommand('G1J')">G1 Joint Move</button>
+                            <button type="button" class="btn btn-secondary" onclick="gcodeBuilderCommand('G1P')">G1 Stored Position</button>
+                            <button type="button" class="btn btn-secondary" onclick="gcodeBuilderCommand('G1O')">G1 Tool Orientation</button>
+                            <button type="button" class="btn btn-secondary" onclick="gcodeBuilderCommand('M0')">M0 Pause</button>
+                            <button type="button" class="btn btn-secondary" onclick="gcodeBuilderCommand('M10')">M10 Gripper Open</button>
+                            <button type="button" class="btn btn-secondary" onclick="gcodeBuilderCommand('M11')">M11 Gripper Close</button>
+                            <button type="button" class="btn btn-secondary" onclick="gcodeBuilderCommand('M12')">M12 Gripper Set</button>
+                            <button type="button" class="btn btn-secondary" onclick="gcodeBuilderCommand('M62')">M62 Vacuum On</button>
+                            <button type="button" class="btn btn-secondary" onclick="gcodeBuilderCommand('M63')">M63 Vacuum Off</button>
+                            <button type="button" class="btn btn-secondary" onclick="gcodeBuilderCommand('M204')">M204 Acceleration</button>
+                            <button type="button" class="btn btn-secondary" onclick="gcodeBuilderCommand('N')">N Label</button>
+                            <button type="button" class="btn btn-secondary" onclick="gcodeBuilderCommand('GOTO')">GOTO</button>
+                            <button type="button" class="btn btn-secondary" onclick="gcodeBuilderCommand('IF')">IF … GOTO</button>
+                            <button type="button" class="btn btn-secondary" onclick="gcodeBuilderCommand('SET')">#Var = …</button>
+                            <button type="button" class="btn btn-secondary" onclick="gcodeBuilderCommand('M780')">M780 Count Blocks</button>
+                            <button type="button" class="btn btn-secondary" onclick="gcodeBuilderCommand('M781')">M781 Block → Position</button>
+                            <button type="button" class="btn btn-secondary" onclick="gcodeBuilderCommand('COMMENT')">; Comment</button>
+                            <button type="button" class="btn btn-secondary" onclick="gcodeBuilderCommand('M30')">M30 End</button>
+                            <button type="button" class="btn btn-secondary" onclick="gcodeBuilderCommand('M2')">M2 End</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- G-Code Preview -->
             <div class="gcode-preview">
                 <h3>G-Code Editor</h3>
                 <div class="gcode-editor-controls">
-                    <button class="btn btn-small" onclick="applyGCodeChanges()">Apply Changes</button>
                     <button class="btn btn-small" onclick="reloadGCodeFromEditor()">Reload from File</button>
                 </div>
                 <textarea id="gcodeContent" placeholder="Load a G-Code file or type G-code here..."></textarea>
                 <div class="gcode-info">
                     <span>Lines: <span id="gcodeLineCount">0</span></span>
                     <span>Commands: <span id="gcodeCommandCount">0</span></span>
-                    <span id="gcodeModified" style="color: #e74c3c; display: none;">● Modified</span>
+                    <span>Start Execution always runs what is in the editor.</span>
                 </div>
             </div>
 
@@ -1602,6 +1657,18 @@
 
         <!-- In-app dialog. Replaces window.confirm/prompt, whose buttons are
              drawn by the OS and cannot be made touch-sized. -->
+        <div id="gcodeBuilderDialogBackdrop" class="app-dialog-backdrop" hidden>
+            <div class="app-dialog gcode-builder-dialog" role="dialog" aria-modal="true" aria-labelledby="gcodeBuilderDialogTitle">
+                <p class="app-dialog-message" id="gcodeBuilderDialogTitle"></p>
+                <p class="gcode-builder-dialog-help" id="gcodeBuilderDialogHelp"></p>
+                <div class="gcode-builder-dialog-fields" id="gcodeBuilderDialogFields"></div>
+                <div class="gcode-builder-dialog-preview">Line: <code id="gcodeBuilderDialogPreview"></code></div>
+                <div class="app-dialog-buttons">
+                    <button type="button" class="btn btn-secondary btn-major" id="gcodeBuilderDialogCancel">Cancel</button>
+                    <button type="button" class="btn btn-primary btn-major" id="gcodeBuilderDialogConfirm">Add Line</button>
+                </div>
+            </div>
+        </div>
         <div id="appDialogBackdrop" class="app-dialog-backdrop" hidden>
             <div class="app-dialog" role="dialog" aria-modal="true" aria-labelledby="appDialogMessage">
                 <p class="app-dialog-message" id="appDialogMessage"></p>
@@ -1764,7 +1831,7 @@
     <script src="calibrationPage.js"></script>
     <script src="cameraView.js?v=20260616"></script>
     <!-- Main Application: UI logic and event handlers -->
-    <script src="app.js?v=20260925a"></script>
+    <script src="app.js?v=20261028"></script>
     <!-- On-Screen Keyboard: touch keyboard for kiosk mode (no system OSK in Chromium kiosk) -->
     <script src="keyboard.js?v=20260930"></script>
 

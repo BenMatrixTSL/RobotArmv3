@@ -3676,56 +3676,43 @@ async function homeAllJoints() {
 /**
  * Initialize G-Code editor functionality
  */
-let gcodeOriginalContent = ''; // Store original content to detect changes
+let gcodeOriginalContent = ''; // Content as last loaded from a file (for Reload from File)
 
 function initializeGCodeEditor() {
     const gcodeTextarea = document.getElementById('gcodeContent');
     if (!gcodeTextarea) return;
-    
-    // Store original content when loaded
+
+    // There is no "Apply" step: the processor always mirrors the editor.
+    // Typing re-parses (cheap) unless a program is running, in which case the
+    // running program keeps its own copy until it finishes.
     gcodeTextarea.addEventListener('input', function() {
-        // Show modified indicator if content has changed
-        const currentContent = gcodeTextarea.value;
-        if (currentContent !== gcodeOriginalContent) {
-            document.getElementById('gcodeModified').style.display = 'inline';
-        } else {
-            document.getElementById('gcodeModified').style.display = 'none';
+        if (!gcodeProcessor.isRunning) {
+            applyGCodeChanges();
         }
+        updateGCodeBuilderCurrentLine();
     });
+    gcodeTextarea.addEventListener('click', updateGCodeBuilderCurrentLine);
+    gcodeTextarea.addEventListener('keyup', updateGCodeBuilderCurrentLine);
+    gcodeTextarea.addEventListener('focus', updateGCodeBuilderCurrentLine);
 }
 
 /**
- * Applies changes from the G-Code editor to the processor
+ * Loads whatever is in the editor into the processor and refreshes the
+ * line/command counts. Called on every edit and again by Start Execution,
+ * so the program that runs is always the one on screen.
  */
 function applyGCodeChanges() {
     const gcodeTextarea = document.getElementById('gcodeContent');
     if (!gcodeTextarea) {
-        showAppMessage('G-Code editor not found');
         return;
     }
-    
-    const content = gcodeTextarea.value;
-    
-    // Load the updated G-code
-    const result = gcodeProcessor.loadGCode(content);
-    
-    // Update line and command counts
-    document.getElementById('gcodeLineCount').textContent = result.lines;
-    document.getElementById('gcodeCommandCount').textContent = result.commands;
-    
-    // Update original content
-    gcodeOriginalContent = content;
-    
-    // Clear modified indicator
-    document.getElementById('gcodeModified').style.display = 'none';
-    
-    // Enable start button if not already enabled
-    const startButton = document.getElementById('startGcodeButton');
-    if (startButton) {
-        startButton.disabled = false;
-    }
-    
-    console.log(`G-Code updated: ${result.lines} lines, ${result.commands} commands`);
+
+    const result = gcodeProcessor.loadGCode(gcodeTextarea.value);
+
+    const lineCountEl = document.getElementById('gcodeLineCount');
+    const cmdCountEl = document.getElementById('gcodeCommandCount');
+    if (lineCountEl) lineCountEl.textContent = result.lines;
+    if (cmdCountEl) cmdCountEl.textContent = result.commands;
 }
 
 /**
@@ -5499,7 +5486,6 @@ M30`;
     gcodeOriginalContent = defaultGCode;
     
     // Clear modified indicator
-    document.getElementById('gcodeModified').style.display = 'none';
     document.getElementById('fileName').textContent = 'Default Example (loaded)';
     document.getElementById('startGcodeButton').disabled = false;
     
@@ -5540,7 +5526,6 @@ function initializeFileInput() {
             gcodeOriginalContent = content;
             
             // Clear modified indicator
-            document.getElementById('gcodeModified').style.display = 'none';
             
             // Enable start button
             document.getElementById('startGcodeButton').disabled = false;
@@ -5560,9 +5545,16 @@ async function startGcode() {
         showAppMessage('Not connected to robot arm controller');
         return;
     }
-    
+
+    if (gcodeProcessor.isRunning) {
+        return;
+    }
+
+    // Always run what is in the editor - no separate "apply" step.
+    applyGCodeChanges();
+
     if (gcodeProcessor.getCommands().length === 0) {
-        showAppMessage('No G-code loaded');
+        showAppMessage('No G-code to run - type a program or use the G-Code Builder');
         return;
     }
     
@@ -9158,3 +9150,604 @@ function testConnection(address, port, timeout) {
     });
 }
 
+
+// ===== G-Code Builder =====
+// Pendant-style command buttons for the G-Code tab. Modelled on the Robot
+// Arm 2 Flowcode pendant (PendantControl.fcsx): its OnButtonClick macro
+// asked for each parameter in turn (GetUserParams) and then AddToLine wrote
+// the finished command into the selected line of the program. Here the
+// "selected line" is the line the editor caret is on, the parameters are
+// asked for on one form, and the command set is the one gcodeProcessor.js
+// actually understands.
+
+/**
+ * Splits the editor text into lines and finds the line the caret is on.
+ * @returns {{textarea: HTMLTextAreaElement, lines: string[], index: number}|null}
+ */
+function gcodeBuilderGetCaretLine() {
+    const textarea = document.getElementById('gcodeContent');
+    if (!textarea) return null;
+    const lines = textarea.value.split('\n');
+    const caret = typeof textarea.selectionStart === 'number' ? textarea.selectionStart : textarea.value.length;
+    const index = textarea.value.slice(0, caret).split('\n').length - 1;
+    return { textarea: textarea, lines: lines, index: Math.min(index, lines.length - 1) };
+}
+
+/**
+ * Selects a whole line, scrolls it into view and refreshes the "Line n:"
+ * readout under the Line Edit buttons.
+ * @param {number} index - Zero-based line index
+ */
+function gcodeBuilderSelectLine(index) {
+    const info = gcodeBuilderGetCaretLine();
+    if (!info) return;
+    const textarea = info.textarea;
+    const lines = info.lines;
+    const target = Math.max(0, Math.min(index, lines.length - 1));
+    let pos = 0;
+    for (let i = 0; i < target; i++) {
+        pos += lines[i].length + 1;
+    }
+    textarea.focus({ preventScroll: true });
+    textarea.setSelectionRange(pos, pos + lines[target].length);
+
+    // Scroll so the line sits roughly in the middle of the editor
+    const lineHeight = parseFloat(getComputedStyle(textarea).lineHeight) || 16;
+    textarea.scrollTop = Math.max(0, target * lineHeight - textarea.clientHeight / 2);
+
+    updateGCodeBuilderCurrentLine();
+}
+
+/**
+ * Updates the "Line n: ..." readout in the builder panel.
+ */
+function updateGCodeBuilderCurrentLine() {
+    const noEl = document.getElementById('gcodeBuilderLineNo');
+    const textEl = document.getElementById('gcodeBuilderLineText');
+    if (!noEl || !textEl) return;
+    const info = gcodeBuilderGetCaretLine();
+    if (!info) return;
+    const text = info.lines[info.index] || '';
+    noEl.textContent = String(info.index + 1);
+    textEl.textContent = text.trim() ? text : '(empty)';
+}
+
+/**
+ * Writes the lines back to the editor and re-syncs the processor.
+ * @param {string[]} lines
+ * @param {number} selectIndex - Line to leave selected
+ */
+function gcodeBuilderCommit(lines, selectIndex) {
+    const textarea = document.getElementById('gcodeContent');
+    if (!textarea) return;
+    textarea.value = lines.join('\n');
+    if (!gcodeProcessor.isRunning) {
+        applyGCodeChanges();
+    }
+    gcodeBuilderSelectLine(selectIndex);
+}
+
+/**
+ * Cursor Up / Down / Top / Bottom (the pendant's Cursor buttons).
+ * @param {'up'|'down'|'top'|'bottom'} where
+ */
+function gcodeBuilderCursor(where) {
+    const info = gcodeBuilderGetCaretLine();
+    if (!info) return;
+    const last = info.lines.length - 1;
+    let target;
+    if (where === 'top') target = 0;
+    else if (where === 'bottom') target = last;
+    else if (where === 'up') target = info.index - 1;
+    else target = info.index + 1;
+    gcodeBuilderSelectLine(target);
+}
+
+/**
+ * Insert Before / Insert After: adds an empty line and selects it, ready
+ * for a command button to fill it in.
+ * @param {'before'|'after'} where
+ */
+function gcodeBuilderInsertLine(where) {
+    const info = gcodeBuilderGetCaretLine();
+    if (!info) return;
+    const at = where === 'before' ? info.index : info.index + 1;
+    const lines = info.lines.slice();
+    lines.splice(at, 0, '');
+    gcodeBuilderCommit(lines, at);
+}
+
+/**
+ * Deletes the selected line. The editor always keeps at least one line.
+ */
+function gcodeBuilderDeleteLine() {
+    const info = gcodeBuilderGetCaretLine();
+    if (!info) return;
+    const lines = info.lines.slice();
+    if (lines.length <= 1) {
+        gcodeBuilderCommit([''], 0);
+        return;
+    }
+    lines.splice(info.index, 1);
+    gcodeBuilderCommit(lines, Math.min(info.index, lines.length - 1));
+}
+
+/**
+ * The pendant's AddToLine: puts a command on the selected line. An empty
+ * line is filled in; a line that already holds something gets the new
+ * command inserted after it so nothing is silently overwritten.
+ * @param {string} text - Finished G-code line
+ */
+function gcodeBuilderAddToLine(text) {
+    const info = gcodeBuilderGetCaretLine();
+    if (!info) return;
+    const lines = info.lines.slice();
+    let at = info.index;
+    if (lines[at].trim() === '') {
+        lines[at] = text;
+    } else {
+        at = info.index + 1;
+        lines.splice(at, 0, text);
+    }
+    gcodeBuilderCommit(lines, at);
+}
+
+/**
+ * Current joint angles from the last good status poll, or null if none.
+ * @returns {number[]|null}
+ */
+function gcodeBuilderCurrentAngles() {
+    const n = getNumJoints();
+    const angles = [];
+    for (let i = 0; i < n; i++) {
+        const j = lastGoodJointStatus[i];
+        if (!j || typeof j.angleDegrees !== 'number' || isNaN(j.angleDegrees)) {
+            return null;
+        }
+        angles.push(j.angleDegrees);
+    }
+    return angles;
+}
+
+/**
+ * Current TCP position via local FK, or null if kinematics is not ready.
+ * @returns {{x:number,y:number,z:number}|null}
+ */
+function gcodeBuilderCurrentXYZ() {
+    const angles = gcodeBuilderCurrentAngles();
+    if (!angles || typeof robotKinematics === 'undefined') return null;
+    try {
+        if (robotKinematics.isConfigured && !robotKinematics.isConfigured()) return null;
+        const pose = robotKinematics.forwardKinematics(angles);
+        return pose && pose.position ? pose.position : null;
+    } catch (e) {
+        return null;
+    }
+}
+
+/**
+ * Formats a number for a G-code line (no trailing zeros).
+ * @param {number} v
+ * @returns {string}
+ */
+function gcodeBuilderNum(v) {
+    return String(Math.round(v * 100) / 100);
+}
+
+/**
+ * Appends " <letter><value>" when the field has a value. GetUserParams
+ * skipped a parameter when its prompt was cancelled; here a blank field
+ * does the same.
+ * @param {Object} values - Field values keyed by field id
+ * @param {string} key - Field id
+ * @param {string} letter - G-code address, e.g. 'X' or 'J1='
+ * @returns {string}
+ */
+function gcodeBuilderParam(values, key, letter) {
+    const v = (values[key] || '').trim();
+    return v === '' ? '' : ' ' + letter + v;
+}
+
+/**
+ * Lists stored positions as select options for the G1 P form.
+ * @returns {Array<{value:string,label:string}>}
+ */
+function gcodeBuilderPositionOptions() {
+    const options = [];
+    if (typeof getAllPositions !== 'function') return options;
+    const positions = getAllPositions() || {};
+    Object.keys(positions)
+        .map(function (k) { return parseInt(k, 10); })
+        .filter(function (k) { return !isNaN(k); })
+        .sort(function (a, b) { return a - b; })
+        .forEach(function (num) {
+            const p = positions[num] || {};
+            const name = p.name ? String(p.name) : '';
+            options.push({ value: String(num), label: 'P' + num + (name ? ' - ' + name : '') });
+        });
+    return options;
+}
+
+/**
+ * Command definitions. Each has a title, optional help, optional fields
+ * (shown on the form) and build(values) returning the finished line.
+ * Commands with no fields are added straight away, as G28/G90 were on the
+ * pendant.
+ */
+const GCODE_BUILDER_COMMANDS = {
+    G28: {
+        title: 'G28 - Home All Joints',
+        help: 'Moves every joint to 0°. Speed is optional.',
+        fields: [{ id: 'f', label: 'Speed F (deg/s)', type: 'number', placeholder: 'e.g. 45', hint: 'Blank = default' }],
+        build: function (v) { return 'G28' + gcodeBuilderParam(v, 'f', 'F'); }
+    },
+    G0: {
+        title: 'G0 - Rapid Move to XYZ',
+        help: 'Cartesian move of the tool tip. Fields start at the arm’s current position. Leave a field blank to leave that axis unchanged.',
+        fields: 'xyz',
+        build: function (v) {
+            return 'G0' + gcodeBuilderParam(v, 'x', 'X') + gcodeBuilderParam(v, 'y', 'Y') + gcodeBuilderParam(v, 'z', 'Z') + gcodeBuilderParam(v, 'f', 'F');
+        }
+    },
+    G1: {
+        title: 'G1 - Move to XYZ',
+        help: 'Cartesian move of the tool tip. Fields start at the arm’s current position. F is a feed rate in mm/min (F2400 = 40 mm/s).',
+        fields: 'xyz',
+        build: function (v) {
+            return 'G1' + gcodeBuilderParam(v, 'x', 'X') + gcodeBuilderParam(v, 'y', 'Y') + gcodeBuilderParam(v, 'z', 'Z') + gcodeBuilderParam(v, 'f', 'F');
+        }
+    },
+    G1J: {
+        title: 'G1 - Joint Move',
+        help: 'Move individual joints to angles in degrees. Fields start at the current angles. Leave a joint blank to leave it where it is.',
+        fields: 'joints',
+        build: function (v) {
+            let line = 'G1';
+            for (let i = 1; i <= getNumJoints(); i++) {
+                line += gcodeBuilderParam(v, 'j' + i, 'J' + i + '=');
+            }
+            return line + gcodeBuilderParam(v, 'f', 'F');
+        }
+    },
+    G1P: {
+        title: 'G1 - Move to Stored Position',
+        help: 'Moves to a position saved on the Stored Positions tab.',
+        fields: 'position',
+        build: function (v) {
+            const p = (v.p || '').trim();
+            if (p === '') return '';
+            const pText = /^\d+$/.test(p) ? p : '"' + p.replace(/"/g, '') + '"';
+            return 'G1 P' + pText + gcodeBuilderParam(v, 'f', 'F');
+        }
+    },
+    G1O: {
+        title: 'G1 - Tool Orientation',
+        help: 'Points the tool’s Z axis along the vector (I, J, K) with spin R, turning in place at F deg/s. Later XYZ moves keep this orientation.',
+        fields: [
+            { id: 'i', label: 'I (X component)', type: 'number', value: '0' },
+            { id: 'j', label: 'J (Y component)', type: 'number', value: '0' },
+            { id: 'k', label: 'K (Z component)', type: 'number', value: '-1' },
+            { id: 'r', label: 'R spin (deg)', type: 'number', value: '0' },
+            { id: 'f', label: 'Speed F (deg/s)', type: 'number', placeholder: '90' }
+        ],
+        build: function (v) {
+            return 'G1' + gcodeBuilderParam(v, 'i', 'I') + gcodeBuilderParam(v, 'j', 'J') + gcodeBuilderParam(v, 'k', 'K') + gcodeBuilderParam(v, 'r', 'R') + gcodeBuilderParam(v, 'f', 'F');
+        }
+    },
+    M0: {
+        title: 'M0 - Pause',
+        help: 'Pauses the program for a time in milliseconds.',
+        fields: [{ id: 'p', label: 'Delay P (ms)', type: 'number', value: '2000', min: 0, hint: 'Blank = 2000 ms' }],
+        build: function (v) { return 'M0' + gcodeBuilderParam(v, 'p', 'P'); }
+    },
+    M10: { title: 'M10 - Gripper Open', build: function () { return 'M10'; } },
+    M11: { title: 'M11 - Gripper Close', build: function () { return 'M11'; } },
+    M12: {
+        title: 'M12 - Gripper / End Tool Servo Angle',
+        help: 'Sets the end tool servo to an angle.',
+        fields: [{ id: 'p', label: 'Angle P (0-180°)', type: 'number', value: '90', min: 0, max: 180, required: true }],
+        build: function (v) { return 'M12' + gcodeBuilderParam(v, 'p', 'P'); }
+    },
+    M62: { title: 'M62 - Vacuum On', build: function () { return 'M62'; } },
+    M63: { title: 'M63 - Vacuum Off', build: function () { return 'M63'; } },
+    M204: {
+        title: 'M204 - Servo Acceleration',
+        help: 'Acceleration 0-254 in units of 100 step/s². Leave Joint blank to set all joints.',
+        fields: [
+            { id: 'a', label: 'Acceleration A', type: 'number', value: '80', min: 0, max: 254, required: true },
+            { id: 'j', label: 'Joint J (blank = all)', type: 'number', placeholder: '1-6', min: 1 }
+        ],
+        build: function (v) { return 'M204' + gcodeBuilderParam(v, 'j', 'J') + gcodeBuilderParam(v, 'a', 'A'); }
+    },
+    N: {
+        title: 'N - Line Label',
+        help: 'Labels this line so GOTO / IF can jump to it.',
+        fields: [{ id: 'n', label: 'Label number', type: 'number', value: '100', min: 1, required: true }],
+        build: function (v) { return 'N' + (v.n || '').trim(); }
+    },
+    GOTO: {
+        title: 'GOTO - Jump to Label',
+        help: 'Jumps to the line labelled N<number>. A GOTO back to an earlier label loops forever - use Stop to end it.',
+        fields: [{ id: 'n', label: 'Label number', type: 'number', value: '100', min: 1, required: true }],
+        build: function (v) { return 'GOTO ' + (v.n || '').trim(); }
+    },
+    IF: {
+        title: 'IF - Conditional Jump',
+        help: 'Jumps to the label only if the comparison is true, e.g. IF [#1 LT 3] GOTO 100.',
+        fields: [
+            { id: 'var', label: 'Variable #', type: 'number', value: '1', min: 1, required: true },
+            { id: 'op', label: 'Compare', type: 'select', value: 'LT', options: [
+                { value: 'EQ', label: 'EQ  (=)' }, { value: 'NE', label: 'NE  (≠)' },
+                { value: 'GT', label: 'GT  (>)' }, { value: 'GE', label: 'GE  (≥)' },
+                { value: 'LT', label: 'LT  (<)' }, { value: 'LE', label: 'LE  (≤)' }
+            ] },
+            { id: 'val', label: 'Value', type: 'text', value: '3', required: true, hint: 'Number or #variable', keyboard: 'numeric' },
+            { id: 'n', label: 'GOTO label', type: 'number', value: '100', min: 1, required: true }
+        ],
+        build: function (v) {
+            return 'IF [#' + (v.var || '').trim() + ' ' + v.op + ' ' + (v.val || '').trim() + '] GOTO ' + (v.n || '').trim();
+        }
+    },
+    SET: {
+        title: '# - Set Variable',
+        help: 'Sets a numeric variable. The expression may use + - * / and other variables, e.g. #1 + 1.',
+        fields: [
+            { id: 'var', label: 'Variable #', type: 'number', value: '1', min: 1, required: true },
+            { id: 'expr', label: 'Expression', type: 'text', value: '0', required: true, hint: 'e.g. 0, #1 + 1, [#2 * 2] / 3', wide: true }
+        ],
+        build: function (v) { return '#' + (v.var || '').trim() + ' = ' + (v.expr || '').trim(); }
+    },
+    M780: {
+        title: 'M780 - Count Coloured Blocks',
+        help: 'Logs how many blocks the camera sees. Optionally stores the count in a variable.',
+        fields: [{ id: 'v', label: 'Store in variable # (optional)', type: 'number', placeholder: 'e.g. 1', min: 1 }],
+        build: function (v) { return 'M780' + gcodeBuilderParam(v, 'v', 'V'); }
+    },
+    M781: {
+        title: 'M781 - Block Position to Stored Slot',
+        help: 'Saves a detected block’s position into a Stored Position slot so a later G1 P can move to it.',
+        fields: [
+            { id: 'p', label: 'Block index P', type: 'number', value: '0', min: 0, required: true },
+            { id: 'l', label: 'Store in slot L (0-99)', type: 'number', value: '10', min: 0, max: 99, required: true },
+            { id: 'z', label: 'Height Z (mm, optional)', type: 'number', placeholder: '0' }
+        ],
+        build: function (v) { return 'M781' + gcodeBuilderParam(v, 'p', 'P') + gcodeBuilderParam(v, 'l', 'L') + gcodeBuilderParam(v, 'z', 'Z'); }
+    },
+    COMMENT: {
+        title: '; - Comment',
+        help: 'A note for the reader. Comments are ignored when the program runs.',
+        fields: [{ id: 'text', label: 'Comment', type: 'text', placeholder: 'e.g. Pick up block', required: true, wide: true, keyboard: 'full' }],
+        build: function (v) { return '; ' + (v.text || '').trim(); }
+    },
+    M30: { title: 'M30 - Program End', build: function () { return 'M30'; } },
+    M2: { title: 'M2 - Program End', build: function () { return 'M2'; } }
+};
+
+/**
+ * Expands the shorthand field sets ('xyz', 'joints', 'position') into
+ * concrete fields with live defaults from the arm.
+ * @param {Object} def - Command definition
+ * @returns {Array<Object>}
+ */
+function gcodeBuilderResolveFields(def) {
+    if (!def.fields) return [];
+    if (Array.isArray(def.fields)) return def.fields;
+
+    if (def.fields === 'xyz') {
+        const pos = gcodeBuilderCurrentXYZ();
+        const val = function (axis) { return pos ? gcodeBuilderNum(pos[axis]) : ''; };
+        return [
+            { id: 'x', label: 'X (mm)', type: 'number', value: val('x') },
+            { id: 'y', label: 'Y (mm)', type: 'number', value: val('y') },
+            { id: 'z', label: 'Z (mm)', type: 'number', value: val('z') },
+            { id: 'f', label: 'Feed F (mm/min)', type: 'number', value: '2400', hint: 'F2400 = 40 mm/s' }
+        ];
+    }
+
+    if (def.fields === 'joints') {
+        const angles = gcodeBuilderCurrentAngles();
+        const fields = [];
+        for (let i = 1; i <= getNumJoints(); i++) {
+            fields.push({
+                id: 'j' + i,
+                label: 'J' + i + ' (deg)',
+                type: 'number',
+                value: angles ? gcodeBuilderNum(angles[i - 1]) : ''
+            });
+        }
+        fields.push({ id: 'f', label: 'Speed F (deg/s)', type: 'number', value: '60' });
+        return fields;
+    }
+
+    if (def.fields === 'position') {
+        const options = gcodeBuilderPositionOptions();
+        const pField = options.length
+            ? { id: 'p', label: 'Stored position', type: 'select', value: options[0].value, options: options, wide: true }
+            : { id: 'p', label: 'Position number (0-99) or "Name"', type: 'text', placeholder: 'No positions stored yet', required: true, wide: true, keyboard: 'full' };
+        return [pField, { id: 'f', label: 'Speed F (deg/s)', type: 'number', value: '60' }];
+    }
+
+    return [];
+}
+
+let gcodeBuilderDialogResolve = null;
+
+/**
+ * Shows the parameter form for a command and resolves with the finished
+ * line, or null if cancelled.
+ * @param {Object} def - Command definition
+ * @returns {Promise<string|null>}
+ */
+function showGCodeBuilderDialog(def) {
+    const backdrop = document.getElementById('gcodeBuilderDialogBackdrop');
+    const titleEl = document.getElementById('gcodeBuilderDialogTitle');
+    const helpEl = document.getElementById('gcodeBuilderDialogHelp');
+    const fieldsEl = document.getElementById('gcodeBuilderDialogFields');
+    const previewEl = document.getElementById('gcodeBuilderDialogPreview');
+    const okBtn = document.getElementById('gcodeBuilderDialogConfirm');
+    const cancelBtn = document.getElementById('gcodeBuilderDialogCancel');
+    if (!backdrop || !titleEl || !fieldsEl || !okBtn || !cancelBtn) {
+        return Promise.resolve(null);
+    }
+
+    if (gcodeBuilderDialogResolve) {
+        closeGCodeBuilderDialog(null);
+    }
+
+    const fields = gcodeBuilderResolveFields(def);
+    titleEl.textContent = def.title;
+    if (helpEl) {
+        helpEl.textContent = def.help || '';
+        helpEl.hidden = !def.help;
+    }
+    fieldsEl.innerHTML = '';
+
+    const inputs = {};
+
+    function currentValues() {
+        const values = {};
+        Object.keys(inputs).forEach(function (id) { values[id] = inputs[id].value; });
+        return values;
+    }
+
+    function validate(values) {
+        for (const field of fields) {
+            const raw = (values[field.id] || '').trim();
+            if (field.required && raw === '') {
+                return field.label + ' is required';
+            }
+            if (raw === '' || field.type !== 'number') continue;
+            const num = parseFloat(raw);
+            if (isNaN(num)) return field.label + ' must be a number';
+            if (typeof field.min === 'number' && num < field.min) return field.label + ' must be at least ' + field.min;
+            if (typeof field.max === 'number' && num > field.max) return field.label + ' must be at most ' + field.max;
+        }
+        return null;
+    }
+
+    function refreshPreview() {
+        const values = currentValues();
+        const error = validate(values);
+        const line = error ? '' : def.build(values);
+        if (previewEl) {
+            previewEl.textContent = error ? error : (line || '(nothing to add)');
+            previewEl.style.color = error ? '#c0392b' : '';
+        }
+        okBtn.disabled = !!error || !line;
+    }
+
+    fields.forEach(function (field) {
+        const wrap = document.createElement('div');
+        wrap.className = 'gcode-builder-field' + (field.wide ? ' gcode-builder-field-wide' : '');
+
+        const label = document.createElement('label');
+        label.textContent = field.label;
+        label.htmlFor = 'gcodeBuilderField_' + field.id;
+        wrap.appendChild(label);
+
+        let input;
+        if (field.type === 'select') {
+            input = document.createElement('select');
+            (field.options || []).forEach(function (opt) {
+                const o = document.createElement('option');
+                o.value = opt.value;
+                o.textContent = opt.label;
+                input.appendChild(o);
+            });
+            input.value = field.value || '';
+        } else {
+            // Always a text input: a number input blanks partial values like
+            // "-" and cannot hold "#1". data-kbd picks the kiosk keypad.
+            input = document.createElement('input');
+            input.type = 'text';
+            input.dataset.kbd = field.keyboard || (field.type === 'number' ? 'numeric' : 'full');
+            input.autocomplete = 'off';
+            input.value = field.value !== undefined ? String(field.value) : '';
+            if (field.placeholder) input.placeholder = field.placeholder;
+        }
+        input.id = 'gcodeBuilderField_' + field.id;
+        input.addEventListener('input', refreshPreview);
+        input.addEventListener('change', refreshPreview);
+        input.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' && input.tagName !== 'SELECT') {
+                e.preventDefault();
+                okBtn.click();
+            }
+        });
+        inputs[field.id] = input;
+        wrap.appendChild(input);
+
+        if (field.hint) {
+            const hint = document.createElement('div');
+            hint.className = 'gcode-builder-field-hint';
+            hint.textContent = field.hint;
+            wrap.appendChild(hint);
+        }
+        fieldsEl.appendChild(wrap);
+    });
+
+    okBtn.onclick = function () {
+        const values = currentValues();
+        if (validate(values)) return;
+        closeGCodeBuilderDialog(def.build(values));
+    };
+    cancelBtn.onclick = function () { closeGCodeBuilderDialog(null); };
+    backdrop.onclick = function (e) {
+        if (e.target === backdrop) closeGCodeBuilderDialog(null);
+    };
+
+    refreshPreview();
+    backdrop.hidden = false;
+
+    setTimeout(function () {
+        const first = fields.length ? inputs[fields[0].id] : okBtn;
+        if (first) {
+            first.focus();
+            if (first.select) first.select();
+        }
+    }, 30);
+
+    return new Promise(function (resolve) { gcodeBuilderDialogResolve = resolve; });
+}
+
+/**
+ * Hides the builder form and settles its promise.
+ * @param {string|null} result
+ */
+function closeGCodeBuilderDialog(result) {
+    const backdrop = document.getElementById('gcodeBuilderDialogBackdrop');
+    if (backdrop) backdrop.hidden = true;
+    const resolve = gcodeBuilderDialogResolve;
+    gcodeBuilderDialogResolve = null;
+    if (resolve) resolve(result);
+}
+
+/**
+ * Command button handler (the pendant's OnButtonClick for the G CODE
+ * panel): ask for parameters if the command has any, then AddToLine.
+ * @param {string} key - Key into GCODE_BUILDER_COMMANDS
+ */
+async function gcodeBuilderCommand(key) {
+    const def = GCODE_BUILDER_COMMANDS[key];
+    if (!def) return;
+
+    if (gcodeProcessor.isRunning) {
+        showAppMessage('Stop the program before editing it');
+        return;
+    }
+
+    let line;
+    if (def.fields) {
+        line = await showGCodeBuilderDialog(def);
+        if (line === null || line === '') return;
+    } else {
+        line = def.build({});
+    }
+    gcodeBuilderAddToLine(line);
+}
+
+document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && gcodeBuilderDialogResolve) {
+        closeGCodeBuilderDialog(null);
+    }
+});
