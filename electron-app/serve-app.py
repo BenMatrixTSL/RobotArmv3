@@ -14,7 +14,7 @@ import os
 import sys
 import urllib.error
 import urllib.request
-from http.server import HTTPServer, SimpleHTTPRequestHandler
+from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 
 PORT = int(os.environ.get("ROBOT_ARM_WEB_PORT", "80"))
 BIND = os.environ.get("ROBOT_ARM_WEB_BIND", "0.0.0.0")
@@ -97,7 +97,12 @@ def main():
     snapshot_backend = CAMERA_BACKEND.replace("/stream", "/snapshot")
     print(f"Web UI: http://{BIND}:{PORT}/")
     print(f"Camera proxy: http://{BIND}:{PORT}/camera/snapshot -> {snapshot_backend}")
-    HTTPServer((BIND, PORT), AppHandler).serve_forever()
+    # One thread per request. The camera MJPEG proxy never finishes, so with
+    # the single-threaded HTTPServer a kiosk holding the stream open blocked
+    # every other request (the page itself) until the service was restarted.
+    server = ThreadingHTTPServer((BIND, PORT), AppHandler)
+    server.daemon_threads = True
+    server.serve_forever()
 
 
 if __name__ == "__main__":
