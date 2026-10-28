@@ -952,6 +952,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Three.js renderer can size itself correctly.
     initializePositions();
     initializeGCodeEditor();
+    initializeInfoPopovers();
 
     // Put the last saved G-Code / RAPID programs back in their editors
     restoreSavedPrograms();
@@ -9751,3 +9752,197 @@ document.addEventListener('keydown', function (e) {
         closeGCodeBuilderDialog(null);
     }
 });
+
+// ===== Section info popovers =====
+// Most cards open with a heading followed by an italic paragraph explaining
+// what the section does. That text is useful once and then takes up room,
+// so at startup each such paragraph is lifted out of the page into an (i)
+// button on its heading. Hovering the button shows the text; tapping it
+// pins the text open until the next tap, Escape or a click elsewhere.
+// Only paragraphs that sit directly after an h2/h3/h4 and carry no ids are
+// moved; hints under inputs and dynamic status lines stay where they are.
+
+let infoPopoverEl = null;
+let infoPopoverPinnedBtn = null;
+let infoPopoverHideTimer = null;
+
+/**
+ * Positions the shared popover under (or above) a button.
+ * @param {HTMLElement} btn
+ */
+function positionInfoPopover(btn) {
+    const pop = infoPopoverEl;
+    const margin = 12;
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const rect = btn.getBoundingClientRect();
+
+    pop.style.maxWidth = Math.min(520, vw - margin * 2) + 'px';
+    pop.style.left = '0px';
+    pop.style.top = '0px';
+    const popRect = pop.getBoundingClientRect();
+
+    let left = rect.left;
+    left = Math.max(margin, Math.min(left, vw - margin - popRect.width));
+
+    let top = rect.bottom + 8;
+    let above = false;
+    if (top + popRect.height > vh - margin && rect.top - 8 - popRect.height >= margin) {
+        top = rect.top - 8 - popRect.height;
+        above = true;
+    }
+    top = Math.max(margin, Math.min(top, vh - margin - popRect.height));
+
+    pop.style.left = Math.round(left) + 'px';
+    pop.style.top = Math.round(top) + 'px';
+    pop.classList.toggle('info-popover-above', above);
+}
+
+/**
+ * Shows the popover for a button.
+ * @param {HTMLElement} btn
+ * @param {boolean} pin - True when opened by a tap/click
+ */
+function showInfoPopover(btn, pin) {
+    if (!infoPopoverEl) return;
+    clearTimeout(infoPopoverHideTimer);
+
+    if (infoPopoverPinnedBtn && infoPopoverPinnedBtn !== btn) {
+        infoPopoverPinnedBtn.classList.remove('info-btn-active');
+        infoPopoverPinnedBtn.setAttribute('aria-expanded', 'false');
+    }
+
+    infoPopoverEl.innerHTML = btn.dataset.infoHtml || '';
+    infoPopoverEl.hidden = false;
+    positionInfoPopover(btn);
+
+    document.querySelectorAll('.info-btn.info-btn-active').forEach(function (b) {
+        if (b !== btn) {
+            b.classList.remove('info-btn-active');
+            b.setAttribute('aria-expanded', 'false');
+        }
+    });
+    btn.classList.add('info-btn-active');
+    btn.setAttribute('aria-expanded', 'true');
+    infoPopoverPinnedBtn = pin ? btn : null;
+    infoPopoverEl.classList.toggle('info-popover-pinned', !!pin);
+}
+
+/**
+ * Hides the popover and clears any pinned state.
+ */
+function hideInfoPopover() {
+    clearTimeout(infoPopoverHideTimer);
+    if (!infoPopoverEl || infoPopoverEl.hidden) {
+        infoPopoverPinnedBtn = null;
+        return;
+    }
+    infoPopoverEl.hidden = true;
+    infoPopoverEl.classList.remove('info-popover-pinned');
+    document.querySelectorAll('.info-btn.info-btn-active').forEach(function (b) {
+        b.classList.remove('info-btn-active');
+        b.setAttribute('aria-expanded', 'false');
+    });
+    infoPopoverPinnedBtn = null;
+}
+
+/**
+ * Hides a hover-opened popover after a short grace period so the pointer
+ * can travel from the button into the popover text.
+ */
+function scheduleInfoPopoverHide() {
+    if (infoPopoverPinnedBtn) return;
+    clearTimeout(infoPopoverHideTimer);
+    infoPopoverHideTimer = setTimeout(hideInfoPopover, 180);
+}
+
+/**
+ * Converts every heading-plus-explanation pair into an (i) button.
+ */
+function initializeInfoPopovers() {
+    if (infoPopoverEl) return;
+
+    infoPopoverEl = document.createElement('div');
+    infoPopoverEl.className = 'info-popover';
+    infoPopoverEl.setAttribute('role', 'tooltip');
+    infoPopoverEl.hidden = true;
+    document.body.appendChild(infoPopoverEl);
+
+    const canHover = window.matchMedia && window.matchMedia('(hover: hover)').matches;
+
+    // Collect first, then modify: removing a paragraph changes which element
+    // the next one sits after.
+    const isInfoParagraph = function (el) {
+        return el && el.tagName === 'P' && el.classList.contains('info-text')
+            && !el.id && !el.querySelector('[id]');
+    };
+    const groups = [];
+    document.querySelectorAll('h2, h3, h4').forEach(function (heading) {
+        const paragraphs = [];
+        let next = heading.nextElementSibling;
+        while (isInfoParagraph(next)) {
+            paragraphs.push(next);
+            next = next.nextElementSibling;
+        }
+        if (paragraphs.length && paragraphs.some(function (p) { return p.textContent.trim(); })) {
+            groups.push({ heading: heading, paragraphs: paragraphs });
+        }
+    });
+
+    groups.forEach(function (group) {
+        const heading = group.heading;
+        const label = heading.textContent.trim();
+
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'info-btn';
+        btn.textContent = 'i';
+        btn.title = 'About this section';
+        btn.setAttribute('aria-label', 'About ' + label);
+        btn.setAttribute('aria-haspopup', 'true');
+        btn.setAttribute('aria-expanded', 'false');
+        btn.dataset.infoHtml = group.paragraphs
+            .map(function (p) { return '<p>' + p.innerHTML + '</p>'; })
+            .join('');
+
+        heading.appendChild(btn);
+        group.paragraphs.forEach(function (p) { p.remove(); });
+
+        btn.addEventListener('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (infoPopoverPinnedBtn === btn) {
+                hideInfoPopover();
+            } else {
+                showInfoPopover(btn, true);
+            }
+        });
+        if (canHover) {
+            btn.addEventListener('mouseenter', function () {
+                if (!infoPopoverPinnedBtn) showInfoPopover(btn, false);
+            });
+            btn.addEventListener('mouseleave', scheduleInfoPopoverHide);
+        }
+    });
+
+    infoPopoverEl.addEventListener('mouseenter', function () {
+        clearTimeout(infoPopoverHideTimer);
+    });
+    infoPopoverEl.addEventListener('mouseleave', scheduleInfoPopoverHide);
+    infoPopoverEl.addEventListener('click', function (e) {
+        e.stopPropagation();
+    });
+
+    document.addEventListener('click', function () {
+        if (infoPopoverPinnedBtn) hideInfoPopover();
+    });
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') hideInfoPopover();
+    });
+    // Anything that moves the button out from under the popover closes it
+    window.addEventListener('scroll', hideInfoPopover, true);
+    window.addEventListener('resize', hideInfoPopover);
+    document.querySelectorAll('.tab-button').forEach(function (tab) {
+        tab.addEventListener('click', hideInfoPopover);
+    });
+}
