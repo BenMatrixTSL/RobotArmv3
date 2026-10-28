@@ -123,6 +123,42 @@ ipcMain.handle('open-visualisation-window', () => {
     });
 });
 
+let curriculumWindow = null;
+
+/**
+ * Opens (or re-focuses) a separate, normal window showing a curriculum page.
+ * Only pages inside the Curriculum folder are accepted.
+ */
+ipcMain.handle('open-curriculum-window', (event, args) => {
+    const requested = (args && typeof args.page === 'string') ? args.page : 'Curriculum/index.html';
+    const m = requested.match(/^Curriculum\/([A-Za-z0-9_.-]+\.html)(?:#(.*))?$/);
+    const file = m ? path.join(__dirname, 'Curriculum', m[1]) : path.join(__dirname, 'Curriculum', 'index.html');
+    const hash = m && m[2] ? m[2] : undefined;
+
+    if (curriculumWindow && !curriculumWindow.isDestroyed()) {
+        curriculumWindow.loadFile(file, hash ? { hash } : undefined);
+        curriculumWindow.focus();
+        return;
+    }
+
+    curriculumWindow = new BrowserWindow({
+        width: 1100,
+        height: 800,
+        minWidth: 600,
+        minHeight: 400,
+        title: 'Robot Arm Curriculum',
+        webPreferences: {
+            nodeIntegration: false,
+            contextIsolation: true
+        }
+    });
+    curriculumWindow.setMenuBarVisibility(false);
+    curriculumWindow.loadFile(file, hash ? { hash } : undefined);
+    curriculumWindow.on('closed', () => {
+        curriculumWindow = null;
+    });
+});
+
 /**
  * Handle requests from the renderer to update local git repositories.
  * For safety this only supports a small set of known folders.

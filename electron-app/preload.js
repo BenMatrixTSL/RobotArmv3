@@ -57,6 +57,18 @@ const api = {
     },
 
     /**
+     * Asks the main process to open the curriculum in a separate window.
+     * @param {string} page - Path under Curriculum/, e.g. 'Curriculum/module-03.html'
+     */
+    openCurriculumWindow: (page) => {
+        try {
+            ipcRenderer.invoke('open-curriculum-window', { page });
+        } catch (e) {
+            console.error('[preload] openCurriculumWindow failed:', e);
+        }
+    },
+
+    /**
      * Ask the main process to update one of the local git repositories.
      * Valid values for "which" are:
      *  - 'electron'  → update the electron-app folder

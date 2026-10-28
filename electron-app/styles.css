@@ -4916,3 +4916,18 @@ body.kiosk-mode .tab-button.active {
 body.touch-mode .kin-schematic-wrap {
     margin: 0 auto;
 }
+
+/* Curriculum tab: small toolbar above the embedded pages */
+.curriculum-toolbar {
+    flex: 0 0 auto;
+    display: flex;
+    justify-content: flex-end;
+    padding: 6px 10px;
+    background: #f8f9fa;
+    border-bottom: 1px solid #ddd;
+}
+
+.curriculum-tab-content iframe {
+    flex: 1 1 auto;
+    min-height: 0;
+}

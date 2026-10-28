@@ -2252,6 +2252,38 @@ function openVisualisationPopup() {
     }
 }
 
+/**
+ * Opens the curriculum in its own window, on the page the embedded tab is
+ * currently showing, so a module can sit beside the app while it is used.
+ * Electron opens a real BrowserWindow via the preload bridge; the
+ * browser-served kiosk falls back to window.open.
+ */
+function openCurriculumPopup() {
+    let page = 'Curriculum/index.html';
+    try {
+        const frame = document.getElementById('curriculum-iframe');
+        const href = frame && frame.contentWindow && frame.contentWindow.location
+            ? frame.contentWindow.location.href : '';
+        const m = href.match(/Curriculum\/[A-Za-z0-9_.-]+\.html(?:[#?].*)?$/);
+        if (m) page = m[0];
+    } catch (e) {
+        // Cross-origin or not loaded yet - open the index
+    }
+    try {
+        if (window.electronAPI && typeof window.electronAPI.openCurriculumWindow === 'function') {
+            window.electronAPI.openCurriculumWindow(page);
+        } else {
+            const popup = window.open(page, 'robotArmCurriculum', 'width=1100,height=800,resizable=yes,scrollbars=yes');
+            if (!popup) {
+                showAppMessage('Pop-up was blocked. Please allow pop-ups for this page and try again.');
+            }
+        }
+    } catch (e) {
+        console.error('openCurriculumPopup failed:', e);
+        showAppMessage('Failed to open curriculum window.');
+    }
+}
+
 // ===== URDF file viewer =====
 
 /**
