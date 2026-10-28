@@ -4772,3 +4772,88 @@ body.kiosk-mode .pendant2-jog-label .info-btn {
     height: 28px;
     font-size: 16px;
 }
+
+/* ---- Tab icons ----
+   Each sidebar tab carries an icon (tabIcons.js) coloured by its group;
+   the active tab's edge stripe takes the same colour. */
+.tab-button {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.tab-icon {
+    display: inline-flex;
+    flex: 0 0 auto;
+    width: 20px;
+    height: 20px;
+    color: var(--tab-colour, #7f8c8d);
+}
+
+.tab-icon svg {
+    width: 100%;
+    height: 100%;
+}
+
+.tab-label {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.tab-button.active {
+    border-right-color: var(--tab-colour, #3498db);
+}
+
+.tab-button:hover .tab-icon,
+.tab-button.active .tab-icon {
+    color: var(--tab-colour, #3498db);
+}
+
+/* Narrow screens: tabs run in a row and show only their icons. The column
+   layout above has align-items: flex-start, which left both the tab row and
+   the content at their natural (sidebar) width - stretch them instead. */
+@media (max-width: 800px) {
+    .main-layout {
+        align-items: stretch;
+    }
+
+    .tabs {
+        width: 100%;
+        min-width: 0;
+        justify-content: flex-start;
+    }
+
+    .tab-content-container {
+        width: 100%;
+    }
+
+    .tab-button {
+        padding: 8px 10px;
+        justify-content: center;
+        border-bottom: 3px solid transparent;
+    }
+
+    .tab-button .tab-label {
+        display: none;
+    }
+
+    .tab-button .tab-icon {
+        width: 24px;
+        height: 24px;
+    }
+
+    .tab-button.active {
+        border-bottom-color: var(--tab-colour, #3498db);
+    }
+}
+
+/* Kiosk sidebar is narrow: icon above a small label */
+body.kiosk-mode .tab-button {
+    flex-direction: column;
+    gap: 3px;
+    justify-content: center;
+}
+
+body.kiosk-mode .tab-button.active {
+    border-right-color: var(--tab-colour, #3498db);
+}

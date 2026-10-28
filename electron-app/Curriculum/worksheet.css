@@ -138,3 +138,21 @@
     print-color-adjust: exact;
   }
 }
+
+/* ---- App tab chips ----
+   worksheet.js drops the application's tab icon into each
+   "App tab: ..." chip so students can match it to the sidebar. */
+.app-tab-with-icon {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 0.4em;
+}
+
+.app-tab-icon {
+  width: 1.3em;
+  height: 1.3em;
+  background: #fff;
+  border-radius: 3px;
+  padding: 1px;
+  box-sizing: border-box;
+}

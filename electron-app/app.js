@@ -943,6 +943,7 @@ document.addEventListener('DOMContentLoaded', function() {
     detectScreenSize();
     
     // Initialize the UI
+    decorateTabButtons();
     initializeTabs();
     initializeConnection();
     initializeFileInput();
@@ -9952,5 +9953,44 @@ function initializeInfoPopovers() {
     window.addEventListener('resize', hideInfoPopover);
     document.querySelectorAll('.tab-button').forEach(function (tab) {
         tab.addEventListener('click', hideInfoPopover);
+    });
+}
+
+// ===== Tab icons =====
+// Puts the icon from tabIcons.js in front of each sidebar tab's label and
+// tags the button with its colour group. On narrow screens the stylesheet
+// hides the label and shows the icon alone, so the title attribute keeps
+// the name available as a tooltip.
+
+/**
+ * Adds icon and group colour to every .tab-button that has a data-tab.
+ */
+function decorateTabButtons() {
+    if (typeof TAB_ICONS === 'undefined' || typeof tabIconSvg !== 'function') return;
+    document.querySelectorAll('.tab-button[data-tab]').forEach(function (btn) {
+        const id = btn.getAttribute('data-tab');
+        const icon = TAB_ICONS[id];
+        if (!icon || btn.querySelector('.tab-icon')) return;
+
+        const label = btn.textContent.trim();
+        btn.textContent = '';
+
+        const iconEl = document.createElement('span');
+        iconEl.className = 'tab-icon';
+        iconEl.setAttribute('aria-hidden', 'true');
+        iconEl.innerHTML = tabIconSvg(id, { size: 20 });
+
+        const labelEl = document.createElement('span');
+        labelEl.className = 'tab-label';
+        labelEl.textContent = label;
+
+        btn.appendChild(iconEl);
+        btn.appendChild(labelEl);
+        btn.dataset.group = icon.group;
+        btn.title = label;
+        const group = TAB_GROUPS[icon.group];
+        if (group) {
+            btn.style.setProperty('--tab-colour', group.colour);
+        }
     });
 }

@@ -262,3 +262,54 @@ function remapOldModuleKey(key, fromVersion) {
     '.ws-table td input[type="text"] { width: 100%; border: none; background: transparent; padding: 0.3rem 0.4rem; font-size: 0.82rem; font-family: inherit; }',
   ].join('\n');
 })();
+
+// ---- App tab icons ----
+// Activity cards name the app tab to use with a chip such as
+// <span class="app-tab">App tab: Joint Control</span>. This puts the matching
+// icon from the application's sidebar (images/tabs/*.svg, generated from
+// electron-app/tabIcons.js) in front of the text, so the chip looks like
+// the tab the student has to find. Unknown names are left as plain text.
+(function () {
+  var TAB_ICON_FILES = {
+    'connection': 'connection',
+    'joint control': 'pendant',
+    'pendant control': 'pendant-ui',
+    'g-code control': 'gcode',
+    'g-code': 'gcode',
+    'rapid': 'rapid',
+    'visual programming': 'blockly',
+    'blockly': 'blockly',
+    '3d visualisation': 'visualization',
+    '3d visualization': 'visualization',
+    'kinematics': 'kinematics',
+    'stored positions': 'positions',
+    'calibration': 'calibration',
+    'dead zones': 'deadzones',
+    'camera': 'camera',
+    'settings': 'settings',
+    'curriculum': 'curriculum'
+  };
+
+  function addTabIcons() {
+    var chips = document.querySelectorAll('.app-tab');
+    for (var i = 0; i < chips.length; i++) {
+      var chip = chips[i];
+      if (chip.querySelector('img')) continue;
+      var text = chip.textContent.replace(/^\s*App tab:\s*/i, '').trim();
+      var file = TAB_ICON_FILES[text.toLowerCase()];
+      if (!file) continue;
+      var img = document.createElement('img');
+      img.src = 'images/tabs/' + file + '.svg';
+      img.alt = '';
+      img.className = 'app-tab-icon';
+      chip.insertBefore(img, chip.firstChild);
+      chip.classList.add('app-tab-with-icon');
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', addTabIcons);
+  } else {
+    addTabIcons();
+  }
+})();
