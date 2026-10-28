@@ -1168,6 +1168,18 @@ class RobotArm3D {
                 // Store zone info for debugging
                 box.userData = { zoneName: zone.name || 'unnamed', zoneId: zone.id };
                 this.deadZoneGroup.add(box);
+
+                // The translucent fill alone is easy to lose against the
+                // table and the arm, so outline the cuboid's twelve edges
+                // in a solid, brighter red. (WebGL ignores linewidth, so
+                // boldness comes from full opacity and a vivid colour.)
+                const edges = new THREE.LineSegments(
+                    new THREE.EdgesGeometry(geometry),
+                    new THREE.LineBasicMaterial({ color: 0xff1a1a, transparent: false, depthTest: true })
+                );
+                edges.position.copy(threeCenter);
+                edges.userData = { zoneName: zone.name || 'unnamed', zoneId: zone.id, isEdge: true };
+                this.deadZoneGroup.add(edges);
                 addedCount++;
             } catch (error) {
                 console.error(`updateDeadZones: Error creating box for zone "${zone.name || 'unnamed'}":`, error);
