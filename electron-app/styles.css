@@ -4857,3 +4857,16 @@ body.kiosk-mode .tab-button {
 body.kiosk-mode .tab-button.active {
     border-right-color: var(--tab-colour, #3498db);
 }
+
+/* Kinematics tab: the legend's heading was a bold paragraph; keep that size */
+.kinematics-legend-title {
+    font-size: 15px;
+    margin: 0 0 8px 0;
+    color: #2c3e50;
+}
+
+.kinematics-steps h3 {
+    font-size: 16px;
+    margin: 0 0 8px 0;
+    color: #2c3e50;
+}

@@ -19,7 +19,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Robot Arm Control - Pendant & G-Code</title>
-    <link rel="stylesheet" href="styles.css?v=20261028d">
+    <link rel="stylesheet" href="styles.css?v=20261028e">
     <script>
     // Kiosk mode on the Pi: show a loading screen and reload until the UI is really loaded.
     (function () {
@@ -1031,6 +1031,13 @@
                 <a href="#" id="kinematicsViewUrdfLink" onclick="openUrdfFileWindow(); return false;">View the URDF file</a>
                 to read the actual geometry (the URDF uses metres for lengths and radians for joint limits).
             </p>
+            <p class="info-text">
+                The tab shows how forward kinematics builds up from the base to the end effector. For each joint
+                one transform T<sub>i</sub> = Origin<sub>i</sub> &middot; Rotation(axis<sub>i</sub>, angle<sub>i</sub>) is
+                formed, and multiplying them in order gives the cumulative transform - where that joint's frame,
+                and finally the tool tip, sits in base coordinates. Every matrix below updates live as the arm
+                moves, or from typed angles when Simulate joint angles is ticked.
+            </p>
 
             <div class="simulation-panel kinematics-source-panel">
                 <div class="simulation-controls">
@@ -1049,14 +1056,16 @@
                 </div>
             </div>
 
-            <p class="info-text">
-                This tab shows how forward kinematics builds up from the base to the end effector.
-                For each joint, we apply a transform
-                T<sub>i</sub> = Origin<sub>i</sub> · Rotation(axis<sub>i</sub>, angle<sub>i</sub>),
-                and multiply them to get the cumulative transform.
-            </p>
             <div class="kinematics-matrix-legend">
-                <p class="info-text"><strong>4×4 transform layout</strong></p>
+                <h3 class="kinematics-legend-title">4&times;4 transform layout</h3>
+                <p class="info-text">
+                    The top-left 3&times;3 entries R<sub>ij</sub> form the rotation (driven by each joint's axis and angle).
+                    The last column holds the translation in millimetres (from each joint's origin; internally stored in metres).
+                    The bottom row is always 0 0 0 1 - it is what lets one 4&times;4 matrix carry both a rotation and a
+                    translation, so chaining frames becomes plain matrix multiplication.
+                    In each step below: <strong>Origin &times; Rotation(axis, &theta;) = T<sub>i</sub></strong>, then the running product
+                    multiplies T<sub>i</sub> onto everything before it to give that frame's position in the base frame.
+                </p>
                 <table class="kinematics-matrix">
                     <tbody>
                         <tr>
@@ -1085,12 +1094,6 @@
                         </tr>
                     </tbody>
                 </table>
-                <p class="info-text">
-                    The top-left 3×3 entries R<sub>ij</sub> form the rotation (driven by each joint's axis and angle).
-                    The last column holds the translation in millimetres (from each joint's origin; internally stored in metres).
-                    In each step below: <strong>Origin × Rotation(axis, θ) = T<sub>i</sub></strong>, then the running product
-                    multiplies T<sub>i</sub> onto everything before it to give that frame's position in the base frame.
-                </p>
             </div>
             <div id="kinematicsMatricesDisplay" class="kinematics-matrices-display"></div>
         </div>
@@ -1834,7 +1837,7 @@
     <script src="cameraView.js?v=20260616"></script>
     <!-- Main Application: UI logic and event handlers -->
     <script src="tabIcons.js?v=20261028"></script>
-    <script src="app.js?v=20261028e"></script>
+    <script src="app.js?v=20261028f"></script>
     <!-- On-Screen Keyboard: touch keyboard for kiosk mode (no system OSK in Chromium kiosk) -->
     <script src="keyboard.js?v=20260930"></script>
 

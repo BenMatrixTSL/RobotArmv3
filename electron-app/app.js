@@ -438,10 +438,15 @@ function buildKinematicsStepCards(display, steps, revoluteCount) {
 
     let html = '';
     html += '<div class="kinematics-steps">';
-    html += '<p><strong>Forward Kinematics Matrices (Base → Joint / Tool)</strong><br>';
-    html += 'Each joint contributes one transform T<sub>i</sub> = Origin<sub>i</sub> × Rotation(axis<sub>i</sub>, θ<sub>i</sub>). ';
-    html += 'The running product T<sub>0…i</sub> = T<sub>0…i−1</sub> × T<sub>i</sub> is where that joint\'s frame ends up in the base frame. ';
-    html += 'Rotation entries are unitless; the last column is translation in millimetres.</p>';
+    const infoAttr = (text) => ` data-info="${String(text).replace(/&/g, '&amp;').replace(/"/g, '&quot;')}"`;
+    html += `<h3${infoAttr(
+        'Each joint contributes one transform T<sub>i</sub> = Origin<sub>i</sub> × Rotation(axis<sub>i</sub>, θ<sub>i</sub>). ' +
+        'The running product T<sub>0…i</sub> = T<sub>0…i−1</sub> × T<sub>i</sub> is where that joint\'s frame ends up in the base frame, ' +
+        'and the last card\'s running product is the tool-tip pose the rest of the app uses. ' +
+        'Rotation entries are unitless; the last column is translation in millimetres. ' +
+        'Each card is colour-coded: origin values from the URDF, the axis the joint turns about, the entries the angle θ changes, ' +
+        'and the resulting position of that frame. Open the (i) on a card for what its matrices mean for that joint.'
+    )}>Forward Kinematics Matrices (Base → Joint / Tool)</h3>`;
     html += '<p class="kin-colour-key">Colour key: ' +
         swatch('kin-hl-origin', 'Origin (URDF xyz / rpy)') + ' ' +
         swatch('kin-hl-axis', 'Axis (the component the joint turns about)') + ' ' +
@@ -475,12 +480,13 @@ function buildKinematicsStepCards(display, steps, revoluteCount) {
         const runningClass = (r, c) => (r < 3 && c === 3) ? 'kin-hl-position' : '';
 
         html += `<div class="kinematics-step" id="kinStep${s}">`;
+        const stepInfo = infoAttr(kinematicsStepInfoText(s, isJoint, name, axis, nonZero, k, hasRpy, s === steps.length - 1));
         if (s === steps.length - 1) {
-            html += `<h4 class="kin-tool-title"><span>${isJoint ? `Joint ${s + 1}` : 'Tool'} - ${name} (step ${step.index})</span>` +
+            html += `<h4 class="kin-tool-title"${stepInfo}><span>${isJoint ? `Joint ${s + 1}` : 'Tool'} - ${name} (step ${step.index})</span>` +
                 `<span class="end-tool-state" id="endToolState" title="">–</span>` +
                 `<button class="btn btn-small btn-secondary" onclick="refreshEndTool()">Re-check tool</button></h4>`;
         } else {
-            html += `<h4>${isJoint ? `Joint ${s + 1}` : 'Tool'} - ${name} (step ${step.index})</h4>`;
+            html += `<h4${stepInfo}>${isJoint ? `Joint ${s + 1}` : 'Tool'} - ${name} (step ${step.index})</h4>`;
         }
         html += '<table class="kinematics-step-info"><tbody>';
         if (isJoint) {
@@ -531,8 +537,57 @@ function buildKinematicsStepCards(display, steps, revoluteCount) {
     html += '</div>';
     display.innerHTML = html;
 
+    // The headings were just re-created - give them their (i) buttons
+    if (typeof decorateInfoTitles === 'function') decorateInfoTitles(display);
+
     // The status span was just re-created - fill it in
     if (typeof renderEndToolPanel === 'function') renderEndToolPanel();
+}
+
+/**
+ * Explanation shown by the (i) on a kinematics step card: what this joint's
+ * origin, axis, rotation, T_i and running product mean, worded for the
+ * axis it actually turns about.
+ * @param {number} s - step index
+ * @param {boolean} isJoint - revolute joint (true) or fixed tool step (false)
+ * @param {string} name - URDF joint name
+ * @param {{x:number,y:number,z:number}} axis
+ * @param {number} nonZero - non-zero axis components
+ * @param {number} k - dominant axis component index
+ * @param {boolean} hasRpy - origin carries a roll/pitch/yaw rotation
+ * @param {boolean} isLast - last card (tool tip)
+ * @returns {string} HTML
+ */
+function kinematicsStepInfoText(s, isJoint, name, axis, nonZero, k, hasRpy, isLast) {
+    if (!isJoint) {
+        return 'The tool step has no joint angle: <strong>T<sub>tool</sub></strong> is a fixed offset holding where the end tool\'s ' +
+            'tip sits relative to the last joint\'s frame, taken from the active end tool\'s entry in the URDF. ' +
+            'Multiplying it onto the running product gives the tool-tip position used for XYZ moves, stored XYZ positions and the ' +
+            '3D view. A different end tool changes this offset and nothing else - Re-check tool re-reads which one is fitted.';
+    }
+    const n = s + 1;
+    const axisName = ['X', 'Y', 'Z'][k];
+    const neg = [axis.x, axis.y, axis.z][k] < 0;
+    const prev = s === 0 ? 'the base' : 'joint ' + s + '\'s frame';
+    let text = '<strong>Joint ' + n + '</strong> (' + name + ') turns about ';
+    if (nonZero === 1) {
+        text += 'its own <strong>' + (neg ? '−' : '') + axisName + '</strong> axis. ';
+    } else {
+        text += 'a tilted axis, so its rotation matrix uses Rodrigues\' formula with c = cos θ, s = sin θ and v = 1 − c. ';
+    }
+    text += '<strong>Origin<sub>' + n + '</sub></strong> is the fixed offset from ' + prev + ' given by the URDF: the xyz (in metres, ' +
+        'shown here in mm) is the link length' + (hasRpy ? ', and its rpy turns the frame before the joint rotates' : '') + '. ';
+    text += '<strong>Rotation(axis, θ)</strong> is built from the joint angle, θ = angle × π/180. ';
+    if (nonZero === 1) {
+        text += 'The ' + axisName + ' row and column stay fixed (the diagonal entry is 1) and cos θ and sin θ fill the other 2×2 block' +
+            (neg ? ' with the sine signs swapped, because a negative axis direction rotates by −θ' : '') + '. ';
+    }
+    text += '<strong>T<sub>' + n + '</sub> = Origin<sub>' + n + '</sub> × Rotation</strong> is this joint\'s complete transform. ' +
+        'The <strong>running product</strong> ' + (s === 0 ? 'T<sub>0…1</sub> = T<sub>1</sub>' :
+            'T<sub>0…' + n + '</sub> = T<sub>0…' + s + '</sub> × T<sub>' + n + '</sub>') +
+        ' chains every transform from the base; its last column is where this joint\'s frame sits in base coordinates (the Position row). ' +
+        'Change the angle and only the highlighted entries move' + (isLast ? '; this is the final frame, so it is the tool-tip pose' : '') + '.';
+    return text;
 }
 
 /**
@@ -9853,29 +9908,27 @@ function scheduleInfoPopoverHide() {
 }
 
 /**
- * Converts every heading-plus-explanation pair into an (i) button.
+ * Gives every heading-plus-explanation pair under `root` an (i) button.
+ * Safe to call again after new content is rendered (e.g. the Kinematics
+ * step cards): titles that already have a button are skipped.
+ * @param {ParentNode} [root] - Defaults to the whole document
  */
-function initializeInfoPopovers() {
-    if (infoPopoverEl) return;
-
-    infoPopoverEl = document.createElement('div');
-    infoPopoverEl.className = 'info-popover';
-    infoPopoverEl.setAttribute('role', 'tooltip');
-    infoPopoverEl.hidden = true;
-    document.body.appendChild(infoPopoverEl);
-
+function decorateInfoTitles(root) {
+    const scope = root || document;
     const canHover = window.matchMedia && window.matchMedia('(hover: hover)').matches;
 
-    // Collect first, then modify: removing a paragraph changes which element
-    // the next one sits after.
+    // A paragraph with its own id is dynamic status text and stays put;
+    // ids on children (e.g. a link) are fine.
     const isInfoParagraph = function (el) {
-        return el && el.tagName === 'P' && el.classList.contains('info-text')
-            && !el.id && !el.querySelector('[id]');
+        return el && el.tagName === 'P' && el.classList.contains('info-text') && !el.id;
     };
-    // A title can also carry its text in a data-info attribute, for cards
-    // that never had a paragraph (pendant cards, table headings).
+
+    // Collect first, then modify: removing a paragraph changes which element
+    // the next one sits after. A title can also carry its text in a
+    // data-info attribute, for cards that never had a paragraph.
     const groups = [];
-    document.querySelectorAll('h2, h3, h4, .pendant2-card-title, .pendant2-jog-label').forEach(function (heading) {
+    scope.querySelectorAll('h2, h3, h4, .pendant2-card-title, .pendant2-jog-label').forEach(function (heading) {
+        if (heading.querySelector('.info-btn')) return;
         const paragraphs = [];
         let next = heading.nextElementSibling;
         while (isInfoParagraph(next)) {
@@ -9891,7 +9944,10 @@ function initializeInfoPopovers() {
 
     groups.forEach(function (group) {
         const heading = group.heading;
-        const label = heading.textContent.trim();
+        // Titles that also hold controls (e.g. the tool card's status and
+        // Re-check button) keep their name in a leading span.
+        const first = heading.firstElementChild;
+        const label = ((first && first.tagName === 'SPAN') ? first.textContent : heading.textContent).trim();
 
         const btn = document.createElement('button');
         btn.type = 'button';
@@ -9928,6 +9984,22 @@ function initializeInfoPopovers() {
             btn.addEventListener('mouseleave', scheduleInfoPopoverHide);
         }
     });
+}
+
+/**
+ * Creates the shared popover, wires its global listeners and decorates the
+ * static page. Called once at startup.
+ */
+function initializeInfoPopovers() {
+    if (infoPopoverEl) return;
+
+    infoPopoverEl = document.createElement('div');
+    infoPopoverEl.className = 'info-popover';
+    infoPopoverEl.setAttribute('role', 'tooltip');
+    infoPopoverEl.hidden = true;
+    document.body.appendChild(infoPopoverEl);
+
+    decorateInfoTitles(document);
 
     infoPopoverEl.addEventListener('mouseenter', function () {
         clearTimeout(infoPopoverHideTimer);
