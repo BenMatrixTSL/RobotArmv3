@@ -14,13 +14,24 @@ At boot, a **desktop autostart** entry runs the kiosk script after you log into 
 
 ### Two displays (HDMI-1 and HDMI-2)
 
-By default the installer sets `ROBOT_ARM_KIOSK_SCREENS=1` (one fullscreen window - most reliable at boot). For **two monitors**, set `ROBOT_ARM_KIOSK_SCREENS=all` when installing. When two monitors are connected, the script:
+With `ROBOT_ARM_KIOSK_SCREENS=all` the kiosk opens **one app window per screen**. On the Pi's
+default desktop (Wayland / labwc) `start-kiosk.sh`:
 
-- Reads their position and size with `xrandr`
-- Starts **one separate Chromium instance per screen** (each with its own profile folder)
-- Places each window on the correct monitor (`--window-position` / `--window-size`)
+- Lists the enabled screens with `wlr-randr` (HDMI-A-1 first - the screen the touch panel is mapped to)
+- Opens each window on its own entry page, `kiosk-hdmi-a-1.html` / `kiosk-hdmi-a-2.html`, as a Chromium
+  app window. Chromium names the window after that page.
+- Adds a labwc window rule per screen to `~/.config/labwc/rc.xml` (between `robot-arm-kiosk window rules`
+  marker comments; your other settings, such as the touch mapping, are kept and a backup is saved as
+  `rc.xml.before-robot-arm-kiosk`). The rule moves each window to its screen when it opens.
+- Runs every window in **one Chromium process and profile**, so both screens share stored positions,
+  saved programs and the user-type settings.
+- Watches for screens being plugged in or removed and reopens one window per screen, so the app no
+  longer jumps onto a newly connected monitor.
 
-Both show the same UI. **Important:** each browser opens its own WebSocket to the server, so both can send commands. Use one touchscreen for control, or set `ROBOT_ARM_KIOSK_SCREENS=1` for a single fullscreen window only.
+On X11 desktops the older behaviour applies: `xrandr` positions, one Chromium instance (and profile) per screen.
+
+Each window opens its own connection to the server. Only one app can hold arm control at a time, so the
+second screen can watch while the first drives, or take control itself with the Take control button.
 
 ```bash
 # Install with single-screen kiosk (default)
@@ -29,7 +40,7 @@ sudo ./install-kiosk-service.sh
 # Single display only (one fullscreen window)
 sudo ROBOT_ARM_KIOSK_SCREENS=1 ./install-kiosk-service.sh /opt/RobotArm/electron-app
 
-# Exactly two windows (first two outputs from xrandr)
+# At most two windows (first two screens)
 sudo ROBOT_ARM_KIOSK_SCREENS=2 ./install-kiosk-service.sh /opt/RobotArm/electron-app
 
 # All connected monitors

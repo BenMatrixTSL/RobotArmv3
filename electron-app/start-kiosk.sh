@@ -4,7 +4,11 @@
 # Must run inside a graphical desktop session (auto-login recommended).
 #
 #   ./start-kiosk.sh
-#   ROBOT_ARM_KIOSK_SCREENS=all ./start-kiosk.sh
+#   ROBOT_ARM_KIOSK_SCREENS=all ./start-kiosk.sh   # one window per screen
+#
+# On Wayland (labwc, the Pi default) each screen gets its own window, kept on
+# that screen by a labwc window rule; plugging a screen in or out reopens the
+# windows. See run_wayland_screens below and KIOSK_SETUP.md.
 #
 # Log file: ~/.robot-arm-kiosk/kiosk.log
 
@@ -22,6 +26,9 @@ PROFILE_BASE="${HOME}/.robot-arm-kiosk"
 LOG_FILE="${PROFILE_BASE}/kiosk.log"
 
 CHROMIUM_FLAGS=()
+# What launch_chromium opens: the plain kiosk URL, or --app=<page> for the
+# per-screen windows on Wayland (see run_wayland_screens).
+CHROMIUM_TARGET=("$KIOSK_URL")
 CHROMIUM_USE_WAYLAND=0
 HTTP_PID=""
 
@@ -29,7 +36,7 @@ mkdir -p "$PROFILE_BASE"
 exec >>"$LOG_FILE" 2>&1
 echo ""
 echo "========== Kiosk start $(date) =========="
-echo "Kiosk: script version 2026-06-24a"
+echo "Kiosk: script version 2026-10-30a"
 
 # Only one kiosk script at a time (desktop autostart + labwc may both try to start it)
 KIOSK_LOCK_FILE="${PROFILE_BASE}/kiosk.lock"
@@ -427,7 +434,7 @@ launch_chromium() {
     mkdir -p "$profile_dir"
     clear_chromium_singleton_lock "$profile_dir"
 
-    echo "Kiosk: launching Chromium -> $KIOSK_URL"
+    echo "Kiosk: launching Chromium -> ${CHROMIUM_TARGET[*]}"
 
     # Stop GNOME keyring "Unlock keyring" popup in kiosk mode
     unset GNOME_KEYRING_CONTROL
@@ -443,7 +450,7 @@ launch_chromium() {
         --disable-session-crashed-bubble \
         --disable-restore-session-state \
         --start-fullscreen \
-        "$KIOSK_URL" &
+        "${CHROMIUM_TARGET[@]}" &
 
     local launcher_pid=$!
     local wait_count=0
@@ -475,6 +482,176 @@ launch_chromium() {
     return 1
 }
 
+# ===== Wayland (labwc): one kiosk window per screen =====
+#
+# Wayland ignores Chromium's --window-position, so windows cannot be placed
+# the X11 way above. Instead every screen gets its own Chromium *app* window
+# opened on its own entry page (kiosk-hdmi-a-1.html, kiosk-hdmi-a-2.html).
+# Chromium names an app window's Wayland app id after that page, and a labwc
+# window rule matching the name moves the window to its output when it first
+# appears: leave fullscreen, MoveToOutput (which ignores fullscreen windows),
+# fullscreen again. All windows live in ONE Chromium process and profile, so
+# both screens share stored positions, saved programs and settings.
+#
+# When a screen is plugged in or removed the windows are closed and reopened
+# one per screen, so nothing is left stacked on the wrong monitor.
+
+KIOSK_RULE_OUTPUTS=(HDMI-A-1 HDMI-A-2)
+KIOSK_RULES_VERSION="v1"
+
+kiosk_page_for_output() {
+    echo "kiosk-$(echo "$1" | tr 'A-Z' 'a-z').html"
+}
+
+# Screens to open a window on, one per line, in name order (HDMI-A-1 first,
+# the screen the touch panel is mapped to). Only outputs with an entry page
+# qualify. ROBOT_ARM_KIOSK_SCREENS=1 or 2 caps the count.
+wayland_kiosk_outputs() {
+    command -v wlr-randr >/dev/null 2>&1 || return 0
+    local names name count=0 limit=99
+    case "$KIOSK_SCREENS" in
+        1) limit=1 ;;
+        2) limit=2 ;;
+    esac
+    names="$(wlr-randr 2>/dev/null | awk '
+        /^[^ \t]/ { name = $1; next }
+        /^[ \t]+Enabled: yes/ { if (name != "") print name; name = "" }' | sort)"
+    while IFS= read -r name; do
+        [ -n "$name" ] || continue
+        [ -f "$SCRIPT_DIR/$(kiosk_page_for_output "$name")" ] || continue
+        echo "$name"
+        count=$((count + 1))
+        [ "$count" -ge "$limit" ] && break
+    done <<< "$names"
+}
+
+# Adds (or updates) this script's window rules in the desktop user's labwc
+# rc.xml, between marker comments so other settings - such as the touch
+# panel mapping - are left alone, then tells labwc to reload.
+ensure_labwc_window_rules() {
+    local rc="$HOME/.config/labwc/rc.xml"
+    local begin="<!-- robot-arm-kiosk window rules ${KIOSK_RULES_VERSION}: begin -->"
+    local tmp out page
+
+    pgrep -u "$(id -u)" -x labwc >/dev/null 2>&1 || return 0
+    mkdir -p "$(dirname "$rc")"
+    if [ ! -f "$rc" ]; then
+        printf '<?xml version="1.0"?>\n<openbox_config xmlns="http://openbox.org/3.4/rc">\n</openbox_config>\n' > "$rc"
+    fi
+    if grep -qF "$begin" "$rc"; then
+        return 0
+    fi
+    if ! grep -q '</openbox_config>' "$rc"; then
+        echo "Kiosk: $rc has no </openbox_config> - not adding window rules" >&2
+        return 1
+    fi
+
+    tmp="$(mktemp)"
+    {
+        echo "	$begin"
+        echo "	<!-- Written by start-kiosk.sh: keeps each kiosk window on its own screen. -->"
+        echo "	<windowRules>"
+        for out in "${KIOSK_RULE_OUTPUTS[@]}"; do
+            page="$(kiosk_page_for_output "$out")"
+            echo "		<windowRule identifier=\"*${page%.html}*\">"
+            echo "			<action name=\"ToggleFullscreen\"/>"
+            echo "			<action name=\"MoveToOutput\" output=\"$out\"/>"
+            echo "			<action name=\"ToggleFullscreen\"/>"
+            echo "		</windowRule>"
+        done
+        echo "	</windowRules>"
+        echo "	<!-- robot-arm-kiosk window rules: end -->"
+    } > "$tmp.block"
+
+    # Drop any older version of our block, then insert the new one before
+    # the closing tag.
+    sed '/<!-- robot-arm-kiosk window rules .*: begin -->/,/<!-- robot-arm-kiosk window rules: end -->/d' "$rc" |
+        awk -v blockfile="$tmp.block" '
+            /<\/openbox_config>/ { while ((getline line < blockfile) > 0) print line }
+            { print }' > "$tmp"
+
+    if [ -s "$tmp" ]; then
+        cp "$rc" "$rc.before-robot-arm-kiosk" 2>/dev/null || true
+        cat "$tmp" > "$rc"
+        echo "Kiosk: added window rules to $rc"
+        kill -HUP "$(pgrep -u "$(id -u)" -x labwc | head -1)" 2>/dev/null || true
+        sleep 1
+    fi
+    rm -f "$tmp" "$tmp.block"
+}
+
+# Opens one app window per output in a single Chromium process.
+open_wayland_screen_windows() {
+    local profile_dir="$1"
+    shift
+    local out url first=1
+
+    for out in "$@"; do
+        url="http://127.0.0.1:${PORT}/$(kiosk_page_for_output "$out")"
+        if [ "$first" = "1" ]; then
+            echo "Kiosk: window for $out"
+            CHROMIUM_TARGET=(--app="$url")
+            launch_chromium "$profile_dir" || return 1
+            first=0
+            sleep 3
+        else
+            # Handed to the running process (same profile), which is already
+            # in kiosk mode, so this window also opens fullscreen.
+            echo "Kiosk: window for $out"
+            env -u DISPLAY "$CHROMIUM" --user-data-dir="$profile_dir" "${CHROMIUM_FLAGS[@]}" \
+                --kiosk --noerrdialogs --disable-infobars --app="$url" >/dev/null 2>&1 &
+            sleep 2
+        fi
+    done
+    return 0
+}
+
+# Runs the kiosk on Wayland until Chromium closes. Returns 1 (so the caller
+# falls back to the single-window launch) if no usable output was found.
+run_wayland_screens() {
+    local profile_dir="${PROFILE_BASE}/profile-0"
+    local outputs=()
+    local current waited
+
+    mapfile -t outputs < <(wayland_kiosk_outputs)
+    if [ "${#outputs[@]}" -eq 0 ]; then
+        return 1
+    fi
+
+    ensure_labwc_window_rules
+    current="${outputs[*]}"
+    echo "Kiosk: Wayland screens: $current"
+    open_wayland_screen_windows "$profile_dir" "${outputs[@]}" || return 1
+
+    while true; do
+        sleep 5
+        if ! chromium_profile_is_running "$profile_dir"; then
+            echo "Kiosk: Chromium closed"
+            return 0
+        fi
+
+        mapfile -t outputs < <(wayland_kiosk_outputs)
+        [ "${#outputs[@]}" -gt 0 ] || continue
+        [ "${outputs[*]}" != "$current" ] || continue
+
+        # Let the compositor finish rearranging, then confirm the change
+        sleep 2
+        mapfile -t outputs < <(wayland_kiosk_outputs)
+        [ "${#outputs[@]}" -gt 0 ] || continue
+        [ "${outputs[*]}" != "$current" ] || continue
+
+        echo "Kiosk: screens changed ($current -> ${outputs[*]}) - reopening one window per screen"
+        pkill -u "$(id -u)" -f "user-data-dir=${profile_dir}" 2>/dev/null || true
+        waited=0
+        while chromium_profile_is_running "$profile_dir" && [ "$waited" -lt 15 ]; do
+            sleep 1
+            waited=$((waited + 1))
+        done
+        current="${outputs[*]}"
+        open_wayland_screen_windows "$profile_dir" "${outputs[@]}" || return 1
+    done
+}
+
 CHROMIUM="$(find_chromium || true)"
 if [ -z "$CHROMIUM" ]; then
     echo "Error: Chromium not found. Install: sudo apt install -y chromium" >&2
@@ -491,6 +668,12 @@ if ! wait_for_display; then
 fi
 
 start_http_server
+
+if [ "$CHROMIUM_USE_WAYLAND" = "1" ] && run_wayland_screens; then
+    echo "Kiosk: Chromium closed — done"
+    exit 0
+fi
+CHROMIUM_TARGET=("$KIOSK_URL")
 
 if pick_monitors_to_use; then
     PROFILE_DIRS=()

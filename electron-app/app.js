@@ -1227,9 +1227,18 @@ document.addEventListener('DOMContentLoaded', function() {
             'camera': 'Camera',
             'visualization': '3D View'
         };
+        // Change only the label span - setting the button's textContent
+        // would also wipe the tab icon that decorateTabButtons() added.
         document.querySelectorAll('.tab-button[data-tab]').forEach(function (btn) {
             const label = kioskLabels[btn.getAttribute('data-tab')];
-            if (label) btn.textContent = label;
+            if (!label) return;
+            const labelEl = btn.querySelector('.tab-label');
+            if (labelEl) {
+                labelEl.textContent = label;
+            } else {
+                btn.textContent = label;
+            }
+            btn.title = label;
         });
 
         // Open Joint Control automatically in kiosk mode

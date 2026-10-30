@@ -1,0 +1,11 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Robot Arm</title>
+<!--
+  Kiosk entry page for the screen on HDMI-A-2.
+  start-kiosk.sh opens this page as a Chromium app window. Chromium names the
+  window's Wayland app id after the page, and the labwc window rule written by
+  start-kiosk.sh uses that name to keep this window on HDMI-A-2. The page itself
+  just hands over to the normal splash / app pages.
+-->
+<script>location.replace('splash.html' + location.search);</script>
