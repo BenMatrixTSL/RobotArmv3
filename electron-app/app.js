@@ -10345,6 +10345,44 @@ const USER_TYPE_PRESETS = {
     }
 };
 
+// The Pi touchscreen kiosk starts as Key Stage 3. Applied once per kiosk
+// profile (flag below), so it also replaces a type saved before this
+// default existed, but a teacher's later choice is kept.
+const KIOSK_DEFAULT_USER_TYPE = 'ks3';
+const KIOSK_DEFAULT_APPLIED_KEY = 'robotArmVisibilityKioskDefault';
+
+/**
+ * Settings object for a user-type preset.
+ * @param {string} key - Key of USER_TYPE_PRESETS
+ * @returns {{userType: string, hiddenTabs: string[], hiddenModules: string[]}|null}
+ */
+function visibilitySettingsForPreset(key) {
+    const preset = USER_TYPE_PRESETS[key];
+    if (!preset) return null;
+    return {
+        userType: key,
+        hiddenTabs: VISIBILITY_TABS.filter(id => preset.tabs.indexOf(id) < 0),
+        hiddenModules: CURRICULUM_MODULES.map(m => m.id).filter(id => preset.modules.indexOf(id) < 0)
+    };
+}
+
+/**
+ * On the kiosk (?kiosk=1), saves the Key Stage 3 preset the first time
+ * this profile runs a version with the default.
+ */
+function applyKioskDefaultUserType() {
+    if (window.location.search.indexOf('kiosk=1') < 0) return;
+    try {
+        if (localStorage.getItem(KIOSK_DEFAULT_APPLIED_KEY) === KIOSK_DEFAULT_USER_TYPE) return;
+        const s = visibilitySettingsForPreset(KIOSK_DEFAULT_USER_TYPE);
+        if (!s) return;
+        localStorage.setItem(VISIBILITY_STORAGE_KEY, JSON.stringify(s));
+        localStorage.setItem(KIOSK_DEFAULT_APPLIED_KEY, KIOSK_DEFAULT_USER_TYPE);
+    } catch (e) {
+        // Storage blocked - the panel falls back to showing everything
+    }
+}
+
 /**
  * Reads the saved visibility settings, or the show-everything default.
  * @returns {{userType: string, hiddenTabs: string[], hiddenModules: string[]}}
@@ -10417,6 +10455,7 @@ function initializeVisibilityPanel() {
     const descEl = document.getElementById('userTypeDescription');
     if (!typeSelect || !tabsList || !modulesList) return;
 
+    applyKioskDefaultUserType();
     const settings = loadVisibilitySettings();
 
     // User types
@@ -10497,14 +10536,8 @@ function initializeVisibilityPanel() {
     }
 
     typeSelect.addEventListener('change', function () {
-        const key = typeSelect.value;
-        const preset = USER_TYPE_PRESETS[key];
-        if (!preset) return;
-        const s = {
-            userType: key,
-            hiddenTabs: VISIBILITY_TABS.filter(id => preset.tabs.indexOf(id) < 0),
-            hiddenModules: CURRICULUM_MODULES.map(m => m.id).filter(id => preset.modules.indexOf(id) < 0)
-        };
+        const s = visibilitySettingsForPreset(typeSelect.value);
+        if (!s) return;
         writeBoxes(s);
         saveVisibilitySettings(s);
     });
