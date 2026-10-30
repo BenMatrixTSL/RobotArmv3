@@ -4383,8 +4383,10 @@ async function moveToXYZ(xArg, yArg, zArg, orientationOverride, skipRefinement) 
         // ── Linear Cartesian mode ──────────────────────────────────────────────
         if (movementMode === 'linear' && moveToXyzInitialAngles) {
             if (!robotArmClient.hasArmControl) {
-                showAppMessage('Linear move requires control session. Taking control...');
-                try { await robotArmClient.takeControl(); } catch (e) { showAppMessage('Could not take control: ' + e.message); return; }
+                // Same rule as everywhere else: control is taken only by the
+                // Take control button, never grabbed by a move.
+                showAppMessage('Read-only - use Take control on the Connection tab first');
+                return;
             }
             let prevAngles = moveToXyzInitialAngles;
             for (let w = 0; w < waypoints.length; w++) {

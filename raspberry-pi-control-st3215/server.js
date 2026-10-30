@@ -966,7 +966,7 @@ async function handleCommand(ws, data) {
             // Compute a Cartesian-linear path on the server and execute it with precise timing.
             // Requires the caller to hold the control session.
             if (!controlSession || controlSession.ws !== ws) {
-                sendResponse({ type: 'error', message: 'Control session required for linear move. Call takeControl first.' });
+                sendResponse({ type: 'error', message: 'Control session required for linear move. Call takeControl first.', controlRequired: true });
                 break;
             }
             touchControlActivity(ws);

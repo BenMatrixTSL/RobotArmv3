@@ -270,7 +270,14 @@ class RobotArmClient {
                     this._notifyMotionListeners(data.joints);
                 }
                 if (data.type === 'error') {
-                    pending.reject(new Error(data.message || 'Server error'));
+                    const err = new Error(data.message || 'Server error');
+                    if (data.controlRequired) {
+                        // Every control-gated command that is refused shows the same
+                        // notice, whether or not the caller handles the rejection.
+                        err.controlRequired = true;
+                        this._notifyControlRequired(data.message);
+                    }
+                    pending.reject(err);
                 } else {
                     pending.resolve(data);
                 }
@@ -391,10 +398,10 @@ class RobotArmClient {
 
         if (data.type === 'error') {
             console.error('Server error:', data.message);
-            if (typeof showAppMessage === 'function') {
-                if (data.controlRequired || data.joint !== undefined) {
-                    showAppMessage(data.message);
-                }
+            if (data.controlRequired) {
+                this._notifyControlRequired(data.message);
+            } else if (data.joint !== undefined && typeof showAppMessage === 'function') {
+                showAppMessage(data.message);
             }
         }
 
@@ -402,6 +409,25 @@ class RobotArmClient {
             console.log('Server:', data.message);
         }
 
+    }
+
+    /**
+     * Shows the "you do not have control" notice. Rate-limited so a jog
+     * button held down or a running program does not stack up toasts.
+     * @param {string} serverMessage - Message from the server, if any
+     */
+    _notifyControlRequired(serverMessage) {
+        this.hasArmControl = false;
+        const now = Date.now();
+        if (this._lastControlNoticeAt && now - this._lastControlNoticeAt < 2500) return;
+        this._lastControlNoticeAt = now;
+        const detail = serverMessage ? ' (' + String(serverMessage).replace(/\.$/, '') + ')' : '';
+        if (typeof showAppMessage === 'function') {
+            showAppMessage('Read-only - use Take control on the Connection tab first' + detail, 4000);
+        }
+        if (typeof this.onControlRequired === 'function') {
+            this.onControlRequired(serverMessage);
+        }
     }
 
     /**
