@@ -19,7 +19,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Robot Arm Control - Pendant & G-Code</title>
-    <link rel="stylesheet" href="styles.css?v=20261028g">
+    <link rel="stylesheet" href="styles.css?v=20261030b">
     <script>
     // Kiosk mode on the Pi: show a loading screen and reload until the UI is really loaded.
     (function () {
@@ -247,6 +247,32 @@
                     <button class="btn btn-secondary" data-touch-mode="off" onclick="setTouchModePreference('off')">Off</button>
                 </div>
                 <p class="info-text" id="touchModeStatus"></p>
+            </div>
+
+            <div class="connection-panel" id="userTypePanel">
+                <h3>Who is using the app</h3>
+                <p class="info-text">
+                    Choose a user type by age or course and the app shows only the tabs and curriculum
+                    modules that suit them: hidden tabs leave the sidebar and hidden modules leave the
+                    curriculum index. The tick boxes can then be changed by hand, which makes the type
+                    Custom. Everything is shown by default, and the choice is remembered on this device.
+                </p>
+                <div class="user-type-row">
+                    <label for="userTypeSelect">User type</label>
+                    <select id="userTypeSelect" class="user-type-select"></select>
+                    <button type="button" class="btn btn-secondary btn-small" id="visibilityShowAllButton">Show everything</button>
+                </div>
+                <p class="info-text" id="userTypeDescription"></p>
+                <div class="visibility-columns">
+                    <div class="visibility-column">
+                        <h4>App tabs</h4>
+                        <div id="visibilityTabsList" class="visibility-list"></div>
+                    </div>
+                    <div class="visibility-column">
+                        <h4>Curriculum modules</h4>
+                        <div id="visibilityModulesList" class="visibility-list"></div>
+                    </div>
+                </div>
             </div>
 
             <div class="connection-panel" id="serverDiagnosticsPanel" style="display: none;">
@@ -1840,7 +1866,7 @@
     <script src="cameraView.js?v=20260616"></script>
     <!-- Main Application: UI logic and event handlers -->
     <script src="tabIcons.js?v=20261028"></script>
-    <script src="app.js?v=20261030a"></script>
+    <script src="app.js?v=20261030b"></script>
     <!-- On-Screen Keyboard: touch keyboard for kiosk mode (no system OSK in Chromium kiosk) -->
     <script src="keyboard.js?v=20260930"></script>
 

@@ -313,3 +313,57 @@ function remapOldModuleKey(key, fromVersion) {
     addTabIcons();
   }
 })();
+
+// ---- Module visibility ----
+// The app's Connection tab lets a teacher choose a user type, which hides
+// some curriculum modules. The choice is saved under one localStorage key
+// (same origin as the app, so it is shared) and applied to the module cards
+// on the index page here. Hidden modules can still be opened by URL - this
+// only tidies the index.
+(function () {
+  var KEY = 'robotArmVisibility';
+
+  function hiddenModules() {
+    try {
+      var saved = JSON.parse(localStorage.getItem(KEY) || 'null');
+      return (saved && Array.isArray(saved.hiddenModules)) ? saved.hiddenModules : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function applyCurriculumVisibility() {
+    var cards = document.querySelectorAll('.module-card[href]');
+    if (!cards.length) return;
+    var hidden = hiddenModules();
+    for (var i = 0; i < cards.length; i++) {
+      var card = cards[i];
+      var file = (card.getAttribute('href') || '').split(/[#?]/)[0].replace(/\.html$/, '');
+      card.style.display = hidden.indexOf(file) >= 0 ? 'none' : '';
+    }
+    // Hide a section heading whose grid has no visible cards left
+    var titles = document.querySelectorAll('.section-title');
+    for (var t = 0; t < titles.length; t++) {
+      var grid = titles[t].nextElementSibling;
+      if (!grid || !grid.classList.contains('module-grid')) continue;
+      var visible = 0;
+      var gridCards = grid.querySelectorAll('.module-card');
+      for (var c = 0; c < gridCards.length; c++) {
+        if (gridCards[c].style.display !== 'none') visible++;
+      }
+      titles[t].style.display = visible ? '' : 'none';
+      grid.style.display = visible ? '' : 'none';
+    }
+  }
+
+  window.applyCurriculumVisibility = applyCurriculumVisibility;
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyCurriculumVisibility);
+  } else {
+    applyCurriculumVisibility();
+  }
+  window.addEventListener('storage', function (e) {
+    if (!e.key || e.key === KEY) applyCurriculumVisibility();
+  });
+})();

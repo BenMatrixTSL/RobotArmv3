@@ -1105,6 +1105,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Initialize the UI
     decorateTabButtons();
+    initializeVisibilityPanel();
     initializeTabs();
     initializeConnection();
     initializeFileInput();
@@ -10200,4 +10201,278 @@ function decorateTabButtons() {
             btn.style.setProperty('--tab-colour', group.colour);
         }
     });
+}
+
+// ===== User type and visibility =====
+// The Connection tab lets a teacher say who is using the app. Picking a user
+// type ticks a sensible set of app tabs and curriculum modules; any box can
+// then be changed by hand (the type becomes "Custom"). Hidden tabs disappear
+// from the sidebar and hidden modules disappear from the curriculum index
+// (Curriculum/worksheet.js reads the same localStorage key and listens for
+// changes). Everything is shown by default.
+
+const VISIBILITY_STORAGE_KEY = 'robotArmVisibility';
+
+// Curriculum modules, in index order. Keys match the page file names.
+const CURRICULUM_MODULES = [
+    { id: 'module-01', title: 'Introduction & Safety', group: 'Foundation' },
+    { id: 'module-02', title: 'Mechanical Fundamentals', group: 'Foundation' },
+    { id: 'module-03', title: 'Electrical & Electronic Systems', group: 'Foundation' },
+    { id: 'module-04', title: 'Software & HMI', group: 'Foundation' },
+    { id: 'module-05', title: 'Statics, Forces & Load Analysis', group: 'Intermediate' },
+    { id: 'module-06', title: 'Industrial Context & Basic Automation', group: 'Intermediate' },
+    { id: 'module-07', title: 'Forward Kinematics & Coordinate Systems', group: 'Intermediate' },
+    { id: 'module-08', title: 'Advanced Control & Communication', group: 'Intermediate' },
+    { id: 'module-09', title: 'Software Architecture & Advanced Programming', group: 'Intermediate' },
+    { id: 'module-10', title: 'Machine Vision & Vision-Guided Picking', group: 'Intermediate' },
+    { id: 'module-11', title: 'Data Logging & Diagnostics', group: 'Intermediate' },
+    { id: 'module-12', title: 'Mechatronic System Integration', group: 'Advanced' },
+    { id: 'module-13', title: 'Automation Cell Design', group: 'Advanced' },
+    { id: 'module-14', title: 'Safety Standards & Design for Safety', group: 'Advanced' },
+    { id: 'module-15', title: 'Maintenance & Calibration', group: 'Advanced' },
+    { id: 'module-16', title: 'Project Planning & Management', group: 'Project' },
+    { id: 'module-17', title: 'Technical Documentation', group: 'Project' },
+    { id: 'module-18', title: 'Evaluation, Reflection & Communication', group: 'Project' }
+];
+
+// Sidebar tabs in display order. 'connection' can never be hidden; 'settings'
+// is already hidden by the app and is not offered.
+const VISIBILITY_TABS = ['connection', 'pendant', 'pendant-ui', 'gcode', 'rapid', 'blockly',
+    'visualization', 'kinematics', 'positions', 'calibration', 'deadzones', 'camera', 'curriculum'];
+
+// User types: which tabs and modules are shown. Anything not listed is hidden.
+const USER_TYPE_PRESETS = {
+    all: {
+        label: 'Everything (default)',
+        description: 'All tabs and all 18 modules.',
+        tabs: VISIBILITY_TABS,
+        modules: CURRICULUM_MODULES.map(m => m.id)
+    },
+    ks3: {
+        label: 'Key Stage 3 (ages 11-14)',
+        description: 'Drive the arm by hand, program it with blocks, see it in 3D. Foundation modules only.',
+        tabs: ['connection', 'pendant', 'pendant-ui', 'blockly', 'visualization', 'positions', 'camera', 'curriculum'],
+        modules: ['module-01', 'module-02', 'module-04', 'module-06']
+    },
+    level2: {
+        label: 'GCSE / BTEC Level 2 (ages 14-16)',
+        description: 'Adds G-code, kinematics and dead zones. Foundation and core intermediate modules.',
+        tabs: ['connection', 'pendant', 'pendant-ui', 'gcode', 'blockly', 'visualization', 'kinematics',
+            'positions', 'deadzones', 'camera', 'curriculum'],
+        modules: ['module-01', 'module-02', 'module-03', 'module-04', 'module-05', 'module-06', 'module-07', 'module-10']
+    },
+    level3: {
+        label: 'BTEC Level 3 National (ages 16-18)',
+        description: 'All programming tabs. Level 3 modules; the Level 4/5 systems modules and servo calibration are hidden.',
+        tabs: ['connection', 'pendant', 'pendant-ui', 'gcode', 'rapid', 'blockly', 'visualization', 'kinematics',
+            'positions', 'deadzones', 'camera', 'curriculum'],
+        modules: ['module-01', 'module-02', 'module-03', 'module-04', 'module-05', 'module-06', 'module-07',
+            'module-10', 'module-15', 'module-16', 'module-17', 'module-18']
+    },
+    level45: {
+        label: 'BTEC Level 4/5 Higher National',
+        description: 'Everything, including servo calibration and the systems-level modules.',
+        tabs: VISIBILITY_TABS,
+        modules: CURRICULUM_MODULES.map(m => m.id)
+    },
+    technician: {
+        label: 'Technician / maintenance',
+        description: 'Manual control, calibration, diagnostics and the maintenance documentation.',
+        tabs: ['connection', 'pendant', 'pendant-ui', 'visualization', 'kinematics', 'positions',
+            'calibration', 'deadzones', 'camera', 'curriculum'],
+        modules: ['module-01', 'module-11', 'module-15', 'module-17']
+    }
+};
+
+/**
+ * Reads the saved visibility settings, or the show-everything default.
+ * @returns {{userType: string, hiddenTabs: string[], hiddenModules: string[]}}
+ */
+function loadVisibilitySettings() {
+    try {
+        const saved = JSON.parse(localStorage.getItem(VISIBILITY_STORAGE_KEY) || 'null');
+        if (saved && Array.isArray(saved.hiddenTabs) && Array.isArray(saved.hiddenModules)) {
+            return { userType: saved.userType || 'custom', hiddenTabs: saved.hiddenTabs, hiddenModules: saved.hiddenModules };
+        }
+    } catch (e) {
+        // Fall through to the default
+    }
+    return { userType: 'all', hiddenTabs: [], hiddenModules: [] };
+}
+
+/**
+ * Saves the settings and applies them to the sidebar. The curriculum iframe
+ * picks the change up through the storage event.
+ * @param {{userType: string, hiddenTabs: string[], hiddenModules: string[]}} settings
+ */
+function saveVisibilitySettings(settings) {
+    try {
+        localStorage.setItem(VISIBILITY_STORAGE_KEY, JSON.stringify(settings));
+    } catch (e) {
+        console.warn('Could not save visibility settings:', e);
+    }
+    applyTabVisibility(settings);
+    // Same-document iframes do not always get the storage event in Electron -
+    // nudge the curriculum index directly as well.
+    try {
+        const frame = document.getElementById('curriculum-iframe');
+        if (frame && frame.contentWindow && typeof frame.contentWindow.applyCurriculumVisibility === 'function') {
+            frame.contentWindow.applyCurriculumVisibility();
+        }
+    } catch (e) {
+        // Cross-origin or not loaded
+    }
+}
+
+/**
+ * Shows or hides sidebar tabs. If the active tab is hidden, Connection opens.
+ * @param {{hiddenTabs: string[]}} settings
+ */
+function applyTabVisibility(settings) {
+    const hidden = new Set(settings.hiddenTabs || []);
+    hidden.delete('connection');
+    let activeHidden = false;
+    document.querySelectorAll('.tab-button[data-tab]').forEach(function (btn) {
+        const id = btn.getAttribute('data-tab');
+        if (id === 'settings') return; // managed separately
+        const hide = hidden.has(id);
+        btn.classList.toggle('tab-hidden-by-user', hide);
+        if (hide && btn.classList.contains('active')) activeHidden = true;
+    });
+    if (activeHidden) {
+        const connection = document.querySelector('.tab-button[data-tab="connection"]');
+        if (connection) connection.click();
+    }
+}
+
+/**
+ * Builds the user-type selector and the two checkbox lists on the
+ * Connection tab, then applies the saved settings.
+ */
+function initializeVisibilityPanel() {
+    const typeSelect = document.getElementById('userTypeSelect');
+    const tabsList = document.getElementById('visibilityTabsList');
+    const modulesList = document.getElementById('visibilityModulesList');
+    const descEl = document.getElementById('userTypeDescription');
+    if (!typeSelect || !tabsList || !modulesList) return;
+
+    const settings = loadVisibilitySettings();
+
+    // User types
+    typeSelect.innerHTML = '';
+    Object.keys(USER_TYPE_PRESETS).forEach(function (key) {
+        const opt = document.createElement('option');
+        opt.value = key;
+        opt.textContent = USER_TYPE_PRESETS[key].label;
+        typeSelect.appendChild(opt);
+    });
+    const customOpt = document.createElement('option');
+    customOpt.value = 'custom';
+    customOpt.textContent = 'Custom (boxes changed by hand)';
+    typeSelect.appendChild(customOpt);
+
+    // Tab checkboxes, with the sidebar icons
+    tabsList.innerHTML = '';
+    VISIBILITY_TABS.forEach(function (id) {
+        const icon = (typeof TAB_ICONS !== 'undefined') ? TAB_ICONS[id] : null;
+        const label = icon ? icon.label : id;
+        const group = (icon && typeof TAB_GROUPS !== 'undefined') ? TAB_GROUPS[icon.group] : null;
+        const row = document.createElement('label');
+        row.className = 'visibility-row';
+        if (group) row.style.setProperty('--tab-colour', group.colour);
+        row.innerHTML =
+            '<input type="checkbox" data-visibility-tab="' + id + '"' + (id === 'connection' ? ' checked disabled' : '') + '>' +
+            '<span class="tab-icon" aria-hidden="true">' + (typeof tabIconSvg === 'function' ? tabIconSvg(id, { size: 18 }) : '') + '</span>' +
+            '<span class="visibility-label">' + label + (id === 'connection' ? ' <small>(always shown)</small>' : '') + '</span>';
+        tabsList.appendChild(row);
+    });
+
+    // Module checkboxes, grouped like the curriculum index
+    modulesList.innerHTML = '';
+    let lastGroup = null;
+    CURRICULUM_MODULES.forEach(function (m, i) {
+        if (m.group !== lastGroup) {
+            const h = document.createElement('div');
+            h.className = 'visibility-group';
+            h.textContent = m.group + ' modules';
+            modulesList.appendChild(h);
+            lastGroup = m.group;
+        }
+        const row = document.createElement('label');
+        row.className = 'visibility-row';
+        row.innerHTML =
+            '<input type="checkbox" data-visibility-module="' + m.id + '">' +
+            '<span class="visibility-num">' + String(i + 1).padStart(2, '0') + '</span>' +
+            '<span class="visibility-label">' + m.title.replace(/&/g, '&amp;') + '</span>';
+        modulesList.appendChild(row);
+    });
+
+    function readBoxes() {
+        const hiddenTabs = [];
+        tabsList.querySelectorAll('input[data-visibility-tab]').forEach(function (cb) {
+            if (!cb.checked && !cb.disabled) hiddenTabs.push(cb.dataset.visibilityTab);
+        });
+        const hiddenModules = [];
+        modulesList.querySelectorAll('input[data-visibility-module]').forEach(function (cb) {
+            if (!cb.checked) hiddenModules.push(cb.dataset.visibilityModule);
+        });
+        return { hiddenTabs: hiddenTabs, hiddenModules: hiddenModules };
+    }
+
+    function writeBoxes(s) {
+        const hiddenTabs = new Set(s.hiddenTabs);
+        const hiddenModules = new Set(s.hiddenModules);
+        tabsList.querySelectorAll('input[data-visibility-tab]').forEach(function (cb) {
+            if (!cb.disabled) cb.checked = !hiddenTabs.has(cb.dataset.visibilityTab);
+        });
+        modulesList.querySelectorAll('input[data-visibility-module]').forEach(function (cb) {
+            cb.checked = !hiddenModules.has(cb.dataset.visibilityModule);
+        });
+        typeSelect.value = s.userType;
+        if (descEl) {
+            const preset = USER_TYPE_PRESETS[s.userType];
+            descEl.textContent = preset ? preset.description : 'Tick boxes chosen by hand.';
+        }
+    }
+
+    typeSelect.addEventListener('change', function () {
+        const key = typeSelect.value;
+        const preset = USER_TYPE_PRESETS[key];
+        if (!preset) return;
+        const s = {
+            userType: key,
+            hiddenTabs: VISIBILITY_TABS.filter(id => preset.tabs.indexOf(id) < 0),
+            hiddenModules: CURRICULUM_MODULES.map(m => m.id).filter(id => preset.modules.indexOf(id) < 0)
+        };
+        writeBoxes(s);
+        saveVisibilitySettings(s);
+    });
+
+    function onBoxChange() {
+        const boxes = readBoxes();
+        // Keep the preset name if the boxes still match it exactly
+        let matched = 'custom';
+        Object.keys(USER_TYPE_PRESETS).forEach(function (key) {
+            const p = USER_TYPE_PRESETS[key];
+            const tabsMatch = VISIBILITY_TABS.every(id => (p.tabs.indexOf(id) >= 0) === (boxes.hiddenTabs.indexOf(id) < 0));
+            const modsMatch = CURRICULUM_MODULES.every(m => (p.modules.indexOf(m.id) >= 0) === (boxes.hiddenModules.indexOf(m.id) < 0));
+            if (tabsMatch && modsMatch && matched === 'custom') matched = key;
+        });
+        const s = { userType: matched, hiddenTabs: boxes.hiddenTabs, hiddenModules: boxes.hiddenModules };
+        writeBoxes(s);
+        saveVisibilitySettings(s);
+    }
+    tabsList.addEventListener('change', onBoxChange);
+    modulesList.addEventListener('change', onBoxChange);
+
+    const showAllBtn = document.getElementById('visibilityShowAllButton');
+    if (showAllBtn) {
+        showAllBtn.addEventListener('click', function () {
+            typeSelect.value = 'all';
+            typeSelect.dispatchEvent(new Event('change'));
+        });
+    }
+
+    writeBoxes(settings);
+    applyTabVisibility(settings);
 }
