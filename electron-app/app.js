@@ -8300,9 +8300,39 @@ function initialize3DVisualization() {
             }
         } catch (error) {
             console.error('Failed to initialize 3D visualization:', error);
-            showAppMessage('3D visualisation error: ' + error.message);
+            if (/WebGL/i.test(error.message || '')) {
+                recoverFromLostWebGL(error.message);
+            } else {
+                showAppMessage('3D visualisation error: ' + error.message);
+            }
         }
     }, 1000); // Increased delay to ensure container is visible
+}
+
+/**
+ * WebGL stopped working after the page had been running - on the Pi this
+ * happens when Chromium's GPU process crashes: Chromium then refuses new
+ * WebGL contexts for the page until it is reloaded, and the kiosk shows the
+ * "WebGL is not available" error for ever. A reload fixes it, so the kiosk
+ * reloads itself (at most once every 10 minutes, so a machine with no GPU
+ * at all does not loop); other browsers are told what to do.
+ * @param {string} detail - The error message
+ */
+function recoverFromLostWebGL(detail) {
+    const isKiosk = document.body.classList.contains('kiosk-mode') || window.location.search.indexOf('kiosk=1') >= 0;
+    const KEY = 'robotArmWebglReloadAt';
+    let lastReload = 0;
+    try { lastReload = parseInt(sessionStorage.getItem(KEY) || '0', 10) || 0; } catch (e) { /* storage blocked */ }
+    const recently = Date.now() - lastReload < 10 * 60 * 1000;
+
+    if (isKiosk && !recently) {
+        try { sessionStorage.setItem(KEY, String(Date.now())); } catch (e) { /* storage blocked */ }
+        showAppMessage('3D view lost its graphics context - reloading the display in 5 seconds...', 5000);
+        console.warn('WebGL unavailable in kiosk; reloading page to recover:', detail);
+        setTimeout(function () { window.location.reload(); }, 5000);
+        return;
+    }
+    showAppMessage('3D visualisation error: ' + detail + ' Reload the page (F5) to try again.', 8000);
 }
 
 /**

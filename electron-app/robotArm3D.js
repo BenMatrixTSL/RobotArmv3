@@ -135,6 +135,25 @@ class RobotArm3D {
         this.renderer.setPixelRatio(window.devicePixelRatio);
         this.container.appendChild(this.renderer.domElement);
 
+        // A GPU process crash takes the context away. Three.js asks the
+        // browser to restore it; if that never comes (Chromium blocks new
+        // contexts after a crash) the page-level recovery reloads the kiosk.
+        this.renderer.domElement.addEventListener('webglcontextlost', (event) => {
+            console.warn('3D view: WebGL context lost');
+            this.contextLostAt = Date.now();
+            clearTimeout(this.contextRestoreTimer);
+            this.contextRestoreTimer = setTimeout(() => {
+                if (this.contextLostAt && typeof recoverFromLostWebGL === 'function') {
+                    recoverFromLostWebGL('WebGL context was lost and not restored.');
+                }
+            }, 8000);
+        });
+        this.renderer.domElement.addEventListener('webglcontextrestored', () => {
+            console.info('3D view: WebGL context restored');
+            this.contextLostAt = null;
+            clearTimeout(this.contextRestoreTimer);
+        });
+
         // Add lights
         const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
         this.scene.add(ambientLight);
