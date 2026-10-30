@@ -330,7 +330,7 @@ let lastKnownJointConfigs  = { count: 0, total: 6, joints: [] };
 let lastWorkerDiagnostics  = {};
 
 // Control session (one app at a time can move the arm).
-const controlSession = { ws: null, label: '', hostname: null, clientIp: null, since: null, lastMoveAt: null, locked: false, lockedUntil: null };
+const controlSession = { ws: null, label: '', hostname: null, clientIp: null, since: null, lastActivityAt: null, locked: false, lockedUntil: null };
 
 // ===== Control Session =====
 function normalizeClientIp(raw) {
@@ -353,16 +353,19 @@ function assignControlSession(ws, label) {
     controlSession.clientIp  = ws ? ws.clientIp : null;
     controlSession.hostname  = ws ? getWsClientHostname(ws) : null;
     controlSession.since     = Date.now();
-    controlSession.lastMoveAt = Date.now();
+    controlSession.lastActivityAt = Date.now();
 }
-function touchControlMoveActivity(ws) {
-    if (controlSession.ws === ws) controlSession.lastMoveAt = Date.now();
+// Any command that needed the control session counts as activity for the
+// idle timeout - moves, stops, tool commands, calibration reads/writes and
+// linear paths alike. Cache reads (getStatus etc.) do not.
+function touchControlActivity(ws) {
+    if (controlSession.ws === ws) controlSession.lastActivityAt = Date.now();
 }
 function releaseControlSession(ws) {
     if (controlSession.ws === ws) {
         controlSession.ws = null; controlSession.label = '';
         controlSession.hostname = null; controlSession.clientIp = null;
-        controlSession.since = null; controlSession.lastMoveAt = null;
+        controlSession.since = null; controlSession.lastActivityAt = null;
         controlSession.locked = false; controlSession.lockedUntil = null;
     }
 }
@@ -441,12 +444,12 @@ function broadcastControlStatus(extraForClient) {
     updateLed();
 }
 function releaseControlForIdle() {
-    if (!controlSession.ws || !controlSession.lastMoveAt) return;
+    if (!controlSession.ws || !controlSession.lastActivityAt) return;
     if (isControlLocked()) return; // locked sessions are exempt from the idle timeout
-    if (Date.now() - controlSession.lastMoveAt < CONTROL_IDLE_TIMEOUT_MS) return;
+    if (Date.now() - controlSession.lastActivityAt < CONTROL_IDLE_TIMEOUT_MS) return;
     const idleWs = controlSession.ws;
     releaseControlSession(idleWs);
-    broadcastControlStatus({ ws: idleWs, data: { message: 'Arm control released automatically after 5 minutes with no movement' } });
+    broadcastControlStatus({ ws: idleWs, data: { message: 'Arm control released automatically after 5 minutes with no commands' } });
     debugLog('Arm control released due to idle timeout');
 }
 
@@ -966,6 +969,7 @@ async function handleCommand(ws, data) {
                 sendResponse({ type: 'error', message: 'Control session required for linear move. Call takeControl first.' });
                 break;
             }
+            touchControlActivity(ws);
             if (linearPathRunning) {
                 sendResponse({ type: 'error', message: 'A linear path is already running. Abort it first.' });
                 break;
@@ -1094,9 +1098,7 @@ function startServer() {
                         ws.send(JSON.stringify(errPayload));
                         return;
                     }
-                    if (data.command === 'moveJoint' || data.command === 'setServo' || data.command === 'setServoAngle' || data.command === 'setAcceleration') {
-                        touchControlMoveActivity(ws);
-                    }
+                    touchControlActivity(ws);
                 }
 
                 // Servo EEPROM writes additionally require the control password, on

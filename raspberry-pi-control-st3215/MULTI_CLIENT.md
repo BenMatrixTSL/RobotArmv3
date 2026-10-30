@@ -38,6 +38,11 @@ Read-only commands always work: `getStatus`, `getJointConfigs`, kinematics, etc.
 
 When a client disconnects, control is released automatically (including a locked session).
 
+An unlocked session is also released after 5 minutes with no control-gated command from its
+holder. Any command that needs the session renews the timer - moves, stops, speed and torque,
+end-tool commands, calibration register reads and writes, trainee trims and linear paths. Cached
+reads such as `getStatus` or `getControlStatus` do not.
+
 ### Control lock
 
 `lockControl` takes control if nobody has it, then marks the session **locked** for a
