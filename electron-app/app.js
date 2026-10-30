@@ -88,7 +88,7 @@ function formatFiniteNumber(value, decimals) {
 // 'linear' (Cartesian straight-line interpolation computed on the server).
 let movementMode         = 'ptp';
 let linearSpeedMmPerSec  = 50;
-let linearStepMm         = 2.0;
+let linearStepMm         = 10.0;
 
 // Cached raw URDF text - stored when loaded locally so it can be sent to the
 // server after a WebSocket connection is established (the server needs it too).
@@ -5116,7 +5116,8 @@ function loadMovementSettings() {
     try {
         movementMode        = localStorage.getItem('movementMode')        || 'ptp';
         linearSpeedMmPerSec = parseFloat(localStorage.getItem('linearSpeedMmPerSec')) || 50;
-        linearStepMm        = parseFloat(localStorage.getItem('linearStepMm'))        || 2.0;
+        // Default 10 mm; anything saved below the 1 mm field minimum is raised to it
+        linearStepMm        = Math.max(1, parseFloat(localStorage.getItem('linearStepMm')) || 10.0);
     } catch (e) {}
     const spEl = document.getElementById('linearSpeedMmPerSec');
     const stEl = document.getElementById('linearStepMm');
