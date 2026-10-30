@@ -186,6 +186,7 @@ let busTickInProgress    = false;
 let busWriteQueue        = [];
 let statusPollJointIndex = 0;
 const pendingImmediateMoves = {};
+const LINEAR_BATCH_KEY = 'linearBatch';
 let immediateMoveDrainRunning = false;
 let workerShuttingDown  = false;
 let lastRescanTime      = 0;
@@ -740,6 +741,22 @@ function clearAllServoPendingTransactions() {
 }
 
 function scheduleImmediateCommand(msg) {
+    // A stop must win over anything still queued: drop pending moves and
+    // linear waypoints first, otherwise one could be sent after the stop
+    // and re-enable torque.
+    if (msg.command === 'stopAll' || msg.command === 'stopAllJoints') {
+        Object.keys(pendingImmediateMoves).forEach(function (k) { delete pendingImmediateMoves[k]; });
+    } else if (msg.command === 'stopJoint' && msg.joint !== undefined) {
+        delete pendingImmediateMoves[String(msg.joint)];
+        delete pendingImmediateMoves[LINEAR_BATCH_KEY];
+    }
+    // A linear-path waypoint for all joints. Only the newest one matters: if
+    // the bus fell behind, an older waypoint is skipped rather than sent late.
+    if (msg.command === 'moveJointsBatch') {
+        pendingImmediateMoves[LINEAR_BATCH_KEY] = msg;
+        drainImmediateMoveQueue();
+        return;
+    }
     if (msg.command === 'moveJoint' && msg.joint !== undefined) {
         const key = String(msg.joint);
         const prev = pendingImmediateMoves[key];
@@ -761,7 +778,10 @@ async function drainImmediateMoveQueue() {
             const key = Object.keys(pendingImmediateMoves)[0];
             const item = pendingImmediateMoves[key];
             delete pendingImmediateMoves[key];
-            const moreAfter = Object.keys(pendingImmediateMoves).length > 0;
+            // Streamed linear waypoints always use the short jog gap: they
+            // arrive every few tens of ms and the normal 12/10 ms quiet time
+            // around each one would let the bus fall behind the path.
+            const moreAfter = Object.keys(pendingImmediateMoves).length > 0 || key === LINEAR_BATCH_KEY;
             await runImmediateCommand(item, moreAfter);
         }
     } finally {
@@ -1035,6 +1055,36 @@ async function handleBusCommand(clientId, data) {
                 reply({ type: 'error', message: 'Failed to rescan servos: ' + error.message });
             }
             break;
+        }
+
+        case 'moveJointsBatch': {
+            // One waypoint of a server-side linear path: every joint's goal
+            // written back to back in a single bus slot. Unlike moveJoint this
+            // skips the per-joint status read-back and per-joint quiet gaps -
+            // the bus tick keeps polling status between waypoints - so all
+            // joints get their goals together and the tool tip stays on the
+            // planned line instead of joints updating one at a time.
+            const moves = Array.isArray(data.moves) ? data.moves : [];
+            for (const m of moves) {
+                const jointIndex = m.joint - 1;
+                if (jointIndex < 0 || jointIndex >= servos.length) continue;
+                const servo = await resolveServoForJoint(jointIndex, m.joint);
+                if (!servo) continue;
+                const moveSpeed = (typeof m.speed === 'number' && !isNaN(m.speed) && m.speed >= 0) ? m.speed : 1500;
+                try {
+                    if (!servoTorqueEnabled[jointIndex]) {
+                        await servo.startServo();
+                        servoTorqueEnabled[jointIndex] = true;
+                        cachedTorqueEnabled = null;
+                    }
+                    await servo.moveToAngle(m.angle, moveSpeed);
+                    diag.busMovesCompleted++;
+                } catch (error) {
+                    log(`[LINEAR] joint=${m.joint} FAILED: ${formatCommandError(error)}`, true);
+                    reply({ type: 'error', message: `Failed to move joint ${m.joint}: ${formatCommandError(error)}`, servoFault: !!(error && error.isOverload), joint: m.joint });
+                }
+            }
+            return;
         }
 
         case 'moveJoint': {

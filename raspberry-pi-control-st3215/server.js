@@ -1005,27 +1005,41 @@ async function handleCommand(ws, data) {
                 (async () => {
                     let prevAngles = startAngles;
                     const stepsPerDeg = 11.37; // ST3215 steps per degree
+                    // Each waypoint is sent as ONE batch for all joints, so the
+                    // worker writes every goal in the same bus slot. Sending six
+                    // separate moveJoint commands made the worker update joints
+                    // one at a time (with a status read-back and quiet gaps for
+                    // each), which took longer than the waypoint interval - the
+                    // joints fell out of step and the tip bowed off the line.
+                    // A small speed margin lets each joint reach its goal just
+                    // before the next waypoint despite the servo's acceleration
+                    // ramp, so lag does not build up differently per joint.
+                    const SPEED_MARGIN = 1.25;
+                    const startedAt = Date.now();
 
                     for (let i = 0; i < steps.length; i++) {
                         if (!linearPathRunning) break;
 
                         const angles = steps[i];
+                        const moves = [];
                         for (let j = 0; j < angles.length; j++) {
                             const travel = Math.abs(angles[j] - (prevAngles[j] || 0));
-                            const spd = Math.max(50, Math.round(travel * stepsPerDeg / (intervalMs / 1000)));
-                            if (servoWorker) {
-                                servoWorker.send({
-                                    type: 'immediateBusCommand',
-                                    command: 'moveJoint',
-                                    joint: j + 1,
-                                    angle: angles[j],
-                                    speed: spd,
-                                    clientId: ws.clientId
-                                });
-                            }
+                            const spd = Math.max(50, Math.round(SPEED_MARGIN * travel * stepsPerDeg / (intervalMs / 1000)));
+                            moves.push({ joint: j + 1, angle: angles[j], speed: spd });
+                        }
+                        if (servoWorker) {
+                            servoWorker.send({
+                                type: 'immediateBusCommand',
+                                command: 'moveJointsBatch',
+                                moves: moves,
+                                clientId: ws.clientId
+                            });
                         }
                         prevAngles = angles;
-                        await new Promise(resolve => setTimeout(resolve, intervalMs));
+                        // Pace against the wall clock so timer drift does not
+                        // stretch the move.
+                        const due = startedAt + (i + 1) * intervalMs;
+                        await new Promise(resolve => setTimeout(resolve, Math.max(0, due - Date.now())));
                     }
 
                     linearPathRunning  = false;
