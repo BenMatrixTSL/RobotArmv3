@@ -42,6 +42,7 @@ foreach (var joint in status.GetProperty("joints").EnumerateArray())
 }
 
 // Move a joint
+await arm.TakeControlAsync("my-program");   // required before any move / tool command
 await arm.MoveJointAsync(joint: 1, angle: 45.0);
 await arm.MoveJointAsync(joint: 2, angle: -30.0, speed: 800);
 
@@ -80,6 +81,8 @@ Timeouts are in milliseconds and can be overridden on every call.
 |--------|----------------|-------------|
 | `GetJointConfigsAsync()` | `getJointConfigs` | Servos discovered on the bus |
 | `GetStatusAsync()` | `getStatus` | Angles, load, voltage for all joints |
+| `TakeControlAsync(label, force=false)` | `takeControl` | Claim the arm (needed before moves; never granted implicitly) |
+| `ReleaseControlAsync()` | `releaseControl` | Hand the arm back |
 | `MoveJointAsync(joint, angle, speed=1500)` | `moveJoint` | Move one joint to an angle (degrees) |
 | `StopJointAsync(joint)` | `stopJoint` | Stop one joint immediately |
 | `StopAllJointsAsync()` | `stopAllJoints` | Emergency stop all joints |

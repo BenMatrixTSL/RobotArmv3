@@ -178,6 +178,23 @@ class RobotArmClient:
                 pending["event"].set()
             self._pending.clear()
 
+    # ----- Arm control session -----
+
+    def take_control(self, label: str = "python", force: bool = False,
+                     timeout: float = 5.0) -> Dict[str, Any]:
+        """Claim the arm control session.
+
+        The server only lets one client move the arm at a time and never
+        grants control implicitly: call this before any move, speed, torque
+        or tool command, and check ``youHaveControl`` in the reply.
+        ``force=True`` takes control from another app (unless it is locked).
+        """
+        return self.request("takeControl", timeout=timeout, label=label, force=force)
+
+    def release_control(self, timeout: float = 5.0) -> Dict[str, Any]:
+        """Give the control session back so another app can take it."""
+        return self.request("releaseControl", timeout=timeout)
+
     # ----- Joint commands -----
 
     def get_joint_configs(self, timeout: float = 5.0) -> Dict[str, Any]:

@@ -22,7 +22,8 @@ Commands that **move** the arm or change torque/speed go through the control loc
 
 - `moveJoint`, `stopJoint`, `stopAllJoints`, `setTorqueAll`, `setSpeed`, `setAcceleration`, `rescanServos`, end-tool writes, etc.
 
-- If **no client** has control yet, the **first** command (or `takeControl`) **auto-grants** control to that client.
+- Control is granted **only** by `takeControl` (or `lockControl`). A bus write from a client that
+  has not taken control is rejected with `controlRequired: true`, even when nobody holds control.
 - If **another** client already has control, move commands are rejected.
 
 Read-only commands always work: `getStatus`, `getJointConfigs`, kinematics, etc.

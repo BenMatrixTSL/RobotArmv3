@@ -65,6 +65,7 @@ for (auto& joint : status.value("joints", json::array())) {
 }
 
 // Move a joint
+arm.takeControl("my-program");   // required before any move / tool command
 arm.moveJoint(1, 45.0);          // joint 1, 45 degrees, default speed
 arm.moveJoint(2, -30.0, 800);    // joint 2, -30 degrees, slower speed
 
@@ -104,6 +105,8 @@ Timeouts are in milliseconds and can be overridden on every call.
 |--------|----------------|-------------|
 | `getJointConfigs()` | `getJointConfigs` | Servos discovered on the bus |
 | `getStatus()` | `getStatus` | Angles, load, voltage for all joints |
+| `takeControl(label, force=false)` | `takeControl` | Claim the arm (needed before moves; never granted implicitly) |
+| `releaseControl()` | `releaseControl` | Hand the arm back |
 | `moveJoint(joint, angle, speed=1500)` | `moveJoint` | Move one joint to an angle (degrees) |
 | `stopJoint(joint)` | `stopJoint` | Stop one joint immediately |
 | `stopAllJoints()` | `stopAllJoints` | Emergency stop all joints |

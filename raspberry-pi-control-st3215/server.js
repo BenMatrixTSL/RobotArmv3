@@ -394,7 +394,13 @@ function pruneStaleControlSession() {
 }
 function requireControl(ws) {
     pruneStaleControlSession();
-    if (!controlSession.ws) { assignControlSession(ws, 'auto'); return { ok: true }; }
+    // Control is only ever granted by an explicit takeControl / lockControl.
+    // A bus write from a client that has not asked for it is refused, even
+    // when nobody holds control - otherwise any button in any app could
+    // start moving the arm without the operator meaning to take it over.
+    if (!controlSession.ws) {
+        return { ok: false, message: 'No app has arm control. Use Take control first.' };
+    }
     if (controlSession.ws !== ws) {
         const who = formatControlHolder(controlSession) || 'another client';
         return { ok: false, message: 'Arm control is held by ' + who + '. Only one app can move the arm at a time.' };

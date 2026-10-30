@@ -121,16 +121,16 @@ second. Parse them cheaply or raise `STATUS_POLL_INTERVAL_MS`.
    `setTorqueAll`, `rescanServos`, every `tool*` write, every EEPROM command and
    `executeLinearMove`. Only one client holds it.
 3. Take it explicitly with `{"command":"takeControl","label":"my-cell-controller"}` and
-   check `youHaveControl` in the reply. If nobody holds control the first bus write also
-   auto-grants it, but do not rely on that.
+   check `youHaveControl` in the reply. Bus writes from a client that has not taken control
+   are rejected (`controlRequired: true`), even when nobody holds it.
 4. Control is released when your socket closes, when you send `releaseControl`, or
    automatically after **5 minutes with no move command** (`moveJoint`, `setServo`,
    `setAcceleration` reset the timer; other writes do not). A long-running controller
    that moves rarely should re-take control before each batch of moves rather than
    assume it still has it.
 5. `takeControl` with `"force": true` takes control from another client unless that
-   client locked it. `lockControl` with the lock password (`MatrixRA123`, local-network
-   grade) holds control for `durationMs` (default 15 min, max 60 min) and suspends the
+   client locked it. `lockControl` with the control password (set on the Pi with
+   `set-control-password.sh` - see MULTI_CLIENT.md) holds control for `durationMs` (default 15 min, max 60 min) and suspends the
    idle timeout. Use it for unattended runs so the pendant cannot interrupt you.
 6. `moveJoint`, `stopJoint`, `stopAll` bypass the write queue and go to the bus
    immediately. Everything else is queued behind the status poll. A move is

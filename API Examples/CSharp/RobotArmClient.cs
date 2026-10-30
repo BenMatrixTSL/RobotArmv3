@@ -197,6 +197,24 @@ public sealed class RobotArmClient : IAsyncDisposable
     }
 
     // =========================================================================
+    // Arm control session
+    // =========================================================================
+
+    /// <summary>
+    /// Claims the arm control session. The server lets one client move the
+    /// arm at a time and never grants control implicitly: call this before
+    /// any move, speed, torque or tool command and check "youHaveControl"
+    /// in the reply. force = true takes control from another app (unless locked).
+    /// </summary>
+    public Task<JsonElement> TakeControlAsync(string label = "csharp", bool force = false,
+                                              int timeoutMs = 5000)
+        => RequestAsync("takeControl", new() { ["label"] = label, ["force"] = force }, timeoutMs);
+
+    /// <summary>Hands the arm back so another app can take control.</summary>
+    public Task<JsonElement> ReleaseControlAsync(int timeoutMs = 5000)
+        => RequestAsync("releaseControl", timeoutMs: timeoutMs);
+
+    // =========================================================================
     // Joint commands
     // =========================================================================
 

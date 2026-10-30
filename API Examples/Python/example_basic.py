@@ -35,6 +35,12 @@ def main():
         arm.connect()
         print("Connected.\n")
 
+        # Only one app may move the arm at a time, and the server never hands
+        # control out implicitly - take it before any move or tool command.
+        control = arm.take_control(label="python-example")
+        if not control.get("youHaveControl"):
+            print("Another app has control:", control.get("message", ""))
+
         # How many servos are on the bus?
         configs = arm.get_joint_configs()
         print(

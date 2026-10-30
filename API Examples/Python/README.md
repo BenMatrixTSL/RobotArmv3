@@ -38,6 +38,7 @@ arm = RobotArmClient("192.168.1.100", 8080)
 arm.connect()
 
 status = arm.get_status()
+arm.take_control(label="my-script")   # required before any move / tool command
 arm.move_joint(1, 45.0, speed=1500)
 
 currents = arm.tool_read_currents()
@@ -55,6 +56,8 @@ arm.disconnect()
 | `request(command, **params)` | any | Low-level call with `requestId` matching |
 | `get_joint_configs()` | `getJointConfigs` | Servos discovered on bus |
 | `get_status()` | `getStatus` | Angles, load, voltage, etc. |
+| `take_control(label, force=False)` | `takeControl` | Claim the arm (needed before moves; never granted implicitly) |
+| `release_control()` | `releaseControl` | Hand the arm back |
 | `move_joint(joint, angle, speed=1500)` | `moveJoint` | Move one joint |
 | `stop_joint(joint)` | `stopJoint` | Stop one joint |
 | `stop_all_joints()` | `stopAllJoints` | Stop all joints |

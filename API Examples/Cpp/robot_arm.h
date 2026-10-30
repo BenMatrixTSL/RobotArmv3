@@ -58,6 +58,14 @@ public:
                  json params   = json::object(),
                  int  timeoutMs = 5000);
 
+    /* ---- Arm control session ----
+     * The server lets one client move the arm at a time and never grants
+     * control implicitly: call takeControl() before any move, speed, torque
+     * or tool command and check "youHaveControl" in the reply.
+     * force = true takes control from another app (unless it is locked). */
+    json takeControl(const std::string& label = "cpp", bool force = false, int timeoutMs = 5000);
+    json releaseControl(int timeoutMs = 5000);
+
     /* ---- Joint commands ---- */
     json getJointConfigs(int timeoutMs = 5000);
     json getStatus(int timeoutMs = 5000);

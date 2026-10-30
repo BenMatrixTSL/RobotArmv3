@@ -39,6 +39,11 @@ def main():
         arm.connect()
         print("Connected.\n")
 
+        # Tool commands need the control session too
+        control = arm.take_control(label="python-end-tool-example")
+        if not control.get("youHaveControl"):
+            print("Another app has control:", control.get("message", ""))
+
         # Step 1: Check the end tool is on the bus
         print("Pinging end tool (ID 64)...")
         ping_result = arm.tool_ping()

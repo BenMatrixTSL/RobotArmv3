@@ -41,6 +41,12 @@ int main(int argc, char* argv[]) {
         arm.connect();
         std::cout << "Connected.\n\n";
 
+        /* Only one app may move the arm at a time, and the server never hands
+         * control out implicitly - take it before any move or tool command. */
+        json control = arm.takeControl("cpp-example");
+        if (!control.value("youHaveControl", false))
+            std::cout << "Another app has control: " << control.value("message", "") << "\n\n";
+
         /* How many servos are on the bus? */
         auto configs = arm.getJointConfigs();
         std::cout << "Servos found: "

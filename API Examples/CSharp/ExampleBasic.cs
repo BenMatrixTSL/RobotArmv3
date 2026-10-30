@@ -24,6 +24,15 @@ try
     await arm.ConnectAsync();
     Console.WriteLine("Connected.\n");
 
+    // Only one app may move the arm at a time, and the server never hands
+    // control out implicitly - take it before any move or tool command.
+    var control = await arm.TakeControlAsync("csharp-example");
+    if (!(control.TryGetProperty("youHaveControl", out var have) && have.GetBoolean()))
+    {
+        var why = control.TryGetProperty("message", out var msg) ? msg.GetString() : "";
+        Console.WriteLine($"Another app has control: {why}\n");
+    }
+
     // How many servos are on the bus?
     var configs = await arm.GetJointConfigsAsync();
     Console.WriteLine($"Servos found: {configs.GetInt("count")} of {configs.GetInt("total")}");

@@ -144,6 +144,17 @@ void RobotArmClient::failAllPending(const std::string& reason) {
 }
 
 /* =========================================================================
+ * Arm control session
+ * =========================================================================*/
+json RobotArmClient::takeControl(const std::string& label, bool force, int t) {
+    return request("takeControl", {{"label", label}, {"force", force}}, t);
+}
+
+json RobotArmClient::releaseControl(int t) {
+    return request("releaseControl", {}, t);
+}
+
+/* =========================================================================
  * Joint commands
  * =========================================================================*/
 json RobotArmClient::getJointConfigs(int t) {
