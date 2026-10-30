@@ -4585,13 +4585,14 @@ function pendantSetOrientation(mode) {
 
     const updateDisplay = () => {
         if (!display) return;
+        // Free needs no line (the card's (i) explains it); a lock shows the
+        // live target direction and spin as a warning-coloured readout.
         if (!currentToolOrientation) {
-            display.textContent = 'Free - all 6 joints used for positioning; spin drives joint 6 directly';
-            display.style.color = '';
-            display.style.fontStyle = 'italic';
-            display.style.fontWeight = '';
+            display.textContent = '';
+            display.hidden = true;
         } else {
             const { x, y, z, rotation } = currentToolOrientation;
+            display.hidden = false;
             display.textContent = `⚠ Locked: X:${x.toFixed(2)} Y:${y.toFixed(2)} Z:${z.toFixed(2)} rot:${rotation.toFixed(1)}\xb0`;
             display.style.color = '#e67e22';
             display.style.fontStyle = 'normal';
@@ -5109,12 +5110,6 @@ function updateMovementModeUI() {
     if (ptpBtn)   ptpBtn.classList.toggle('active', movementMode === 'ptp');
     if (linBtn)   linBtn.classList.toggle('active', movementMode === 'linear');
     if (linPanel) linPanel.style.display = movementMode === 'linear' ? '' : 'none';
-    const infoEl = document.getElementById('movementModeInfo');
-    if (infoEl) {
-        infoEl.textContent = movementMode === 'linear'
-            ? 'Linear - tool tip moves in a straight line at the tool speed (applies to XYZ jog, G1 XYZ, RAPID MoveL and Blockly Move TCP)'
-            : 'PTP - joints move together so the tip path is curved; joint speeds are paced so the tip averages about the tool speed';
-    }
 }
 
 function loadMovementSettings() {

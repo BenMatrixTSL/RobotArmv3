@@ -438,11 +438,11 @@
                             <input id="pendantOrientationRotation" type="number" value="0" step="5"
                                 style="width:70px;" oninput="pendantSetOrientation('rotation')">
                         </div>
-                        <div class="pendant2-orientation-info" id="pendantOrientationDisplay">Free - all 6 joints used for positioning; spin drives joint 6 directly</div>
+                        <div class="pendant2-orientation-info" id="pendantOrientationDisplay" hidden></div>
                     </div>
 
                     <div class="pendant2-card" id="pendantMovementModeCard">
-                        <div class="pendant2-card-title" data-info="PTP (point to point) moves every joint to its target at once, so the tool tip follows a curved path. Linear makes the tool tip travel in a straight line by stepping through waypoints every path-step millimetres. Tool speed sets the tool-tip speed in mm/s for XYZ jog and Move to XYZ in both modes; programs set their own speed with G-code F or RAPID speed values.">Movement Mode</div>
+                        <div class="pendant2-card-title" data-info="PTP (point to point) moves every joint to its target at once, so the tool tip follows a curved path. Linear makes the tool tip travel in a straight line by stepping through waypoints every path-step millimetres. Tool speed sets the tool-tip speed in mm/s for XYZ jog and Move to XYZ in both modes; programs set their own speed with G-code F or RAPID speed values. Linear applies to XYZ jog, Move to Stored Position, G-code G1 X/Y/Z, RAPID MoveL and Blockly Move TCP, and needs a control session. Path step is the spacing of the waypoints along the straight line.">Movement Mode</div>
                         <button id="movementModePtp" class="btn btn-secondary pendant2-wide-btn active" onclick="setMovementMode('ptp')" title="All joints move to their targets at once - the tool tip follows a curved path">Point to Point (PTP)</button>
                         <button id="movementModeLinear" class="btn btn-secondary pendant2-wide-btn" onclick="setMovementMode('linear')" title="The tool tip travels in a straight line through space (XYZ jog, G1, MoveL, Move TCP)">Linear Cartesian</button>
                         <div style="display:flex;align-items:center;gap:6px;margin-top:6px;">
@@ -454,9 +454,7 @@
                                 <label style="font-size:0.85em;white-space:nowrap;">Path step (mm)</label>
                                 <input type="number" id="linearStepMm" value="2" min="0.5" max="20" step="0.5" style="width:70px;" onchange="saveLinearSettings()">
                             </div>
-                            <div class="pendant2-orientation-info">Straight-line tool path built from waypoints every "path step" mm. Needs a control session.</div>
                         </div>
-                        <div class="pendant2-orientation-info" id="movementModeInfo">PTP - joints move together; tool path is curved</div>
                     </div>
 
                     <div class="pendant2-card">
@@ -1866,7 +1864,7 @@
     <script src="cameraView.js?v=20260616"></script>
     <!-- Main Application: UI logic and event handlers -->
     <script src="tabIcons.js?v=20261028"></script>
-    <script src="app.js?v=20261030e"></script>
+    <script src="app.js?v=20261030f"></script>
     <!-- On-Screen Keyboard: touch keyboard for kiosk mode (no system OSK in Chromium kiosk) -->
     <script src="keyboard.js?v=20260930"></script>
 
