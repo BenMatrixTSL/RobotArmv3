@@ -8332,7 +8332,7 @@ function recoverFromLostWebGL(detail) {
         setTimeout(function () { window.location.reload(); }, 5000);
         return;
     }
-    showAppMessage('3D visualisation error: ' + detail + ' Reload the page (F5) to try again.', 8000);
+    showAppMessage('3D visualisation error: ' + detail + ' The browser has lost its graphics context - close and restart the browser (or this app) to get 3D back.', 10000);
 }
 
 /**
