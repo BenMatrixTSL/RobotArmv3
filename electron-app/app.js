@@ -10308,10 +10308,10 @@ const USER_TYPE_PRESETS = {
     },
     level2: {
         label: 'GCSE / BTEC Level 2 (ages 14-16)',
-        description: 'Adds G-code, kinematics and dead zones. Foundation and core intermediate modules.',
-        tabs: ['connection', 'pendant', 'pendant-ui', 'gcode', 'blockly', 'visualization', 'kinematics',
+        description: 'Adds G-code and dead zones. Foundation and core intermediate modules, without kinematics.',
+        tabs: ['connection', 'pendant', 'pendant-ui', 'gcode', 'blockly', 'visualization',
             'positions', 'deadzones', 'camera', 'curriculum'],
-        modules: ['module-01', 'module-02', 'module-03', 'module-04', 'module-05', 'module-06', 'module-07', 'module-10']
+        modules: ['module-01', 'module-02', 'module-03', 'module-04', 'module-05', 'module-06', 'module-10']
     },
     level3: {
         label: 'BTEC Level 3 National (ages 16-18)',
