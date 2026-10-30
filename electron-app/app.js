@@ -304,10 +304,12 @@ function resolveStoredPositionAngles(positionNumber) {
 }
 
 /**
- * Moves the arm to a stored position object - dead-zone aware and approaching
- * descents from above, exactly as the programming modes do (they all share
- * moveToStoredAnglesWithApproach). Works for both angles-type and XYZ-type
- * positions (see resolvePositionToAngles).
+ * Moves the arm to a stored position object. In PTP mode this is a dead-zone
+ * aware joint move that approaches descents from above, exactly as the
+ * programming modes do (they all share moveToStoredAnglesWithApproach). In
+ * Linear mode (Pendant Control card) the tool tip instead travels in a
+ * straight line to the position's XYZ via moveToXYZ. Works for both
+ * angles-type and XYZ-type positions (see resolvePositionToAngles).
  * @param {object} position
  * @param {number} [speedDegreesPerSecond=40]
  * @returns {Promise<boolean>} true if the move was dispatched, false if the position couldn't be resolved or was refused
@@ -322,6 +324,30 @@ async function moveToStoredPositionEntry(position, speedDegreesPerSecond = 40) {
         showAppMessage(`Could not move to ${label} - ${reason}.`);
         return false;
     }
+
+    // Linear mode (Pendant Control card): the tool tip travels in a straight
+    // line to the stored position's XYZ through the same Cartesian mover the
+    // XYZ jog uses, at the card's tool speed and with the card's tool
+    // orientation. The joint-space move below is PTP: every joint heads for
+    // its taught angle at once and the tip sweeps a curve.
+    if (movementMode === 'linear' && typeof robotKinematics !== 'undefined' && robotKinematics.isConfigured()) {
+        let target = null;
+        if (position.type === 'xyz' && position.xyz) {
+            target = { x: position.xyz.x, y: position.xyz.y, z: position.xyz.z };
+        } else {
+            try {
+                target = robotKinematics.forwardKinematics(targetAngles).position;
+            } catch (e) {
+                target = null;
+            }
+        }
+        if (target && [target.x, target.y, target.z].every(v => typeof v === 'number' && isFinite(v))) {
+            await moveToXYZ(target.x, target.y, target.z, currentToolOrientation, false);
+            return true;
+        }
+        console.warn('moveToStoredPositionEntry: could not derive an XYZ target, falling back to joint move');
+    }
+
     return moveToStoredAnglesWithApproach(null, targetAngles, speedDegreesPerSecond, showAppMessage);
 }
 
