@@ -273,14 +273,28 @@ Status pushes that arrive while the moves are still being written to the bus can
 4. Send one `moveJoint` per joint with coordinated speeds (section 6).
 5. Wait for motion complete (section 5).
 
-Costs: IK takes 0.2 to 0.4 s on the Pi. Refinement returns in a few ms when the IK
-result is already within 1.5 mm and 3°, otherwise it runs a grid search that takes
-about 2 s **and blocks the server's event loop**, during which no status reaches any
-client. Do not call it at high rate; for a jog-style stream of small moves use IK alone.
+Tool straight down (`orientation` `{"x":0,"y":0,"z":-1}`, any `rotation`) is solved
+exactly: joint 4 is held at 0 and J5 = −(J2 + J3) keeps the tool vertical, leaving a
+two-link problem with a closed-form answer. Both IK and refinement return it in about
+1 ms with 0° tilt, choosing the elbow configuration nearest the seed. If no tool-down
+pose exists for that point within the joint limits, both fall back to the numerical
+solver below and return its best tilted pose, so check `orientationErrorDeg`.
 
-Reachability: a 4° pointing error at full reach near the table is a known limit of the
-solver (position is prioritised over orientation). If `orientationErrorDeg` matters,
-try a slightly less extended target.
+Costs for any other orientation: IK takes 0.2 to 0.4 s on the Pi. Refinement returns
+in a few ms when the IK result is already within 1.5 mm and 3°, otherwise it runs a
+grid search that takes about 2 s **and blocks the server's event loop**, during which
+no status reaches any client. Do not call it at high rate; for a jog-style stream of
+small moves use IK alone.
+
+Reachability: the numerical solver puts position first and treats orientation as a
+secondary goal, so off-vertical targets near the edge of reach can come back tilted
+by several degrees. If `orientationErrorDeg` matters, try a slightly less extended
+target.
+
+Tool-down zone: with the tool vertical the tip can only reach part of the workspace.
+For the bare mount face it runs from about +40 mm (radius 100–180 mm) down to about
+−60 mm (radius 220–240 mm). A fitted tool lowers the whole zone by its length, so the
+105 mm servo tool reaches about −50 mm close in and about −160 mm at radius 220–240 mm.
 
 ### Straight-line moves
 
@@ -298,7 +312,7 @@ produces many small bus writes, so it is the move most exposed to a noisy bus; k
 | 2 shoulder pitch | −90° to +40° |
 | 3 elbow pitch | ±90° |
 | 4 wrist roll | ±90° |
-| 5 wrist pitch | −5° to +90° |
+| 5 wrist pitch | −60° to +90° |
 | 6 tool roll | ±90° |
 
 The kinematics commands respect these. `moveJoint` does not. Clamp in your client.
@@ -335,8 +349,8 @@ The kinematics commands respect these. `moveJoint` does not. Clamp in your clien
   worker broadcasts a heartbeat every 700 ms, so you do not need to keep writing, but
   if the worker crashes the arm will go limp within a second. Design your cell so that
   is safe.
-- **EEPROM writes** (`writeServoEeprom`, `writeServoEepromRaw`) are persistent and the
-  raw variant needs the lock password. Treat them as configuration tooling, not control.
+- **EEPROM writes** (`writeServoEeprom`, `writeServoEepromRaw`) are persistent and both
+  need the control password. Treat them as configuration tooling, not control.
 
 ---
 

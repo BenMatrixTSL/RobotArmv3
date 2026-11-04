@@ -614,6 +614,218 @@ class RobotKinematics {
     }
 
     /**
+     * Turns the last joint so the tool's X axis matches the spin requested in
+     * desiredOrientation.rotation (degrees about the tool's pointing axis).
+     * Joint 6 rotates about the tool Z axis with the TCP on that axis, so the
+     * spin is independent of the position / pointing-direction solve and can
+     * be set after it. Both turn directions are evaluated numerically so the
+     * axis sign convention never matters.
+     * @param {Array<number>} angles - Solved joint angles (degrees)
+     * @param {{ x, y, z, rotation?: number }} desiredOrientation
+     * @returns {{ angles: Array<number>, spinErrorDeg: number|null }}
+     */
+    applyToolSpin(angles, desiredOrientation) {
+        const numJoints = this.joints.length;
+        if (!desiredOrientation || typeof desiredOrientation.rotation !== 'number' ||
+            !Array.isArray(angles) || numJoints < 6 || angles.length < 6) {
+            return { angles: angles, spinErrorDeg: null };
+        }
+        const desiredX = buildToolFrame(normalizeVector(desiredOrientation), desiredOrientation.rotation).xAxis;
+        const spinError = (a) => {
+            const fk = this.forwardKinematics(a);
+            const tz = toolZAxisFromMatrix(fk.rotation);
+            const tx = toolXAxisFromMatrix(fk.rotation);
+            // Compare against the desired X projected into the tool's actual
+            // plane, so a small pointing error does not masquerade as spin error.
+            const d = desiredX.x * tz.x + desiredX.y * tz.y + desiredX.z * tz.z;
+            const px = normalizeVector({ x: desiredX.x - d * tz.x, y: desiredX.y - d * tz.y, z: desiredX.z - d * tz.z });
+            const cos = Math.max(-1, Math.min(1, tx.x * px.x + tx.y * px.y + tx.z * px.z));
+            const cross = {
+                x: tx.y * px.z - tx.z * px.y,
+                y: tx.z * px.x - tx.x * px.z,
+                z: tx.x * px.y - tx.y * px.x
+            };
+            const sin = cross.x * tz.x + cross.y * tz.y + cross.z * tz.z;
+            return Math.atan2(sin, cos) * 180 / Math.PI; // signed, about tool Z
+        };
+        const j6 = this.joints[5];
+        const clamp = (a) => {
+            if (j6 && j6.limits) {
+                if (typeof j6.limits.lowerDegrees === 'number' && a < j6.limits.lowerDegrees) a = j6.limits.lowerDegrees;
+                if (typeof j6.limits.upperDegrees === 'number' && a > j6.limits.upperDegrees) a = j6.limits.upperDegrees;
+            }
+            return a;
+        };
+        const theta = spinError(angles);
+        let best = angles.slice();
+        let bestErr = Math.abs(theta);
+        for (const sign of [1, -1]) {
+            const cand = angles.slice();
+            cand[5] = clamp(angles[5] + sign * theta);
+            const err = Math.abs(spinError(cand));
+            if (err < bestErr) { bestErr = err; best = cand; }
+        }
+        return { angles: best, spinErrorDeg: bestErr };
+    }
+
+    /**
+     * Exact (closed-form) IK for the tool pointing straight down.
+     *
+     * Joints 2, 3 and 5 all pitch about parallel axes, so with joint 4 at 0
+     * the tool stays vertical whenever J5 = -(J2 + J3). The tool tip is then
+     * the J5 axis plus a constant offset, which leaves a two-link planar
+     * problem (upper arm + forearm) in the vertical plane set by joint 1.
+     * Every candidate (elbow up/down, reaching forwards/back over the base)
+     * is checked against the joint limits and verified with FK; the valid
+     * one nearest the seed wins. Returns null if no tool-down pose exists
+     * (or the URDF does not have this structure), so callers can fall back
+     * to the numerical solver.
+     *
+     * @param {{ x, y, z }} targetPose - Tool tip target in mm
+     * @param {{ x, y, z, rotation?: number }} orientation - Must point down
+     * @param {Array<number>} [seedAngles] - Current joint angles (degrees)
+     * @returns {Array<number>|null} Joint angles in degrees
+     */
+    solveToolDownIK(targetPose, orientation, seedAngles) {
+        if (this.joints.length !== 6) return null;
+        const previousLogging = this.enableDebugLogging;
+        this.enableDebugLogging = false;
+        try {
+            return this._solveToolDownIK(targetPose, orientation, seedAngles);
+        } finally {
+            this.enableDebugLogging = previousLogging;
+        }
+    }
+
+    _solveToolDownIK(targetPose, orientation, seedAngles) {
+        const [j1, j2, j3, j4, j5, j6] = this.joints;
+        const seed = (Array.isArray(seedAngles) && seedAngles.length === 6)
+            ? seedAngles.map((a) => (typeof a === 'number' && isFinite(a)) ? a : 0)
+            : [0, 0, 0, 0, 0, 0];
+        const zeroOffset = (joint) => (typeof joint.zeroOffsetDegrees === 'number' ? joint.zeroOffsetDegrees : 0);
+        const axisSign = (axis, key) => {
+            const n = normalizeVector(axis || {});
+            return n[key];
+        };
+
+        // Joint 1 must turn about the vertical, joints 2/3/5 about the same
+        // horizontal line; anything else is not this arm's structure.
+        const s1 = axisSign(j1.axis, 'z');
+        const s2 = -axisSign(j2.axis, 'y');
+        const s3 = -axisSign(j3.axis, 'y');
+        const s5 = -axisSign(j5.axis, 'y');
+        if (Math.abs(Math.abs(s1) - 1) > 1e-6 || [s2, s3, s5].some((s) => Math.abs(Math.abs(s) - 1) > 1e-6)) {
+            return null;
+        }
+
+        const wrap = (deg) => {
+            let a = deg % 360;
+            if (a > 180) a -= 360;
+            if (a < -180) a += 360;
+            return a;
+        };
+        const withinLimits = (angleDeg, joint) => {
+            const lim = joint.limits;
+            if (!lim) return true;
+            if (typeof lim.lowerDegrees === 'number' && angleDeg < lim.lowerDegrees - 1e-6) return false;
+            if (typeof lim.upperDegrees === 'number' && angleDeg > lim.upperDegrees + 1e-6) return false;
+            return true;
+        };
+
+        // Fixed geometry in the joint 1 plane (metres): shoulder pivot,
+        // upper arm (J2 -> J3) and forearm (J3 -> J5, with J4 at zero).
+        const shoulder = { x: (j1.origin.x || 0) + (j2.origin.x || 0), z: (j1.origin.z || 0) + (j2.origin.z || 0) };
+        const upper = { x: j3.origin.x || 0, z: j3.origin.z || 0 };
+        const fore = { x: (j4.origin.x || 0) + (j5.origin.x || 0), z: (j4.origin.z || 0) + (j5.origin.z || 0) };
+        const sideOffset = (j2.origin.y || 0) + (j3.origin.y || 0) + (j4.origin.y || 0) + (j5.origin.y || 0);
+        const a = Math.hypot(upper.x, upper.z);
+        const b = Math.hypot(fore.x, fore.z);
+        if (a < 1e-9 || b < 1e-9) return null;
+        const beta2 = Math.atan2(upper.z, upper.x);
+        const beta3 = Math.atan2(fore.z, fore.x);
+
+        const tx = targetPose.x / 1000;
+        const ty = targetPose.y / 1000;
+        const tz = targetPose.z / 1000;
+        const toRad = Math.PI / 180;
+        const toDeg = 180 / Math.PI;
+
+        const solveForJ6 = (j6Deg) => {
+            // Offset from the J5 axis to the tool tip. With the tool vertical
+            // the J5 frame is level, so this is constant for a given J6.
+            let T = multiplyMatrices(originToMatrix(j6.origin), axisRotationMatrix(j6.axis, (j6Deg + zeroOffset(j6)) * toRad));
+            for (let i = 0; i < this.fixedToolJoints.length; i++) {
+                T = multiplyMatrices(T, originToMatrix(this.fixedToolJoints[i].origin));
+            }
+            const tool = this.getActiveEndTool();
+            if (tool) T = multiplyMatrices(T, originToMatrix(tool.origin));
+            const tip = positionFromMatrix(T);
+            const lateral = sideOffset + tip.y;
+
+            const rho = Math.hypot(tx, ty);
+            if (rho < Math.abs(lateral)) return [];
+            const reach = Math.sqrt(rho * rho - lateral * lateral);
+
+            const candidates = [];
+            for (const X of [reach, -reach]) {
+                const theta1 = Math.atan2(ty, tx) - Math.atan2(lateral, X);
+                const dx = X - tip.x - shoulder.x;
+                const dz = tz - tip.z - shoulder.z;
+                const c = (dx * dx + dz * dz - a * a - b * b) / (2 * a * b);
+                if (c < -1 - 1e-9 || c > 1 + 1e-9) continue;
+                const elbowBase = Math.acos(Math.max(-1, Math.min(1, c)));
+                for (const delta of [elbowBase, -elbowBase]) {
+                    const u = Math.atan2(dz, dx) - Math.atan2(b * Math.sin(delta), a + b * Math.cos(delta));
+                    const phi2 = u - beta2;
+                    const phi3 = delta + beta2 - beta3;
+                    const angles = [
+                        wrap(theta1 / s1 * toDeg - zeroOffset(j1)),
+                        wrap(phi2 / s2 * toDeg - zeroOffset(j2)),
+                        wrap(phi3 / s3 * toDeg - zeroOffset(j3)),
+                        wrap(-zeroOffset(j4)),
+                        wrap(-(phi2 + phi3) / s5 * toDeg - zeroOffset(j5)),
+                        j6Deg
+                    ];
+                    if (angles.every((ang, i) => withinLimits(ang, this.joints[i]))) {
+                        candidates.push(angles);
+                    }
+                }
+            }
+            return candidates;
+        };
+
+        const travel = (angles) => angles.reduce((sum, ang, i) => sum + Math.abs(ang - seed[i]), 0);
+        const verify = (angles) => {
+            const fk = this.forwardKinematics(angles);
+            const p = fk.position;
+            const posErr = Math.hypot(p.x - targetPose.x, p.y - targetPose.y, p.z - targetPose.z);
+            return posErr < 0.5 && toolZAxisFromMatrix(fk.rotation).z < -0.99996; // 0.5 mm, ~0.5 deg
+        };
+        const pickNearest = (j6Deg) => {
+            const valid = solveForJ6(j6Deg).filter(verify);
+            if (valid.length === 0) return null;
+            valid.sort((p, q) => travel(p) - travel(q));
+            return valid[0];
+        };
+
+        // J6 only moves the tip when the tool sits off its axis, so solve,
+        // set the requested spin, and re-solve until J6 stops changing.
+        let j6Deg = seed[5];
+        if (!withinLimits(j6Deg, j6)) j6Deg = 0;
+        let best = null;
+        for (let pass = 0; pass < 3; pass++) {
+            best = pickNearest(j6Deg);
+            if (!best) return null;
+            if (!orientation || typeof orientation.rotation !== 'number') return best;
+            const spunJ6 = this.applyToolSpin(best, orientation).angles[5];
+            if (Math.abs(spunJ6 - j6Deg) < 0.01) return best;
+            j6Deg = spunJ6;
+        }
+        best = pickNearest(j6Deg);
+        return best;
+    }
+
+    /**
      * Inverse Kinematics
      * Calculates joint angles from end effector position
      * 
@@ -656,6 +868,13 @@ class RobotKinematics {
                 console.warn('Inverse kinematics: target outside approximate reach. Distance =', distance.toFixed(1), 'mm, maxReach ≈', this.maxReachMm.toFixed(1), 'mm');
                 return null;
             }
+        }
+
+        // Tool straight down has an exact solution wherever one exists. Outside
+        // that zone fall through to the numerical solver's best tilted pose.
+        if (hasOrientationTarget && desiredToolZ.z < -0.999999) {
+            const exact = this.solveToolDownIK(targetPose, targetPose.orientation, initialAngles);
+            if (exact) return exact;
         }
 
         // Simple numeric IK using Jacobian transpose.
@@ -1086,6 +1305,23 @@ class RobotKinematics {
         }
 
         const desiredZ = normalizeVector(desiredOrientation);
+
+        // Tool straight down: the exact solver is already optimal, so skip the search
+        if (desiredZ.z < -0.999999) {
+            const exact = this.solveToolDownIK(targetPose, desiredOrientation, referenceAngles || baseAngles);
+            if (exact) {
+                const fk = this.forwardKinematics(exact);
+                const p = fk.position;
+                const tz = toolZAxisFromMatrix(fk.rotation);
+                const dot = Math.max(-1, Math.min(1, desiredZ.x * tz.x + desiredZ.y * tz.y + desiredZ.z * tz.z));
+                return {
+                    angles: exact,
+                    positionErrorMm: Math.hypot(p.x - targetPose.x, p.y - targetPose.y, p.z - targetPose.z),
+                    orientationErrorDeg: Math.acos(dot) * 180 / Math.PI,
+                    achievedPosition: p
+                };
+            }
+        }
 
         // Optional spin (rotation around tool Z-axis)
         const hasRot = typeof desiredOrientation.rotation === 'number';
