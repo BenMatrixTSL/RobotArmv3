@@ -3305,6 +3305,29 @@ body.kiosk-mode {
     overflow: hidden;
 }
 
+/* Finger-sized scrollbars for the touchscreen - Chromium's default is only
+   a few px wide. Applies to every scrolling area in kiosk mode, including
+   the log panels that have their own thin scrollbar styling above. */
+body.kiosk-mode ::-webkit-scrollbar {
+    width: 22px;
+    height: 22px;
+}
+
+body.kiosk-mode ::-webkit-scrollbar-track {
+    background: #e6e8eb;
+}
+
+body.kiosk-mode ::-webkit-scrollbar-thumb {
+    background: #9aa1ac;
+    border-radius: 11px;
+    border: 3px solid #e6e8eb;
+    min-height: 48px;
+}
+
+body.kiosk-mode ::-webkit-scrollbar-thumb:active {
+    background: #6c7480;
+}
+
 body.kiosk-mode .app-footer {
     display: none;
 }
