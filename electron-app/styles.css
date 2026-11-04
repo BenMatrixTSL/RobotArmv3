@@ -3427,6 +3427,10 @@ body.kiosk-mode .tab-content-container {
     min-width: 0;
     overflow-y: auto;
     max-height: calc(100vh - 68px);
+    /* Always reserve the scrollbar's width. Without this, content that sits
+       right at the fold (the camera image sizes itself to the width) toggles
+       the scrollbar on and off every frame and the image jitters. */
+    scrollbar-gutter: stable;
 }
 
 body.kiosk-mode .tab-content {
