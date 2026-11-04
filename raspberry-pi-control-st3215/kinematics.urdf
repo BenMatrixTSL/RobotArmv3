@@ -63,7 +63,7 @@
     <child link="link5"/>
     <origin xyz="0.08148 0 0" rpy="0 0 0"/>
     <axis xyz="0 -1 0"/>
-    <limit lower="-0.0872665" upper="1.5708" effort="5" velocity="3"/>
+    <limit lower="-1.0472" upper="1.5708" effort="5" velocity="3"/>
   </joint>
 
   <!-- ================= JOINT 6 ================= -->
@@ -134,7 +134,7 @@
   <joint name="tool_servo" type="fixed">
     <parent link="tool_link"/>
     <child link="tcp_servo"/>
-    <origin xyz="0 0 -0.130" rpy="0 0 0"/>
+    <origin xyz="0 0 -0.105" rpy="0 0 0"/>
     <end_tool id="2" label="Servo motor" controls="servo"/>
   </joint>
 
