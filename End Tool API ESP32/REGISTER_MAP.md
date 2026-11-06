@@ -69,12 +69,12 @@ Addresses match `ST3215_ESP32_END_TOOL_API.md` (hex) and the Pi server (`robotAr
 | 50 (`0x32`) | `SERVO_ANGLE_DEG` | RW | Angle `0`–`180` degrees |
 | 51 (`0x33`) | `SERVO_PULSE_MIN_L` | RW | Min pulse width low byte, µs at position 0 (default 1000 µs). Saved to EEPROM (minor ≥ 4) |
 | 52 | `SERVO_PULSE_MIN_H` | RW | Min pulse width high byte |
-| 53 (`0x35`) | `SERVO_PULSE_MAX_L` | RW | Max pulse width low byte, µs at position 255 (default 2500 µs). Saved to EEPROM (minor ≥ 4) |
+| 53 (`0x35`) | `SERVO_PULSE_MAX_L` | RW | Max pulse width low byte, µs at position 255 (default 2000 µs). Saved to EEPROM (minor ≥ 4) |
 | 54 | `SERVO_PULSE_MAX_H` | RW | Max pulse width high byte |
 | 55 (`0x37`) | `SERVO_CURRENT_POSITION_8BIT` | R | 8-bit position currently applied to the output (walks toward the target during a slew) |
 | 56 (`0x38`) | `SERVO_CURRENT_ANGLE` | R | Angle currently applied to the output (derived from 55) |
-| 57 (`0x39`) | `SERVO_SLEW_RATE` | RW | Slew rate: position steps per ~10 ms main-loop tick. `0` = jump immediately (default). Saved to EEPROM (minor ≥ 4) |
-| 58 (`0x3A`) | `SERVO_CURRENT_LIMIT_L` | RW | Servo current limit low byte, mA. `0` = no limit (default). Saved to EEPROM (minor ≥ 4) |
+| 57 (`0x39`) | `SERVO_SLEW_RATE` | RW | Slew rate: position steps per ~10 ms main-loop tick. `0` = jump immediately. Default `10`. Saved to EEPROM (minor ≥ 4) |
+| 58 (`0x3A`) | `SERVO_CURRENT_LIMIT_L` | RW | Servo current limit low byte, mA. `0` = no limit. Default `2000`. Saved to EEPROM (minor ≥ 4) |
 | 59 (`0x3B`) | `SERVO_CURRENT_LIMIT_H` | RW | Servo current limit high byte |
 | 60 (`0x3C`) | `SERVO_SLEW_STATUS` | R | `0` = at target / idle, `1` = slewing, `2` = stopped by current limit |
 
@@ -90,8 +90,9 @@ Addresses match `ST3215_ESP32_END_TOOL_API.md` (hex) and the Pi server (`robotAr
 ### Pulse range (registers 51-54, firmware minor ≥ 4)
 
 - Position `0`–`255` (and angle `0`–`180`) is spread across `SERVO_PULSE_MIN` to `SERVO_PULSE_MAX` µs.
-  Before minor 4 these registers were stored but ignored, and the output always used 1000–2500 µs;
-  the defaults (1000 / 2500 µs) keep that behaviour.
+  Before minor 4 these registers were stored but ignored, and the output always used 1000–2500 µs.
+  The defaults are now 1000 / 2000 µs, so position 255 / angle 180° moves about a third less far than
+  on older firmware.
 - The output can only produce what `Servo_Controller1`'s `min_pulse_width` / `max_pulse_width`
   properties allow (1000–2500 µs). Values outside that are clamped, and if min is not below max the
   full 1000–2500 µs range is used. To allow a wider range, change those component properties in
@@ -103,9 +104,14 @@ Addresses match `ST3215_ESP32_END_TOOL_API.md` (hex) and the Pi server (`robotAr
 - Like the tool type (register 3), the servo pulse min/max (51-54), slew rate (57) and current limit
   (58/59) survive a power cycle. The main loop compares them with what was last saved and writes any
   change to EEPROM (ESP32 NVS), outside the bus write handler so a flash write never delays a reply.
+- Defaults: slew rate `10` (full travel about 0.25 s), current limit `2000` mA, pulse min `1000` µs,
+  pulse max `2000` µs. Moves therefore slew by default; the 2000 mA limit only trips when the servo
+  current reading saturates at its 2 A ceiling.
 - EEPROM addresses: `0` tool type, `1` slew rate, `2` current limit (mA), `3` pulse min (µs),
-  `4` pulse max (µs). An address that has never been written reads `0`; for the pulse widths that
-  means "use the default".
+  `4` pulse max (µs), `5` marker (`0xA5A5`). A blank EEPROM reads `0`, which is a valid slew rate or
+  current limit, so the marker shows whether the settings have ever been saved. On the first boot
+  without it the firmware writes the defaults, then the marker; after that it always restores the
+  saved values.
 - The servo output itself (`SERVO_ENABLE`, position, angle) is not saved: the servo is still disabled
   at boot.
 
