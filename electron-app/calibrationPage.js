@@ -2,8 +2,9 @@
  * Calibration tab - reads a servo's full EEPROM and SRAM blocks and renders
  * them against the STS3215 memory table (stsMemoryTable.js), or - when
  * "End Tool (ID 64)" is selected in the same dropdown - the ESP32 end tool's
- * register array against endToolMemoryTable.js (identity + persisted Tool
- * type ID as "EEPROM", everything else as editable "RAM"). The EEPROM
+ * register array against endToolMemoryTable.js (identity + persisted
+ * settings - tool type, servo pulse range, slew rate, current limit - as
+ * "EEPROM", everything else as editable "RAM"). The EEPROM
  * table highlights anything that differs from the factory default so a
  * change made at some point in the past (e.g. during PID/overload tuning)
  * is easy to spot later. The SRAM table shows live/runtime state (position,

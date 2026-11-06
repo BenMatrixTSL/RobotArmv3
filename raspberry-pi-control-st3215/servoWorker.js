@@ -118,9 +118,10 @@ const END_TOOL_READ_CHUNK_BYTES = 8;
 
 // address -> {bytes, min, max} for every end-tool register the Calibration
 // page may write. Mirrors electron-app/endToolMemoryTable.js — keep in sync.
-// Only Tool type ID (3) persists on the tool; the rest is RAM, but writing
-// it is how the tool is driven (PWM outputs, hobby servo), so it's allowed
-// behind the same password gate. Read-only telemetry/identity is absent and
+// Tool type ID (3) persists on the tool, and from firmware minor 4 so do the
+// servo pulse range (51/53), slew rate (57) and current limit (58); the rest
+// is RAM, but writing it is how the tool is driven (PWM outputs, hobby
+// servo), so it's allowed behind the same password gate. Read-only telemetry/identity is absent and
 // so gets rejected as "not writable".
 const END_TOOL_WRITE_RANGES = {
     3:  { bytes: 1, min: 0,   max: 255 },  // Tool type ID (persisted to tool EEPROM)
@@ -131,10 +132,10 @@ const END_TOOL_WRITE_RANGES = {
     48: { bytes: 1, min: 0,   max: 1 },    // Servo enable
     49: { bytes: 1, min: 0,   max: 255 },  // Servo position 8-bit
     50: { bytes: 1, min: 0,   max: 180 },  // Servo angle (deg)
-    51: { bytes: 2, min: 500, max: 2500 }, // Servo pulse min (us)
-    53: { bytes: 2, min: 500, max: 2500 }, // Servo pulse max (us)
-    57: { bytes: 1, min: 0,   max: 255 },  // Servo slew rate (steps per ~10 ms tick, 0 = jump) - firmware minor >= 3
-    58: { bytes: 2, min: 0,   max: 2000 }, // Servo current limit (mA, 0 = none) - stops a slewed move - firmware minor >= 3
+    51: { bytes: 2, min: 1000, max: 2500 }, // Servo pulse min (us) - output range is 1000-2500 us; saved to tool EEPROM (minor >= 4)
+    53: { bytes: 2, min: 1000, max: 2500 }, // Servo pulse max (us) - saved to tool EEPROM (minor >= 4)
+    57: { bytes: 1, min: 0,   max: 255 },  // Servo slew rate (steps per ~10 ms tick, 0 = jump) - firmware minor >= 3, saved from minor 4
+    58: { bytes: 2, min: 0,   max: 2000 }, // Servo current limit (mA, 0 = none) - stops a slewed move - firmware minor >= 3, saved from minor 4
 };
 
 // Angle limits (9, 11) can let a joint travel somewhere mechanically unsafe —

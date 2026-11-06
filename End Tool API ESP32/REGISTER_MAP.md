@@ -67,14 +67,14 @@ Addresses match `ST3215_ESP32_END_TOOL_API.md` (hex) and the Pi server (`robotAr
 | 48 (`0x30`) | `SERVO_ENABLE` | RW | `0` = disabled, `1` = enabled |
 | 49 (`0x31`) | `SERVO_POSITION_8BIT` | RW | Position `0`–`255` |
 | 50 (`0x32`) | `SERVO_ANGLE_DEG` | RW | Angle `0`–`180` degrees |
-| 51 (`0x33`) | `SERVO_PULSE_MIN_L` | RW | Min pulse width low byte (default 1000 µs) |
+| 51 (`0x33`) | `SERVO_PULSE_MIN_L` | RW | Min pulse width low byte, µs at position 0 (default 1000 µs). Saved to EEPROM (minor ≥ 4) |
 | 52 | `SERVO_PULSE_MIN_H` | RW | Min pulse width high byte |
-| 53 (`0x35`) | `SERVO_PULSE_MAX_L` | RW | Max pulse width low byte (default 2000 µs) |
+| 53 (`0x35`) | `SERVO_PULSE_MAX_L` | RW | Max pulse width low byte, µs at position 255 (default 2500 µs). Saved to EEPROM (minor ≥ 4) |
 | 54 | `SERVO_PULSE_MAX_H` | RW | Max pulse width high byte |
 | 55 (`0x37`) | `SERVO_CURRENT_POSITION_8BIT` | R | 8-bit position currently applied to the output (walks toward the target during a slew) |
 | 56 (`0x38`) | `SERVO_CURRENT_ANGLE` | R | Angle currently applied to the output (derived from 55) |
-| 57 (`0x39`) | `SERVO_SLEW_RATE` | RW | Slew rate: position steps per ~10 ms main-loop tick. `0` = jump immediately (default) |
-| 58 (`0x3A`) | `SERVO_CURRENT_LIMIT_L` | RW | Servo current limit low byte, mA. `0` = no limit (default) |
+| 57 (`0x39`) | `SERVO_SLEW_RATE` | RW | Slew rate: position steps per ~10 ms main-loop tick. `0` = jump immediately (default). Saved to EEPROM (minor ≥ 4) |
+| 58 (`0x3A`) | `SERVO_CURRENT_LIMIT_L` | RW | Servo current limit low byte, mA. `0` = no limit (default). Saved to EEPROM (minor ≥ 4) |
 | 59 (`0x3B`) | `SERVO_CURRENT_LIMIT_H` | RW | Servo current limit high byte |
 | 60 (`0x3C`) | `SERVO_SLEW_STATUS` | R | `0` = at target / idle, `1` = slewing, `2` = stopped by current limit |
 
@@ -84,7 +84,30 @@ Addresses match `ST3215_ESP32_END_TOOL_API.md` (hex) and the Pi server (`robotAr
 - **WRITE** copies every data byte into consecutive registers (for example enable + angle in one packet).
 - If the last write touched register **49** the 8-bit position is used as the target; any other servo-register write (50, or an enable/pulse write) maps the stored angle to a position target.
 - Servo is **disabled** at boot until `SERVO_ENABLE = 1`.
-- Firmware minor version is **2** when hobby servo support is present, **3** when `SERVO_SLEW_RATE` is present.
+- Firmware minor version is **2** when hobby servo support is present, **3** when `SERVO_SLEW_RATE` is present,
+  **4** when the pulse range is applied and the servo settings are saved to EEPROM.
+
+### Pulse range (registers 51-54, firmware minor ≥ 4)
+
+- Position `0`–`255` (and angle `0`–`180`) is spread across `SERVO_PULSE_MIN` to `SERVO_PULSE_MAX` µs.
+  Before minor 4 these registers were stored but ignored, and the output always used 1000–2500 µs;
+  the defaults (1000 / 2500 µs) keep that behaviour.
+- The output can only produce what `Servo_Controller1`'s `min_pulse_width` / `max_pulse_width`
+  properties allow (1000–2500 µs). Values outside that are clamped, and if min is not below max the
+  full 1000–2500 µs range is used. To allow a wider range, change those component properties in
+  Flowcode **and** the `SERVO_HW_MIN_US` / `SERVO_HW_MAX_US` constants to match.
+- A pulse-range write takes effect on the output immediately, even with no new target.
+
+### Saved settings (firmware minor ≥ 4)
+
+- Like the tool type (register 3), the servo pulse min/max (51-54), slew rate (57) and current limit
+  (58/59) survive a power cycle. The main loop compares them with what was last saved and writes any
+  change to EEPROM (ESP32 NVS), outside the bus write handler so a flash write never delays a reply.
+- EEPROM addresses: `0` tool type, `1` slew rate, `2` current limit (mA), `3` pulse min (µs),
+  `4` pulse max (µs). An address that has never been written reads `0`; for the pulse widths that
+  means "use the default".
+- The servo output itself (`SERVO_ENABLE`, position, angle) is not saved: the servo is still disabled
+  at boot.
 
 ### Slew rate (register 57, firmware minor ≥ 3)
 

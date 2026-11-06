@@ -8,13 +8,14 @@
  * 0 and writing them does nothing).
  *
  * Unlike an ST3215 servo the tool has one flat 64-byte register array in RAM
- * (addresses 0-63). Only one register persists across a power cycle: the
- * Tool type ID (address 3), which the firmware saves to its EEPROM whenever
- * it changes. The Calibration page therefore shows two blocks:
+ * (addresses 0-63). A few registers persist across a power cycle: the Tool
+ * type ID (address 3) and, from firmware minor 4, the hobby servo pulse range,
+ * slew rate and current limit, which the firmware saves to its EEPROM
+ * whenever they change. The Calibration page therefore shows two blocks:
  *  - END_TOOL_EEPROM_REGISTERS: identity (read-only firmware constants) plus
- *    the persisted Tool type ID.
- *  - END_TOOL_RAM_REGISTERS: everything else - outputs, telemetry and hobby
- *    servo settings - lost on power-off. Unlike servo SRAM these ARE
+ *    the persisted settings.
+ *  - END_TOOL_RAM_REGISTERS: everything else - outputs, telemetry and the
+ *    servo target - lost on power-off. Unlike servo SRAM these ARE
  *    writable from the Calibration page (behind the same password gate):
  *    writing them is exactly how the tool is driven, and there is no
  *    arm-motion safety concern in doing so.
@@ -25,7 +26,7 @@
 
 const END_TOOL_READ_BLOCK_LENGTH = 64;
 
-// Address of the only register the firmware persists to EEPROM.
+// Address of the Tool type ID register (persisted to the tool\'s EEPROM).
 const END_TOOL_TOOL_TYPE_ADDRESS = 3;
 
 const END_TOOL_TYPE_NAMES = { 0: 'unassigned', 1: 'pneumatic vacuum + valve', 2: 'servo motor', 3: 'pen' };
@@ -72,9 +73,17 @@ const END_TOOL_EEPROM_REGISTERS = [
     { address: 1, bytes: 1, name: 'Firmware major', access: 'read', default: 0, min: -1, max: -1, unit: ' - ', unitType: 'raw',
       description: 'End-tool firmware major version.' },
     { address: 2, bytes: 1, name: 'Firmware minor', access: 'read', default: 0, min: -1, max: -1, unit: ' - ', unitType: 'raw',
-      description: 'End-tool firmware minor version. 2 or higher means hobby servo support is present; 3 or higher adds the servo slew rate register (57).' },
+      description: 'End-tool firmware minor version. 2 or higher means hobby servo support is present; 3 or higher adds the servo slew rate register (57); 4 or higher applies the servo pulse range (51-54) and saves the servo pulse range, slew rate and current limit to EEPROM.' },
     { address: 3, bytes: 1, name: 'Tool type ID', access: 'read&write', default: 0, min: 0, max: 255, unit: ' - ', unitType: 'enum-tool',
       description: 'Which tool is fitted: 0 = unassigned, 1 = pneumatic vacuum + valve, 2 = servo motor, 3 = pen. Saved to the tool\'s EEPROM when changed. The Pi reads this every 15 s and applies the matching <end_tool> entry from kinematics.urdf, which sets the tool length used by FK/IK.' },
+    { address: 51, bytes: 2, name: 'Servo pulse min', access: 'read&write', default: 1000, min: 1000, max: 2500, unit: 'µs', unitType: 'us',
+      description: 'Pulse width that corresponds to position 0 / angle 0° (default 1000 µs). The output can only produce 1000-2500 µs, so values outside that are clamped. Saved to the tool\'s EEPROM when changed (firmware minor 4 or later; older firmware ignores this register).' },
+    { address: 53, bytes: 2, name: 'Servo pulse max', access: 'read&write', default: 2500, min: 1000, max: 2500, unit: 'µs', unitType: 'us',
+      description: 'Pulse width that corresponds to position 255 / angle 180° (default 2500 µs). The output can only produce 1000-2500 µs, so values outside that are clamped; if min is not below max the full range is used. Saved to the tool\'s EEPROM when changed (firmware minor 4 or later; older firmware ignores this register).' },
+    { address: 57, bytes: 1, name: 'Servo slew rate', access: 'read&write', default: 0, min: 0, max: 255, unit: 'steps/tick', unitType: 'slew-rate',
+      description: 'How fast the hobby servo output moves toward a new position/angle: 8-bit position steps per ~10 ms firmware tick. 0 = jump straight to the target (original behaviour). 1 = full 0-255 travel in about 2.5 s, 5 = about 0.5 s, 25 = about 0.1 s. A move made while the output is disabled always jumps (its real position is unknown). Needs end-tool firmware minor version 3 or later; older firmware reads 0 and ignores writes. Saved to the tool\'s EEPROM when changed from firmware minor 4.' },
+    { address: 58, bytes: 2, name: 'Servo current limit', access: 'read&write', default: 0, min: 0, max: 2000, unit: 'mA', unitType: 'current-limit',
+      description: 'Grip-strength control: while a slewed move is in progress (slew rate > 0) the servo supply current (register 15) is sampled every tick, and the move stops and holds position as soon as the current reaches this limit. 0 = no limit. Has no effect on jump moves (slew rate 0). Register 60 shows whether the last move stopped on the limit. Firmware minor 3 or later; saved to the tool\'s EEPROM when changed from firmware minor 4.' },
 ];
 
 const END_TOOL_RAM_REGISTERS = [
@@ -106,18 +115,10 @@ const END_TOOL_RAM_REGISTERS = [
       description: 'Hobby servo target as 0-255 across the pulse min..max range. Writing this moves the servo (if enabled).' },
     { address: 50, bytes: 1, name: 'Servo angle', access: 'read&write', default: 0, min: 0, max: 180, unit: '°', unitType: 'deg',
       description: 'Hobby servo target angle, 0-180°. Writing this moves the servo (if enabled).' },
-    { address: 51, bytes: 2, name: 'Servo pulse min', access: 'read&write', default: 1000, min: 500, max: 2500, unit: 'µs', unitType: 'us',
-      description: 'Pulse width that corresponds to position 0 / angle 0° (default 1000 µs).' },
-    { address: 53, bytes: 2, name: 'Servo pulse max', access: 'read&write', default: 2000, min: 500, max: 2500, unit: 'µs', unitType: 'us',
-      description: 'Pulse width that corresponds to position 255 / angle 180° (default 2000 µs).' },
     { address: 55, bytes: 1, name: 'Servo current position (8-bit)', access: 'read', default: 0, min: -1, max: -1, unit: ' - ', unitType: 'raw',
       description: '8-bit position currently applied to the hobby servo output. While a slew is in progress this walks from the old position to the new target.' },
     { address: 56, bytes: 1, name: 'Servo current angle', access: 'read', default: 0, min: -1, max: -1, unit: '°', unitType: 'deg',
       description: 'Angle currently applied to the hobby servo output (derived from register 55).' },
-    { address: 57, bytes: 1, name: 'Servo slew rate', access: 'read&write', default: 0, min: 0, max: 255, unit: 'steps/tick', unitType: 'slew-rate',
-      description: 'How fast the hobby servo output moves toward a new position/angle: 8-bit position steps per ~10 ms firmware tick. 0 = jump straight to the target (original behaviour). 1 = full 0-255 travel in about 2.5 s, 5 = about 0.5 s, 25 = about 0.1 s. A move made while the output is disabled always jumps (its real position is unknown). Needs end-tool firmware minor version 3 or later; older firmware reads 0 and ignores writes.' },
-    { address: 58, bytes: 2, name: 'Servo current limit', access: 'read&write', default: 0, min: 0, max: 2000, unit: 'mA', unitType: 'current-limit',
-      description: 'Grip-strength control: while a slewed move is in progress (slew rate > 0) the servo supply current (register 15) is sampled every tick, and the move stops and holds position as soon as the current reaches this limit. 0 = no limit. Has no effect on jump moves (slew rate 0). Register 60 shows whether the last move stopped on the limit. Firmware minor 3 or later.' },
     { address: 60, bytes: 1, name: 'Servo slew status', access: 'read', default: 0, min: -1, max: -1, unit: ' - ', unitType: 'slew-status',
       description: '0 = at target / idle, 1 = slew in progress, 2 = move stopped early because the servo current reached the limit in register 58 (gripper has closed on something).' },
 ];
