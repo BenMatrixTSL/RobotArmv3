@@ -390,9 +390,9 @@ is clamped server-side to the range shown; out-of-range numbers are not rejected
 | Command | Parameters | Range and effect |
 |---|---|---|
 | `toolSetServoEnabledAndAngle` | `angle` | 0 to 180 degrees, clamped. Writes enable = 1 and the angle in one packet, so it works from the boot state. This is the gripper command: 0 is closed, 180 is fully open (the firmware maps it to the 8-bit position as `angle × 255 / 180`). The pendant and programs use 0 and 180. |
-| `toolSetServoAngle` | `angle` | 0 to 180, clamped. Angle only; the servo must already be enabled or nothing moves. |
+| `toolSetServoAngle` | `angle` | 0 to 180, clamped. Angle only. From end-tool firmware minor 5 this powers the servo by itself; on older firmware the servo must already be enabled or nothing moves. |
 | `toolSetServoPosition` | `position` | 0 to 255, clamped. Raw position mapped linearly onto the pulse range (default 1000 to 2000 µs). |
-| `toolSetServoEnabled` | `enabled` | boolean. **Omitting it means true.** `false` removes drive from the servo, so a loaded gripper may relax. |
+| `toolSetServoEnabled` | `enabled` | boolean. **Omitting it means true.** Only for end-tool firmware before minor 5, where `false` removes drive from the servo. From minor 5 it does nothing: the servo powers itself on when moved and off after 2 s still. |
 | `toolGetServoState` | none | `{enabled, currentPosition8bit, currentAngle}`: the last *applied* command, not a measured position. |
 | `toolSetPwm` | `pwm1Duty`, `pwm2Duty`, `enable1`, `enable2` | Duties 0 to 255, clamped; a missing duty is 0. Enables are booleans and **a missing enable means true**, so always send all four fields. Both channels are written together. The pendant drives the pump as PWM1 at duty 80 and the valve as PWM2 at duty 255. |
 | `toolGetPwmState` | none | `{pwm1Duty, pwm2Duty, pwmControl}` where `pwmControl` bit 0 is PWM1 enable and bit 1 is PWM2 enable. |
@@ -417,8 +417,12 @@ The firmware only services registers 0 to 56, so:
 
 ### Behaviour and rules
 
-- The hobby servo is **disabled at boot** until something writes enable = 1. Use
-  `toolSetServoEnabledAndAngle` for the first command after power-up.
+- From end-tool firmware minor 5 the hobby servo powers itself on when it is moved and
+  **switches itself off after 2 s holding still**, so a stalled gripper cannot overheat. The
+  servo then goes slack: a gripper closed on an object stops squeezing and only gearbox
+  friction holds it. `toolSetServoEnabledAndAngle` works on all firmware versions and
+  remains the gripper command; on older firmware it is needed after power-up because the
+  servo is disabled at boot.
 - There is **no watchdog on the tool**. Pump, valve and servo stay exactly as last
   commanded if your client crashes or disconnects. Switch outputs off
   (`toolSetPwm` with both duties 0 and both enables false) and park the gripper before

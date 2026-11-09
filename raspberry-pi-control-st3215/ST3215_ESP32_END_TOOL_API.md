@@ -102,7 +102,7 @@ Addresses below are local to the ESP32 node implementation.
 
 | Address | Name | Size | R/W | Description |
 |---|---|---:|---|---|
-| `0x30` | `SERVO_ENABLE` | 1 | R/W | `0` disabled, `1` enabled |
+| `0x30` | `SERVO_ENABLE` | 1 | R | Output status, `1` powered. From firmware minor 5 a move powers the output and it switches off after 2 s still; writes are ignored (R/W enable on older firmware) |
 | `0x31` | `SERVO_POSITION_8BIT` | 1 | R/W | Position `0..255` |
 | `0x32` | `SERVO_ANGLE_DEG` | 1 | R/W | Angle in degrees (`0..180`) |
 | `0x33` | `SERVO_PULSE_MIN_L` | 2 | R/W | Min pulse width in us |

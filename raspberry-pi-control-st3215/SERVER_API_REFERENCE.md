@@ -126,7 +126,7 @@ Control-session enforcement for `executeLinearMove` is checked manually against 
 | `toolGetPwmState` | Reads back the end-tool's current PWM output settings. | **no** (gap) | `{type:'toolPwmState', pwm1Duty, pwm2Duty, pwmControl}` | **Dead** |
 | `toolReadCurrents` | Reads live current-draw readings from the end-tool's PWM outputs and its hobby servo. | **no** (gap) | `{type:'toolCurrents', pwm1CurrentRaw, pwm2CurrentRaw, servoCurrentRaw}` | app.js × 1 (8631) |
 | `toolReadAdc` | Reads raw ADC voltage readings from the end-tool's two analog input channels. | **no** (gap) | `{type:'toolAdc', adc0Raw, adc1Raw, adc0mV, adc1mV}` | **Dead** |
-| `toolSetServoEnabled` | Enables or disables torque on the end-tool's hobby servo, without changing its target angle. | yes | `{type:'success'}` | app.js × 1 (8516) |
+| `toolSetServoEnabled` | Enables or disables torque on the end-tool's hobby servo, without changing its target angle. No effect from end-tool firmware minor 5, which powers the servo when it moves and switches it off after 2 s still. | yes | `{type:'success'}` | app.js × 1 (8516) |
 | `toolSetServoPosition` | Sets the end-tool's hobby servo to a raw position value (not degrees). | yes | `{type:'success'}` | **Dead** |
 | `toolSetServoAngle` | Sets the end-tool's hobby servo to an angle in degrees, without changing its enabled state. | yes | `{type:'success'}` | **Dead** |
 | `toolSetServoEnabledAndAngle` | Enables the end-tool's hobby servo and moves it to an angle in one call — the actual gripper open/close command. | yes | `{type:'success'}` | **app.js × 7** (5827, 5834, 5846, 6388, 6394, 6441, 8505) — the actual gripper open/close command used throughout the UI |

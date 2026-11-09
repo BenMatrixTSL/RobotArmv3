@@ -9191,10 +9191,6 @@ async function autoDetectRaspberryPi() {
 
 function updateEndToolServoButtonsState() {
     const canControl = robotArmClient.isConnected && robotArmClient.hasArmControl;
-    ['endToolServoEnableBtn', 'endToolServoDisableBtn'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.disabled = !canControl;
-    });
     document.querySelectorAll('#endToolServoPanel .pendant2-servo-btn').forEach(btn => {
         btn.disabled = !canControl;
     });
@@ -9215,24 +9211,14 @@ function moveEndToolServo(angle) {
     if (!robotArmClient.isConnected) { showAppMessage('Not connected'); return; }
     if (!robotArmClient.hasArmControl) { showAppMessage('Read-only - use Take control on the Connection tab first'); return; }
     const a = Math.round(Number(angle));
+    // The end tool powers the servo itself when it moves and switches it off after ~2 s still
+    // (firmware minor 5); older firmware needs the enable byte this command also sends.
     robotArmClient.sendRequest('toolSetServoEnabledAndAngle', { angle: a })
         .then(() => {
             const stateEl = document.getElementById('endToolServoStateText');
-            if (stateEl) stateEl.textContent = 'Enabled - ' + a + '°';
+            if (stateEl) stateEl.textContent = a + '°';
         })
         .catch(err => showAppMessage('End tool servo: ' + err.message));
-}
-
-function setEndToolServoEnabled(enabled) {
-    if (!robotArmClient.isConnected) { showAppMessage('Not connected'); return; }
-    if (!robotArmClient.hasArmControl) { showAppMessage('Read-only - use Take control on the Connection tab first'); return; }
-    robotArmClient.sendCommand('toolSetServoEnabled', { enabled });
-    const stateEl = document.getElementById('endToolServoStateText');
-    if (stateEl) stateEl.textContent = enabled ? 'Enabled' : 'Disabled';
-    setEndToolBtnActive(
-        enabled ? 'servo-enable' : 'servo-disable',
-        enabled ? 'servo-disable' : 'servo-enable'
-    );
 }
 
 function setToolPump(on) {
@@ -9250,7 +9236,7 @@ function readEndToolServoState() {
     robotArmClient.sendRequest('toolGetServoState', {})
         .then(resp => {
             const stateEl = document.getElementById('endToolServoStateText');
-            if (stateEl) stateEl.textContent = (resp.enabled ? 'Enabled' : 'Disabled') + ' - ' + (resp.currentAngle || 0) + '°';
+            if (stateEl) stateEl.textContent = (resp.enabled ? 'Powered' : 'Off') + ' - ' + (resp.currentAngle || 0) + '°';
             const slider = document.getElementById('endToolServoSlider');
             if (slider && resp.currentAngle !== undefined) {
                 slider.value = resp.currentAngle;

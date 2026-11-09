@@ -64,7 +64,7 @@ Addresses match `ST3215_ESP32_END_TOOL_API.md` (hex) and the Pi server (`robotAr
 
 | Address | Name | R/W | Description |
 |--------:|------|-----|-------------|
-| 48 (`0x30`) | `SERVO_ENABLE` | RW | `0` = disabled, `1` = enabled |
+| 48 (`0x30`) | `SERVO_ENABLE` | R (RW before minor 5) | Output status: `1` = powered, `0` = off. From minor 5 the firmware sets it: on when moved, off after 2 s still (see *Automatic power on/off*) |
 | 49 (`0x31`) | `SERVO_POSITION_8BIT` | RW | Position `0`–`255` |
 | 50 (`0x32`) | `SERVO_ANGLE_DEG` | RW | Angle `0`–`180` degrees |
 | 51 (`0x33`) | `SERVO_PULSE_MIN_L` | RW | Min pulse width low byte, µs at position 0 (default 1000 µs). Saved to EEPROM (minor ≥ 4) |
@@ -82,10 +82,26 @@ Addresses match `ST3215_ESP32_END_TOOL_API.md` (hex) and the Pi server (`robotAr
 
 - **READ** supports 1–8 bytes in one command (for example read 3 bytes from address 48).
 - **WRITE** copies every data byte into consecutive registers (for example enable + angle in one packet).
-- If the last write touched register **49** the 8-bit position is used as the target; any other servo-register write (50, or an enable/pulse write) maps the stored angle to a position target.
-- Servo is **disabled** at boot until `SERVO_ENABLE = 1`.
+- A write that covers register **49** or **50** is a move. If it starts at 49 the 8-bit position is the target;
+  otherwise (a write to 50, or the Pi's `[enable, position, angle]` write starting at 48) the angle is mapped to
+  a position target. A pulse-range write (51-54) re-applies the output if it is powered but does not move or power it.
+- Servo output is **off** at boot until the first move.
 - Firmware minor version is **2** when hobby servo support is present, **3** when `SERVO_SLEW_RATE` is present,
-  **4** when the pulse range is applied and the servo settings are saved to EEPROM.
+  **4** when the pulse range is applied and the servo settings are saved to EEPROM, **5** when the output powers
+  itself on and off automatically.
+
+### Automatic power on/off (firmware minor ≥ 5)
+
+- There is no enable/disable any more. Writing a position (49) or angle (50) powers the output and moves the servo.
+- Once the servo has held still for about 2 s (`SERVO_AUTO_OFF_TICKS` = 200 main-loop passes of ~10 ms) - at its
+  target, or stopped by the current limit - the firmware switches the output off so a stalled servo cannot
+  overheat. The count restarts with every move, and a slew in progress is never cut short.
+- A servo with no pulses goes slack, so a gripper closed on an object stops squeezing 2 s after the move and
+  only friction in its gearbox holds it.
+- `SERVO_ENABLE` (48) reports whether the output is powered. Writing it has no effect: a write of 48 alone is
+  ignored and the next main-loop pass puts the real status back.
+- Only the first move after boot jumps (the real position is unknown). After an automatic power-off the firmware
+  still knows the last commanded position, so the next move slews from there and is current-monitored as normal.
 
 ### Pulse range (registers 51-54, firmware minor ≥ 4)
 
@@ -112,8 +128,7 @@ Addresses match `ST3215_ESP32_END_TOOL_API.md` (hex) and the Pi server (`robotAr
   current limit, so the marker shows whether the settings have ever been saved. On the first boot
   without it the firmware writes the defaults, then the marker; after that it always restores the
   saved values.
-- The servo output itself (`SERVO_ENABLE`, position, angle) is not saved: the servo is still disabled
-  at boot.
+- The servo output itself (`SERVO_ENABLE`, position, angle) is not saved: the output is still off at boot.
 
 ### Slew rate (register 57, firmware minor ≥ 3)
 
@@ -122,10 +137,9 @@ Addresses match `ST3215_ESP32_END_TOOL_API.md` (hex) and the Pi server (`robotAr
   iteration (about 10 ms, set by the loop's watchdog delay). Full 0–255 travel therefore takes roughly
   `255 / rate × 10 ms`: `1` ≈ 2.5 s, `5` ≈ 0.5 s, `25` ≈ 0.1 s.
 - A new target written mid-slew simply redirects the slew from the current position.
-- A move made while the output is **disabled** (enable 0 → 1, or any move after boot) always jumps,
-  because the firmware does not know where the unpowered servo physically is. Once enabled, later
-  moves slew - including the Pi's combined enable+angle write used by the gripper commands.
-- Disabling the output (`SERVO_ENABLE = 0`) stops any slew in progress.
+- The first move after boot always jumps, because the firmware does not know where the unpowered servo
+  physically is. Later moves slew, including those made after an automatic power-off (minor ≥ 5).
+  Before minor 5 any move made while the output was disabled jumped, and disabling it stopped a slew.
 - Registers 55/56 report the position/angle actually applied so far, so a host can poll them to see
   when the slew has finished.
 - Pi server: `toolSetServoSlewRate` (`rate: 0-255`), or write address 57 from the Calibration tab.
@@ -150,7 +164,7 @@ Addresses match `ST3215_ESP32_END_TOOL_API.md` (hex) and the Pi server (`robotAr
 
 ### WebSocket commands (Pi server)
 
-- `toolSetServoEnabled` → register 48
+- `toolSetServoEnabled` → register 48 (no effect from minor 5)
 - `toolSetServoPosition` → register 49
 - `toolSetServoAngle` → register 50
 - `toolGetServoState` → read registers 48–50 (enable, position, angle)

@@ -336,11 +336,7 @@
             <div class="pendant2-end-tools-row">
 
                 <div class="pendant2-card pendant2-end-tool-card" id="endToolServoPanel" data-end-tool-control="servo">
-                    <div class="pendant2-card-title" data-info="The gripper servo on the end tool (bus ID 64). Enable powers the servo and Disable lets it go slack. The preset buttons move it to a fixed angle: 0 degrees is closed and 180 degrees fully open. In G-code use M10, M11 or M12 P&lt;angle&gt;.">End Tool - Servo</div>
-                    <div class="pendant2-end-tool-btns">
-                        <button class="btn btn-secondary pendant2-tool-btn end-tool-on-btn" id="endToolServoEnableBtn" data-end-tool-action="servo-enable" onclick="setEndToolServoEnabled(true)">Enable</button>
-                        <button class="btn btn-secondary pendant2-tool-btn end-tool-off-btn" id="endToolServoDisableBtn" data-end-tool-action="servo-disable" onclick="setEndToolServoEnabled(false)">Disable</button>
-                    </div>
+                    <div class="pendant2-card-title" data-info="The gripper servo on the end tool (bus ID 64). It powers up by itself when moved and goes slack again after 2 seconds holding still, so it cannot overheat. The preset buttons move it to a fixed angle: 0 degrees is closed and 180 degrees fully open. In G-code use M10, M11 or M12 P&lt;angle&gt;.">End Tool - Servo</div>
                     <div class="pendant2-end-tool-btns pendant2-end-tool-presets">
                         <button class="btn pendant2-tool-btn pendant2-servo-btn" onclick="moveEndToolServoTo(0)">Close<br><span class="pendant2-angle-sub">0°</span></button>
                         <button class="btn pendant2-tool-btn pendant2-servo-btn" onclick="moveEndToolServoTo(45)">45°</button>
@@ -472,11 +468,7 @@
             <div class="pendant2-end-tools-row">
 
                 <div class="pendant2-card pendant2-end-tool-card" data-end-tool-control="servo">
-                    <div class="pendant2-card-title" data-info="The gripper servo on the end tool (bus ID 64). Enable powers the servo and Disable lets it go slack. The preset buttons move it to a fixed angle: 0 degrees is closed and 180 degrees fully open. In G-code use M10, M11 or M12 P&lt;angle&gt;.">End Tool - Servo</div>
-                    <div class="pendant2-end-tool-btns">
-                        <button class="btn btn-secondary pendant2-tool-btn end-tool-on-btn" data-end-tool-action="servo-enable" onclick="setEndToolServoEnabled(true)">Enable</button>
-                        <button class="btn btn-secondary pendant2-tool-btn end-tool-off-btn" data-end-tool-action="servo-disable" onclick="setEndToolServoEnabled(false)">Disable</button>
-                    </div>
+                    <div class="pendant2-card-title" data-info="The gripper servo on the end tool (bus ID 64). It powers up by itself when moved and goes slack again after 2 seconds holding still, so it cannot overheat. The preset buttons move it to a fixed angle: 0 degrees is closed and 180 degrees fully open. In G-code use M10, M11 or M12 P&lt;angle&gt;.">End Tool - Servo</div>
                     <div class="pendant2-end-tool-btns pendant2-end-tool-presets">
                         <button class="btn pendant2-tool-btn pendant2-servo-btn" onclick="moveEndToolServoTo(0)">Close<br><span class="pendant2-angle-sub">0°</span></button>
                         <button class="btn pendant2-tool-btn pendant2-servo-btn" onclick="moveEndToolServoTo(45)">45°</button>
@@ -1858,13 +1850,13 @@
     <script src="positionsManager.js"></script>
     <!-- STS3215 EEPROM Memory Table: register definitions for the Calibration tab -->
     <script src="stsMemoryTable.js"></script>
-    <script src="endToolMemoryTable.js?v=20261106b"></script>
+    <script src="endToolMemoryTable.js?v=20261109"></script>
     <!-- Calibration Page: reads and displays a servo's full EEPROM against the memory table -->
     <script src="calibrationPage.js"></script>
     <script src="cameraView.js?v=20260616"></script>
     <!-- Main Application: UI logic and event handlers -->
     <script src="tabIcons.js?v=20261028"></script>
-    <script src="app.js?v=20261030i"></script>
+    <script src="app.js?v=20261109"></script>
     <!-- On-Screen Keyboard: touch keyboard for kiosk mode (no system OSK in Chromium kiosk) -->
     <script src="keyboard.js?v=20260930"></script>
 
