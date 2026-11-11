@@ -19,7 +19,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Robot Arm Control - Pendant & G-Code</title>
-    <link rel="stylesheet" href="styles.css?v=20261104b">
+    <link rel="stylesheet" href="styles.css?v=20261111">
     <script>
     // Kiosk mode on the Pi: show a loading screen and reload until the UI is really loaded.
     (function () {
@@ -178,6 +178,7 @@
                 <button class="tab-button active" data-tab="connection">Connection</button>
                 <button class="tab-button" data-tab="pendant">Joint Control</button>
                 <button class="tab-button" data-tab="pendant-ui">Pendant Control</button>
+                <button class="tab-button" data-tab="gamepad">Gamepad Control</button>
                 <button class="tab-button" data-tab="gcode">G-Code Control</button>
                 <button class="tab-button" data-tab="rapid">RAPID</button>
                 <button class="tab-button" data-tab="blockly">Visual Programming</button>
@@ -496,6 +497,115 @@
 
                 <p class="end-tool-none-note" data-end-tool-note hidden></p>
 
+            </div>
+        </div>
+
+        <!-- Gamepad Control Tab -->
+        <div id="gamepad-tab" class="tab-content gp-page">
+
+            <div class="pendant2-header">
+                <div class="pendant2-position-box">
+                    <div class="pendant2-pos-line">X: <span id="gpX">-</span> <span class="pendant2-unit">mm</span></div>
+                    <div class="pendant2-pos-line">Y: <span id="gpY">-</span> <span class="pendant2-unit">mm</span></div>
+                    <div class="pendant2-pos-line">Z: <span id="gpZ">-</span> <span class="pendant2-unit">mm</span></div>
+                    <div class="pendant2-pos-line gp-live-speed"><span id="gpLiveSpeed">0</span> <span class="pendant2-unit">mm/s</span></div>
+                </div>
+                <div class="pendant2-header-actions">
+                    <button id="gpEstop" class="btn btn-danger pendant2-estop">EMERGENCY<br>STOP</button>
+                </div>
+            </div>
+
+            <div class="gp-banner" id="gpBlocker" hidden></div>
+
+            <div class="gp-main">
+                <!-- On-screen controller (mirrors a real controller when one is in use) -->
+                <div class="gp-pad-card">
+                    <div class="gp-pad-top">
+                        <span class="gp-chip" id="gpSource">On-screen controller</span>
+                        <span class="gp-limit" id="gpLimit" hidden></span>
+                    </div>
+
+                    <div class="gp-controller" aria-label="On-screen controller">
+                        <div class="gp-shoulders">
+                            <div class="gp-shoulder-group">
+                                <div class="gp-trigger" id="gpL2" title="L2 - open the gripper smoothly (drag down to press harder)">
+                                    <div class="gp-trigger-fill"></div><span>L2</span>
+                                </div>
+                                <button type="button" class="gp-bumper" id="gpL1" title="L1 - open the gripper fully and switch the pneumatics off">L1</button>
+                            </div>
+                            <div class="gp-shoulder-group">
+                                <div class="gp-trigger" id="gpR2" title="R2 - close the gripper smoothly (drag down to press harder)">
+                                    <div class="gp-trigger-fill"></div><span>R2</span>
+                                </div>
+                                <button type="button" class="gp-bumper" id="gpR1" title="R1 - close the gripper fully and switch the pneumatics on">R1</button>
+                            </div>
+                        </div>
+                        <div class="gp-body">
+                            <div class="gp-stick-wrap">
+                                <div class="gp-stick" id="gpLeftStick"><div class="gp-stick-axis gp-axis-h"></div><div class="gp-stick-axis gp-axis-v"></div><div class="gp-stick-thumb"></div></div>
+                                <div class="gp-stick-label">X / Y</div>
+                            </div>
+                            <div class="gp-centre-logo">MATRIX</div>
+                            <div class="gp-stick-wrap">
+                                <div class="gp-stick" id="gpRightStick"><div class="gp-stick-axis gp-axis-v"></div><div class="gp-stick-thumb"></div></div>
+                                <div class="gp-stick-label">Z</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="gp-legend">
+                        <div><b>Left stick</b> move X / Y</div>
+                        <div><b>Right stick</b> move Z (up / down)</div>
+                        <div data-end-tool-control="servo"><b>L1</b> open gripper + pneumatics off</div>
+                        <div data-end-tool-control="servo"><b>R1</b> close gripper + pneumatics on</div>
+                        <div data-end-tool-control="servo"><b>L2 / R2</b> open / close gripper smoothly</div>
+                    </div>
+                </div>
+
+                <div class="pendant2-side-panels gp-side">
+                    <div class="pendant2-card">
+                        <div class="pendant2-card-title" data-info="Lists game controllers this computer can see. A USB controller works as soon as it is plugged in; a Bluetooth controller must be paired first (below). Browsers only show a controller once one of its buttons has been pressed, so press a button after connecting it.">Controller</div>
+                        <button type="button" class="btn btn-primary pendant2-wide-btn" id="gpScan">Scan for controllers</button>
+                        <div class="gp-scan-hint" id="gpScanHint" hidden></div>
+                        <div class="gp-pad-list" id="gpPadList"></div>
+                    </div>
+
+                    <div class="pendant2-card">
+                        <div class="pendant2-card-title" data-info="Pair a Bluetooth controller. Put the controller in pairing mode first (for example hold Share + PS on a PlayStation pad, or the pair button on an Xbox or 8BitDo pad).">Bluetooth Pairing</div>
+                        <div id="gpBtPi">
+                            <button type="button" class="btn btn-primary pendant2-wide-btn" id="gpBtScan">Scan for Bluetooth controllers</button>
+                            <div class="gp-bt-status" id="gpBtStatus">Put the controller in pairing mode, then scan.</div>
+                            <div class="gp-bt-list" id="gpBtList"></div>
+                        </div>
+                        <div id="gpBtLocal" hidden>
+                            <div class="gp-bt-status">This screen is not the Pi's own, so pair the controller with this computer using its Bluetooth settings, then press Scan for controllers above.</div>
+                            <button type="button" class="btn btn-secondary pendant2-wide-btn" id="gpBtOpenSettings" hidden>Open Bluetooth settings</button>
+                        </div>
+                    </div>
+
+                    <div class="pendant2-card">
+                        <div class="pendant2-card-title" data-info="Tool-tip speed with the stick pushed all the way. Small stick movements go much slower for fine positioning.">Max Speed</div>
+                        <div class="gp-speed-row">
+                            <input type="range" id="gpMaxSpeed" min="10" max="150" step="5" value="50">
+                            <span class="gp-speed-value"><span id="gpMaxSpeedLabel">50</span> mm/s</span>
+                        </div>
+                    </div>
+
+                    <div class="pendant2-card">
+                        <div class="pendant2-card-title" data-info="Same setting as the Pendant Control page. Free lets all joints move for position only. Down and Up keep the tool pointing straight down or up while you move.">Tool Orientation</div>
+                        <div class="gp-seg">
+                            <button type="button" class="btn btn-secondary" data-orient="free">Free</button>
+                            <button type="button" class="btn btn-secondary" data-orient="down">Down</button>
+                            <button type="button" class="btn btn-secondary" data-orient="up">Up</button>
+                        </div>
+                    </div>
+
+                    <div class="pendant2-card" data-end-tool-control="servo">
+                        <div class="pendant2-card-title">End Tool</div>
+                        <div class="gp-tool-row"><span>Gripper</span><span class="gp-chip" id="gpGrip">-</span></div>
+                        <div class="gp-tool-row"><span>Pneumatics</span><span class="gp-chip" id="gpPneumatics">Off</span></div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -1834,7 +1944,7 @@
     
     <!-- Application Scripts - Loaded in order -->
     <!-- Robot Arm Client: Handles WebSocket communication with Raspberry Pi -->
-    <script src="robotArmClient.js?v=20261030a"></script>
+    <script src="robotArmClient.js?v=20261111"></script>
     <!-- G-Code Processor: Parses and executes G-code commands -->
     <script src="gcodeProcessor.js"></script>
     <!-- RAPID Processor: variables, loops and conditionals for the RAPID subset -->
@@ -1855,8 +1965,9 @@
     <script src="calibrationPage.js"></script>
     <script src="cameraView.js?v=20260616"></script>
     <!-- Main Application: UI logic and event handlers -->
-    <script src="tabIcons.js?v=20261028"></script>
-    <script src="app.js?v=20261109"></script>
+    <script src="tabIcons.js?v=20261111"></script>
+    <script src="app.js?v=20261111"></script>
+    <script src="gamepadPage.js?v=20261111"></script>
     <!-- On-Screen Keyboard: touch keyboard for kiosk mode (no system OSK in Chromium kiosk) -->
     <script src="keyboard.js?v=20260930"></script>
 

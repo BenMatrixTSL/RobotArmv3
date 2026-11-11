@@ -19,6 +19,7 @@ const { exec, execFile, fork } = require('child_process');
 const { promisify } = require('util');
 const { robotKinematics } = require('./kinematicsService');
 const ledController = require('./ledController');
+const bluetoothManager = require('./bluetoothManager');
 const execFileAsync = promisify(execFile);
 
 // ===== Configuration =====
@@ -51,12 +52,16 @@ const INSTANT_SERVER_COMMANDS = {
     kinematicsApplyToolSpin: true,
     kinematicsGetInfo: true,
     executeLinearMove: true,
-    abortLinearPath: true
+    abortLinearPath: true,
+    // Gamepad page: pair a Bluetooth controller with the Pi (local clients only)
+    bluetoothScan: true,
+    bluetoothPair: true,
+    bluetoothRemove: true
 };
 
 // Bus commands that require an active control session.
 const BUS_WRITE_COMMANDS = {
-    moveJoint: true, stopJoint: true, stopAll: true, stopAllJoints: true,
+    moveJoint: true, moveJointsBatch: true, stopJoint: true, stopAll: true, stopAllJoints: true,
     setServo: true, setServoAngle: true, setSpeed: true, setSpeedAll: true,
     setTorqueAll: true, setAcceleration: true, rescanServos: true,
     readServoEeprom: true, readServoEepromRaw: true, writeServoEeprom: true, writeServoEepromRaw: true,
@@ -78,8 +83,10 @@ const BUS_WRITE_COMMANDS = {
 const EEPROM_WRITE_COMMANDS = { writeServoEeprom: true, writeServoEepromRaw: true, writeEndToolRegister: true };
 
 // Moves/stops bypass the write queue and run on the bus immediately.
+// moveJointsBatch: every joint's goal in one bus slot (Gamepad page streaming,
+// server linear paths). The worker keeps only the newest pending batch.
 const IMMEDIATE_BUS_COMMANDS = {
-    moveJoint: true, stopJoint: true, stopAll: true, stopAllJoints: true
+    moveJoint: true, moveJointsBatch: true, stopJoint: true, stopAll: true, stopAllJoints: true
 };
 
 const CONTROL_IDLE_TIMEOUT_MS       = 5 * 60 * 1000;
@@ -863,6 +870,30 @@ async function handleCommand(ws, data) {
             break;
         }
 
+        // A Bluetooth controller pairs with the Pi, so it is only any use to a
+        // browser running on the Pi (the kiosk). Remote clients pair with
+        // their own computer instead.
+        case 'bluetoothScan':
+        case 'bluetoothPair':
+        case 'bluetoothRemove': {
+            if (!isLocalClientIp(ws.clientIp)) {
+                sendResponse({ type: 'error', message: 'Bluetooth pairing on the Pi is only available on the Pi\'s own screen. Pair the controller with this computer instead.' });
+                break;
+            }
+            try {
+                if (command === 'bluetoothScan') {
+                    sendResponse({ type: 'bluetoothDevices', devices: await bluetoothManager.scan(data.durationMs) });
+                } else if (command === 'bluetoothPair') {
+                    sendResponse({ type: 'bluetoothPaired', ...(await bluetoothManager.pair(data.mac)) });
+                } else {
+                    sendResponse({ type: 'bluetoothRemoved', ...(await bluetoothManager.remove(data.mac)) });
+                }
+            } catch (error) {
+                sendResponse({ type: 'error', message: error.message || String(error) });
+            }
+            break;
+        }
+
         case 'updatePiServerFromGit': {
             exec('git pull --ff-only', { cwd: __dirname }, (error, stdout, stderr) => {
                 if (error) {
@@ -1138,6 +1169,25 @@ function startServer() {
                     if (data.requestId !== undefined) errPayload.requestId = data.requestId;
                     ws.send(JSON.stringify(errPayload));
                     return;
+                }
+
+                // Streamed batch from a client (Gamepad page): sanity-check the
+                // payload here so a bad message never reaches the bus.
+                if (data.command === 'moveJointsBatch') {
+                    const moves = data.moves;
+                    const valid = Array.isArray(moves) && moves.length > 0 && moves.length <= 16 && moves.every(m =>
+                        m && Number.isInteger(m.joint) && m.joint >= 1 &&
+                        typeof m.angle === 'number' && isFinite(m.angle) && Math.abs(m.angle) <= 360 &&
+                        typeof m.speed === 'number' && isFinite(m.speed) && m.speed >= 0 && m.speed <= 4000);
+                    if (!valid) {
+                        const errPayload = { type: 'error', message: 'Invalid moveJointsBatch payload' };
+                        if (data.requestId !== undefined) errPayload.requestId = data.requestId;
+                        ws.send(JSON.stringify(errPayload));
+                        return;
+                    }
+                    // A client stream replaces any server linear path in progress.
+                    linearPathRunning  = false;
+                    linearPathClientWs = null;
                 }
 
                 // A stop command also aborts any in-progress linear path.

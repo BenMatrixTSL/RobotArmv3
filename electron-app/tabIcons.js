@@ -57,6 +57,10 @@
             label: 'Pendant Control', group: 'control',
             paths: '<rect x="5" y="2" width="14" height="20" rx="3"/><path d="M12 7v6M9 10h6"/><circle cx="9" cy="17.5" r="1.1"/><circle cx="15" cy="17.5" r="1.1"/>'
         },
+        gamepad: {
+            label: 'Gamepad Control', group: 'control',
+            paths: '<path d="M6.5 7h11a4.5 4.5 0 0 1 4.4 5.4l-.9 4.4a2.6 2.6 0 0 1-4.6 1L15 16H9l-1.4 1.8a2.6 2.6 0 0 1-4.6-1l-.9-4.4A4.5 4.5 0 0 1 6.5 7z"/><path d="M7.5 10v4M5.5 12h4"/><circle cx="15.5" cy="11" r=".9"/><circle cx="17.5" cy="13" r=".9"/>'
+        },
         gcode: {
             label: 'G-Code Control', group: 'program',
             paths: '<path d="M8 6l-5 6 5 6M16 6l5 6-5 6"/><path d="M14 5l-4 14"/>'

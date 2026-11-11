@@ -632,6 +632,31 @@ class RobotArmClient {
     }
 
     /**
+     * Fire-and-forget goal for several joints, written to the bus in one slot.
+     * Used for streamed motion (Gamepad page): the Pi keeps only the newest
+     * pending batch, so sending faster than the bus can go never builds a backlog.
+     * @param {Array<{joint:number, angle:number, speed:number}>} moves
+     */
+    moveJointsBatch(moves) {
+        return this.sendCommand('moveJointsBatch', { moves: moves });
+    }
+
+    /** Scans for Bluetooth devices near the Pi (Pi's own screen only). */
+    bluetoothScan(durationMs = 8000) {
+        return this.sendRequest('bluetoothScan', { durationMs: durationMs }, durationMs + 45000);
+    }
+
+    /** Pairs, trusts and connects a Bluetooth device to the Pi. */
+    bluetoothPair(mac) {
+        return this.sendRequest('bluetoothPair', { mac: mac }, 70000);
+    }
+
+    /** Forgets a Bluetooth device on the Pi. */
+    bluetoothRemove(mac) {
+        return this.sendRequest('bluetoothRemove', { mac: mac }, 15000);
+    }
+
+    /**
      * Sets the movement speed for a specific joint
      * @param {number} jointNumber - Joint number (1, 2, 3, etc.)
      * @param {number} speed - Speed in step/s (0-3400)

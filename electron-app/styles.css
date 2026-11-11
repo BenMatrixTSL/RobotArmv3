@@ -1963,6 +1963,12 @@ header h1 {
     margin: 4px 0 0;
 }
 
+/* Trainee zero trims left active - shown in the Calibration tab */
+#zeroTrimSummary.zero-trim-active {
+    color: #b8610f;
+    font-weight: 700;
+}
+
 .calibration-section-heading {
     margin: 24px 0 8px;
     font-size: 15px;
@@ -5066,4 +5072,446 @@ body.touch-mode .visibility-row {
 body.touch-mode .visibility-row input[type="checkbox"] {
     width: 24px;
     height: 24px;
+}
+
+
+/* ================================================================
+   Gamepad Control page
+   ================================================================ */
+.gp-page {
+    flex-direction: column;
+    gap: 12px;
+    padding: 10px 0 0;
+}
+
+.gp-page.active {
+    display: flex;
+}
+
+.gp-page [hidden] {
+    display: none !important;
+}
+
+.gp-live-speed {
+    opacity: 0.75;
+}
+
+.gp-banner {
+    background: #fdf2e9;
+    border: 1px solid #f0b27a;
+    color: #a04000;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-weight: 600;
+}
+
+.gp-main {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+}
+
+.gp-pad-card {
+    flex: 1 1 520px;
+    min-width: 0;
+    background: #ecf0f1;
+    border-radius: 10px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.gp-pad-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    min-height: 28px;
+}
+
+.gp-chip {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: #d5dbdb;
+    color: #2c3e50;
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+.gp-chip.gp-chip-ok {
+    background: #d4efdf;
+    color: #1e8449;
+}
+
+.gp-limit {
+    color: #ca6f1e;
+    font-weight: 700;
+    font-size: 14px;
+}
+
+/* --- Controller drawing --- */
+.gp-controller {
+    --gp-shell: #2c3e50;
+    --gp-shell-edge: #1f2d3a;
+    --gp-well: #1a252f;
+    --gp-thumb: #5d6d7e;
+    --gp-accent: #3498db;
+    position: relative;
+    max-width: 640px;
+    width: 100%;
+    margin: 0 auto;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
+}
+
+.gp-shoulders {
+    display: flex;
+    justify-content: space-between;
+    padding: 0 9%;
+    margin-bottom: -6px;
+}
+
+.gp-shoulder-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    width: 26%;
+}
+
+.gp-trigger {
+    position: relative;
+    width: 64%;
+    height: 64px;
+    border-radius: 14px 14px 6px 6px;
+    background: var(--gp-shell-edge);
+    color: #ecf0f1;
+    overflow: hidden;
+    cursor: ns-resize;
+    touch-action: none;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding-bottom: 6px;
+    box-sizing: border-box;
+    font-weight: 700;
+    font-size: 15px;
+}
+
+.gp-trigger span {
+    position: relative;
+    pointer-events: none;
+}
+
+.gp-trigger-fill {
+    position: absolute;
+    inset: 0;
+    background: var(--gp-accent);
+    transform-origin: top;
+    transform: scaleY(0);
+    pointer-events: none;
+}
+
+.gp-trigger.pressed {
+    box-shadow: 0 0 0 2px var(--gp-accent);
+}
+
+.gp-bumper {
+    width: 100%;
+    min-height: var(--tap-min, 44px);
+    border: none;
+    border-radius: 12px 12px 4px 4px;
+    background: var(--gp-shell-edge);
+    color: #ecf0f1;
+    font-weight: 700;
+    font-size: 15px;
+    cursor: pointer;
+    touch-action: none;
+    transition: background-color 0.08s, transform 0.08s;
+}
+
+.gp-bumper.pressed {
+    background: var(--gp-accent);
+    transform: translateY(2px);
+}
+
+.gp-body {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4%;
+    padding: 28px 9% 34px;
+    background: linear-gradient(180deg, #34495e 0%, var(--gp-shell) 60%);
+    border: 2px solid var(--gp-shell-edge);
+    border-radius: 60px 60px 120px 120px / 50px 50px 140px 140px;
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.25);
+}
+
+.gp-stick-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    width: 34%;
+}
+
+.gp-stick {
+    position: relative;
+    width: 100%;
+    max-width: 190px;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: radial-gradient(circle at 50% 50%, #22313f 0%, var(--gp-well) 70%);
+    border: 3px solid var(--gp-shell-edge);
+    box-shadow: inset 0 4px 10px rgba(0, 0, 0, 0.5);
+    cursor: grab;
+    touch-action: none;
+}
+
+.gp-stick.dragging {
+    cursor: grabbing;
+}
+
+.gp-stick-axis {
+    position: absolute;
+    background: rgba(236, 240, 241, 0.12);
+    pointer-events: none;
+}
+
+.gp-axis-h {
+    left: 12%;
+    right: 12%;
+    top: 50%;
+    height: 2px;
+    margin-top: -1px;
+}
+
+.gp-axis-v {
+    top: 12%;
+    bottom: 12%;
+    left: 50%;
+    width: 2px;
+    margin-left: -1px;
+}
+
+.gp-stick-thumb {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 46%;
+    height: 46%;
+    margin: -23% 0 0 -23%;
+    border-radius: 50%;
+    background: radial-gradient(circle at 40% 35%, #85929e 0%, var(--gp-thumb) 55%, #4a5866 100%);
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.45), inset 0 -3px 0 rgba(0, 0, 0, 0.2);
+    pointer-events: none;
+    will-change: transform;
+}
+
+/* Spring back to centre when released (on screen). While dragging or driven by
+   a real controller the thumb follows input every frame without lag. */
+.gp-stick:not(.dragging) .gp-stick-thumb {
+    transition: transform 0.06s linear;
+}
+
+.gp-stick.dragging .gp-stick-thumb {
+    background: radial-gradient(circle at 40% 35%, #85c1e9 0%, var(--gp-accent) 60%, #21618c 100%);
+}
+
+.gp-stick-label {
+    color: #ecf0f1;
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 1px;
+}
+
+.gp-centre-logo {
+    color: rgba(236, 240, 241, 0.35);
+    font-weight: 800;
+    letter-spacing: 3px;
+    font-size: 13px;
+    align-self: flex-start;
+    margin-top: 6%;
+}
+
+.gp-legend {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 6px 20px;
+    font-size: 13px;
+    color: #34495e;
+}
+
+.gp-legend > div {
+    display: flex;
+    gap: 8px;
+    align-items: baseline;
+}
+
+.gp-legend b {
+    flex: 0 0 74px;
+    color: #2c3e50;
+}
+
+/* --- Side panels --- */
+.gp-side {
+    flex: 0 1 320px;
+    min-width: 260px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.gp-scan-hint,
+.gp-bt-status {
+    font-size: 13px;
+    color: #566573;
+    line-height: 1.4;
+}
+
+.gp-pad-list,
+.gp-bt-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.gp-pad-empty {
+    font-size: 13px;
+    color: #7f8c8d;
+}
+
+.gp-pad-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4px 8px;
+    min-height: var(--tap-min, 44px);
+    padding: 8px 10px;
+    border: 2px solid #d5dbdb;
+    border-radius: 8px;
+    background: white;
+    text-align: left;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.gp-pad-row.selected {
+    border-color: #27ae60;
+    background: #eafaf1;
+}
+
+.gp-pad-name {
+    font-weight: 600;
+    color: #2c3e50;
+    overflow-wrap: anywhere;
+}
+
+.gp-pad-tag {
+    font-size: 12px;
+    font-weight: 700;
+    color: #27ae60;
+}
+
+.gp-pad-row:not(.selected) .gp-pad-tag {
+    color: #2980b9;
+}
+
+.gp-pad-warn {
+    flex-basis: 100%;
+    font-size: 12px;
+    color: #ca6f1e;
+}
+
+.gp-bt-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    border-radius: 8px;
+    background: white;
+}
+
+.gp-bt-row.gp-bt-gamepad {
+    border: 2px solid #aed6f1;
+}
+
+.gp-bt-name {
+    flex: 1;
+    min-width: 0;
+    font-size: 14px;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+
+.gp-bt-state {
+    font-size: 12px;
+    color: #27ae60;
+}
+
+.gp-bt-btn {
+    min-height: var(--tap-min, 44px);
+    padding: 6px 14px !important;
+}
+
+.gp-speed-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.gp-speed-row input[type="range"] {
+    flex: 1;
+    min-height: var(--tap-min, 44px);
+}
+
+.gp-speed-value {
+    font-weight: 700;
+    white-space: nowrap;
+    min-width: 72px;
+    text-align: right;
+}
+
+.gp-seg {
+    display: flex;
+    gap: 6px;
+}
+
+.gp-seg .btn {
+    flex: 1;
+    min-height: var(--tap-min, 44px);
+    padding: 8px 6px;
+}
+
+.gp-tool-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 14px;
+}
+
+@media (max-width: 700px) {
+    .gp-body {
+        padding: 20px 6% 26px;
+    }
+    .gp-trigger {
+        height: 52px;
+    }
+    .gp-centre-logo {
+        display: none;
+    }
+    .gp-side {
+        flex-basis: 100%;
+    }
 }

@@ -69,6 +69,18 @@ const api = {
     },
 
     /**
+     * Opens the operating system's Bluetooth settings (to pair a game controller).
+     */
+    openBluetoothSettings: async () => {
+        try {
+            return await ipcRenderer.invoke('open-bluetooth-settings');
+        } catch (e) {
+            console.error('[preload] openBluetoothSettings failed:', e);
+            return { ok: false, message: e.message || String(e) };
+        }
+    },
+
+    /**
      * Ask the main process to update one of the local git repositories.
      * Valid values for "which" are:
      *  - 'electron'  → update the electron-app folder

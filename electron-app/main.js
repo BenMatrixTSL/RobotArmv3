@@ -5,7 +5,7 @@
  * It creates the application window and handles system events.
  */
 
-const { app, BrowserWindow, screen, ipcMain } = require('electron');
+const { app, BrowserWindow, screen, ipcMain, shell } = require('electron');
 const path = require('path');
 const { exec } = require('child_process');
 
@@ -190,6 +190,26 @@ ipcMain.handle('update-from-git', async (event, args) => {
             }
         });
     });
+});
+
+/**
+ * Opens the operating system's Bluetooth settings so a game controller can be
+ * paired with this computer (Gamepad Control page). On the Pi's own screen the
+ * page pairs through the arm server instead.
+ */
+ipcMain.handle('open-bluetooth-settings', async () => {
+    try {
+        if (process.platform === 'win32') {
+            await shell.openExternal('ms-settings:bluetooth');
+        } else if (process.platform === 'darwin') {
+            await shell.openExternal('x-apple.systempreferences:com.apple.BluetoothSettings');
+        } else {
+            exec('blueman-manager || gnome-control-center bluetooth', () => {});
+        }
+        return { ok: true };
+    } catch (e) {
+        return { ok: false, message: e.message || String(e) };
+    }
 });
 
 // Quit when all windows are closed (except on macOS)

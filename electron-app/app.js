@@ -1223,6 +1223,7 @@ document.addEventListener('DOMContentLoaded', function() {
             'connection': 'Connect',
             'pendant': 'Joints',
             'pendant-ui': 'Pendant',
+            'gamepad': 'Gamepad',
             'positions': 'Positions',
             'camera': 'Camera',
             'visualization': '3D View'
@@ -2158,6 +2159,12 @@ function initializeTabs() {
                 }, 100);
             }
             
+            // Gamepad tab - run its control loop only while it is showing
+            if (window.gamepadPage) {
+                if (targetTab === 'gamepad') window.gamepadPage.activate();
+                else window.gamepadPage.deactivate();
+            }
+
             // Camera tab - start or stop MJPEG stream
             if (targetTab === 'camera') {
                 if (typeof startCameraView === 'function') {
@@ -10284,7 +10291,7 @@ const CURRICULUM_MODULES = [
 
 // Sidebar tabs in display order. 'connection' can never be hidden; 'settings'
 // is already hidden by the app and is not offered.
-const VISIBILITY_TABS = ['connection', 'pendant', 'pendant-ui', 'gcode', 'rapid', 'blockly',
+const VISIBILITY_TABS = ['connection', 'pendant', 'pendant-ui', 'gamepad', 'gcode', 'rapid', 'blockly',
     'visualization', 'kinematics', 'positions', 'calibration', 'deadzones', 'camera', 'curriculum'];
 
 // User types: which tabs and modules are shown. Anything not listed is hidden.
@@ -10298,20 +10305,20 @@ const USER_TYPE_PRESETS = {
     ks3: {
         label: 'Key Stage 3 (ages 11-14)',
         description: 'Drive the arm by hand, program it with blocks, see it in 3D. Foundation modules only.',
-        tabs: ['connection', 'pendant', 'pendant-ui', 'blockly', 'visualization', 'positions', 'camera', 'curriculum'],
+        tabs: ['connection', 'pendant', 'pendant-ui', 'gamepad', 'blockly', 'visualization', 'positions', 'camera', 'curriculum'],
         modules: ['module-01', 'module-02', 'module-04', 'module-06']
     },
     level2: {
         label: 'GCSE / BTEC Level 2 (ages 14-16)',
         description: 'Adds G-code and dead zones. Foundation and core intermediate modules, without kinematics.',
-        tabs: ['connection', 'pendant', 'pendant-ui', 'gcode', 'blockly', 'visualization',
+        tabs: ['connection', 'pendant', 'pendant-ui', 'gamepad', 'gcode', 'blockly', 'visualization',
             'positions', 'deadzones', 'camera', 'curriculum'],
         modules: ['module-01', 'module-02', 'module-03', 'module-04', 'module-05', 'module-06', 'module-10']
     },
     level3: {
         label: 'BTEC Level 3 National (ages 16-18)',
         description: 'All programming tabs. Level 3 modules; the Level 4/5 systems modules and servo calibration are hidden.',
-        tabs: ['connection', 'pendant', 'pendant-ui', 'gcode', 'rapid', 'blockly', 'visualization', 'kinematics',
+        tabs: ['connection', 'pendant', 'pendant-ui', 'gamepad', 'gcode', 'rapid', 'blockly', 'visualization', 'kinematics',
             'positions', 'deadzones', 'camera', 'curriculum'],
         modules: ['module-01', 'module-02', 'module-03', 'module-04', 'module-05', 'module-06', 'module-07',
             'module-10', 'module-15', 'module-16', 'module-17', 'module-18']
@@ -10325,7 +10332,7 @@ const USER_TYPE_PRESETS = {
     technician: {
         label: 'Technician / maintenance',
         description: 'Manual control, calibration, diagnostics and the maintenance documentation.',
-        tabs: ['connection', 'pendant', 'pendant-ui', 'visualization', 'kinematics', 'positions',
+        tabs: ['connection', 'pendant', 'pendant-ui', 'gamepad', 'visualization', 'kinematics', 'positions',
             'calibration', 'deadzones', 'camera', 'curriculum'],
         modules: ['module-01', 'module-11', 'module-15', 'module-17']
     }
