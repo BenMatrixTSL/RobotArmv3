@@ -18,6 +18,7 @@ const crypto      = require('crypto');
 const { exec, execFile, fork } = require('child_process');
 const { promisify } = require('util');
 const { robotKinematics } = require('./kinematicsService');
+const linearTiming = require('./linearPathTiming');
 const ledController = require('./ledController');
 const bluetoothManager = require('./bluetoothManager');
 const execFileAsync = promisify(execFile);
@@ -26,6 +27,10 @@ const execFileAsync = promisify(execFile);
 const PORT             = 8080;
 const SERVER_BUILD_ID  = '2026-06-05-worker-thread';
 const DEBUG_LOG_FILE   = process.env.ROBOT_ARM_DEBUG_LOG || '';
+// Fastest any joint may be asked to move during a linear path (deg/s). Waypoints
+// that would need more are given more time; the rest keep the requested speed.
+// Set very high to switch the stretching off.
+const LINEAR_MAX_JOINT_DEG_PER_SEC = Number(process.env.LINEAR_MAX_JOINT_DEG_PER_SEC) || 110;
 
 // Commands that do not touch the servo bus — handled instantly in main thread.
 const INSTANT_SERVER_COMMANDS = {
@@ -1024,13 +1029,22 @@ async function handleCommand(ws, data) {
                 const speed     = (typeof speedMmPerSec === 'number' && speedMmPerSec > 0) ? speedMmPerSec : 50;
                 const stepDist  = (typeof stepMm === 'number' && stepMm > 0) ? stepMm : 2.0;
                 const intervalMs = Math.max(20, Math.round((stepDist / speed) * 1000));
+                // Stretch only the waypoints whose joint jump would need more than
+                // LINEAR_MAX_JOINT_DEG_PER_SEC, so no servo is asked for more than it can do.
+                const timing = linearTiming.planWaypointTiming(startAngles, steps, intervalMs, { maxJointDegPerSec: LINEAR_MAX_JOINT_DEG_PER_SEC });
 
                 linearPathRunning  = true;
                 linearPathClientWs = ws;
                 updateLed();
 
-                // Acknowledge immediately — client can display progress
-                sendResponse({ type: 'linearPathStarted', totalSteps: steps.length, totalDistanceMm, intervalMs, requestId });
+                // Acknowledge immediately — client can display progress.
+                // durationMs is the planned time (sum of the per-waypoint delays);
+                // intervalMs is the nominal one, kept for existing clients.
+                sendResponse({
+                    type: 'linearPathStarted', totalSteps: steps.length, totalDistanceMm, intervalMs,
+                    durationMs: timing.totalMs, slowedSteps: timing.slowedSteps,
+                    peakJointDegPerSec: Math.round(timing.peakJointDegPerSec), requestId
+                });
 
                 // Execute asynchronously so stop commands can be processed between steps
                 (async () => {
@@ -1046,16 +1060,19 @@ async function handleCommand(ws, data) {
                     // before the next waypoint despite the servo's acceleration
                     // ramp, so lag does not build up differently per joint.
                     const SPEED_MARGIN = 1.25;
-                    const startedAt = Date.now();
+                    let dueAt = Date.now();
 
                     for (let i = 0; i < steps.length; i++) {
                         if (!linearPathRunning) break;
 
                         const angles = steps[i];
+                        const stepMs = timing.dtMs[i];
                         const moves = [];
                         for (let j = 0; j < angles.length; j++) {
+                            // Fallback one-step speed; the worker recomputes it from the
+                            // real distance to the goal it last wrote (see servoWorker.js)
                             const travel = Math.abs(angles[j] - (prevAngles[j] || 0));
-                            const spd = Math.max(50, Math.round(SPEED_MARGIN * travel * stepsPerDeg / (intervalMs / 1000)));
+                            const spd = Math.max(50, Math.round(SPEED_MARGIN * travel * stepsPerDeg / (stepMs / 1000)));
                             moves.push({ joint: j + 1, angle: angles[j], speed: spd });
                         }
                         if (servoWorker) {
@@ -1063,14 +1080,20 @@ async function handleCommand(ws, data) {
                                 type: 'immediateBusCommand',
                                 command: 'moveJointsBatch',
                                 moves: moves,
+                                seq: i + 1,
+                                total: steps.length,
+                                first: i === 0,
+                                final: i === steps.length - 1,
+                                dtMs: stepMs,
+                                prevAngles: i === 0 ? startAngles : undefined,
                                 clientId: ws.clientId
                             });
                         }
                         prevAngles = angles;
-                        // Pace against the wall clock so timer drift does not
-                        // stretch the move.
-                        const due = startedAt + (i + 1) * intervalMs;
-                        await new Promise(resolve => setTimeout(resolve, Math.max(0, due - Date.now())));
+                        // Pace against the wall clock so timer drift does not stretch
+                        // the move; each waypoint has its own delay.
+                        dueAt += stepMs;
+                        await new Promise(resolve => setTimeout(resolve, Math.max(0, dueAt - Date.now())));
                     }
 
                     linearPathRunning  = false;

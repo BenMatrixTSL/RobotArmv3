@@ -155,7 +155,7 @@ Each entry in `status.joints[]` (also returned by `getStatus`):
 | `angleDegrees` | current angle, degrees, 0 at the servo's calibrated centre |
 | `position` | raw servo steps, 0 to 4095 (2048 is 0°) |
 | `isMoving` | servo reports motion in progress |
-| `speed`, `load`, `voltage`, `temperature` | servo telemetry (raw speed, load %, volts, °C) |
+| `speed`, `load`, `voltage`, `temperature` | servo telemetry: speed in steps/s and load in % (both magnitudes; `speedSigned` and `loadSigned` carry the direction), volts, °C |
 | `torqueEnabled` | false after `stopJoint`/`stopAll`, a watchdog trip or an overload trip |
 | `readStale` | this joint's last poll failed; the values are the last good ones |
 | `pollError` | reason for the stale read, when stale |

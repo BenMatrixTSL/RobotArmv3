@@ -229,7 +229,7 @@ Only registers used in local working implementation are listed.
 - `0x39` (`57`) `STS_PRESENT_POSITION_H`
 - `0x3A` (`58`) `STS_PRESENT_SPEED_L`
 - `0x3B` (`59`) `STS_PRESENT_SPEED_H`
-- `0x3C` (`60`) `STS_PRESENT_LOAD_L` (read as 1 byte in this code)
+- `0x3C` (`60`) `STS_PRESENT_LOAD_L` (word with 61: 0-1000 = 0.1 %, bit 10 = direction; speed and position use bit 15 for direction)
 - `0x3E` (`62`) `STS_PRESENT_VOLTAGE` (1 byte)
 - `0x3F` (`63`) `STS_PRESENT_TEMPERATURE` (1 byte)
 - `0x42` (`66`) `STS_MOVING` (1 byte)

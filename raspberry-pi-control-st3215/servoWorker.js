@@ -188,6 +188,17 @@ let busWriteQueue        = [];
 let statusPollJointIndex = 0;
 const pendingImmediateMoves = {};
 const LINEAR_BATCH_KEY = 'linearBatch';
+
+// Linear-path speeds worked out from the real distance and cadence, and a
+// coordinated finish. See linearPathTiming.js for the background.
+const linearTiming = require('./linearPathTiming');
+const LINEAR_SPEED_MARGIN = 1.25;
+const LINEAR_SETTLE_DEG_PER_SEC = Number(process.env.LINEAR_SETTLE_DEG_PER_SEC) || 60;
+const LINEAR_SETTLE_TOLERANCE_DEG = 1.5;
+// State for the path being streamed. lastGoal[joint] is the goal most recently
+// WRITTEN to that joint: the next speed comes from the distance to it, not from
+// the distance to a previous waypoint that the bus may have skipped.
+const linearBatch = { lastGoal: [], lastAt: 0, lastSeq: 0, delivered: 0, skipped: 0, failures: 0, sumMs: 0, maxMs: 0 };
 let immediateMoveDrainRunning = false;
 let workerShuttingDown  = false;
 let lastRescanTime      = 0;
@@ -393,9 +404,19 @@ const PLAUSIBLE_MARGIN_DEG    = 3;
 const SUSPECT_ACCEPT_AFTER    = 3;
 const suspectSamples = new Array(JOINT_COUNT).fill(null); // { angle, count } per joint
 
+// Temperature cannot move fast: a jump bigger than this between samples a few
+// seconds apart is a bad reading, not the servo heating up.
+const MAX_PLAUSIBLE_TEMP_STEP_C = 10;
+const PLAUSIBLE_TEMP_WINDOW_MS  = 5000;
+
 function isPlausibleSample(previous, status, nowMs) {
     if (!(status.position >= 0 && status.position <= 4095)) return false;
+    if (!(status.temperature >= 0 && status.temperature <= 120)) return false;
     if (!previous || !previous.lastGoodAt || !previous.available) return true;
+    if (nowMs - previous.lastGoodAt < PLAUSIBLE_TEMP_WINDOW_MS && previous.temperature > 0 &&
+        Math.abs(status.temperature - previous.temperature) > MAX_PLAUSIBLE_TEMP_STEP_C) {
+        return false;
+    }
     const dtS = Math.max((nowMs - previous.lastGoodAt) / 1000, 0.02);
     const allowedDeg = MAX_PLAUSIBLE_DEG_PER_S * dtS + PLAUSIBLE_MARGIN_DEG;
     return Math.abs(status.angleDegrees - previous.angleDegrees) <= allowedDeg;
@@ -630,6 +651,12 @@ async function runBusTick() {
         const pollStart = Date.now();
         const jointsToPoll = Math.min(JOINTS_PER_POLL_TICK, JOINT_COUNT);
         for (let p = 0; p < jointsToPoll; p++) {
+            // A move or linear waypoint is waiting: hand the bus over now rather
+            // than finish polling all six joints. The round-robin index carries
+            // on from here next tick, so every joint still gets polled. Without
+            // this a waypoint arriving mid-tick waited for the whole poll, and
+            // most of a fast linear path's waypoints never reached the servos.
+            if (p > 0 && Object.keys(pendingImmediateMoves).length > 0) break;
             // Check heartbeat before each joint poll so that slow/failing reads
             // cannot delay it past the ~1 s watchdog threshold.
             const nowHb = Date.now();
@@ -754,6 +781,14 @@ function scheduleImmediateCommand(msg) {
     // A linear-path waypoint for all joints. Only the newest one matters: if
     // the bus fell behind, an older waypoint is skipped rather than sent late.
     if (msg.command === 'moveJointsBatch') {
+        // If the waypoint being replaced was the first of its path and was never
+        // written, the new one takes over its "first" flag and start angles, or
+        // the path's speeds would be worked out from a stale goal.
+        const replaced = pendingImmediateMoves[LINEAR_BATCH_KEY];
+        if (replaced && replaced.first && !msg.first) {
+            msg.first = true;
+            msg.prevAngles = replaced.prevAngles;
+        }
         pendingImmediateMoves[LINEAR_BATCH_KEY] = msg;
         drainImmediateMoveQueue();
         return;
@@ -792,8 +827,46 @@ async function drainImmediateMoveQueue() {
 
 async function waitForBusTickToFinish() {
     const waitStart = Date.now();
+    // Check often: the tick now yields between joint polls as soon as a move is
+    // pending, so waiting in 50 ms slices (as before) wasted most of that time.
     while (busTickInProgress && Date.now() - waitStart < 2000) {
-        await new Promise(r => setTimeout(r, 50));
+        await new Promise(r => setTimeout(r, 2));
+    }
+}
+
+/**
+ * After the last waypoint of a linear path, read where each joint really is and
+ * re-write the final goal with speeds that bring every joint in together.
+ * Without this a joint that had fallen behind finished at the speed of the
+ * path's last, tiny step (seen on an arm: J5 crawling its last 50 degrees for
+ * about 2 s after J2 had arrived).
+ * @param {Array<{joint: number, angle: number}>} finalMoves
+ */
+async function settleLinearPath(finalMoves) {
+    try {
+        await new Promise(r => setTimeout(r, 120));          // let the last write get the servos going
+        const joints = [];
+        for (const m of finalMoves) {
+            const idx = m.joint - 1;
+            const servo = (idx >= 0 && idx < servos.length) ? servos[idx] : null;
+            if (!servo) continue;
+            const steps = await servo.getPosition();         // -1 on a failed read
+            if (!(steps >= 0)) continue;                     // leave that joint to its last write
+            const present = servo.stepsToAngle(steps);
+            joints.push({ joint: m.joint, servo, goal: m.angle, remaining: Math.abs(m.angle - present) });
+        }
+        if (joints.length === 0) return;
+        const worst = Math.max(...joints.map(j => j.remaining));
+        if (worst <= LINEAR_SETTLE_TOLERANCE_DEG) return;    // already there
+        const plan = linearTiming.settleSpeeds(joints.map(j => j.remaining), { settleDegPerSec: LINEAR_SETTLE_DEG_PER_SEC });
+        for (let i = 0; i < joints.length; i++) {
+            if (joints[i].remaining <= 0.5) continue;
+            await joints[i].servo.moveToAngle(joints[i].goal, plan.speeds[i]);
+        }
+        log(`[LINEAR] settle: furthest joint ${worst.toFixed(1)} deg from goal, finishing together in ${plan.seconds.toFixed(2)} s ` +
+            `(remaining deg ${joints.map(j => 'J' + j.joint + ':' + j.remaining.toFixed(1)).join(' ')})`);
+    } catch (error) {
+        log(`[LINEAR] settle failed: ${formatCommandError(error)}`, true);
     }
 }
 
@@ -1065,13 +1138,43 @@ async function handleBusCommand(clientId, data) {
             // the bus tick keeps polling status between waypoints - so all
             // joints get their goals together and the tool tip stays on the
             // planned line instead of joints updating one at a time.
+            //
+            // Each joint's speed is worked out HERE from the distance to the
+            // goal last written to it and the real time since the previous
+            // delivery. The bus can skip waypoints (only the newest pending one
+            // is kept), and the speed the server attached assumed a one-step
+            // move. Batches from servers that do not send `seq` (older builds)
+            // fall back to the speed in the message.
+            const batchStart = Date.now();
             const moves = Array.isArray(data.moves) ? data.moves : [];
+            const paced = typeof data.seq === 'number';
+            if (paced && data.first) {
+                linearBatch.lastGoal = [];
+                (Array.isArray(data.prevAngles) ? data.prevAngles : []).forEach((v, i) => { linearBatch.lastGoal[i + 1] = v; });
+                linearBatch.lastAt = batchStart - (data.dtMs || 33);
+                linearBatch.lastSeq = 0; linearBatch.delivered = 0; linearBatch.skipped = 0;
+                linearBatch.failures = 0; linearBatch.sumMs = 0; linearBatch.maxMs = 0;
+            }
+            if (paced) {
+                if (data.seq > linearBatch.lastSeq + 1) linearBatch.skipped += data.seq - linearBatch.lastSeq - 1;
+                linearBatch.lastSeq = data.seq;
+            }
+            // Time the servos have to reach this goal: the planned step time,
+            // or longer if this waypoint was delivered late.
+            const dtEff = Math.max(data.dtMs || 33, batchStart - linearBatch.lastAt);
+            linearBatch.lastAt = batchStart;
             for (const m of moves) {
                 const jointIndex = m.joint - 1;
                 if (jointIndex < 0 || jointIndex >= servos.length) continue;
                 const servo = await resolveServoForJoint(jointIndex, m.joint);
                 if (!servo) continue;
-                const moveSpeed = (typeof m.speed === 'number' && !isNaN(m.speed) && m.speed >= 0) ? m.speed : 1500;
+                let moveSpeed;
+                if (paced) {
+                    const from = (typeof linearBatch.lastGoal[m.joint] === 'number') ? linearBatch.lastGoal[m.joint] : m.angle;
+                    moveSpeed = linearTiming.jointSpeedStepsPerSec(m.angle - from, dtEff, LINEAR_SPEED_MARGIN);
+                } else {
+                    moveSpeed = (typeof m.speed === 'number' && !isNaN(m.speed) && m.speed >= 0) ? m.speed : 1500;
+                }
                 try {
                     if (!servoTorqueEnabled[jointIndex]) {
                         await servo.startServo();
@@ -1079,11 +1182,21 @@ async function handleBusCommand(clientId, data) {
                         cachedTorqueEnabled = null;
                     }
                     await servo.moveToAngle(m.angle, moveSpeed);
+                    linearBatch.lastGoal[m.joint] = m.angle;
                     diag.busMovesCompleted++;
                 } catch (error) {
+                    linearBatch.failures++;
                     log(`[LINEAR] joint=${m.joint} FAILED: ${formatCommandError(error)}`, true);
                     reply({ type: 'error', message: `Failed to move joint ${m.joint}: ${formatCommandError(error)}`, servoFault: !!(error && error.isOverload), joint: m.joint });
                 }
+            }
+            const batchMs = Date.now() - batchStart;
+            linearBatch.delivered++; linearBatch.sumMs += batchMs; linearBatch.maxMs = Math.max(linearBatch.maxMs, batchMs);
+
+            if (paced && data.final) {
+                await settleLinearPath(moves);
+                log(`[LINEAR] path done: ${linearBatch.delivered} of ${data.total || '?'} waypoints delivered, ${linearBatch.skipped} skipped by the bus, ` +
+                    `batch avg ${linearBatch.delivered ? Math.round(linearBatch.sumMs / linearBatch.delivered) : 0} ms / max ${linearBatch.maxMs} ms, ${linearBatch.failures} write failures`);
             }
             return;
         }

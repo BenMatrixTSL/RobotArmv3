@@ -124,7 +124,6 @@ const SERIAL_WRITE_CALLBACK_TIMEOUT_MS = 300;
 // write attempts under 200 ms so a slow joint (4 or 5) cannot hold the bus
 // long enough to trigger the ~1 s watchdog on all other joints during homing.
 const BUS_WRITE_TIMEOUT_MS = 80;
-const BUS_GAP_BETWEEN_WRITES_MS = 15;
 
 // ST3215 status bits in the response packet error byte (register 0x41 style flags)
 const SERVO_ERR_VOLTAGE = 1;
@@ -253,6 +252,33 @@ function isRetryableBusError(error) {
     return message.indexOf('timeout') >= 0
         || message.indexOf('corrupt') >= 0
         || message.indexOf('Communication error') >= 0;
+}
+
+/**
+ * Index of the first packet header (FF FF followed by an ID that is not FF) in
+ * buf, or of a trailing FF FF still waiting for its ID byte; -1 if none.
+ * @param {Buffer} buf
+ * @returns {number}
+ */
+function findPacketHeader(buf) {
+    for (let i = 0; i < buf.length - 1; i++) {
+        if (buf[i] !== 0xFF || buf[i + 1] !== 0xFF) continue;
+        if (i + 2 >= buf.length) return i;          // need the ID byte
+        if (buf[i + 2] !== 0xFF) return i;          // FF FF FF: the header starts one later
+    }
+    return -1;
+}
+
+/**
+ * Decode a sign-magnitude register value (the ST3215 puts the direction in a
+ * high bit rather than using two's complement).
+ * @param {number} raw - 16-bit register value
+ * @param {number} signBit - bit number of the direction flag (15 for position/speed, 10 for load)
+ * @returns {number}
+ */
+function decodeSignMagnitude(raw, signBit) {
+    const mask = 1 << signBit;
+    return (raw & mask) ? -(raw & (mask - 1)) : (raw & (mask - 1));
 }
 
 /**
@@ -528,11 +554,33 @@ class ServoController {
         
         // Parse one or more complete packets (shared bus may deliver other IDs first)
         while (this.pendingResponse && this.pendingResponse.length >= 6) {
+            // Resync on the header. A stray byte before a reply (a glitch on the
+            // half-duplex line turnaround, or the tail of a packet whose start
+            // was dropped) used to stall the parser for the rest of the
+            // transaction, so a perfectly good reply behind it timed out and the
+            // joint's status went stale. Drop everything before the first
+            // FF FF <id != FF> and parse from there.
+            const headerAt = findPacketHeader(this.pendingResponse);
+            if (headerAt < 0) {
+                // No header yet; keep a trailing 0xFF in case it is the first header byte
+                const last = this.pendingResponse[this.pendingResponse.length - 1];
+                this.pendingResponse = last === 0xFF ? Buffer.from([0xFF]) : null;
+                break;
+            }
+            if (headerAt > 0) {
+                this.consumeParsedPacket(headerAt);
+                continue;
+            }
+
             const result = this.parseResponsePacket(this.pendingResponse);
 
             if (!result.complete) {
-                if (result.error && result.error !== 'Invalid header' && result.error !== 'Header at wrong position') {
-                    if (DEBUG) console.log(`[DEBUG Servo ${this.servoId}] Packet parse error: ${result.error}`);
+                if (result.error === 'Checksum mismatch' || result.error === 'Bad length') {
+                    // A false header (FF FF inside other data) or a corrupted
+                    // packet: skip one byte and look for the next header.
+                    if (DEBUG) console.log(`[DEBUG Servo ${this.servoId}] Packet parse error: ${result.error}, resyncing`);
+                    this.consumeParsedPacket(1);
+                    continue;
                 }
                 break;
             }
@@ -587,6 +635,10 @@ class ServoController {
 
         const id = buffer[PKT_ID];
         const length = buffer[PKT_LENGTH];
+        // Every reply carries at least the error byte and the checksum
+        if (length < 2) {
+            return { complete: false, error: 'Bad length' };
+        }
         // According to ST3215 protocol (from Python code):
         // wait_length = rxpacket[PKT_LENGTH] + PKT_LENGTH + 1
         // PKT_LENGTH = 3 (the index of the length field)
@@ -791,6 +843,19 @@ class ServoController {
                     return;
                 }
 
+                // Only a reply of the length we asked for answers this read. Anything
+                // else from this ID is a late reply to an earlier request (a write
+                // ack, or a read that timed out under Pi scheduling jitter); taking
+                // it here mixed old or differently-addressed data into the status.
+                // The end tool is exempt: its firmware is a separate code base.
+                if (this.servoIdNumber !== END_TOOL_ID) {
+                    const got = result.parameters ? result.parameters.length : 0;
+                    if (got !== length) {
+                        if (DEBUG) console.log(`[DEBUG Servo ${this.servoId}] Ignoring ${got}-byte reply while waiting for a ${length}-byte read`);
+                        return;
+                    }
+                }
+
                 if (result.commResult !== COMM_SUCCESS || result.error !== 0) {
                     finishReject(busErrorFromResponse(result));
                 } else if (!result.parameters) {
@@ -879,6 +944,14 @@ class ServoController {
                 this.responseReject = finishReject;
                 this.responseResolve = (result) => {
                     if (settled) {
+                        return;
+                    }
+
+                    // A write is acknowledged by a reply with no data. A late read
+                    // reply from this servo is not an ack: accepting it could report
+                    // a write as delivered when the servo never got it.
+                    if (!isEndTool && result.parameters && result.parameters.length > 0) {
+                        if (DEBUG) console.log(`[DEBUG Servo ${this.servoId}] Ignoring a ${result.parameters.length}-byte read reply while waiting for a write ack`);
                         return;
                     }
 
@@ -1202,33 +1275,30 @@ class ServoController {
         try {
             // Use provided speed, or the current stored speed
             // Check explicitly for null/undefined, but allow 0 as a valid speed value
-            const speedToUse = (speed !== null && speed !== undefined) ? speed : this.currentSpeed;
-            
-            // Always write the speed register before the position command.
-            // Skipping when speedToUse === currentSpeed was an optimisation, but it
-            // caused intermittent "too slow" moves: if a previous speed write failed
-            // silently (ack timeout — the catch in setSpeed swallows it), currentSpeed
-            // tracks the intended value while the servo still holds the old value.
-            // The next call with the same intended speed then skips the write, so the
-            // servo runs at the stale speed.  Always writing costs one extra bus write
-            // (~7 ms) per joint per move — acceptable.
-            try {
-                await this.setSpeed(speedToUse);
-            } catch (_) {
-                // Ack lost; servo very likely received the write anyway — continue.
-            }
-            await new Promise((resolve) => setTimeout(resolve, BUS_GAP_BETWEEN_WRITES_MS));
-            
-            // Don't read position before move - it can cause response matching issues
-            // Just proceed with the move
-            if (DEBUG) console.log(`Servo ${this.servoId}: Moving to angle ${angleDegrees}° (position ${position}) at speed ${speedToUse} step/s`);
+            let speedToUse = (speed !== null && speed !== undefined) ? speed : this.currentSpeed;
+            if (!(speedToUse >= 0)) speedToUse = 0;
+            if (speedToUse > MAX_SPEED) speedToUse = MAX_SPEED;
+            speedToUse = Math.round(speedToUse);
 
+            // Goal position (42-43), goal time (44-45) and goal speed (46-47) are
+            // contiguous, so write them in ONE packet, as Feetech's own WritePosEx
+            // does. This used to be a speed write, a 15 ms pause and then a position
+            // write, with any speed-write failure swallowed. A lost speed write left
+            // the joint running the new goal at the PREVIOUS move's speed, which is
+            // how one joint (often J5 or J3) arrived seconds after the others. Now
+            // position and speed land together or the write fails as a whole and is
+            // retried, and a move costs one bus transaction per joint instead of two
+            // plus a pause. Goal time 0 means "use the speed"; acceleration
+            // (register 41) is left as configured.
             const data = [
-                this.stsLobyte(position),   // Low byte first
-                this.stsHibyte(position)    // High byte second
+                this.stsLobyte(position), this.stsHibyte(position),     // 42-43 goal position
+                0, 0,                                                    // 44-45 goal time (0 = use speed)
+                this.stsLobyte(speedToUse), this.stsHibyte(speedToUse)  // 46-47 goal speed
             ];
+            if (DEBUG) console.log(`Servo ${this.servoId}: Moving to angle ${angleDegrees}° (position ${position}) at speed ${speedToUse} step/s`);
             await this.writeData(STS_GOAL_POSITION_L, data);
-            if (DEBUG) console.log(`Servo ${this.servoId}: Position command sent (bytes: 0x${data[0].toString(16).padStart(2,'0')} 0x${data[1].toString(16).padStart(2,'0')})`);
+            // Only record the speed once the servo has acknowledged it
+            this.currentSpeed = speedToUse;
         } catch (error) {
             this.logServoCommandError('move to angle', error);
             throw error;
@@ -1320,20 +1390,7 @@ class ServoController {
                 throw new Error(`Invalid bulk status data (len=${data ? data.length : 0}, expected ${blockLen})`);
             }
 
-            const torqueEnabled  = data[STS_TORQUE_ENABLE        - startAddr] !== 0;
-            const posL           = data[STS_PRESENT_POSITION_L   - startAddr];
-            const posH           = data[STS_PRESENT_POSITION_H   - startAddr];
-            const position       = this.makeWord(posL, posH);
-            const angleDegrees   = this.stepsToAngle(position);
-            const spdL           = data[STS_PRESENT_SPEED_L      - startAddr];
-            const spdH           = data[STS_PRESENT_SPEED_H      - startAddr];
-            const speed          = this.makeWord(spdL, spdH);
-            const load           = data[STS_PRESENT_LOAD_L       - startAddr] * 0.1;
-            const voltage        = data[STS_PRESENT_VOLTAGE       - startAddr] * 0.1;
-            const temperature    = data[STS_PRESENT_TEMPERATURE   - startAddr];
-            const isMoving       = data[STS_MOVING                - startAddr] !== 0;
-
-            return { angleDegrees, position, speed, load, voltage, temperature, isMoving, torqueEnabled };
+            return this.quickStatusFromBuffer(data);
         } catch (error) {
             console.error(`Servo ${this.servoId}: Failed to read status:`, error.message);
             throw error;
@@ -1399,18 +1456,23 @@ class ServoController {
      */
     quickStatusFromBuffer(data) {
         const startAddr   = STS_TORQUE_ENABLE;
+        const word = (addr) => this.makeWord(data[addr - startAddr], data[addr - startAddr + 1]);
         const torqueEnabled = data[0] !== 0;
-        const position    = this.makeWord(
-            data[STS_PRESENT_POSITION_L - startAddr],
-            data[STS_PRESENT_POSITION_H - startAddr]
-        );
+        // Position, speed and load are sign-magnitude: direction in bit 15 for
+        // position and speed, bit 10 for load. Load is a 0-1000 word (0.1 %);
+        // it used to be read from its low byte only, so anything over 25.5 %
+        // wrapped round to a small number, and speed in the negative direction
+        // read as 32768 plus the real value.
+        const position    = Math.max(0, decodeSignMagnitude(word(STS_PRESENT_POSITION_L), 15));
         const angleDegrees = this.stepsToAngle(position);
         const isMoving    = data[STS_MOVING - startAddr] !== 0;
-        const speed       = this.makeWord(data[STS_PRESENT_SPEED_L - startAddr], data[STS_PRESENT_SPEED_H - startAddr]);
-        const load        = data[STS_PRESENT_LOAD_L - startAddr] * 0.1;
+        const speedSigned = decodeSignMagnitude(word(STS_PRESENT_SPEED_L), 15);   // steps/s
+        const loadSigned  = decodeSignMagnitude(word(STS_PRESENT_LOAD_L), 10) * 0.1; // %
+        const speed       = Math.abs(speedSigned);
+        const load        = Math.round(Math.abs(loadSigned) * 10) / 10;
         const voltage     = data[STS_PRESENT_VOLTAGE - startAddr] * 0.1;
         const temperature = data[STS_PRESENT_TEMPERATURE - startAddr];
-        return { angleDegrees, position, isMoving, torqueEnabled, speed, load, voltage, temperature };
+        return { angleDegrees, position, isMoving, torqueEnabled, speed, speedSigned, load, loadSigned: Math.round(loadSigned * 10) / 10, voltage, temperature };
     }
 
     /**
@@ -1434,34 +1496,7 @@ class ServoController {
                 throw new Error(`Invalid quick status data received (len=${data ? data.length : 0}, expected>=${length})`);
             }
 
-            // Torque enabled at STS_TORQUE_ENABLE
-            const torqueEnabled = data[0] !== 0;
-
-            // Position bytes at STS_PRESENT_POSITION_L/H
-            const posLowIndex = STS_PRESENT_POSITION_L - startAddr;
-            const posHighIndex = STS_PRESENT_POSITION_H - startAddr;
-            const position = this.makeWord(data[posLowIndex], data[posHighIndex]);
-            const angleDegrees = this.stepsToAngle(position);
-
-            // Moving flag at STS_MOVING
-            const movingIndex = STS_MOVING - startAddr;
-            const isMoving = data[movingIndex] !== 0;
-
-            const speed       = this.makeWord(data[STS_PRESENT_SPEED_L - startAddr], data[STS_PRESENT_SPEED_H - startAddr]);
-            const load        = data[STS_PRESENT_LOAD_L - startAddr] * 0.1;
-            const voltage     = data[STS_PRESENT_VOLTAGE - startAddr] * 0.1;
-            const temperature = data[STS_PRESENT_TEMPERATURE - startAddr];
-
-            return {
-                angleDegrees,
-                position,
-                isMoving,
-                torqueEnabled,
-                speed,
-                load,
-                voltage,
-                temperature
-            };
+            return this.quickStatusFromBuffer(data);
         } catch (error) {
             if (DEBUG) console.error(`Servo ${this.servoId}: Failed to read quick status:`, error.message);
             throw error;
