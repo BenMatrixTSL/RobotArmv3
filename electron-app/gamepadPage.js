@@ -5,7 +5,7 @@
  * read with the browser Gamepad API) or from the on-screen controller:
  *
  *   Left stick   X (right = X+) and Y (up = Y+)
- *   Right stick  Z (up = Z+)
+ *   Right stick  up/down = Z (up = Z+), left/right = tool rotation (joint 6)
  *   L1           gripper fully open  + pneumatics (pump and valve) off
  *   R1           gripper fully closed + pneumatics on
  *   L2 / R2      open / close the gripper smoothly - the harder the press, the faster
@@ -50,6 +50,9 @@
     const ALIGN_MIN_DEG = 1.5;          // smaller misalignment than this is ignored
     const MIN_SEND_DELTA_DEG = 0.02;
     const RESYNC_AFTER_IDLE_MS = 250;   // re-read the real arm pose when movement restarts after this
+    const J6_MAX_DEG_S = 90;            // tool rotation at full right-stick left/right
+    const J6_ACCEL_DEG_S2 = 360;
+    const J6_DECEL_DEG_S2 = 900;
     const GRIP_RATE_DEG_S = 150;        // L2/R2 full press
     const GRIP_SEND_PERIOD_MS = 50;
     const GRIP_OPEN = (typeof GRIPPER_OPEN_ANGLE === 'number') ? GRIPPER_OPEN_ANGLE : 180;
@@ -85,6 +88,8 @@
     // retried until the stick on that axis is released or reversed, so a
     // failing (slow) IK solve is not repeated every tick against a wall.
     let blocked = { x: 0, y: 0, z: 0 };
+    let j6Vel = 0;                      // tool rotation rate (deg/s), smoothed
+    let j6Blocked = 0;                  // direction (+1/-1) J6 last hit its limit in
     let alignUntil = 0;
 
     let streaming = false;              // goals with projection have been sent; a settle goal is owed
@@ -141,9 +146,9 @@
         return shapeStick2(v, 0).x;
     }
 
-    function approach(current, target, dt) {
-        // Speeding up (same sign, bigger) uses ACCEL; slowing or reversing uses DECEL.
-        const rate = (Math.abs(target) > Math.abs(current) && Math.sign(target) === Math.sign(current || target)) ? ACCEL_MM_S2 : DECEL_MM_S2;
+    function approach(current, target, dt, accel = ACCEL_MM_S2, decel = DECEL_MM_S2) {
+        // Speeding up (same sign, bigger) uses accel; slowing or reversing uses decel.
+        const rate = (Math.abs(target) > Math.abs(current) && Math.sign(target) === Math.sign(current || target)) ? accel : decel;
         const step = rate * dt;
         if (Math.abs(target - current) <= step) return target;
         return current + Math.sign(target - current) * step;
@@ -502,6 +507,30 @@
         robotArmClient.moveJointsBatch(moves);
     }
 
+    /**
+     * With Tool Down / Up locked, IK holds the tool at the orientation's spin
+     * rotation, so J6 would swing back as soon as XYZ moves. After the stick
+     * turns J6, set the locked spin to match where J6 now is.
+     */
+    function syncSpinToJ6(a) {
+        const orient = (typeof currentToolOrientation !== 'undefined') ? currentToolOrientation : null;
+        if (!orient || typeof orient.rotation !== 'number' || !a || typeof robotKinematics.applyToolSpin !== 'function') return;
+        try {
+            const j6For = (rot) => robotKinematics.applyToolSpin(a, { ...orient, rotation: rot }).angles[5];
+            const delta = j6For(orient.rotation) - a[5];      // how far IK would turn J6 back
+            if (Math.abs(delta) < 0.5) return;
+            // J6 and spin may turn in opposite senses: keep whichever candidate leaves J6 where it is
+            const cands = [orient.rotation - delta, orient.rotation + delta];
+            let best = cands[0];
+            if (Math.abs(j6For(cands[1]) - a[5]) < Math.abs(j6For(cands[0]) - a[5])) best = cands[1];
+            best = ((best + 540) % 360) - 180;                // -180..180
+            best = Math.round(best * 10) / 10;
+            currentToolOrientation = { ...orient, rotation: best };
+            const input = $('pendantOrientationRotation');
+            if (input) input.value = best;
+        } catch (e) { /* leave the orientation as it was */ }
+    }
+
     function motionTick(input, now) {
         const dt = clamp((now - lastMotionAt) / 1000, 0.005, 0.1);
         lastMotionAt = now;
@@ -522,10 +551,18 @@
             else blocked[axis] = 0;
         });
 
-        const wantsMotion = want.x || want.y || want.z;
-        const isMoving = velocity.x || velocity.y || velocity.z;
+        // Right stick left/right turns the tool (J6): right = J6+
+        let wantJ6 = canMove ? shapeAxis(input.rx) * J6_MAX_DEG_S : 0;
+        if (j6Blocked) {
+            if (Math.sign(wantJ6) === j6Blocked) wantJ6 = 0;
+            else j6Blocked = 0;
+        }
+
+        const wantsMotion = want.x || want.y || want.z || wantJ6;
+        const isMoving = velocity.x || velocity.y || velocity.z || j6Vel;
 
         if (!canMove) {
+            j6Vel = 0;
             velocity = { x: 0, y: 0, z: 0 };
             streaming = false;
             pose = null;
@@ -549,10 +586,14 @@
         velocity.x = approach(velocity.x, want.x, dt);
         velocity.y = approach(velocity.y, want.y, dt);
         velocity.z = approach(velocity.z, want.z, dt);
+        const j6WasMoving = !!j6Vel;
+        j6Vel = approach(j6Vel, wantJ6, dt, J6_ACCEL_DEG_S2, J6_DECEL_DEG_S2);
+        if (j6WasMoving && !j6Vel) syncSpinToJ6(angles);
 
-        if (!velocity.x && !velocity.y && !velocity.z) {
+        const tipMoving = velocity.x || velocity.y || velocity.z;
+        if (!tipMoving && !j6Vel) {
             if (streaming) settleJoints();
-            if (!wantsMotion && !blocked.x && !blocked.y && !blocked.z) limitNote = '';
+            if (!wantsMotion && !blocked.x && !blocked.y && !blocked.z && !j6Blocked) limitNote = '';
             return;
         }
         lastMovingAt = now;
@@ -561,8 +602,30 @@
         // stepPose may advance `angles` while trying single axes (to seed the
         // next solve); restore it so sendJoints sizes speeds from the last goal sent.
         const before = angles.slice();
-        const target = stepPose({ x: velocity.x * dt, y: velocity.y * dt, z: velocity.z * dt });
+        let target = tipMoving ? stepPose({ x: velocity.x * dt, y: velocity.y * dt, z: velocity.z * dt }) : null;
         angles = before;
+
+        if (j6Vel) {
+            // J6 spins the tool about its own axis, so it is driven directly rather
+            // than through IK. It barely moves the tip (only the vacuum tool's tip is
+            // slightly off-axis), so the commanded pose is refreshed from the result.
+            if (!target) target = angles.slice();
+            const lim = jointLimits(5);
+            let j6 = angles[5] + j6Vel * dt;
+            if (j6 <= lim.lo || j6 >= lim.hi) {
+                j6 = clamp(j6, lim.lo, lim.hi);
+                j6Blocked = Math.sign(j6Vel);
+                j6Vel = 0;
+                limitNote = 'Tool rotation limit';
+            }
+            target[5] = j6;
+            if (!j6Vel) syncSpinToJ6(target);
+            try {
+                const p = robotKinematics.forwardKinematics(target).position;
+                pose = { x: p.x, y: p.y, z: p.z };
+            } catch (e) { /* keep pose */ }
+        }
+
         if (target) sendJoints(target, dt);
         else if (streaming) settleJoints();   // every direction blocked: stop exactly where we are
     }
@@ -640,8 +703,8 @@
             if (side === 'left') {
                 screenInput.lx = dx; screenInput.ly = dy;
             } else {
-                // Right stick only drives Z: keep it vertical like a slider
-                screenInput.rx = 0; screenInput.ry = dy;
+                // Right stick: up/down = Z, left/right = tool rotation (J6)
+                screenInput.rx = dx; screenInput.ry = dy;
             }
         };
         el.addEventListener('pointerdown', (e) => {
@@ -775,6 +838,8 @@
         streaming = false;
         velocity = { x: 0, y: 0, z: 0 };
         blocked = { x: 0, y: 0, z: 0 };
+        j6Vel = 0;
+        j6Blocked = 0;
         alignUntil = 0;
         pose = null;
         angles = null;
