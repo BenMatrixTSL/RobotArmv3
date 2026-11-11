@@ -18,6 +18,15 @@ Typical use:
     python st3215_test.py --no-motion        # comms/electrical only, no movement
     python st3215_test.py --manual           # adds hand-turn encoder sweep test
 
+Soak test (motor + mechanics endurance), one motor on the bus:
+    python st3215_test.py --soak                       # +/-90 deg, 60 min
+    python st3215_test.py --soak --soak-minutes 0      # until Ctrl+C
+    python st3215_test.py --soak --id 3 --soak-speeds 1000 2500 --soak-accs 20 100
+  Swings +/- --soak-angle about wherever the motor is when started, cycling
+  through every speed x acceleration combination. Pauses to cool at
+  --soak-max-temp; aborts on servo error flags, torque dropping out, or
+  repeated missed moves. Every move goes to reports/soak_id<N>_<time>.csv.
+
 The motor MUST be free to move (no linkage, nothing to crash into) unless
 --no-motion is given.
 """
@@ -1279,6 +1288,433 @@ class Tester:
 
 
 # --------------------------------------------------------------------------
+# Soak test: swing back and forth about the motor's resting position for hours
+# --------------------------------------------------------------------------
+class SoakAbort(Exception):
+    """A fault that ends the soak early (the motor is still parked safely)."""
+
+
+# flags that end a soak; the voltage flag is only counted, because a brief
+# supply dip is something the soak is meant to measure, not stop for
+SOAK_FATAL_FLAGS = 0x02 | 0x04 | 0x08 | 0x10 | 0x20
+
+SOAK_CSV_FIELDS = [
+    "time", "elapsed_s", "cycle", "profile", "speed", "acc", "direction",
+    "target", "start", "final", "error", "settled", "settle_s",
+    "peak_current_ma", "mean_current_ma", "peak_load_pct", "temp_c",
+    "voltage_min", "voltage_max", "flags", "comm_failures",
+]
+
+
+class SoakTester(Tester):
+    """Swings the output +/- --soak-angle about wherever it sat when the test
+    started, cycling through every speed x acceleration combination, until the
+    time or cycle budget runs out, a fault is seen, or Ctrl+C.
+
+    Every move is logged to CSV, and the summary compares the start of the
+    run with the end of it per profile: a gearbox wearing in or wearing out
+    shows up as a drift in settle time, current or positioning error well
+    before it actually fails."""
+
+    def __init__(self, bus, sid, args):
+        super().__init__(bus, sid, args)
+        self.profiles = [(s, a) for s in args.soak_speeds for a in args.soak_accs]
+        self.span = int(round(args.soak_angle / DEG_PER_COUNT))
+        self.origin = None
+        self.last_pos = None
+        self.torque_on = False
+        self.slow = (min(args.soak_speeds), 20)
+        self.stats = {p: [] for p in self.profiles}   # (settle_s, peak_i, mean_i, err)
+        self.moves = 0
+        self.cycles = 0
+        self.misses = 0
+        self.consecutive_misses = 0
+        self.voltage_flag_moves = 0
+        self.min_voltage = None
+        self.max_temp = None
+        self.start_temp = None
+        self.start_voltage = None
+        self.cooldowns = 0
+        self.cool_seconds = 0.0
+        self.stop_reason = None
+        self.faulted = False
+        self.t_start = None
+        self.last_status = 0.0
+        self.last_row = None
+        self.lat_n = 0
+        self.lat_sum = 0.0
+        self.lat_max = 0.0
+        self.csv_file = None
+        self.csv = None
+        self.csv_path = None
+
+    # -- helpers -----------------------------------------------------------
+    def _bad(self):
+        c = self.bus.c
+        return c.timeout + c.corrupt + c.rx_fail + c.tx_fail + c.other
+
+    def _fold_latency(self):
+        # the counters keep every latency sample; over a multi-hour soak that
+        # list would grow by hundreds of MB, so fold it into running totals
+        lat = self.bus.c.latency_ms
+        if lat:
+            self.lat_n += len(lat)
+            self.lat_sum += sum(lat)
+            self.lat_max = max(self.lat_max, max(lat))
+            lat.clear()
+
+    def _elapsed(self):
+        return time.perf_counter() - self.t_start if self.t_start else 0.0
+
+    @staticmethod
+    def _hms(seconds):
+        s = int(seconds)
+        return f"{s // 3600:02d}:{s % 3600 // 60:02d}:{s % 60:02d}"
+
+    def _move_timeout(self, dist, speed, acc):
+        ramp = speed / (acc * ACC_UNIT) if acc else 0.0
+        return dist / max(speed, 1) + ramp + self.args.soak_move_margin
+
+    def park_at_origin(self):
+        speed, acc = self.slow
+        dist = abs((self.last_pos if self.last_pos is not None else self.origin)
+                   - self.origin) or self.span
+        self.goto(self.origin, speed=speed, acc=acc)
+        self.wait_settled(self.origin, tol=self.args.soak_tol,
+                          timeout=self._move_timeout(dist, speed, acc))
+        self.last_pos = self.bus.position(self.sid)
+
+    # -- phases ------------------------------------------------------------
+    def prepare(self):
+        mode = self.bus.read1(self.sid, ADDR_OPERATING_MODE)
+        if mode != 0:
+            raise SoakAbort(f"operating mode is {mode}, not 0 (position); the soak "
+                            "test will not rewrite EEPROM - fix register 33 first")
+        lo_lim = self.bus.read2(self.sid, 9)
+        hi_lim = self.bus.read2(self.sid, 11)
+        if lo_lim is None or hi_lim is None:
+            raise SoakAbort("could not read the angle limits")
+        lo, hi = (lo_lim, hi_lim) if hi_lim > lo_lim else (0, COUNTS_PER_REV - 1)
+
+        reads = [p for p in (self.bus.position(self.sid) for _ in range(5))
+                 if p is not None]
+        if len(reads) < 3:
+            raise SoakAbort("could not read the starting position")
+        self.origin = int(statistics.median(reads))
+        self.last_pos = self.origin
+        if self.origin - self.span < lo or self.origin + self.span > hi:
+            raise SoakAbort(
+                f"start position {self.origin} is too close to the end of travel: "
+                f"+/-{self.args.soak_angle:g} deg needs {self.origin - self.span}.."
+                f"{self.origin + self.span} counts but the servo allows {lo}..{hi}. "
+                f"Turn the horn nearer {(lo + hi) // 2} (torque off) or reduce "
+                "--soak-angle")
+
+        t = self.bus.telemetry(self.sid)
+        if t is None:
+            raise SoakAbort("no telemetry from the servo")
+        self.start_temp = self.max_temp = t["temperature"]
+        self.start_voltage = self.min_voltage = t["voltage"]
+        if decode_status(t["status"] & SOAK_FATAL_FLAGS):
+            raise SoakAbort("servo already reports errors: "
+                            + ", ".join(decode_status(t["status"])))
+
+        print(f"  origin {self.origin} counts "
+              f"({(self.origin - 2048) * DEG_PER_COUNT:+.1f} deg from centre), "
+              f"swing {self.origin - self.span}..{self.origin + self.span} "
+              f"(+/-{self.args.soak_angle:g} deg)")
+        print(f"  start: {self.start_temp} degC, {self.start_voltage:.1f} V")
+        print(f"  {len(self.profiles)} profiles x {self.args.soak_cycles_per_profile} "
+              "cycles each, repeating:")
+        for i, (s, a) in enumerate(self.profiles, 1):
+            print(f"    {i}: speed {s} counts/s, acc {a}"
+                  + (" (max)" if a == 0 else f" ({a * ACC_UNIT} counts/s^2)"))
+
+        # hold where it is: a stale goal position would make it jump on enable
+        self.bus.write2(self.sid, ADDR_GOAL_POSITION, self.origin)
+        self.bus.write1(self.sid, ADDR_ACC, self.slow[1])
+        self.bus.write2(self.sid, ADDR_GOAL_SPEED, self.slow[0])
+        if not self.torque(True):
+            raise SoakAbort("could not enable torque")
+        self.torque_on = True
+        time.sleep(0.3)
+
+    def schedule(self):
+        while True:
+            for i, p in enumerate(self.profiles, 1):
+                for _ in range(self.args.soak_cycles_per_profile):
+                    yield i, p
+
+    def loop(self):
+        a = self.args
+        deadline = self.t_start + a.soak_minutes * 60 if a.soak_minutes > 0 else None
+        for prof_idx, (speed, acc) in self.schedule():
+            if deadline is not None and time.perf_counter() >= deadline:
+                self.stop_reason = f"time limit reached ({a.soak_minutes:g} min)"
+                return
+            if a.soak_cycles and self.cycles >= a.soak_cycles:
+                self.stop_reason = f"cycle limit reached ({a.soak_cycles})"
+                return
+            for direction, target in (("+", self.origin + self.span),
+                                      ("-", self.origin - self.span)):
+                self.do_move(target, speed, acc, prof_idx, direction)
+            self.cycles += 1
+            self.maybe_status(prof_idx, speed, acc)
+
+    def do_move(self, target, speed, acc, prof_idx, direction):
+        a = self.args
+        bad0 = self._bad()
+        start = self.last_pos
+        dist = abs(target - start) if start is not None else 2 * self.span
+        wrote = self.goto(target, speed=speed, acc=acc)
+        settled, t_settle, samples = self.wait_settled(
+            target, tol=a.soak_tol, timeout=self._move_timeout(dist, speed, acc))
+        self.moves += 1
+
+        flags = 0
+        torque_lost = False
+        for s in samples:
+            flags |= s["status"]
+            if not s["torque_enable"]:
+                torque_lost = True
+        if samples:
+            final = int(statistics.median([s["position"] for s in samples[-5:]]))
+            cur = [abs(s["current_ma"]) for s in samples]
+            volts = [s["voltage"] for s in samples]
+            temp = samples[-1]["temperature"]
+            peak_i, mean_i = max(cur), statistics.mean(cur)
+            peak_load = max(abs(s["load_pct"]) for s in samples)
+            self.last_pos = final
+            self.min_voltage = min(self.min_voltage, min(volts))
+            self.max_temp = max(self.max_temp, temp)
+        else:
+            final = None
+            peak_i = mean_i = peak_load = temp = None
+            volts = []
+        err = None if final is None else final - target
+        ok = bool(wrote and settled)
+        comm_fail = self._bad() - bad0
+
+        if ok:
+            self.consecutive_misses = 0
+        else:
+            self.misses += 1
+            self.consecutive_misses += 1
+        if flags & 0x01:
+            self.voltage_flag_moves += 1
+        self.stats[(speed, acc)].append(
+            (t_settle if ok else None, peak_i, mean_i, err))
+
+        row = {
+            "time": datetime.now().isoformat(timespec="seconds"),
+            "elapsed_s": round(self._elapsed(), 2),
+            "cycle": self.cycles + 1,
+            "profile": prof_idx, "speed": speed, "acc": acc,
+            "direction": direction, "target": target, "start": start,
+            "final": final, "error": err, "settled": int(ok),
+            "settle_s": round(t_settle, 3) if (ok and t_settle) else "",
+            "peak_current_ma": round(peak_i) if peak_i is not None else "",
+            "mean_current_ma": round(mean_i) if mean_i is not None else "",
+            "peak_load_pct": peak_load if peak_load is not None else "",
+            "temp_c": temp if temp is not None else "",
+            "voltage_min": min(volts) if volts else "",
+            "voltage_max": max(volts) if volts else "",
+            "flags": "|".join(decode_status(flags)),
+            "comm_failures": comm_fail,
+        }
+        self.csv.writerow(row)
+        self.last_row = row
+
+        if not ok:
+            why = ("goal write failed" if not wrote else
+                   "no telemetry" if not samples else
+                   f"did not settle (ended at {final}, error {err:+d})")
+            print(f"\n  ! cycle {self.cycles + 1} move {direction}: {why}")
+        if torque_lost:
+            raise SoakAbort("torque dropped out during a move - the servo reset "
+                            "(supply brownout?) or tripped its own protection")
+        if flags & SOAK_FATAL_FLAGS:
+            raise SoakAbort("servo error flags: "
+                            + ", ".join(decode_status(flags & SOAK_FATAL_FLAGS)))
+        if self.consecutive_misses >= a.soak_max_misses:
+            raise SoakAbort(f"{self.consecutive_misses} moves in a row failed - "
+                            "jammed, stalled, slipping or lost comms")
+        if temp is not None and temp >= a.soak_max_temp:
+            self.cool_down(temp)
+
+    def cool_down(self, temp):
+        a = self.args
+        goal = a.soak_max_temp - a.soak_cool_drop
+        print(f"\n  !! {temp} degC reached (limit {a.soak_max_temp}) - holding at "
+              f"origin until it cools to {goal} degC")
+        self.csv_file.flush()
+        t0 = time.perf_counter()
+        self.park_at_origin()
+        while True:
+            t = self.bus.temperature(self.sid)
+            waited = time.perf_counter() - t0
+            if t is not None and t <= goal:
+                break
+            if waited > a.soak_cool_minutes * 60:
+                raise SoakAbort(f"still {t} degC after {a.soak_cool_minutes:g} min "
+                                "of cooling")
+            print(f"\r     {t} degC, waited {self._hms(waited)}   ", end="", flush=True)
+            time.sleep(2.0)
+        self.cooldowns += 1
+        self.cool_seconds += time.perf_counter() - t0
+        print(f"\n     cooled to {t} degC in {self._hms(time.perf_counter() - t0)}, "
+              "resuming")
+
+    def maybe_status(self, prof_idx, speed, acc, force=False):
+        now = time.perf_counter()
+        if not force and now - self.last_status < self.args.soak_report_seconds:
+            return
+        self.last_status = now
+        self._fold_latency()
+        self.csv_file.flush()
+        r = self.last_row or {}
+        c = self.bus.c
+        rate = self._bad() / c.attempts * 100 if c.attempts else 0.0
+        print(f"[{self._hms(self._elapsed())}] cycle {self.cycles:<6} "
+              f"prof {prof_idx}/{len(self.profiles)} (spd {speed}, acc {acc}) | "
+              f"move {r.get('settle_s') or '-'} s err {r.get('error')} | "
+              f"I {r.get('mean_current_ma')}/{r.get('peak_current_ma')} mA | "
+              f"{r.get('temp_c')} degC {r.get('voltage_min')} V | "
+              f"misses {self.misses}, comms {rate:.2f}%", flush=True)
+
+    def finish(self):
+        self.bus.port.clearPort()
+        if self.torque_on and self.origin is not None:
+            print("\n  returning to origin ...")
+            self.park_at_origin()
+        self.restore_state()
+
+    def soak(self):
+        print(f"\n{'=' * 72}\nSoak test - servo ID {self.sid}\n{'=' * 72}")
+        os.makedirs(self.args.outdir, exist_ok=True)
+        stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        self.csv_path = os.path.join(self.args.outdir,
+                                     f"soak_id{self.sid}_{stamp}.csv")
+        self.csv_file = open(self.csv_path, "w", newline="", encoding="utf-8")
+        self.csv = csv.DictWriter(self.csv_file, fieldnames=SOAK_CSV_FIELDS)
+        self.csv.writeheader()
+        self.save_state()
+        try:
+            self.prepare()
+            print(f"\n  running - Ctrl+C to stop. Move log: {self.csv_path}\n")
+            self.t_start = time.perf_counter()
+            self.loop()
+        except KeyboardInterrupt:
+            self.stop_reason = "stopped by operator (Ctrl+C)"
+        except SoakAbort as exc:
+            self.stop_reason = f"ABORTED: {exc}"
+            self.faulted = True
+        finally:
+            try:
+                self.finish()
+            finally:
+                self._fold_latency()
+                self.csv_file.close()
+        return self.soak_report(stamp)
+
+    def soak_report(self, stamp):
+        def trend(vals):
+            vals = [v for v in vals if v is not None]
+            if not vals:
+                return None, None
+            k = max(1, len(vals) // 10)
+            return statistics.median(vals[:k]), statistics.median(vals[-k:])
+
+        profiles = []
+        for (speed, acc), rows in self.stats.items():
+            if not rows:
+                continue
+            settle = [r[0] for r in rows]
+            peak = [r[1] for r in rows]
+            errs = [abs(r[3]) for r in rows if r[3] is not None]
+            s0, s1 = trend(settle)
+            p0, p1 = trend(peak)
+            e0, e1 = trend(errs)
+            profiles.append({
+                "speed": speed, "acc": acc, "moves": len(rows),
+                "misses": sum(1 for s in settle if s is None),
+                "settle_s_first_last": [s0 and round(s0, 3), s1 and round(s1, 3)],
+                "peak_current_ma_first_last": [p0 and round(p0), p1 and round(p1)],
+                "abs_error_first_last": [e0, e1],
+                "abs_error_max": max(errs) if errs else None,
+            })
+        c = self.bus.c
+        bad = self._bad()
+        end_temp = self.bus.temperature(self.sid)
+        return {
+            "servo_id": self.sid,
+            "port": self.args.port,
+            "timestamp": stamp,
+            "result": "FAULT" if self.faulted else "OK",
+            "stop_reason": self.stop_reason,
+            "duration": self._hms(self._elapsed()),
+            "origin": self.origin,
+            "swing_deg": self.args.soak_angle,
+            "cycles": self.cycles,
+            "moves": self.moves,
+            "missed_moves": self.misses,
+            "voltage_flag_moves": self.voltage_flag_moves,
+            "temperature": {"start": self.start_temp, "max": self.max_temp,
+                            "end": end_temp},
+            "voltage": {"start": self.start_voltage, "min": self.min_voltage},
+            "cooldowns": self.cooldowns,
+            "cooldown_time": self._hms(self.cool_seconds),
+            "comms": {
+                "transactions": c.attempts, "failed": bad,
+                "failure_rate_pct": round(bad / c.attempts * 100, 3) if c.attempts else 0,
+                "failed_ops": c.failed_ops, "retried_ops": c.retried_ops,
+                "latency_ms_avg": round(self.lat_sum / self.lat_n, 3) if self.lat_n else None,
+                "latency_ms_max": round(self.lat_max, 3) if self.lat_n else None,
+            },
+            "latched_error_flags": decode_status(self.bus.last_error_byte),
+            "profiles": profiles,
+            "move_log": self.csv_path,
+        }
+
+
+def print_soak_report(r):
+    print(f"\n{'=' * 72}")
+    print(f"SOAK SUMMARY - servo ID {r['servo_id']}: {r['result']}")
+    print(f"{'=' * 72}")
+    print(f"  {r['stop_reason']}")
+    print(f"  ran {r['duration']}: {r['cycles']} cycles, {r['moves']} moves of "
+          f"+/-{r['swing_deg']:g} deg about {r['origin']}")
+    print(f"  missed moves {r['missed_moves']}, moves with the voltage flag "
+          f"{r['voltage_flag_moves']}")
+    t, v = r["temperature"], r["voltage"]
+    print(f"  temperature start/max/end {t['start']} / {t['max']} / {t['end']} degC, "
+          f"voltage start {v['start']} V, lowest {v['min']} V")
+    if r["cooldowns"]:
+        print(f"  cool-down pauses: {r['cooldowns']} ({r['cooldown_time']})")
+    cm = r["comms"]
+    print(f"  comms: {cm['transactions']} transactions, {cm['failed']} failed "
+          f"({cm['failure_rate_pct']}%), {cm['failed_ops']} ops failed outright")
+    if r["latched_error_flags"]:
+        print(f"  latched servo error flags: {', '.join(r['latched_error_flags'])}")
+    if r["profiles"]:
+        print("\n  per profile, first 10% of moves -> last 10% (median):")
+        print(f"  {'speed':>6} {'acc':>4} {'moves':>6} {'miss':>5}  "
+              f"{'settle s':>15}  {'peak mA':>13}  {'|err| counts':>13}  {'max err':>7}")
+        for p in r["profiles"]:
+            def fmt(pair, nd=0):
+                a, b = pair
+                if a is None:
+                    return "-"
+                return f"{a:.{nd}f} -> {b:.{nd}f}"
+            print(f"  {p['speed']:>6} {p['acc']:>4} {p['moves']:>6} {p['misses']:>5}  "
+                  f"{fmt(p['settle_s_first_last'], 2):>15}  "
+                  f"{fmt(p['peak_current_ma_first_last']):>13}  "
+                  f"{fmt(p['abs_error_first_last']):>13}  "
+                  f"{p['abs_error_max'] if p['abs_error_max'] is not None else '-':>7}")
+    print()
+
+
+# --------------------------------------------------------------------------
 def scan(bus, first, last):
     print(f"Scanning IDs {first}..{last} on {bus.port.getPortName()} "
           f"at {bus.port.getBaudRate()} baud")
@@ -1367,7 +1803,7 @@ def write_reports(report, outdir):
 
 def main():
     p = argparse.ArgumentParser(description="Scan and health-test ST3215 servos")
-    p.add_argument("--port", default="COM16")
+    p.add_argument("--port", default="COM6")
     p.add_argument("--baud", type=int, default=1000000)
     p.add_argument("--id", type=int, default=None,
                    help="test this ID only, skipping the bus scan")
@@ -1415,7 +1851,42 @@ def main():
     p.add_argument("--verbose", action="store_true",
                    help="print every failed transaction")
     p.add_argument("--yes", action="store_true", help="skip the safety prompt")
+    s = p.add_argument_group("soak test (--soak)")
+    s.add_argument("--soak", action="store_true",
+                   help="soak test one motor: swing +/- --soak-angle about its "
+                        "current position for a long time, instead of the health test")
+    s.add_argument("--soak-angle", type=float, default=90.0,
+                   help="degrees either side of the starting position")
+    s.add_argument("--soak-minutes", type=float, default=60.0,
+                   help="run time; 0 = until Ctrl+C or --soak-cycles")
+    s.add_argument("--soak-cycles", type=int, default=0,
+                   help="stop after this many +/- cycles (0 = no limit)")
+    s.add_argument("--soak-speeds", type=int, nargs="+", default=[600, 1500, 3000],
+                   help="goal speeds in counts/s (4096 = one turn)")
+    s.add_argument("--soak-accs", type=int, nargs="+", default=[10, 50, 150],
+                   help="acceleration register values (x100 counts/s^2, 0 = max); "
+                        "every speed is run with every acceleration")
+    s.add_argument("--soak-cycles-per-profile", type=int, default=5,
+                   help="cycles at each speed/acc combination before moving on")
+    s.add_argument("--soak-tol", type=int, default=10,
+                   help="counts from target that count as arrived")
+    s.add_argument("--soak-move-margin", type=float, default=2.0,
+                   help="seconds allowed beyond the ideal move time before a "
+                        "move is called missed")
+    s.add_argument("--soak-max-misses", type=int, default=3,
+                   help="abort after this many missed moves in a row")
+    s.add_argument("--soak-max-temp", type=int, default=65,
+                   help="degC at which it pauses at the origin to cool")
+    s.add_argument("--soak-cool-drop", type=int, default=10,
+                   help="degC it must cool by before resuming")
+    s.add_argument("--soak-cool-minutes", type=float, default=15.0,
+                   help="abort if it has not cooled within this time")
+    s.add_argument("--soak-report-seconds", type=float, default=30.0,
+                   help="interval between status lines")
     args = p.parse_args()
+    if args.soak and (min(args.soak_speeds) <= 0 or min(args.soak_accs) < 0
+                      or args.soak_angle <= 0):
+        p.error("--soak-speeds must be > 0, --soak-accs >= 0, --soak-angle > 0")
 
     bus = Bus(args.port, args.baud, retries=args.retries, verbose=args.verbose)
     try:
@@ -1438,6 +1909,29 @@ def main():
 
         if args.scan_only:
             return 0
+
+        if args.soak:
+            if len(targets) != 1:
+                print("The soak test runs on one motor; found "
+                      f"{len(targets)}. Pick one with --id.")
+                return 2
+            sid = targets[0][0]
+            if not args.yes:
+                ans = input(f"\nServo {sid} will swing +/-{args.soak_angle:g} deg "
+                            "about its current position, repeatedly, at up to "
+                            f"{max(args.soak_speeds)} counts/s. Is it clear to move? "
+                            "[y/N] ").strip().lower()
+                if ans != "y":
+                    print("Aborted.")
+                    return 1
+            report = SoakTester(bus, sid, args).soak()
+            print_soak_report(report)
+            path = os.path.join(args.outdir,
+                                f"soak_id{sid}_{report['timestamp']}.json")
+            with open(path, "w", encoding="utf-8") as f:
+                json.dump(report, f, indent=2)
+            print(f"  report: {path}\n  move log: {report['move_log']}\n")
+            return 3 if report["result"] == "FAULT" else 0
 
         if not args.no_motion and not args.yes:
             extra = ("" if args.no_wheel else
