@@ -1254,24 +1254,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }, 1500);
 
-        // Touch scrolling: add .touch-scrolling while finger is on screen so
-        // dragging scrolls rather than selects text. Mouse events leave
-        // pointerType === 'mouse' so they never trigger this.
-        document.addEventListener('pointerdown', function(e) {
-            if (e.pointerType === 'touch') {
-                document.body.classList.add('touch-scrolling');
-            }
-        });
-        document.addEventListener('pointerup', function(e) {
-            if (e.pointerType === 'touch') {
-                document.body.classList.remove('touch-scrolling');
-            }
-        });
-        document.addEventListener('pointercancel', function(e) {
-            if (e.pointerType === 'touch') {
-                document.body.classList.remove('touch-scrolling');
-            }
-        });
+        // Drag-to-scroll on the touchscreen: see kioskTouchScroll.js
     } else if (window.location.protocol === 'http:' || window.location.protocol === 'https:') {
         // Accessed remotely over the network (not the Electron desktop app,
         // which loads index.html via file://, and not the kiosk build above).

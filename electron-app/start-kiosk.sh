@@ -36,7 +36,7 @@ mkdir -p "$PROFILE_BASE"
 exec >>"$LOG_FILE" 2>&1
 echo ""
 echo "========== Kiosk start $(date) =========="
-echo "Kiosk: script version 2026-10-30a"
+echo "Kiosk: script version 2026-11-12a"
 
 # Only one kiosk script at a time (desktop autostart + labwc may both try to start it)
 KIOSK_LOCK_FILE="${PROFILE_BASE}/kiosk.lock"
@@ -105,6 +105,9 @@ build_chromium_flags() {
         --no-first-run
         --no-default-browser-check
         --touch-events=enabled
+        # No pinch-zoom, and a sideways swipe never navigates "back" off the app
+        --disable-pinch
+        --overscroll-history-navigation=0
         --password-store=basic
         --disable-sync
         --disable-translate

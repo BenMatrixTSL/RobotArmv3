@@ -3409,22 +3409,32 @@ body.kiosk-mode .main-layout.sidebar-collapsed {
 }
 
 
-/* Touch scrolling: disable text selection while the finger is moving so
-   dragging scrolls the page instead of highlighting text.
-   The .touch-scrolling class is added/removed by JS pointer events so a
-   plugged-in mouse still gets normal selection behaviour. */
-body.kiosk-mode.touch-scrolling,
-body.kiosk-mode.touch-scrolling * {
+/* Touchscreen: no text selection, so a finger drag scrolls (kioskTouchScroll.js)
+   instead of highlighting text. Text fields still select normally. */
+body.kiosk-mode,
+body.kiosk-mode * {
     user-select: none;
     -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
 }
 
-/* Allow text entry inside inputs/textareas even during touch */
-body.kiosk-mode.touch-scrolling input,
-body.kiosk-mode.touch-scrolling textarea,
-body.kiosk-mode.touch-scrolling [contenteditable] {
+body.kiosk-mode input,
+body.kiosk-mode textarea,
+body.kiosk-mode [contenteditable],
+body.kiosk-mode [contenteditable] * {
     user-select: text;
     -webkit-user-select: text;
+}
+
+/* Images and links are not picked up when a drag starts on them */
+body.kiosk-mode img,
+body.kiosk-mode a {
+    -webkit-user-drag: none;
+}
+
+/* While a drag is scrolling, hover/active styles don't flash on the items under the finger */
+body.kiosk-mode.kiosk-drag-scrolling * {
+    pointer-events: none;
 }
 
 /* Hint to the browser that vertical panning is the primary touch gesture
