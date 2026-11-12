@@ -2159,7 +2159,7 @@ header h1 {
 }
 
 /* Small Display Optimization (800x480 and similar) */
-@media (max-width: 800px), (max-height: 600px) {
+@media (max-width: 800px), (max-height: 500px) {
     body {
         font-size: 12px;
     }
@@ -4422,7 +4422,7 @@ body.touch-mode .joint-card-compact .joint-details-toggle:active {
     background-color: white;
 }
 
-@media (max-width: 800px), (max-height: 600px) {
+@media (max-width: 800px), (max-height: 500px) {
     #rapidContent {
         height: 150px;
         font-size: 12px;
@@ -5524,4 +5524,135 @@ body.touch-mode .visibility-row input[type="checkbox"] {
     .gp-side {
         flex-basis: 100%;
     }
+}
+
+/* ================================================================
+   Touchscreen kiosk sizing (7" 1024x600, ~170 px per inch)
+   At this density 1 CSS px is ~0.15 mm, so 13 px text is ~2 mm tall.
+   Floors: body text 15 px, labels/secondary text 13-14 px, nothing under
+   12 px (dense kinematics matrices only), touch targets at least ~40 px.
+   Kept at the end of the file so it wins over the earlier layout rules.
+   ================================================================ */
+body.kiosk-mode {
+    font-size: 15px;
+}
+
+/* Header connection/control status */
+body.kiosk-mode #statusText,
+body.kiosk-mode #controlText {
+    font-size: 15px;
+}
+
+/* Sidebar: tapping leaves the "mouse" over the last tab, so a hover
+   highlight stuck there and looked like a second selected tab */
+body.kiosk-mode .tab-button:hover:not(.active) {
+    background-color: transparent;
+    color: inherit;
+}
+
+body.kiosk-mode .tab-button .tab-label {
+    overflow-wrap: anywhere;
+}
+
+/* Section titles on the pendant / gamepad cards (uppercase, letter-spaced) */
+body.kiosk-mode .pendant2-card-title,
+body.kiosk-mode .pendant2-jog-label {
+    font-size: 13px;
+}
+
+body.kiosk-mode .pendant2-dpad-center,
+body.kiosk-mode .pendant2-angle-sub {
+    font-size: 13px;
+}
+
+body.kiosk-mode #pendant-ui-tab label {
+    font-size: 14px;
+}
+
+/* Joints tab: compact joint cards */
+body.kiosk-mode .joint-card-title {
+    font-size: 15px;
+}
+
+body.kiosk-mode .joint-status-summary .status-value.compact,
+body.kiosk-mode .joint-status-summary .status-value.compact span {
+    font-size: 13px;
+}
+
+body.touch-mode.kiosk-mode .joint-card-compact {
+    padding-bottom: 50px;
+}
+
+body.touch-mode.kiosk-mode .joint-card-compact .joint-details-toggle {
+    height: 40px;
+    min-height: 40px;
+}
+
+/* Connect tab: tab visibility list */
+body.kiosk-mode .visibility-row,
+body.kiosk-mode .visibility-group,
+body.kiosk-mode .visibility-num {
+    font-size: 14px;
+}
+
+body.kiosk-mode .visibility-column h4 {
+    font-size: 15px;
+}
+
+/* Checkboxes and radio buttons */
+body.kiosk-mode input[type="checkbox"],
+body.kiosk-mode input[type="radio"],
+body.touch-mode.kiosk-mode .visibility-row input[type="checkbox"] {
+    width: 28px;
+    height: 28px;
+}
+
+/* Positions tab */
+body.kiosk-mode .position-input-group label,
+body.kiosk-mode #positionsXYZStatus {
+    font-size: 14px;
+}
+
+/* Small buttons are still finger-pressed */
+body.kiosk-mode .btn,
+body.kiosk-mode .btn-small {
+    font-size: 14px;
+    min-height: 40px;
+}
+
+/* Calibration tables */
+body.kiosk-mode .calibration-table th,
+body.kiosk-mode #calibration-tab th {
+    font-size: 13px;
+}
+
+/* G-code / RAPID command reference tables */
+body.kiosk-mode #gcode-tab td,
+body.kiosk-mode #gcode-tab td code,
+body.kiosk-mode #gcode-tab td strong,
+body.kiosk-mode #rapid-tab td,
+body.kiosk-mode #rapid-tab td code,
+body.kiosk-mode #rapid-tab td strong {
+    font-size: 14px;
+}
+
+/* Kinematics: matrices are dense, so these floors are lower */
+body.kiosk-mode .kin-matrix-caption,
+body.kiosk-mode .kin-derivation-label,
+body.kiosk-mode .kin-derivation-values {
+    font-size: 13px;
+}
+
+body.kiosk-mode #kinematics-tab td {
+    font-size: 13px;
+}
+
+body.kiosk-mode #kinematics-tab sub,
+body.kiosk-mode .kin-sch-key {
+    font-size: 12px;
+}
+
+body.kiosk-mode .positions-controls .btn,
+body.kiosk-mode .positions-list-controls .btn {
+    font-size: 14px;
 }

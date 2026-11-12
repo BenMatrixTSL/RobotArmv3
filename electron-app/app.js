@@ -1226,7 +1226,8 @@ document.addEventListener('DOMContentLoaded', function() {
             'gamepad': 'Gamepad',
             'positions': 'Positions',
             'camera': 'Camera',
-            'visualization': '3D View'
+            'visualization': '3D View',
+            'blockly': 'Blocks'
         };
         // Change only the label span - setting the button's textContent
         // would also wipe the tab icon that decorateTabButtons() added.
