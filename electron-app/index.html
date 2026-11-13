@@ -19,7 +19,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Robot Arm Control - Pendant & G-Code</title>
-    <link rel="stylesheet" href="styles.css?v=20261112b">
+    <link rel="stylesheet" href="styles.css?v=20261113">
+    <link rel="stylesheet" href="boot-splash.css?v=20261113">
     <script>
     // Kiosk mode on the Pi: show a loading screen and reload until the UI is really loaded.
     (function () {
@@ -51,6 +52,7 @@
             if (screen) {
                 screen.style.display = 'none';
             }
+            document.documentElement.style.overflow = '';
             sessionStorage.removeItem(reloadKey);
         }
 
@@ -102,9 +104,33 @@
             }, 2000);
         }
 
+        // The loading screen (the boot-splash picture) stays up until the page
+        // has loaded AND app.js has finished setting up the kiosk layout
+        // (it calls window.kioskUiReady), so the desktop layout never flashes.
+        var pageReady = false;
+        var appReady = false;
+        var appReadyFallback = null;
+
+        function hideWhenBothReady() {
+            if (pageReady && appReady) {
+                hideLoadingScreen();
+            }
+        }
+
+        window.kioskUiReady = function () {
+            appReady = true;
+            hideWhenBothReady();
+        };
+
         function tryHideLoadingScreen() {
             if (pageLooksReady()) {
-                hideLoadingScreen();
+                pageReady = true;
+                sessionStorage.removeItem(reloadKey);
+                if (!appReadyFallback) {
+                    // Never leave the splash up for good if the app's signal is missed
+                    appReadyFallback = setTimeout(window.kioskUiReady, 15000);
+                }
+                hideWhenBothReady();
                 return true;
             }
             return false;
@@ -141,10 +167,20 @@
         document.body.style.backgroundColor = '#ede9f0';
     }
     </script>
-    <div id="kiosk-loading-screen" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; z-index:999999; background-color:#ede9f0; color:#2c3e50; flex-direction:column; align-items:center; justify-content:center; font-family:sans-serif; font-size:1.2rem; text-align:center; padding:20px;">
-        <p style="font-size:1.4rem; margin-bottom:10px;">Loading robot arm UI...</p>
-        <p id="kiosk-loading-status" style="font-size:1rem; color:#5c6370;">Starting</p>
+    <!-- Kiosk loading screen: the same picture as the boot splash and splash.html
+         (boot-splash.css), shown from the first paint until the kiosk layout is ready -->
+    <div id="kiosk-loading-screen" class="boot-splash" style="display:none;">
+        <img class="boot-splash-logo" src="boot-logo.png" alt="Matrix">
+        <div class="boot-splash-spinner"></div>
+        <p id="kiosk-loading-status" class="boot-splash-status">Loading&hellip;</p>
     </div>
+    <script>
+    if (window.location.search.indexOf('kiosk=1') >= 0) {
+        document.getElementById('kiosk-loading-screen').style.display = 'block';
+        // No page scrollbar while it is up, or the picture sits 8 px off the boot splash
+        document.documentElement.style.overflow = 'hidden';
+    }
+    </script>
 
     <!-- Main Application Container -->
     <div class="container">
@@ -1966,7 +2002,7 @@
     <script src="cameraView.js?v=20260616"></script>
     <!-- Main Application: UI logic and event handlers -->
     <script src="tabIcons.js?v=20261111"></script>
-    <script src="app.js?v=20261112b"></script>
+    <script src="app.js?v=20261113"></script>
     <script src="gamepadPage.js?v=20261111"></script>
     <!-- On-Screen Keyboard: touch keyboard for kiosk mode (no system OSK in Chromium kiosk) -->
     <script src="keyboard.js?v=20260930"></script>

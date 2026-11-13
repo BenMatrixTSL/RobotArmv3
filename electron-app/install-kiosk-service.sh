@@ -166,13 +166,27 @@ echo "Step 5: Install labwc autostart (Pi OS Bookworm+ Wayland — often require
 LABWC_AUTOSTART="$SERVICE_HOME/.config/labwc/autostart"
 mkdir -p "$(dirname "$LABWC_AUTOSTART")"
 if [ -f "$LABWC_AUTOSTART" ]; then
-    grep -v "start-kiosk.sh" "$LABWC_AUTOSTART" > "${LABWC_AUTOSTART}.tmp" 2>/dev/null || true
+    # Drop earlier kiosk lines: our own, and the hand-written splash colour and
+    # taskbar removal that kiosk-boot-splash.sh now does
+    grep -v -e "start-kiosk.sh" -e "kiosk-boot-splash.sh" -e "^# robot-arm-kiosk" \
+        -e "^swaybg " -e "wf-panel-pi" \
+        -e "^# Fill screen with splash colour" -e "^# This covers the black gap" \
+        -e "^# drawing the desktop wallpaper" -e "^# Remove the taskbar" \
+        -e "^# We kill both the lwrespawn" -e "^# Launch kiosk" \
+        "$LABWC_AUTOSTART" | cat -s > "${LABWC_AUTOSTART}.tmp" 2>/dev/null || true
     mv "${LABWC_AUTOSTART}.tmp" "$LABWC_AUTOSTART"
 else
     touch "$LABWC_AUTOSTART"
 fi
-# start-kiosk.sh runs until Chromium closes — do not use lwrespawn (causes duplicate launches)
-echo "$INSTALL_DIR/start-kiosk.sh &" >> "$LABWC_AUTOSTART"
+# kiosk-boot-splash.sh keeps the boot-splash picture on screen (instead of the
+# desktop) until the kiosk window covers it. start-kiosk.sh runs until Chromium
+# closes — do not use lwrespawn for it (causes duplicate launches).
+cat >> "$LABWC_AUTOSTART" <<EOF
+# robot-arm-kiosk: begin
+$INSTALL_DIR/kiosk-boot-splash.sh &
+$INSTALL_DIR/start-kiosk.sh &
+# robot-arm-kiosk: end
+EOF
 chmod +x "$LABWC_AUTOSTART"
 chown "$SERVICE_USER:$SERVICE_USER" "$LABWC_AUTOSTART"
 echo "  Installed $LABWC_AUTOSTART"

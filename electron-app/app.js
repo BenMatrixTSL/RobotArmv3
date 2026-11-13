@@ -1247,6 +1247,10 @@ document.addEventListener('DOMContentLoaded', function() {
         setTimeout(function () {
             const btn = document.querySelector('.tab-button[data-tab="pendant"]');
             if (btn) btn.click();
+            // Kiosk layout is in place: let index.html take the loading screen down
+            setTimeout(function () {
+                if (typeof window.kioskUiReady === 'function') window.kioskUiReady();
+            }, 200);
         }, 300);
 
         setTimeout(function () {

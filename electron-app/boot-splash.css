@@ -1,0 +1,66 @@
+/*
+ * The Matrix boot-splash screen, drawn exactly as the Plymouth boot theme
+ * (matrixtsl.script) and the kiosk desktop picture (kiosk-boot-splash.py):
+ *   - vertical gradient #0d1320 -> #060911
+ *   - logo (480x320) scaled to at most 45% of the width, centred, 40 px above the middle
+ *   - 80 px spinner 30 px below the logo: a 270 degree arc fading in towards its head
+ * Used by splash.html and by the kiosk loading screen in index.html, so the
+ * screen does not change from power-on until the app is ready.
+ */
+.boot-splash {
+    --logo-w: min(480px, 45vw);
+    --logo-h: calc(var(--logo-w) * 2 / 3);
+    position: fixed;
+    inset: 0;
+    z-index: 999999;
+    background: linear-gradient(#0d1320, #060911);
+    overflow: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+    cursor: none;
+}
+
+.boot-splash-logo {
+    position: absolute;
+    left: 50%;
+    top: calc(50vh - var(--logo-h) / 2 - 40px);
+    width: var(--logo-w);
+    height: var(--logo-h);
+    transform: translateX(-50%);
+}
+
+.boot-splash-spinner {
+    position: absolute;
+    left: calc(50% - 40px);
+    top: calc(50vh + var(--logo-h) / 2 - 10px);
+    width: 80px;
+    height: 80px;
+}
+
+.boot-splash-spinner::before {
+    content: "";
+    position: absolute;
+    inset: 6px;
+    border-radius: 50%;
+    background: conic-gradient(rgba(255, 255, 255, 0.12), #fff 270deg, transparent 270deg);
+    -webkit-mask: radial-gradient(closest-side, transparent calc(100% - 7px), #000 calc(100% - 6px));
+    mask: radial-gradient(closest-side, transparent calc(100% - 7px), #000 calc(100% - 6px));
+    animation: boot-splash-spin 0.5s linear infinite;
+}
+
+.boot-splash-status {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: calc(50vh + var(--logo-h) / 2 + 90px);
+    margin: 0;
+    font-family: system-ui, -apple-system, sans-serif;
+    font-size: 14px;
+    letter-spacing: 0.4px;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.35);
+}
+
+@keyframes boot-splash-spin {
+    to { transform: rotate(360deg); }
+}
