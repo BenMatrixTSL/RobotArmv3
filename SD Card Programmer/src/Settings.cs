@@ -39,6 +39,7 @@ namespace SdCardProgrammer
         public List<string> SelectedPorts = new List<string>();
         public bool Eject = true;
         public bool AutoStart = false;
+        public bool Parallel = true;
 
         public static string Folder
         {

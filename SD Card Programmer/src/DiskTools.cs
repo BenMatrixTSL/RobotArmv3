@@ -355,7 +355,18 @@ namespace SdCardProgrammer
         }
 
         /// <summary>Wipe the card and create one partition using diskpart. Returns the new drive letter.</summary>
+        static readonly object diskpartLock = new object();
+
         public static char FormatWithDiskpart(int n, long diskSize, string fileSystem, string label,
+            char preferredLetter, Action<string> log, Func<bool> cancelled)
+        {
+            // diskpart sessions can't safely run side by side, and parallel cards must not race for the same
+            // free drive letter - so formats queue up here (they only take a few seconds each).
+            lock (diskpartLock)
+                return FormatWithDiskpartLocked(n, diskSize, fileSystem, label, preferredLetter, log, cancelled);
+        }
+
+        static char FormatWithDiskpartLocked(int n, long diskSize, string fileSystem, string label,
             char preferredLetter, Action<string> log, Func<bool> cancelled)
         {
             // Release anything Windows has mounted so diskpart's "clean" doesn't hit "access denied".
@@ -398,7 +409,7 @@ namespace SdCardProgrammer
                         {
                             // The old letter may have been grabbed by something else - retry without it.
                             log("  diskpart failed (exit " + p.ExitCode + "); retrying without a fixed drive letter.");
-                            return FormatWithDiskpart(n, diskSize, fileSystem, label, '\0', log, cancelled);
+                            return FormatWithDiskpartLocked(n, diskSize, fileSystem, label, '\0', log, cancelled);
                         }
                         throw new IOException("diskpart failed (exit code " + p.ExitCode + "):\r\n" + output.Trim());
                     }

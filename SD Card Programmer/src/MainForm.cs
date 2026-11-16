@@ -41,7 +41,7 @@ namespace SdCardProgrammer
         CheckedListBox lstPorts;
         Button btnSavePreset, btnDeletePreset, btnRefresh, btnBrowse, btnStart, btnNext, btnCancel;
         RadioButton rbImage, rbZip;
-        CheckBox chkVerify, chkSkip, chkFormat, chkStrip, chkEject, chkAuto;
+        CheckBox chkVerify, chkSkip, chkFormat, chkStrip, chkEject, chkAuto, chkParallel;
         TextBox txtLabel, txtLog;
         Label lblBig, lblSmall, lblDetail, lblCounter;
         TableLayoutPanel pnlStatus;
@@ -50,8 +50,6 @@ namespace SdCardProgrammer
         System.Windows.Forms.Timer pollTimer, refreshTimer;
 
         UiState state = UiState.Idle;
-        JobContext currentJob;
-        Thread worker;
         bool loadingUi;
         int okCount, failCount;
 
@@ -64,10 +62,6 @@ namespace SdCardProgrammer
         string lastMediaSignature = "";
 
         // progress / speed tracking
-        string curPhase = "", curPhaseWorker = "";
-        DateTime phaseStart, lastUiProgress = DateTime.MinValue;
-        int batchIndex, batchCount, batchDisk = -1;
-        string batchPort = "";
 
         public MainForm()
         {
@@ -88,6 +82,8 @@ namespace SdCardProgrammer
             pollTimer.Start();
             refreshTimer = new System.Windows.Forms.Timer { Interval = 800 };
             refreshTimer.Tick += delegate { refreshTimer.Stop(); RefreshPorts(); };
+            uiTimer = new System.Windows.Forms.Timer { Interval = 250 };
+            uiTimer.Tick += delegate { RenderProgress(); };
 
             SetStatus(UiState.Idle, "READY", "Tick the card ports to program, choose a job, then press START.");
             Log("SD Card Programmer started. Settings: " + AppSettings.FilePath);
@@ -116,7 +112,7 @@ namespace SdCardProgrammer
             AddRow(grid, "Saved job:", cboPreset, Flow(btnSavePreset, btnDeletePreset));
 
             // Ports
-            lstPorts = new CheckedListBox { Dock = DockStyle.Fill, CheckOnClick = true, IntegralHeight = false, Height = S(118) };
+            lstPorts = new CheckedListBox { Dock = DockStyle.Fill, CheckOnClick = true, IntegralHeight = false, Height = S(172) };
             lstPorts.ItemCheck += delegate { if (!loadingUi) BeginInvoke((Action)SaveSelectedPorts); };
             btnRefresh = new Button { Text = "Refresh", AutoSize = true, Anchor = AnchorStyles.Top };
             btnRefresh.Click += delegate { RefreshPorts(); };
@@ -156,6 +152,9 @@ namespace SdCardProgrammer
             chkAuto = new CheckBox { Text = "Auto-start when every ticked port has a new card", AutoSize = true };
             AddRow(grid, "When done:", Flow(chkEject, chkAuto), null);
 
+            chkParallel = new CheckBox { Text = "Write all ticked cards at the same time (fastest - one reader per hub port)", AutoSize = true, Checked = true };
+            AddRow(grid, "Speed:", chkParallel, null);
+
             // Action buttons
             var big = new Font("Segoe UI", 14f, FontStyle.Bold);
             btnStart = new Button { Text = "START", Font = big, Size = new Size(S(160), S(58)), BackColor = Color.FromArgb(0x15, 0x65, 0xC0), ForeColor = Color.White, FlatStyle = FlatStyle.Flat };
@@ -188,7 +187,7 @@ namespace SdCardProgrammer
             AddSpan(grid, txtLog, SizeType.Percent, 100);
 
             lockWhileRunning.AddRange(new Control[] { cboPreset, btnSavePreset, btnDeletePreset, lstPorts, btnRefresh, rbImage, rbZip,
-                cboSource, btnBrowse, chkVerify, chkSkip, chkFormat, cboFs, txtLabel, chkStrip, chkEject, btnStart });
+                cboSource, btnBrowse, chkVerify, chkSkip, chkFormat, cboFs, txtLabel, chkStrip, chkEject, chkParallel, btnStart });
             UpdateCounter();
         }
 
@@ -246,6 +245,7 @@ namespace SdCardProgrammer
             ApplyPreset(settings.Current);
             chkEject.Checked = settings.Eject;
             chkAuto.Checked = settings.AutoStart;
+            chkParallel.Checked = settings.Parallel;
             RefreshPorts();
         }
 
@@ -311,6 +311,7 @@ namespace SdCardProgrammer
             settings.Current = ReadUiPreset();
             settings.Eject = chkEject.Checked;
             settings.AutoStart = chkAuto.Checked;
+            settings.Parallel = chkParallel.Checked;
             settings.Save();
         }
 
@@ -509,9 +510,9 @@ namespace SdCardProgrammer
 
         void CancelClicked()
         {
-            if (state == UiState.Running && currentJob != null)
+            if (state == UiState.Running)
             {
-                currentJob.CancelRequested = true;
+                foreach (var r in runs) if (r.Ctx != null) r.Ctx.CancelRequested = true;
                 btnCancel.Enabled = false;
                 Log("Cancelling...");
             }
@@ -587,86 +588,121 @@ namespace SdCardProgrammer
             RedrawPortStatus();
 
             bool eject = chkEject.Checked;
-            var ctx = new JobContext();
-            ctx.Log = msg => BeginInvoke((Action)(() => Log(msg)));
-            ctx.Progress = (phase, done, total, frac) =>
-            {
-                DateTime now = DateTime.Now;
-                if (phase == curPhaseWorker && (now - lastUiProgress).TotalMilliseconds < 150 && done != total) return;
-                lastUiProgress = now;
-                curPhaseWorker = phase;
-                BeginInvoke((Action)(() => ShowProgress(phase, done, total, frac)));
-            };
-            currentJob = ctx;
+            bool verifying = p.Mode == JobMode.Image && p.Verify;
+            int maxParallel = chkParallel.Checked ? targets.Count : 1;
             hadJob = true;
+            runs.Clear();
+            foreach (var d in targets) runs.Add(new CardRun { Disk = d, Port = PortName(d) });
 
-            Log("========== Batch started: " + Path.GetFileName(p.SourcePath) + " -> " + targets.Count + " card(s)");
+            Log("========== Batch started: " + Path.GetFileName(p.SourcePath) + " -> " + targets.Count + " card(s)" +
+                (targets.Count > 1 ? (maxParallel > 1 ? ", all at the same time" : ", one after another") : ""));
             SetStatus(UiState.Running, "STARTING...", "");
             progress.Value = 0;
+            progress.Style = ProgressBarStyle.Continuous;
             lblDetail.Text = "";
-            DateTime started = DateTime.Now;
+            batchStarted = DateTime.Now;
 
-            worker = new Thread(() =>
+            var gate = new Semaphore(maxParallel, maxParallel);
+            int remaining = runs.Count;
+            var failures = new List<string>();
+            foreach (CardRun run in runs)
             {
-                var failures = new List<string>();
-                int ok = 0;
-                bool cancelled = false;
-                for (int i = 0; i < targets.Count && !cancelled; i++)
+                CardRun r = run;
+                var ctx = new JobContext();
+                r.Ctx = ctx;
+                ctx.Log = msg => BeginInvoke((Action)(() => Log(r.Port + "  " + msg)));
+                ctx.Progress = (phase, done, total, frac) => r.Update(phase, done, total, frac, verifying);
+                var opts = new JobOptions
                 {
-                    DiskInfo d = targets[i];
-                    int idx = i;
-                    BeginInvoke((Action)(() => CardStarting(idx, targets.Count, d)));
-                    var opts = new JobOptions
-                    {
-                        Mode = p.Mode, SourcePath = p.SourcePath, DiskNumber = d.Number,
-                        Verify = p.Verify, SkipUnpartitioned = p.SkipUnpartitioned,
-                        Format = p.Format, FileSystem = p.FileSystem, Label = p.Label, StripRoot = p.StripRoot,
-                        Eject = eject,
-                    };
-                    DateTime t0 = DateTime.Now;
+                    Mode = p.Mode, SourcePath = p.SourcePath, DiskNumber = r.Disk.Number,
+                    Verify = p.Verify, SkipUnpartitioned = p.SkipUnpartitioned,
+                    Format = p.Format, FileSystem = p.FileSystem, Label = p.Label, StripRoot = p.StripRoot,
+                    Eject = eject,
+                };
+                var t = new Thread(() =>
+                {
+                    bool ok = false, ejected = false;
+                    string message;
+                    gate.WaitOne();
                     try
                     {
-                        JobResult r = Jobs.Run(opts, ctx);
-                        ok++;
-                        string took = FormatDuration(DateTime.Now - t0);
-                        BeginInvoke((Action)(() => CardFinished(d, true, r.Summary + " in " + took, r.Ejected, eject)));
+                        if (ctx.CancelRequested) throw new OperationCanceledException();
+                        r.Started = DateTime.Now;
+                        r.Update("Starting...", 0, -1, -1, verifying);
+                        JobResult res = Jobs.Run(opts, ctx);
+                        ok = true;
+                        ejected = res.Ejected;
+                        message = res.Summary + " in " + FormatDuration(DateTime.Now - r.Started);
                     }
-                    catch (OperationCanceledException)
-                    {
-                        cancelled = true;
-                        BeginInvoke((Action)(() => CardFinished(d, false, "cancelled", false, eject)));
-                    }
+                    catch (OperationCanceledException) { message = "cancelled"; }
                     catch (Exception ex)
                     {
-                        failures.Add(PortName(d) + ": " + ex.Message);
-                        string msg = ex.Message;
-                        BeginInvoke((Action)(() => CardFinished(d, false, msg, false, eject)));
+                        message = ex.Message;
+                        lock (failures) failures.Add(r.Port + " " + ex.Message);
                     }
+                    finally { gate.Release(); }
+                    r.Finished = true;
+                    r.Ok = ok;
+                    try
+                    {
+                        BeginInvoke((Action)(() => CardFinished(r.Disk, ok, message, ejected, eject)));
+                        if (Interlocked.Decrement(ref remaining) == 0)
+                        {
+                            bool cancelled = false;
+                            foreach (var x in runs) if (x.Ctx.CancelRequested) cancelled = true;
+                            int okN = 0;
+                            foreach (var x in runs) if (x.Ok) okN++;
+                            BeginInvoke((Action)(() => BatchFinished(okN, runs.Count, failures, cancelled, eject, DateTime.Now - batchStarted)));
+                        }
+                    }
+                    catch { }
+                });
+                t.IsBackground = true;
+                t.Start();
+            }
+            uiTimer.Start();
+        }
+
+        /// <summary>Live progress of one card in the batch (written by its worker thread, read by the UI timer).</summary>
+        class CardRun
+        {
+            public DiskInfo Disk;
+            public string Port;
+            public JobContext Ctx;
+            public DateTime Started = DateTime.MinValue;
+            public volatile bool Finished, Ok;
+            readonly object sync = new object();
+            string phase = "queued";
+            long done;
+            double overall;           // 0..1 for the whole card
+            DateTime phaseStart = DateTime.Now;
+
+            public void Update(string ph, long d, long total, double frac, bool verifying)
+            {
+                lock (sync)
+                {
+                    if (ph != phase) { phase = ph; phaseStart = DateTime.Now; }
+                    done = d;
+                    double f = total > 0 ? (double)d / total : frac;
+                    if (f < 0) return;
+                    if (ph == "Writing") overall = f * (verifying ? 0.7 : 1.0);
+                    else if (ph == "Verifying") overall = 0.7 + 0.3 * f;
+                    else if (ph == "Copying") overall = f;
                 }
-                TimeSpan total = DateTime.Now - started;
-                try { BeginInvoke((Action)(() => BatchFinished(ok, targets.Count, failures, cancelled, eject, total))); } catch { }
-            });
-            worker.IsBackground = true;
-            worker.Start();
-        }
+            }
 
-        void CardStarting(int index, int count, DiskInfo d)
-        {
-            batchIndex = index;
-            batchCount = count;
-            batchPort = PortName(d);
-            batchDisk = d.Number;
-            curPhase = "";
-            curPhaseWorker = "";
-            portStatus[d.Number] = "▶ programming...";
-            RedrawPortStatus();
-            lblSmall.Text = CardPrefix() + d.Model + ", " + DiskTools.FormatSize(d.Size);
-            progress.Value = 0;
-        }
-
-        string CardPrefix()
-        {
-            return batchCount > 1 ? "Card " + (batchIndex + 1) + " of " + batchCount + "  (" + batchPort + ")   -   " : batchPort + "   -   ";
+            /// <summary>phase, overall fraction, current-phase speed in bytes/s (0 if unknown)</summary>
+            public void Snapshot(out string ph, out double fraction, out double rate)
+            {
+                lock (sync)
+                {
+                    ph = phase;
+                    fraction = Finished ? 1 : overall;
+                    double secs = (DateTime.Now - phaseStart).TotalSeconds;
+                    bool measured = ph == "Writing" || ph == "Verifying" || ph == "Copying";
+                    rate = measured && secs > 2 ? done / secs : 0;
+                }
+            }
         }
 
         void CardFinished(DiskInfo d, bool ok, string message, bool ejected, bool ejectRequested)
@@ -676,57 +712,80 @@ namespace SdCardProgrammer
                 okCount++;
                 needsSwap.Add(d.Number);
                 portStatus[d.Number] = "✔ DONE" + (ejectRequested ? " - remove card" : "");
-                Log(PortName(d) + " SUCCESS: " + message + (ejectRequested ? (ejected ? " - ejected." : " - unmounted, safe to remove.") : ""));
+                Log(PortName(d) + "  SUCCESS: " + message + (ejectRequested ? (ejected ? " - ejected." : " - unmounted, safe to remove.") : ""));
             }
             else if (message == "cancelled")
             {
                 portStatus[d.Number] = "✖ cancelled - card incomplete";
-                Log(PortName(d) + " CANCELLED - card incomplete.");
+                Log(PortName(d) + "  CANCELLED - card incomplete.");
             }
             else
             {
                 failCount++;
                 portStatus[d.Number] = "✖ FAILED";
-                Log(PortName(d) + " FAILED: " + message);
+                Log(PortName(d) + "  FAILED: " + message);
             }
             RedrawPortStatus();
             UpdateCounter();
         }
 
-        void ShowProgress(string phase, long done, long total, double frac)
-        {
-            if (state != UiState.Running) return;
-            if (phase != curPhase) { curPhase = phase; phaseStart = DateTime.Now; }
-            double f = total > 0 ? (double)done / total : frac;
-            bool measured = phase == "Writing" || phase == "Verifying" || phase == "Copying";
-            if (!measured)
-            {
-                lblBig.Text = phase.TrimEnd('.').ToUpperInvariant() + "...";
-                progress.Style = ProgressBarStyle.Marquee;
-                lblDetail.Text = "";
-                return;
-            }
-            progress.Style = ProgressBarStyle.Continuous;
-            string big = phase.ToUpperInvariant();
-            if (f >= 0) { progress.Value = Math.Max(0, Math.Min(1000, (int)(f * 1000))); big += "  " + (int)(f * 100) + "%"; }
-            lblBig.Text = big;
+        readonly List<CardRun> runs = new List<CardRun>();
+        DateTime batchStarted;
+        System.Windows.Forms.Timer uiTimer;
 
-            double secs = (DateTime.Now - phaseStart).TotalSeconds;
-            string detail = DiskTools.FormatSize(done) + (total > 0 ? " of " + DiskTools.FormatSize(total) : "");
-            if (secs > 2)
+        /// <summary>Refreshes the big panel, progress bar and port list from all running cards.</summary>
+        void RenderProgress()
+        {
+            if (state != UiState.Running || runs.Count == 0) return;
+            double sum = 0, totalRate = 0, maxLeft = 0;
+            int active = 0, finished = 0, queued = 0;
+            var phases = new Dictionary<string, int>();
+            string onlyPhase = null;
+            foreach (var r in runs)
             {
-                double rate = done / secs;
-                detail += "   -   " + (rate / 1e6).ToString("0.0") + " MB/s";
-                if (f > 0.01 && f < 1) detail += "   -   about " + FormatDuration(TimeSpan.FromSeconds(secs / f - secs)) + " left on this card";
+                string ph; double f, rate;
+                r.Snapshot(out ph, out f, out rate);
+                sum += f;
+                if (r.Finished) { finished++; continue; }
+                if (r.Started == DateTime.MinValue) { queued++; portStatus[r.Disk.Number] = "queued"; continue; }
+                active++;
+                totalRate += rate;
+                string name = ph.TrimEnd('.').ToLowerInvariant();
+                int c; phases.TryGetValue(name, out c); phases[name] = c + 1;
+                onlyPhase = name;
+                string line = "▶ " + name;
+                if (f > 0) line += "  " + (int)(f * 100) + "%";
+                if (rate > 0) line += "   " + (rate / 1e6).ToString("0.0") + " MB/s";
+                portStatus[r.Disk.Number] = line;
+                double elapsed = (DateTime.Now - r.Started).TotalSeconds;
+                if (f > 0.02 && elapsed > 5) maxLeft = Math.Max(maxLeft, elapsed / f - elapsed);
             }
+            RedrawPortStatus();
+
+            double overall = sum / runs.Count;
+            progress.Value = Math.Max(0, Math.Min(1000, (int)(overall * 1000)));
+            string pct = "  " + (int)(overall * 100) + "%";
+            if (runs.Count == 1)
+                lblBig.Text = (onlyPhase ?? "finishing").ToUpperInvariant() + (onlyPhase == "writing" || onlyPhase == "verifying" || onlyPhase == "copying" ? pct : "...");
+            else
+                lblBig.Text = "PROGRAMMING " + runs.Count + " CARDS" + pct;
+
+            var parts = new List<string>();
+            foreach (var kv in phases) parts.Add(kv.Value + " " + kv.Key);
+            if (queued > 0) parts.Add(queued + " queued");
+            if (finished > 0) parts.Add(finished + " finished");
+            lblSmall.Text = runs.Count == 1 ? runs[0].Port + "   " + runs[0].Disk.Model + ", " + DiskTools.FormatSize(runs[0].Disk.Size)
+                                            : string.Join("   ·   ", parts.ToArray());
+
+            string detail = "Elapsed " + FormatDuration(DateTime.Now - batchStarted);
+            if (totalRate > 0) detail += "   -   total " + (totalRate / 1e6).ToString("0.0") + " MB/s";
+            if (maxLeft > 0 && queued == 0) detail += "   -   about " + FormatDuration(TimeSpan.FromSeconds(maxLeft)) + " left";
             lblDetail.Text = detail;
-            string pct = f >= 0 ? (int)(f * 100) + "% " : "";
-            if (batchDisk >= 0) portStatus[batchDisk] = "▶ " + phase.ToLowerInvariant() + " " + pct;
         }
 
         void BatchFinished(int ok, int count, List<string> failures, bool cancelled, bool ejectRequested, TimeSpan took)
         {
-            currentJob = null;
+            uiTimer.Stop();
             progress.Style = ProgressBarStyle.Continuous;
             foreach (var k in new List<int>(portStatus.Keys))
                 if (portStatus[k] == "queued") portStatus[k] = "not started";
@@ -848,8 +907,8 @@ namespace SdCardProgrammer
                     e.Cancel = true;
                     return;
                 }
-                if (currentJob != null) currentJob.CancelRequested = true;
-                if (worker != null) worker.Join(10000);
+                foreach (var r in runs) if (r.Ctx != null) r.Ctx.CancelRequested = true;
+                for (int i = 0; i < 100 && runs.Exists(r => !r.Finished); i++) Thread.Sleep(100);
             }
             SaveUiToSettings();
             base.OnFormClosing(e);

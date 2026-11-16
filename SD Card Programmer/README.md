@@ -1,7 +1,7 @@
 # SD Card Programmer
 
 A Windows tool for programming SD cards in batches: clone a Raspberry Pi `.img` onto the cards,
-or copy the contents of a `.zip` onto them, one card port after another. When a batch finishes,
+or copy the contents of a `.zip` onto them. Every ticked card is written **at the same time**, so a hub full of readers programs a whole batch in about the time one card takes. When a batch finishes,
 the status panel turns **green** and the cards are safely ejected. Press **PROGRAM NEXT BATCH**
 (or turn on auto-start) to do it again.
 
@@ -26,9 +26,10 @@ rights (UAC) because writing to SD cards needs raw disk access.
      every file in the ZIP onto it. *Remove single top folder* handles ZIPs where everything sits inside
      one folder.
 3. **Source file**: Browse, or pick one of the recently used files from the drop-down.
-4. Press **START**. You're asked to confirm the list of cards that will be erased, then the cards are
-   programmed **one after another**. Each card is ejected as soon as it's finished, and its port line
-   shows ✔ DONE or ✖ FAILED.
+4. Press **START**. You're asked to confirm the list of cards that will be erased, then all the cards are
+   programmed **at the same time**. Each port line shows its own phase, % and MB/s. The big panel shows the
+   overall %, total throughput and time left for the slowest card. Each card is ejected as soon as it's
+   finished, and its line shows ✔ DONE or ✖ FAILED. One card failing doesn't affect the others.
 5. **Big status panel**
    - Grey: ready
    - Amber: working (shows the % done, speed and time left in the line underneath)
@@ -46,6 +47,11 @@ Set up a job (type, file, options), press **Save as...** and give it a name such
 "Robot Arm Pi image v3". Pick it from **Saved job** next time to load everything at once.
 
 ### Speed and safety features
+
+- **Write all ticked cards at the same time** (on by default): best with one reader per port of a USB 3
+  hub, where each card's own write speed is the limit. Untick it to program the cards one after another,
+  for example if a cheap hub or reader misbehaves under load. In ZIP mode the quick format step runs
+  one card at a time (diskpart can't run in parallel), and the file copying then runs in parallel.
 
 - **Skip unused space** (image mode): only writes up to the end of the last partition in the image. This
   speeds up images that have empty space at the end, such as a freshly downloaded Pi OS image or a shrunk
