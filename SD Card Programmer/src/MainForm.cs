@@ -35,6 +35,8 @@ namespace SdCardProgrammer
         }
 
         readonly AppSettings settings;
+        JobStore jobStore;
+        List<Preset> jobs = new List<Preset>();
         float scale = 1f;
 
         ComboBox cboPreset, cboSource, cboFs;
@@ -104,6 +106,7 @@ namespace SdCardProgrammer
 
             // Saved jobs
             cboPreset = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Dock = DockStyle.Fill };
+            cboPreset.DropDown += delegate { ReloadJobs(); };
             cboPreset.SelectedIndexChanged += delegate { if (!loadingUi && cboPreset.SelectedItem is Preset) ApplyPreset((Preset)cboPreset.SelectedItem); };
             btnSavePreset = new Button { Text = "Save as...", AutoSize = true };
             btnSavePreset.Click += delegate { SavePreset(); };
@@ -239,6 +242,29 @@ namespace SdCardProgrammer
 
         void LoadSettingsIntoUi()
         {
+            jobStore = JobStore.Locate();
+            jobs = LoadJobs();
+            // One-off move of jobs saved by older versions (kept in AppData) into the job file.
+            if (settings.Presets.Count > 0 && jobs.Count == 0 && jobStore.Writable)
+            {
+                try
+                {
+                    jobStore.Save(settings.Presets);
+                    Log("Moved " + settings.Presets.Count + " saved job(s) into " + jobStore.FilePath);
+                    settings.Presets.Clear();
+                    settings.Save();
+                    jobs = LoadJobs();
+                }
+                catch (Exception ex) { Log("Could not move old saved jobs: " + ex.Message); }
+            }
+            Log(jobStore.Describe());
+            btnSavePreset.Enabled = btnDeletePreset.Enabled = jobStore.Writable;
+            if (!jobStore.Writable)
+            {
+                var tip = new ToolTip();
+                tip.SetToolTip(cboPreset, "This job list is shared and read-only: " + jobStore.FilePath);
+            }
+
             loadingUi = true;
             RefreshPresetList(settings.LastPresetName);
             loadingUi = false;
@@ -249,15 +275,38 @@ namespace SdCardProgrammer
             RefreshPorts();
         }
 
+        List<Preset> LoadJobs()
+        {
+            string error;
+            List<Preset> list = jobStore.Load(out error);
+            if (error != null) Log("WARNING: " + error);
+            return list;
+        }
+
+        Preset FindJob(string name)
+        {
+            foreach (var p in jobs)
+                if (string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase)) return p;
+            return null;
+        }
+
         void RefreshPresetList(string selectName)
         {
             bool was = loadingUi;
             loadingUi = true;
             cboPreset.Items.Clear();
-            settings.Presets.Sort((a, b) => string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase));
-            foreach (var p in settings.Presets) cboPreset.Items.Add(p);
-            cboPreset.SelectedItem = settings.FindPreset(selectName);
+            foreach (var p in jobs) cboPreset.Items.Add(p);
+            cboPreset.SelectedItem = FindJob(selectName);
             loadingUi = was;
+        }
+
+        /// <summary>Re-read the job file (someone may have updated the shared list).</summary>
+        void ReloadJobs()
+        {
+            if (state == UiState.Running) return;
+            var sel = cboPreset.SelectedItem as Preset;
+            jobs = LoadJobs();
+            RefreshPresetList(sel != null ? sel.Name : "");
         }
 
         void RefreshRecentList()
@@ -317,36 +366,65 @@ namespace SdCardProgrammer
 
         void SavePreset()
         {
+            if (!jobStore.Writable) return;
             Preset p = ReadUiPreset();
             if (string.IsNullOrEmpty(p.SourcePath)) { Warn("Choose a source file first."); return; }
+            if (jobStore.BesideExe && JobStore.IsLocalOnly(p.SourcePath) &&
+                MessageBox.Show(this, "This file is on this PC's own disk:\n\n" + p.SourcePath + "\n\n" +
+                    "Other PCs using the shared job list won't be able to find it. For a shared job, put the file on the " +
+                    "network share (use a \\\\server\\share path) or inside the tool's folder.\n\nSave anyway?",
+                    "Save job", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) != DialogResult.Yes) return;
             string suggested = cboPreset.SelectedItem is Preset ? ((Preset)cboPreset.SelectedItem).Name : Path.GetFileNameWithoutExtension(p.SourcePath);
             string name = InputBox.Show(this, "Save job", "Friendly name for this job (e.g. \"Robot Arm Pi image v3\"):", suggested);
             if (string.IsNullOrEmpty(name)) return;
-            Preset existing = settings.FindPreset(name);
+
+            jobs = LoadJobs();   // merge with any changes made from another PC
+            Preset existing = FindJob(name);
             if (existing != null)
             {
                 if (MessageBox.Show(this, "Replace the saved job '" + existing.Name + "'?", "Save job", MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes) return;
-                settings.Presets.Remove(existing);
+                jobs.Remove(existing);
             }
             p.Name = name;
-            settings.Presets.Add(p);
+            jobs.Add(p);
+            if (!WriteJobs()) return;
             settings.LastPresetName = name;
             settings.AddRecent(p.SourcePath);
             SaveUiToSettings();
             RefreshPresetList(name);
             RefreshRecentList();
-            Log("Saved job '" + name + "'.");
+            Log("Saved job '" + name + "' to " + jobStore.FilePath);
         }
 
         void DeletePreset()
         {
-            var p = cboPreset.SelectedItem as Preset;
-            if (p == null) return;
-            if (MessageBox.Show(this, "Delete the saved job '" + p.Name + "'?\n(The file itself is not deleted.)", "Delete job", MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes) return;
-            settings.Presets.Remove(p);
+            if (!jobStore.Writable) return;
+            var sel = cboPreset.SelectedItem as Preset;
+            if (sel == null) return;
+            if (MessageBox.Show(this, "Delete the saved job '" + sel.Name + "'?\n(The file itself is not deleted.)", "Delete job", MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes) return;
+            jobs = LoadJobs();
+            Preset p = FindJob(sel.Name);
+            if (p != null) jobs.Remove(p);
+            if (!WriteJobs()) return;
             settings.LastPresetName = "";
             settings.Save();
             RefreshPresetList("");
+        }
+
+        bool WriteJobs()
+        {
+            try
+            {
+                jobStore.Save(jobs);
+                jobs = LoadJobs();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Fail("Could not save the job list to " + jobStore.FilePath + ":\n" + ex.Message);
+                jobs = LoadJobs();
+                return false;
+            }
         }
 
         void Browse()
@@ -837,6 +915,7 @@ namespace SdCardProgrammer
 
             bool running = s == UiState.Running;
             foreach (var c in lockWhileRunning) c.Enabled = !running;
+            if (jobStore != null && !jobStore.Writable) btnSavePreset.Enabled = btnDeletePreset.Enabled = false;
             UpdateModeEnables();
             btnNext.Enabled = !running && hadJob && s != UiState.Waiting;
             btnNext.BackColor = btnNext.Enabled ? Color.FromArgb(0x1E, 0x9E, 0x3A) : Color.FromArgb(0xB8, 0xC4, 0xBB);

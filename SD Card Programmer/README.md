@@ -41,11 +41,33 @@ rights (UAC) because writing to SD cards needs raw disk access.
    only asked to confirm again if the set of ports changes. Tick *Auto-start* to go fully hands-free:
    swap the cards and the next batch starts by itself.
 
-### Saved jobs (friendly names)
+### Saved jobs (friendly names) - one shared list for everyone
 
 Set up a job (type, file, options), press **Save as...** and give it a name such as
-"Robot Arm Pi image v3". Pick it from **Saved job** next time to load everything at once.
+"Robot Arm Pi image v3". Pick it from **Saved job** to load everything at once.
 
+Saved jobs are stored in **`jobs.xml` next to `SDCardProgrammer.exe`**, so the whole team can share one list:
+
+1. **Build the list:** copy this folder somewhere you can write to, run the exe and save your jobs. They
+   go into `jobs.xml` in that folder.
+2. **Publish it:** copy the folder, including `jobs.xml`, to a read-only network share. Anyone who runs
+   the exe from there gets the same job list. On a read-only share, Save and Delete are greyed out.
+3. **Update it:** edit `jobs.xml` from a PC that can write to the share (run the exe there, or edit
+   the XML by hand). Everyone else sees the change the next time they open the Saved job drop-down.
+
+Where the job's files should live:
+
+- **Inside the tool's folder** (e.g. an `images\` subfolder on the share). These are stored as relative
+  paths (`images\robot-arm-v3.img`), so they keep working wherever the folder is copied. This is the
+  simplest option.
+- **Anywhere else on the network:** use a full `\\server\share\...` path, *not* a mapped drive letter
+  like `Z:`. The tool runs as administrator, and Windows hides mapped drive letters from
+  administrator programs. The app warns you if you save a shared job that points at a file on the
+  local PC.
+- Also start the tool itself from a `\\server\share\...` path or a shortcut to one, for the same reason.
+
+If the exe's folder is read-only *and* has no `jobs.xml`, the app falls back to a personal list in
+`%APPDATA%\SD Card Programmer\jobs.xml`. The log shows which job list is in use when the app starts.
 ### Speed and safety features
 
 - **Write all ticked cards at the same time** (on by default): best with one reader per port of a USB 3
@@ -66,7 +88,8 @@ Set up a job (type, file, options), press **Save as...** and give it a name such
 
 ## Files
 
-- `settings.xml`: saved jobs, recent files and ticked ports, stored in `%APPDATA%\SD Card Programmer\`
+- `jobs.xml` (next to the exe): the shared saved-job list
+- `settings.xml`: each user's recent files, ticked ports and checkbox choices, in `%APPDATA%\SD Card Programmer\`
 - `log.txt`: a log of every job, in the same folder
 
 ## Building
@@ -80,5 +103,6 @@ is in `src\`:
 | `MainForm.cs` | The window, batch queue, card-swap detection, saved jobs |
 | `Jobs.cs` | Image writing and verifying, ZIP extraction, MBR parsing |
 | `DiskTools.cs` | Listing disks, safety checks, lock/dismount, eject, diskpart formatting |
-| `Settings.cs` | Saved jobs and preferences (XML) |
+| `JobStore.cs` | The shared `jobs.xml` job list (location, read-only detection, relative paths) |
+| `Settings.cs` | Per-user preferences (XML) |
 | `NativeMethods.cs` | Win32 calls |
