@@ -894,6 +894,14 @@ async function handleCommand(ws, data) {
                     sendResponse({ type: 'bluetoothRemoved', ...(await bluetoothManager.remove(data.mac)) });
                 }
             } catch (error) {
+                // Keep a record for diagnosis: journalctl -u st3215-server
+                console.error('[bluetooth] ' + command + (data.mac ? ' ' + data.mac : '') + ' failed: ' + (error.message || error));
+                if (error.transcript) {
+                    console.error('[bluetooth] bluetoothctl transcript:\n' +
+                        error.transcript.split('\n')
+                            .filter(l => l.trim() && !/RSSI|ManufacturerData|ServiceData|TxPower|AdvertisingFlags/.test(l))
+                            .slice(-80).join('\n'));
+                }
                 sendResponse({ type: 'error', message: error.message || String(error) });
             }
             break;

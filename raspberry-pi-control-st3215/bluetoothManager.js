@@ -19,12 +19,20 @@ const ANSI_RE = /\x1b\[[0-9;?]*[A-Za-z]|\x01|\x02|\r/g;
 
 let busy = false;
 
+// Agent prompts that need a "yes". BlueZ uses numeric comparison with some
+// controllers (seen with a Switch Pro Controller: "Confirm passkey 298136
+// (yes/no)") even when NoInputNoOutput is requested; unanswered, the
+// controller gives up after ~25 s with Authentication Failure (0x05).
+const AGENT_PROMPT_RE = /(Confirm passkey \d+|Authorize service [^\n]*|Accept pairing[^\n]*)[^\n]*\(yes\/no\)/gi;
+
 /**
  * Runs one bluetoothctl session.
  * script(api) gets { send(line), waitFor(regex, ms), wait(ms), output() }
  * and returns the result. The session is always closed afterwards.
+ * options.autoConfirm answers agent yes/no prompts with "yes" (pairing only).
+ * A failure's Error carries .transcript (the session output) for logging.
  */
-function runSession(script, overallTimeoutMs) {
+function runSession(script, overallTimeoutMs, options = {}) {
     if (busy) return Promise.reject(new Error('Bluetooth is busy with another scan or pairing - try again in a moment'));
     busy = true;
 
@@ -41,9 +49,20 @@ function runSession(script, overallTimeoutMs) {
         let text = '';
         let waiters = [];
         let finished = false;
+        let promptsAnswered = 0;
 
         const onData = (chunk) => {
             text += chunk.toString('utf8').replace(ANSI_RE, '');
+            if (options.autoConfirm && !finished) {
+                const prompts = text.match(AGENT_PROMPT_RE) || [];
+                // The prompt is reprinted after every async line, so answer
+                // only once per new distinct prompt.
+                const distinct = new Set(prompts.map(p => p.replace(/\s+/g, ' '))).size;
+                while (promptsAnswered < distinct) {
+                    promptsAnswered++;
+                    try { proc.stdin.write('yes\n'); } catch (e) { /* closed */ }
+                }
+            }
             waiters = waiters.filter((w) => {
                 const m = text.slice(w.from).match(w.re);
                 if (m) { clearTimeout(w.timer); w.resolve(m); return false; }
@@ -62,7 +81,12 @@ function runSession(script, overallTimeoutMs) {
             try { proc.stdin.write('scan off\nquit\n'); } catch (e) { /* closed */ }
             setTimeout(() => { try { proc.kill(); } catch (e) { /* gone */ } }, 500);
             busy = false;
-            if (err) reject(err); else resolve(value);
+            if (err) {
+                if (!err.transcript) err.transcript = text.slice(-6000);
+                reject(err);
+            } else {
+                resolve(value);
+            }
         };
 
         proc.on('error', () => finish(new Error('bluetoothctl is not available on this system')));
@@ -216,7 +240,7 @@ function pair(mac) {
             throw new Error('Paired, but could not connect - press the controller\'s home button to wake it');
         }
         return { mac, paired: true, connected: true };
-    }, 60000);
+    }, 60000, { autoConfirm: true });
 }
 
 /** Disconnects and forgets a device. */

@@ -5656,3 +5656,23 @@ body.kiosk-mode .positions-controls .btn,
 body.kiosk-mode .positions-list-controls .btn {
     font-size: 14px;
 }
+
+.gp-raw summary {
+    cursor: pointer;
+    font-size: 13px;
+    color: #566573;
+    min-height: 32px;
+    display: list-item;
+}
+
+.gp-raw-text {
+    margin: 6px 0 0;
+    padding: 8px 10px;
+    background: #2c3e50;
+    color: #ecf0f1;
+    border-radius: 6px;
+    font-size: 12px;
+    line-height: 1.45;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}

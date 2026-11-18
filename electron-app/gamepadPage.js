@@ -831,6 +831,29 @@
 
         renderController(input);
         renderStatus();
+        renderRawInput(now);
+    }
+
+    /**
+     * Shows exactly what the browser reports for the selected controller, so a
+     * controller whose sticks or buttons do nothing can be diagnosed: move each
+     * stick and see which axis numbers change. Only updates while the panel is open.
+     */
+    let rawLastAt = 0;
+    function renderRawInput(now) {
+        if (!els.raw || !els.raw.open || now - rawLastAt < 100) return;
+        rawLastAt = now;
+        const pad = currentPad();
+        if (!pad) { els.rawText.textContent = 'No controller selected.'; return; }
+        const axes = Array.from(pad.axes || []).map((v, i) => `  axis ${i}: ${v >= 0 ? ' ' : ''}${v.toFixed(2)}`).join('\n');
+        const pressed = Array.from(pad.buttons || [])
+            .map((b, i) => (b && (b.pressed || b.value > 0.05)) ? `${i}${b.value > 0 && b.value < 1 ? '(' + b.value.toFixed(2) + ')' : ''}` : null)
+            .filter(x => x !== null);
+        els.rawText.textContent =
+            `${pad.id}\n` +
+            `layout: ${pad.mapping || 'non-standard'}   axes: ${(pad.axes || []).length}   buttons: ${(pad.buttons || []).length}\n` +
+            `${axes || '  (no axes reported)'}\n` +
+            `pressed: ${pressed.length ? pressed.join(', ') : 'none'}`;
     }
 
     function stopMotion() {
@@ -865,6 +888,7 @@
             speed: $('gpMaxSpeed'), speedLabel: $('gpMaxSpeedLabel'),
             blocker: $('gpBlocker'), limit: $('gpLimit'),
             source: $('gpSource'), padList: $('gpPadList'), scanHint: $('gpScanHint'),
+            raw: $('gpRaw'), rawText: $('gpRawText'),
             pneu: $('gpPneumatics'), grip: $('gpGrip'),
             orientBtns: Array.from(document.querySelectorAll('#gamepad-tab [data-orient]')),
             btPi: $('gpBtPi'), btLocal: $('gpBtLocal'), btScanBtn: $('gpBtScan'),
